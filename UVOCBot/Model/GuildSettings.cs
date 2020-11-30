@@ -1,12 +1,13 @@
 ﻿using Realms;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace UVOCBot.Model
 {
-    public class GuildSettings : RealmObject
+    /// <summary>
+    /// Contains settings pertinent to a guild's preferences
+    /// </summary>
+    public sealed class GuildSettings : RealmObject
     {
+        [PrimaryKey]
         public int Id { get; set; }
     }
 }

@@ -1,9 +1,14 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
+using FluentScheduler;
 using Microsoft.Extensions.Logging;
+using Realms;
 using Serilog;
 using System;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using UVOCBot.Model;
 
 namespace UVOCBot
 {
@@ -25,6 +30,8 @@ namespace UVOCBot
         public const string PREFIX = "ub!";
         public const string NAME = "UVOCBot";
 
+        public static DiscordClient Client { get; private set; }
+
         public static void Main(string[] args)
         {
             MainAsync().GetAwaiter().GetResult();
@@ -32,7 +39,11 @@ namespace UVOCBot
 
         public static async Task MainAsync()
         {
-            DiscordClient client = new DiscordClient(new DiscordConfiguration
+            // Useful for debugging
+            Log.Information("Appdata stored in " + GetAppdataFilePath(null));
+
+            // Connect to the Discord API
+            Client = new DiscordClient(new DiscordConfiguration
             {
                 Token = Environment.GetEnvironmentVariable(TOKEN_ENV_NAME, EnvironmentVariableTarget.Process),
                 TokenType = TokenType.Bot,
@@ -44,15 +55,75 @@ namespace UVOCBot
                 | DiscordIntents.Guilds
                 | DiscordIntents.GuildVoiceStates
             });
-            await client.ConnectAsync(new DiscordActivity(PREFIX + "help", ActivityType.ListeningTo)).ConfigureAwait(false);
+            await Client.ConnectAsync(new DiscordActivity(PREFIX + "help", ActivityType.ListeningTo)).ConfigureAwait(false);
 
-            client.MessageCreated += async (_, e) =>
+            Client.MessageCreated += async (_, e) =>
             {
                 if (e.Message.Content.StartsWith("ub!ping", StringComparison.OrdinalIgnoreCase))
-                    await e.Message.RespondAsync("pong!").ConfigureAwait(false);
+                    await e.Message.RespondAsync(":construction: pong! :construction:").ConfigureAwait(false);
             };
 
+            // Begin any scheduled tasks we have
+            JobManager.Initialize(new JobRegistry());
+            JobManager.JobException += info => Log.Error(info.Exception, "An error occured in the job {name}", info.Name);
+
             await Task.Delay(-1).ConfigureAwait(false);
+        }
+
+        public static Realm GetRealmInstance()
+        {
+            RealmConfiguration config = new RealmConfiguration(GetAppdataFilePath("store.realm"))
+            {
+                SchemaVersion = 0,
+#if DEBUG
+                ShouldDeleteIfMigrationNeeded = true
+#endif
+            };
+
+            return Realm.GetInstance(config);
+        }
+
+        public static BotSettings QuerySettings()
+        {
+            Realm instance = GetRealmInstance();
+            IQueryable<BotSettings> settingsList = instance.All<BotSettings>();
+
+            if (settingsList.Any())
+            {
+                return settingsList.First();
+            } else
+            {
+                BotSettings settings = new BotSettings();
+                instance.Write(() => instance.Add(settings));
+                return settings;
+            }
+        }
+
+        public static async Task WriteSettingsAsync(Action<BotSettings> action)
+        {
+            await GetRealmInstance().WriteAsync((_) => action.Invoke(QuerySettings())).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Gets the path to the specified file, assuming that it is in our appdata store
+        /// </summary>
+        /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory</param>
+        /// <remarks>Data is stored in the local appdata</remarks>
+        /// <returns></returns>
+        public static string GetAppdataFilePath(string fileName)
+        {
+            string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            if (fileName is not null)
+                directory = Path.Combine(directory, "UVOCBot");
+
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            if (fileName is not null)
+                return Path.Combine(directory, fileName);
+            else
+                return directory;
         }
 
         private static ILoggerFactory SetupLogging()

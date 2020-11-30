@@ -1,19 +1,124 @@
-﻿using System;
+﻿using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
+using FluentScheduler;
+using Realms;
+using Serilog;
+using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 using Tweetinvi;
+using Tweetinvi.Models;
+using Tweetinvi.Models.V2;
+using UVOCBot.Model;
 
 namespace UVOCBot.Services
 {
-    public class TwitterService
+    public sealed class TwitterService : IJob
     {
-        protected readonly TwitterClient _client;
+        private readonly TwitterClient _client;
 
         public TwitterService()
         {
             string apiKey = Environment.GetEnvironmentVariable("TWITTER_API_KEY");
             string apiSecret = Environment.GetEnvironmentVariable("TWITTER_API_SECRET");
-            _client = new TwitterClient()
+            string bearerToken = Environment.GetEnvironmentVariable("TWITTER_BEARER_TOKEN");
+
+            _client = new TwitterClient(apiKey, apiSecret, bearerToken);
+            Log.Information($"[{nameof(TwitterService)}] Connected to the Twitter API");
+        }
+
+        public void Execute()
+        {
+            ExecuteAsync().GetAwaiter().GetResult();
+        }
+
+        private async Task ExecuteAsync()
+        {
+            Log.Debug($"[{nameof(TwitterService)}] Getting tweets");
+
+            Dictionary<long, List<ITweet>> userTweetPairs = new Dictionary<long, List<ITweet>>();
+            DateTimeOffset lastFetch = Program.QuerySettings().TimeOfLastTwitterFetch;
+
+            // Load all of the twitter users we should relay tweets from
+            Realm db = Program.GetRealmInstance();
+            foreach (GuildTwitterSettings settings in db.All<GuildTwitterSettings>())
+            {
+                foreach (long userId in settings.TwitterUserIds)
+                {
+                    if (userTweetPairs.ContainsKey(userId))
+                    {
+                        await PostTweetsToChannel(settings, userTweetPairs[userId]).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        List<ITweet> userTweets = await GetUserTweets(userId, lastFetch).ConfigureAwait(false);
+                        userTweetPairs.Add(userId, userTweets);
+                        await PostTweetsToChannel(settings, userTweets).ConfigureAwait(false);
+                    }
+                }
+            }
+
+            // Update our time record
+            await Program.WriteSettingsAsync((b) => b.TimeOfLastTwitterFetch = DateTimeOffset.Now).ConfigureAwait(false);
+
+            Log.Information($"[{nameof(TwitterService)}] Finished getting tweets");
+        }
+
+        /// <summary>
+        /// Gets tweets from a twitter user made after the specified fetch time
+        /// </summary>
+        /// <param name="userId">The ID of the twitter user to get tweets from</param>
+        /// <param name="lastFetch">The earliest time to fetch tweets from</param>
+        /// <returns></returns>
+        private async Task<List<ITweet>> GetUserTweets(long userId, DateTimeOffset lastFetch)
+        {
+            ITweet[] tweets = await _client.Timelines.GetUserTimelineAsync(userId).ConfigureAwait(false);
+
+            List<ITweet> validTweets = new List<ITweet>();
+            foreach (ITweet tweet in tweets)
+            {
+                if (tweet.CreatedAt < lastFetch)
+                    break;
+
+                // Presumably, all of the devs are being tracked. Therefore, retweets won't reveal any unknown info
+                if (tweet.IsRetweet)
+                    continue;
+
+                validTweets.Add(tweet);
+            }
+            return validTweets;
+        }
+
+        private static async Task PostTweetsToChannel(GuildTwitterSettings settings, List<ITweet> tweets)
+        {
+            DiscordChannel channel;
+            try
+            {
+                channel = await Program.Client.GetChannelAsync(settings.RelayChannelId).ConfigureAwait(false);
+            }
+            catch (NotFoundException)
+            {
+                channel = (await Program.Client.GetGuildAsync(settings.GuildId).ConfigureAwait(false)).GetDefaultChannel();
+                // TODO: Append the channel reset command
+                await channel.SendMessageAsync($":warning: {Program.NAME} can't find the Twitter relay channel. Has it been deleted? Please reset it.").ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"[{nameof(TwitterService)}] Could not get channel to send tweets to");
+                return;
+            }
+
+            try
+            {
+                foreach (ITweet tweet in tweets)
+                {
+                    // TODO: Experiment with building a full message, rather than relying on the webhook to render
+                    await channel.SendMessageAsync(tweet.Url).ConfigureAwait(false);
+                }
+            } catch (Exception ex)
+            {
+                Log.Error(ex, $"[{nameof(TwitterService)}] Could not send tweet");
+            }
         }
     }
 }

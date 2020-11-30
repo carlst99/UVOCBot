@@ -1,4 +1,5 @@
 ﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using FluentScheduler;
 using Microsoft.Extensions.Logging;
@@ -6,6 +7,8 @@ using Serilog;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Model;
 
@@ -28,6 +31,8 @@ namespace UVOCBot
 
         public const string PREFIX = "ub!";
         public const string NAME = "UVOCBot";
+
+        private static ManualResetEvent _exitMRE = new ManualResetEvent(false);
 
         public static DiscordClient Client { get; private set; }
 
@@ -54,19 +59,34 @@ namespace UVOCBot
                 | DiscordIntents.Guilds
                 | DiscordIntents.GuildVoiceStates
             });
-            await Client.ConnectAsync(new DiscordActivity(PREFIX + "help", ActivityType.ListeningTo)).ConfigureAwait(false);
 
-            Client.MessageCreated += async (_, e) =>
+            // TODO: Pass a custom IoC container to CommandsNextConfiguration.Services
+            CommandsNextExtension commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
-                if (e.Message.Content.StartsWith("ub!ping", StringComparison.OrdinalIgnoreCase))
-                    await e.Message.RespondAsync(":construction: pong! :construction:").ConfigureAwait(false);
-            };
+                StringPrefixes = new string[] { PREFIX }
+            });
+            commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
+            commands.RegisterCommands(Assembly.GetExecutingAssembly());
+
+            await Client.ConnectAsync(new DiscordActivity(PREFIX + "help", ActivityType.ListeningTo)).ConfigureAwait(false);
 
             // Begin any scheduled tasks we have
             JobManager.Initialize(new JobRegistry());
             JobManager.JobException += info => Log.Error(info.Exception, "An error occured in the job {name}", info.Name);
 
-            await Task.Delay(-1).ConfigureAwait(false);
+            // Clean up when a shutdown is requested by the user
+            Console.CancelKeyPress += Console_CancelKeyPress;
+
+            _exitMRE.WaitOne();
+            //await Task.Delay(-1).ConfigureAwait(false);
+        }
+
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+            JobManager.Stop();
+            Client.DisconnectAsync().Wait();
+            _exitMRE.Set();
         }
 
         /// <summary>

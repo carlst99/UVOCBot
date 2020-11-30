@@ -12,7 +12,7 @@ namespace UVOCBot.Model
         /// <summary>
         /// Gets or sets the guild that these Twitter settings are for
         /// </summary>
-        public GuildSettings Guild { get; set; }
+        public ulong GuildId { get; set; }
 
         /// <summary>
         /// Gets or sets the Discord id of the guild channel in which Twitter posts should be relayed to

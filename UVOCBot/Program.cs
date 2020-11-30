@@ -2,7 +2,6 @@
 using DSharpPlus.Entities;
 using FluentScheduler;
 using Microsoft.Extensions.Logging;
-using Realms;
 using Serilog;
 using System;
 using System.IO;
@@ -68,40 +67,6 @@ namespace UVOCBot
             JobManager.JobException += info => Log.Error(info.Exception, "An error occured in the job {name}", info.Name);
 
             await Task.Delay(-1).ConfigureAwait(false);
-        }
-
-        public static Realm GetRealmInstance()
-        {
-            RealmConfiguration config = new RealmConfiguration(GetAppdataFilePath("store.realm"))
-            {
-                SchemaVersion = 0,
-#if DEBUG
-                ShouldDeleteIfMigrationNeeded = true
-#endif
-            };
-
-            return Realm.GetInstance(config);
-        }
-
-        public static BotSettings QuerySettings()
-        {
-            Realm instance = GetRealmInstance();
-            IQueryable<BotSettings> settingsList = instance.All<BotSettings>();
-
-            if (settingsList.Any())
-            {
-                return settingsList.First();
-            } else
-            {
-                BotSettings settings = new BotSettings();
-                instance.Write(() => instance.Add(settings));
-                return settings;
-            }
-        }
-
-        public static async Task WriteSettingsAsync(Action<BotSettings> action)
-        {
-            await GetRealmInstance().WriteAsync((_) => action.Invoke(QuerySettings())).ConfigureAwait(false);
         }
 
         /// <summary>

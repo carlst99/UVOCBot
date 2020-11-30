@@ -1,13 +1,15 @@
-﻿using Realms;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace UVOCBot.Model
 {
     /// <summary>
     /// Contains settings pertinent to a guild's preferences
     /// </summary>
-    public sealed class GuildSettings : RealmObject
+    public sealed class GuildSettings
     {
-        [PrimaryKey]
-        public int Id { get; set; }
+        /// <summary>
+        /// Gets the Discord ID of this guild
+        /// </summary>
+        public ulong Id { get; set; }
     }
 }

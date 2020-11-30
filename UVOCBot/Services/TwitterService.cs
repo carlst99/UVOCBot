@@ -1,14 +1,12 @@
 ﻿using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using FluentScheduler;
-using Realms;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
-using Tweetinvi.Models.V2;
 using UVOCBot.Model;
 
 namespace UVOCBot.Services
@@ -37,11 +35,11 @@ namespace UVOCBot.Services
             Log.Debug($"[{nameof(TwitterService)}] Getting tweets");
 
             Dictionary<long, List<ITweet>> userTweetPairs = new Dictionary<long, List<ITweet>>();
-            DateTimeOffset lastFetch = Program.QuerySettings().TimeOfLastTwitterFetch;
+            using BotContext db = new BotContext();
+            DateTimeOffset lastFetch = db.ActualBotSettings.TimeOfLastTwitterFetch;
 
             // Load all of the twitter users we should relay tweets from
-            Realm db = Program.GetRealmInstance();
-            foreach (GuildTwitterSettings settings in db.All<GuildTwitterSettings>())
+            foreach (GuildTwitterSettings settings in db.GuildTwitterSettings)
             {
                 foreach (long userId in settings.TwitterUserIds)
                 {
@@ -59,7 +57,8 @@ namespace UVOCBot.Services
             }
 
             // Update our time record
-            await Program.WriteSettingsAsync((b) => b.TimeOfLastTwitterFetch = DateTimeOffset.Now).ConfigureAwait(false);
+            db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.Now;
+            await db.SaveChangesAsync().ConfigureAwait(false);
 
             Log.Information($"[{nameof(TwitterService)}] Finished getting tweets");
         }
@@ -98,7 +97,7 @@ namespace UVOCBot.Services
             }
             catch (NotFoundException)
             {
-                channel = (await Program.Client.GetGuildAsync(settings.GuildId).ConfigureAwait(false)).GetDefaultChannel();
+                channel = (await Program.Client.GetGuildAsync(settings.Guild.Id).ConfigureAwait(false)).GetDefaultChannel();
                 // TODO: Append the channel reset command
                 await channel.SendMessageAsync($":warning: {Program.NAME} can't find the Twitter relay channel. Has it been deleted? Please reset it.").ConfigureAwait(false);
             }

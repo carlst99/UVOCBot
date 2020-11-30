@@ -97,7 +97,7 @@ namespace UVOCBot.Services
             }
             catch (NotFoundException)
             {
-                channel = (await Program.Client.GetGuildAsync(settings.Guild.Id).ConfigureAwait(false)).GetDefaultChannel();
+                channel = (await Program.Client.GetGuildAsync(settings.GuildId).ConfigureAwait(false)).GetDefaultChannel();
                 // TODO: Append the channel reset command
                 await channel.SendMessageAsync($":warning: {Program.NAME} can't find the Twitter relay channel. Has it been deleted? Please reset it.").ConfigureAwait(false);
             }

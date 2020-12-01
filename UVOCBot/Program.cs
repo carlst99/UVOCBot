@@ -2,15 +2,15 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using FluentScheduler;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Model;
+using Tweetinvi;
 
 namespace UVOCBot
 {
@@ -24,6 +24,8 @@ namespace UVOCBot
         // - View Channels
         // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268504128&scope=bot
 
+        #region Constants
+
         /// <summary>
         /// The name of the environment variable storing our bot token
         /// </summary>
@@ -32,7 +34,9 @@ namespace UVOCBot
         public const string PREFIX = "ub!";
         public const string NAME = "UVOCBot";
 
-        private static ManualResetEvent _exitMRE = new ManualResetEvent(false);
+        #endregion
+
+        private static readonly ManualResetEvent _exitMRE = new ManualResetEvent(false);
 
         public static DiscordClient Client { get; private set; }
 
@@ -60,10 +64,14 @@ namespace UVOCBot
                 | DiscordIntents.GuildVoiceStates
             });
 
+            // Setup the DI
+            IServiceProvider services = SetupServiceProvider();
+
             // TODO: Pass a custom IoC container to CommandsNextConfiguration.Services
             CommandsNextExtension commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { PREFIX }
+                StringPrefixes = new string[] { PREFIX },
+                Services = services
             });
             commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
@@ -78,15 +86,6 @@ namespace UVOCBot
             Console.CancelKeyPress += Console_CancelKeyPress;
 
             _exitMRE.WaitOne();
-            //await Task.Delay(-1).ConfigureAwait(false);
-        }
-
-        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            e.Cancel = true;
-            JobManager.Stop();
-            Client.DisconnectAsync().Wait();
-            _exitMRE.Set();
         }
 
         /// <summary>
@@ -111,6 +110,14 @@ namespace UVOCBot
                 return directory;
         }
 
+        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+            JobManager.Stop();
+            Client.DisconnectAsync().Wait();
+            _exitMRE.Set();
+        }
+
         private static ILoggerFactory SetupLogging()
         {
             Log.Logger = new LoggerConfiguration()
@@ -124,6 +131,18 @@ namespace UVOCBot
                 .CreateLogger();
 
             return new LoggerFactory().AddSerilog();
+        }
+
+        private static IServiceProvider SetupServiceProvider()
+        {
+            string apiKey = Environment.GetEnvironmentVariable("TWITTER_API_KEY");
+            string apiSecret = Environment.GetEnvironmentVariable("TWITTER_API_SECRET");
+            string bearerToken = Environment.GetEnvironmentVariable("TWITTER_BEARER_TOKEN");
+
+            return new ServiceCollection()
+                .AddDbContext<BotContext>()
+                .AddSingleton<ITwitterClient>(new TwitterClient(apiKey, apiSecret, bearerToken))
+                .BuildServiceProvider();
         }
     }
 }

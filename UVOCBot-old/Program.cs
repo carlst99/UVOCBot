@@ -47,6 +47,7 @@ namespace UVOCBot
 
         public static async Task MainAsync()
         {
+            ILoggerFactory logger = SetupLogging();
             // Useful for debugging
             Log.Information("Appdata stored in " + GetAppdataFilePath(null));
 
@@ -55,7 +56,7 @@ namespace UVOCBot
             {
                 Token = Environment.GetEnvironmentVariable(TOKEN_ENV_NAME, EnvironmentVariableTarget.Process),
                 TokenType = TokenType.Bot,
-                LoggerFactory = SetupLogging(),
+                LoggerFactory = logger,
                 Intents = DiscordIntents.DirectMessageReactions
                 | DiscordIntents.DirectMessages
                 | DiscordIntents.GuildMessageReactions

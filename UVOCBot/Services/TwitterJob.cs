@@ -11,18 +11,18 @@ using UVOCBot.Model;
 
 namespace UVOCBot.Services
 {
-    public sealed class TwitterService : IJob
+    public sealed class TwitterJob : IJob
     {
         private readonly TwitterClient _client;
 
-        public TwitterService()
+        public TwitterJob()
         {
             string apiKey = Environment.GetEnvironmentVariable("TWITTER_API_KEY");
             string apiSecret = Environment.GetEnvironmentVariable("TWITTER_API_SECRET");
             string bearerToken = Environment.GetEnvironmentVariable("TWITTER_BEARER_TOKEN");
 
             _client = new TwitterClient(apiKey, apiSecret, bearerToken);
-            Log.Information($"[{nameof(TwitterService)}] Connected to the Twitter API");
+            Log.Information($"[{nameof(TwitterJob)}] Connected to the Twitter API");
         }
 
         public void Execute()
@@ -32,7 +32,7 @@ namespace UVOCBot.Services
 
         private async Task ExecuteAsync()
         {
-            Log.Debug($"[{nameof(TwitterService)}] Getting tweets");
+            Log.Debug($"[{nameof(TwitterJob)}] Getting tweets");
 
             Dictionary<long, List<ITweet>> userTweetPairs = new Dictionary<long, List<ITweet>>();
             using BotContext db = new BotContext();
@@ -60,7 +60,7 @@ namespace UVOCBot.Services
             db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.Now;
             await db.SaveChangesAsync().ConfigureAwait(false);
 
-            Log.Information($"[{nameof(TwitterService)}] Finished getting tweets");
+            Log.Information($"[{nameof(TwitterJob)}] Finished getting tweets");
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace UVOCBot.Services
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"[{nameof(TwitterService)}] Could not get channel to send tweets to");
+                Log.Error(ex, $"[{nameof(TwitterJob)}] Could not get channel to send tweets to");
                 return;
             }
 
@@ -116,7 +116,7 @@ namespace UVOCBot.Services
                 }
             } catch (Exception ex)
             {
-                Log.Error(ex, $"[{nameof(TwitterService)}] Could not send tweet");
+                Log.Error(ex, $"[{nameof(TwitterJob)}] Could not send tweet");
             }
         }
     }

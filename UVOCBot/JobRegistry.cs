@@ -7,7 +7,7 @@ namespace UVOCBot
     {
         public JobRegistry()
         {
-            Schedule<TwitterService>().ToRunNow().AndEvery(10).Minutes();
+            Schedule<TwitterJob>().ToRunNow().AndEvery(10).Minutes();
         }
     }
 }

@@ -40,7 +40,7 @@ namespace UVOCBot
 
         public static DiscordClient Client { get; private set; }
 
-        public static void Main(string[] args)
+        public static void Main()
         {
             MainAsync().GetAwaiter().GetResult();
         }

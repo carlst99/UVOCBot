@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Model;
+using UVOCBot.Utils;
 
 namespace UVOCBot.Workers
 {
@@ -18,6 +19,8 @@ namespace UVOCBot.Workers
     {
         private readonly DiscordClient _discordClient;
         private readonly ITwitterClient _twitterClient;
+
+        private MaxSizeQueue<long> _previousTweets = new MaxSizeQueue<long>(100);
 
         public TwitterWorker(
             DiscordClient discordClient,

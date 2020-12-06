@@ -50,7 +50,7 @@ namespace UVOCBot.Workers
                         else
                         {
                             List<ITweet> userTweets = await GetUserTweets(user.UserId, lastFetch).ConfigureAwait(false);
-                            tweetCount += userTweetPairs.Count;
+                            tweetCount += userTweets.Count;
 
                             userTweetPairs.Add(user.UserId, userTweets);
                             await PostTweetsToChannel(settings, userTweets).ConfigureAwait(false);

@@ -68,7 +68,6 @@ namespace UVOCBot
             // Setup the DI
             IServiceProvider services = SetupServiceProvider();
 
-            // TODO: Pass a custom IoC container to CommandsNextConfiguration.Services
             CommandsNextExtension commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { PREFIX },

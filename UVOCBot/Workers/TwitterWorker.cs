@@ -20,7 +20,7 @@ namespace UVOCBot.Workers
         private readonly DiscordClient _discordClient;
         private readonly ITwitterClient _twitterClient;
 
-        private MaxSizeQueue<long> _previousTweets = new MaxSizeQueue<long>(100);
+        private readonly MaxSizeQueue<ITweet> _previousTweets = new MaxSizeQueue<ITweet>(100);
 
         public TwitterWorker(
             DiscordClient discordClient,
@@ -97,11 +97,20 @@ namespace UVOCBot.Workers
                 if (tweet.CreatedAt < lastFetch)
                     break;
 
-                // Presumably, all of the devs are being tracked. Therefore, retweets won't reveal any unknown info
+                // Filter out retweets of tweets that we have already posted
                 if (tweet.IsRetweet)
-                    continue;
-
-                validTweets.Add(tweet);
+                {
+                    if (!_previousTweets.Contains(tweet.RetweetedTweet))
+                    {
+                        validTweets.Add(tweet);
+                        _previousTweets.Enqueue(tweet.RetweetedTweet);
+                    }
+                }
+                else
+                {
+                    validTweets.Add(tweet);
+                    _previousTweets.Enqueue(tweet);
+                }
             }
             return validTweets;
         }

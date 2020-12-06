@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Text;
@@ -171,6 +172,28 @@ namespace UVOCBot.Commands
 
         [Command("relay-channel")]
         [Aliases("channel", "relay")]
+        [Description("Displays the channel to which tweets will be relayed")]
+        public async Task RelayChannelCommand(CommandContext ctx)
+        {
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
+            if (settings == default)
+            {
+                await ctx.RespondAsync("A relay channel has not yet been set").ConfigureAwait(false);
+            }
+            else
+            {
+                try
+                {
+                    DiscordChannel channel = ctx.Guild.GetChannel((ulong)settings.RelayChannelId);
+                    await ctx.RespondAsync($"Tweets are being relayed to {channel.Mention}").ConfigureAwait(false);
+                } catch (NotFoundException)
+                {
+                    await ctx.RespondAsync("An invalid channel is currently set as the relay endpoint. Please reset it").ConfigureAwait(false);
+                }
+            }
+        }
+
+        [Command("relay-channel")]
         [Description("Sets the channel to which tweets will be relayed")]
         public async Task RelayChannelCommand(CommandContext ctx, [Description("The channel that tweets should be relayed to")] DiscordChannel channel)
         {

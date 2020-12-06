@@ -14,16 +14,16 @@ namespace UVOCBot.Commands
             await ctx.RespondAsync("pong!").ConfigureAwait(false);
         }
 
-        [Command("coinflip")]
+        [Command("coin-flip")]
         [Description("Flips a coin")]
         public async Task CoinFlip(CommandContext ctx)
         {
             Random rnd = new Random();
             int result = rnd.Next(0, 2);
             if (result == 0)
-                await ctx.RespondAsync("You flipped a **heads**!").ConfigureAwait(false);
+                await ctx.RespondAsync("You flipped a heads!").ConfigureAwait(false);
             else
-                await ctx.RespondAsync("You flipped a **tails**!").ConfigureAwait(false);
+                await ctx.RespondAsync("You flipped a tails!").ConfigureAwait(false);
         }
     }
 }

@@ -1,4 +1,7 @@
 # UVOCBot
+
+![.NET Core](https://github.com/carlst99/UVOCBot/workflows/.NET%20Core/badge.svg)
+
 Provides various functions to assist with the Planetside experience of the UVOC outfit Discord server. Current features include:
 
 - Tweet relaying - Posts tweets made by Twitter users of your selection into the Discord

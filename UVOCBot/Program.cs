@@ -1,92 +1,80 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.Entities;
-using FluentScheduler;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Events;
 using System;
 using System.IO;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
+using Tweetinvi.Models;
+using UVOCBot.Workers;
 
 namespace UVOCBot
 {
+    // Permissions integer: 268504128
+    // - Manage Roles
+    // - Send Messages
+    // - Read Message History
+    // - Add Reactions
+    // - View Channels
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268504128&scope=bot
+
     public static class Program
     {
-        // Permissions integer: 268504128
-        // - Manage Roles
-        // - Send Messages
-        // - Read Message History
-        // - Add Reactions
-        // - View Channels
-        // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268504128&scope=bot
-
-        #region Constants
-
         /// <summary>
         /// The name of the environment variable storing our bot token
         /// </summary>
-        private const string TOKEN_ENV_NAME = "UVOC_BOT_TOKEN";
+        private const string BOT_TOKEN_ENV = "UVOCBOT_BOT_TOKEN";
+        private const string TWITTER_API_KEY_ENV = "UVOCBOT_TWITTERAPI_KEY";
+        private const string TWITTER_API_SECRET_ENV = "UVOCBOT_TWITTERAPI_SECRET";
+        private const string TWITTER_API_BEARER_ENV = "UVOCBOT_TWITTERAPI_BEARER_TOKEN";
 
         public const string PREFIX = "ub!";
         public const string NAME = "UVOCBot";
 
-        #endregion
-
-        private static readonly ManualResetEvent _exitMRE = new ManualResetEvent(false);
-
-        public static DiscordClient Client { get; private set; }
-
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            MainAsync().GetAwaiter().GetResult();
-        }
-
-        public static async Task MainAsync()
-        {
-            // Useful for debugging
+            SetupLogging();
             Log.Information("Appdata stored in " + GetAppdataFilePath(null));
 
-            // Connect to the Discord API
-            Client = new DiscordClient(new DiscordConfiguration
+            try
             {
-                Token = Environment.GetEnvironmentVariable(TOKEN_ENV_NAME, EnvironmentVariableTarget.Process),
-                TokenType = TokenType.Bot,
-                LoggerFactory = SetupLogging(),
-                Intents = DiscordIntents.DirectMessageReactions
-                | DiscordIntents.DirectMessages
-                | DiscordIntents.GuildMessageReactions
-                | DiscordIntents.GuildMessages
-                | DiscordIntents.Guilds
-                | DiscordIntents.GuildVoiceStates
-            });
-
-            // Setup the DI
-            IServiceProvider services = SetupServiceProvider();
-
-            // TODO: Pass a custom IoC container to CommandsNextConfiguration.Services
-            CommandsNextExtension commands = Client.UseCommandsNext(new CommandsNextConfiguration
+                Log.Information("Starting host");
+                CreateHostBuilder(args).Build().Run();
+                return 0;
+            }
+            catch (Exception ex)
             {
-                StringPrefixes = new string[] { PREFIX },
-                Services = services
-            });
-            commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
-            commands.RegisterCommands(Assembly.GetExecutingAssembly());
-
-            await Client.ConnectAsync(new DiscordActivity(PREFIX + "help", ActivityType.ListeningTo)).ConfigureAwait(false);
-
-            // Begin any scheduled tasks we have
-            JobManager.Initialize(new JobRegistry());
-            JobManager.JobException += info => Log.Error(info.Exception, "An error occured in the job {name}", info.Name);
-
-            // Clean up when a shutdown is requested by the user
-            Console.CancelKeyPress += Console_CancelKeyPress;
-
-            _exitMRE.WaitOne();
+                Log.Fatal(ex, "Host terminated unexpectedly");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .UseSystemd()
+                .ConfigureServices((_, services) =>
+                {
+                    services.AddHostedService<DiscordWorker>();
+                    services.AddHostedService<TwitterWorker>();
+                    services.AddDbContext<BotContext>();
+                    services.AddSingleton<ITwitterClient>(new TwitterClient(new ConsumerOnlyCredentials
+                    {
+                        ConsumerKey = Environment.GetEnvironmentVariable(TWITTER_API_KEY_ENV),
+                        ConsumerSecret = Environment.GetEnvironmentVariable(TWITTER_API_SECRET_ENV),
+                        BearerToken = Environment.GetEnvironmentVariable(TWITTER_API_BEARER_ENV)
+                    }));
+                    services.AddSingleton(DiscordClientFactory);
+                })
+                .UseSerilog();
 
         /// <summary>
         /// Gets the path to the specified file, assuming that it is in our appdata store
@@ -110,39 +98,46 @@ namespace UVOCBot
                 return directory;
         }
 
-        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            e.Cancel = true;
-            JobManager.Stop();
-            Client.DisconnectAsync().Wait();
-            _exitMRE.Set();
-        }
-
-        private static ILoggerFactory SetupLogging()
+        private static void SetupLogging()
         {
             Log.Logger = new LoggerConfiguration()
 #if DEBUG
                 .MinimumLevel.Debug()
-                .MinimumLevel.Override("DSharpPlus", Serilog.Events.LogEventLevel.Information)
 #else
                 .MinimumLevel.Information()
 #endif
+                .MinimumLevel.Override("DSharpPlus", LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .Enrich.FromLogContext()
                 .WriteTo.Console()
+                .WriteTo.File(GetAppdataFilePath("log.log"), rollingInterval: RollingInterval.Day)
                 .CreateLogger();
-
-            return new LoggerFactory().AddSerilog();
         }
 
-        private static IServiceProvider SetupServiceProvider()
+        private static DiscordClient DiscordClientFactory(IServiceProvider services)
         {
-            string apiKey = Environment.GetEnvironmentVariable("TWITTER_API_KEY");
-            string apiSecret = Environment.GetEnvironmentVariable("TWITTER_API_SECRET");
-            string bearerToken = Environment.GetEnvironmentVariable("TWITTER_BEARER_TOKEN");
+            DiscordClient client = new DiscordClient(new DiscordConfiguration
+            {
+                Token = Environment.GetEnvironmentVariable(BOT_TOKEN_ENV, EnvironmentVariableTarget.Process),
+                TokenType = TokenType.Bot,
+                LoggerFactory = new LoggerFactory().AddSerilog(),
+                Intents = DiscordIntents.DirectMessageReactions
+                            | DiscordIntents.DirectMessages
+                            | DiscordIntents.GuildMessageReactions
+                            | DiscordIntents.GuildMessages
+                            | DiscordIntents.Guilds
+                            | DiscordIntents.GuildVoiceStates
+            });
 
-            return new ServiceCollection()
-                .AddDbContext<BotContext>()
-                .AddSingleton<ITwitterClient>(new TwitterClient(apiKey, apiSecret, bearerToken))
-                .BuildServiceProvider();
+            CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration
+            {
+                StringPrefixes = new string[] { PREFIX },
+                Services = services
+            });
+            commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
+            commands.RegisterCommands(Assembly.GetExecutingAssembly());
+
+            return client;
         }
     }
 }

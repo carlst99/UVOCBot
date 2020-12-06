@@ -10,6 +10,7 @@ namespace UVOCBot.Model
         /// <summary>
         /// Gets the Discord ID of this guild
         /// </summary>
-        public ulong Id { get; set; }
+        [Key]
+        public ulong GuildId { get; set; }
     }
 }

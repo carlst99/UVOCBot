@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
@@ -39,7 +40,7 @@ namespace UVOCBot.Workers
                 int tweetCount = 0;
 
                 // Load all of the twitter users we should relay tweets from
-                foreach (GuildTwitterSettings settings in db.GuildTwitterSettings.ToList())
+                foreach (GuildTwitterSettings settings in db.GuildTwitterSettings.Include(e => e.TwitterUsers))
                 {
                     foreach (TwitterUser user in settings.TwitterUsers)
                     {
@@ -59,7 +60,13 @@ namespace UVOCBot.Workers
                 }
 
                 // Update our time record
+#if DEBUG
+                // Give us six hours of play when debugging
+                if (db.ActualBotSettings.TimeOfLastTwitterFetch.AddHours(6) < DateTimeOffset.Now)
+                    db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.Now;
+#else
                 db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.Now;
+#endif
                 await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
 
                 Log.Information($"[{nameof(TwitterWorker)}] Finished getting {tweetCount} tweets");

@@ -8,12 +8,10 @@ namespace UVOCBot.Model
     /// </summary>
     public sealed class GuildTwitterSettings
     {
-        [Key]
-        public int Id { get; set; }
-
         /// <summary>
         /// Gets or sets the guild that these Twitter settings are for
         /// </summary>
+        [Key]
         public ulong GuildId { get; set; }
 
         /// <summary>
@@ -24,23 +22,13 @@ namespace UVOCBot.Model
         /// <summary>
         /// Gets or sets a list of twitter user ids from whom to relay posts
         /// </summary>
-        public IList<TwitterUser> TwitterUsers { get; set; } = new List<TwitterUser>();
-    }
+        public ICollection<TwitterUser> TwitterUsers { get; } = new List<TwitterUser>();
 
-    public class TwitterUser
-    {
-        [Key]
-        public int Id { get; set; }
+        public GuildTwitterSettings() { }
 
-        //[Key]
-        public long UserId { get; set; }
-
-        public IList<GuildTwitterSettings> Guilds { get; set; } = new List<GuildTwitterSettings>();
-
-        public TwitterUser() { }
-
-        public TwitterUser(long id) => UserId = id;
-
-        public TwitterUser(string id) => UserId = long.Parse(id);
+        public GuildTwitterSettings(ulong guildId)
+        {
+            GuildId = guildId;
+        }
     }
 }

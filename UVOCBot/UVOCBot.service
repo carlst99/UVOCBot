@@ -5,11 +5,10 @@ Wants=network.target
 
 [Service]
 Type=simple
-ExecStart=/home/pi/programs/UVOCBot
+ExecStart=/home/pi/programs/StartUVOCBot.sh
 Restart=always
 RestartSec=30
 KillMode=mixed
-EnvironmentFile=/etc/systemd/systemd/uvocbot.env
 
 [Install]
 WantedBy=multi-user.target

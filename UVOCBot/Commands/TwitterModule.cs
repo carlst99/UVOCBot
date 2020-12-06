@@ -1,7 +1,9 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,10 +19,13 @@ namespace UVOCBot.Commands
     [ModuleLifespan(ModuleLifespan.Transient)]
     public class TwitterModule : BaseCommandModule
     {
+        private const string ENV_CLIENT_ID = "UVOCBOT_CLIENT_ID";
+
         public ITwitterClient TwitterClient { private get; set; }
         public BotContext DbContext { private get; set; }
 
         [Command("add-user")]
+        [Aliases("add")]
         [Description("Starts relaying tweets from a twitter user")]
         public async Task AddUserCommand(CommandContext ctx, [Description("The person's twitter username, e.g. 'Wrel'")] string username)
         {
@@ -63,13 +68,14 @@ namespace UVOCBot.Commands
 
             await DbContext.SaveChangesAsync().ConfigureAwait(false);
 
-            await ctx.RespondAsync($"Now relaying tweets from {username}!").ConfigureAwait(false);
+            await ctx.RespondAsync($"Now relaying tweets from **{username}!**").ConfigureAwait(false);
 
             if (settings.RelayChannelId is null)
                 await ctx.RespondAsync($"You haven't set a channel to relay tweets to. Please use the `{Program.PREFIX}twitter relay-channel` command").ConfigureAwait(false);
         }
 
         [Command("remove-user")]
+        [Aliases("remove")]
         [Description("Stops relaying tweets from a twitter user")]
         public async Task RemoveUserCommand(CommandContext ctx, [Description("The person's twitter username, e.g. 'Wrel'")] string username)
         {
@@ -106,18 +112,18 @@ namespace UVOCBot.Commands
 
             if (dbUser == default)
             {
-                await ctx.RespondAsync("You aren't relaying tweets from this user").ConfigureAwait(false);
+                await ctx.RespondAsync($"You aren't relaying tweets from **{username}**").ConfigureAwait(false);
                 return;
             }
 
             if (settings.TwitterUsers.Contains(dbUser))
             {
                 settings.TwitterUsers.Remove(dbUser);
-                await ctx.RespondAsync("Tweets from this user are no longer being relayed").ConfigureAwait(false);
+                await ctx.RespondAsync($"Tweets from **{username}** are no longer being relayed").ConfigureAwait(false);
             }
             else
             {
-                await ctx.RespondAsync("You aren't relaying tweets from this user").ConfigureAwait(false);
+                await ctx.RespondAsync($"You aren't relaying tweets from **{username}**").ConfigureAwait(false);
             }
 
             await DbContext.SaveChangesAsync().ConfigureAwait(false);
@@ -130,6 +136,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("list-users")]
+        [Aliases("list", "users", "all")]
         [Description("Lists all the users who's tweets are being relayed into your guild")]
         public async Task ListUsersCommand(CommandContext ctx)
         {
@@ -162,10 +169,23 @@ namespace UVOCBot.Commands
             }
         }
 
+        // TODO: Can only add this channel if uvocbot has permissions to post to it
         [Command("relay-channel")]
+        [Aliases("channel", "relay")]
         [Description("Sets the channel to which tweets will be relayed")]
         public async Task RelayChannelCommand(CommandContext ctx, [Description("The channel that tweets should be relayed to")] DiscordChannel channel)
         {
+            ulong clientId = ulong.Parse(Environment.GetEnvironmentVariable(ENV_CLIENT_ID));
+            DiscordMember botMember = await ctx.Guild.GetMemberAsync(clientId).ConfigureAwait(false);
+
+            Permissions channelPerms = channel.PermissionsFor(botMember);
+
+            if ((channelPerms & DSharpPlus.Permissions.SendMessages) == 0 || (channelPerms & Permissions.AccessChannels) == 0)
+            {
+                await ctx.RespondAsync($"{Program.NAME} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
+                return;
+            }
+
             GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
             if (settings == default)
             {

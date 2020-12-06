@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Serilog;
 using System;
 using System.Linq;
 using UVOCBot.Model;

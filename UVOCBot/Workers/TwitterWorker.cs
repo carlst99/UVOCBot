@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
@@ -71,8 +70,11 @@ namespace UVOCBot.Workers
 
                 Log.Information($"[{nameof(TwitterWorker)}] Finished getting {tweetCount} tweets");
 
-                // Get tweets every 15min (900000)
+#if DEBUG
                 await Task.Delay(30000, stoppingToken).ConfigureAwait(false);
+#else
+                await Task.Delay(900000, stoppingToken).ConfigureAwait(false);
+#endif
             }
         }
 

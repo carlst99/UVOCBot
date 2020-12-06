@@ -14,19 +14,20 @@ namespace UVOCBot.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasAnnotation("Relational:MaxIdentifierLength", 64)
                 .HasAnnotation("ProductVersion", "5.0.0");
 
             modelBuilder.Entity("GuildTwitterSettingsTwitterUser", b =>
                 {
-                    b.Property<int>("GuildsId")
-                        .HasColumnType("INTEGER");
+                    b.Property<ulong>("GuildsGuildId")
+                        .HasColumnType("bigint unsigned");
 
-                    b.Property<int>("TwitterUsersId")
-                        .HasColumnType("INTEGER");
+                    b.Property<long>("TwitterUsersUserId")
+                        .HasColumnType("bigint");
 
-                    b.HasKey("GuildsId", "TwitterUsersId");
+                    b.HasKey("GuildsGuildId", "TwitterUsersUserId");
 
-                    b.HasIndex("TwitterUsersId");
+                    b.HasIndex("TwitterUsersUserId");
 
                     b.ToTable("GuildTwitterSettingsTwitterUser");
                 });
@@ -35,10 +36,10 @@ namespace UVOCBot.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("TimeOfLastTwitterFetch")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
@@ -47,57 +48,51 @@ namespace UVOCBot.Migrations
 
             modelBuilder.Entity("UVOCBot.Model.GuildSettings", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<ulong>("GuildId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.HasKey("Id");
+                    b.HasKey("GuildId");
 
                     b.ToTable("GuildSettings");
                 });
 
             modelBuilder.Entity("UVOCBot.Model.GuildTwitterSettings", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
                     b.Property<ulong>("GuildId")
-                        .HasColumnType("INTEGER");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
 
                     b.Property<ulong?>("RelayChannelId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint unsigned");
 
-                    b.HasKey("Id");
+                    b.HasKey("GuildId");
 
                     b.ToTable("GuildTwitterSettings");
                 });
 
             modelBuilder.Entity("UVOCBot.Model.TwitterUser", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
                     b.Property<long>("UserId")
-                        .HasColumnType("INTEGER");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
 
-                    b.ToTable("TwitterUser");
+                    b.ToTable("TwitterUsers");
                 });
 
             modelBuilder.Entity("GuildTwitterSettingsTwitterUser", b =>
                 {
                     b.HasOne("UVOCBot.Model.GuildTwitterSettings", null)
                         .WithMany()
-                        .HasForeignKey("GuildsId")
+                        .HasForeignKey("GuildsGuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("UVOCBot.Model.TwitterUser", null)
                         .WithMany()
-                        .HasForeignKey("TwitterUsersId")
+                        .HasForeignKey("TwitterUsersUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

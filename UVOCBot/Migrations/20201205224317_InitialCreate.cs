@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace UVOCBot.Migrations
@@ -11,9 +12,9 @@ namespace UVOCBot.Migrations
                 name: "BotSettings",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    TimeOfLastTwitterFetch = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TimeOfLastTwitterFetch = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -24,69 +25,67 @@ namespace UVOCBot.Migrations
                 name: "GuildSettings",
                 columns: table => new
                 {
-                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true)
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_GuildSettings", x => x.Id);
+                    table.PrimaryKey("PK_GuildSettings", x => x.GuildId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "GuildTwitterSettings",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    GuildId = table.Column<ulong>(type: "INTEGER", nullable: false),
-                    RelayChannelId = table.Column<ulong>(type: "INTEGER", nullable: true)
+                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    RelayChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_GuildTwitterSettings", x => x.Id);
+                    table.PrimaryKey("PK_GuildTwitterSettings", x => x.GuildId);
                 });
 
             migrationBuilder.CreateTable(
-                name: "TwitterUser",
+                name: "TwitterUsers",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    UserId = table.Column<long>(type: "INTEGER", nullable: false)
+                    UserId = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TwitterUser", x => x.Id);
+                    table.PrimaryKey("PK_TwitterUsers", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
                 name: "GuildTwitterSettingsTwitterUser",
                 columns: table => new
                 {
-                    GuildsId = table.Column<int>(type: "INTEGER", nullable: false),
-                    TwitterUsersId = table.Column<int>(type: "INTEGER", nullable: false)
+                    GuildsGuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false),
+                    TwitterUsersUserId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_GuildTwitterSettingsTwitterUser", x => new { x.GuildsId, x.TwitterUsersId });
+                    table.PrimaryKey("PK_GuildTwitterSettingsTwitterUser", x => new { x.GuildsGuildId, x.TwitterUsersUserId });
                     table.ForeignKey(
-                        name: "FK_GuildTwitterSettingsTwitterUser_GuildTwitterSettings_GuildsId",
-                        column: x => x.GuildsId,
+                        name: "FK_GuildTwitterSettingsTwitterUser_GuildTwitterSettings_GuildsG~",
+                        column: x => x.GuildsGuildId,
                         principalTable: "GuildTwitterSettings",
-                        principalColumn: "Id",
+                        principalColumn: "GuildId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_GuildTwitterSettingsTwitterUser_TwitterUser_TwitterUsersId",
-                        column: x => x.TwitterUsersId,
-                        principalTable: "TwitterUser",
-                        principalColumn: "Id",
+                        name: "FK_GuildTwitterSettingsTwitterUser_TwitterUsers_TwitterUsersUse~",
+                        column: x => x.TwitterUsersUserId,
+                        principalTable: "TwitterUsers",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_GuildTwitterSettingsTwitterUser_TwitterUsersId",
+                name: "IX_GuildTwitterSettingsTwitterUser_TwitterUsersUserId",
                 table: "GuildTwitterSettingsTwitterUser",
-                column: "TwitterUsersId");
+                column: "TwitterUsersUserId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -104,7 +103,7 @@ namespace UVOCBot.Migrations
                 name: "GuildTwitterSettings");
 
             migrationBuilder.DropTable(
-                name: "TwitterUser");
+                name: "TwitterUsers");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -36,26 +37,49 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            ulong guildId = ctx.Guild.Id;
-            GuildTwitterSettings settings = DbContext.GuildTwitterSettings.FirstOrDefault(s => s.GuildId == guildId);
+            // Find or create the guild twitter settings record
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
             if (settings == default)
             {
-                settings = new GuildTwitterSettings
-                {
-                    GuildId = guildId
-                };
+                settings = new GuildTwitterSettings(ctx.Guild.Id);
                 DbContext.GuildTwitterSettings.Add(settings);
             }
-            TwitterUser twitterUser = new TwitterUser(user.User.Id);
-            DbContext.Add(twitterUser);
+
+            long twitterUserId = long.Parse(user.User.Id);
+
+            // Find or create the twitter user record
+            TwitterUser twitterUser = await DbContext.TwitterUsers.FindAsync(twitterUserId).ConfigureAwait(false);
+            if (twitterUser == default)
+            {
+                twitterUser = new TwitterUser(twitterUserId);
+                DbContext.TwitterUsers.Add(twitterUser);
+            }
+
             settings.TwitterUsers.Add(twitterUser);
+
+            await DbContext.SaveChangesAsync().ConfigureAwait(false);
 
             await ctx.RespondAsync($"Now relaying tweets from {username}!").ConfigureAwait(false);
 
             if (settings.RelayChannelId is null)
                 await ctx.RespondAsync($"You haven't set a channel to relay tweets to. Please use the `{Program.PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+        }
 
+        [Command("relay-channel")]
+        [Description("Sets the channel to which tweets will be relayed")]
+        public async Task RelayChannelCommand(CommandContext ctx, [Description("The channel that tweets should be relayed to")] DiscordChannel channel)
+        {
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
+            if (settings == default)
+            {
+                settings = new GuildTwitterSettings(ctx.Guild.Id);
+                DbContext.Add(settings);
+            }
+
+            settings.RelayChannelId = channel.Id;
             await DbContext.SaveChangesAsync().ConfigureAwait(false);
+
+            await ctx.RespondAsync("Tweets will now be relayed to " + channel.Mention).ConfigureAwait(false);
         }
     }
 }

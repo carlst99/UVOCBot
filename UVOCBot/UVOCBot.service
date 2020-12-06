@@ -9,7 +9,7 @@ ExecStart=/home/pi/programs/UVOCBot
 Restart=always
 RestartSec=30
 KillMode=mixed
-Environment=DOTNET_ROOT=/home/pi/dotnet-5
+EnvironmentFile=/etc/systemd/systemd/uvocbot.env
 
 [Install]
 WantedBy=multi-user.target

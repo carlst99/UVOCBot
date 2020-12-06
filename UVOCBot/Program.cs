@@ -15,6 +15,14 @@ using UVOCBot.Workers;
 
 namespace UVOCBot
 {
+    // Permissions integer: 268504128
+    // - Manage Roles
+    // - Send Messages
+    // - Read Message History
+    // - Add Reactions
+    // - View Channels
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268504128&scope=bot
+
     public static class Program
     {
         /// <summary>
@@ -121,7 +129,6 @@ namespace UVOCBot
                             | DiscordIntents.GuildVoiceStates
             });
 
-            // TODO: Pass a custom IoC container to CommandsNextConfiguration.Services
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { PREFIX },

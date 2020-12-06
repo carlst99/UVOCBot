@@ -13,10 +13,10 @@ using UVOCBot.Model;
 
 namespace UVOCBot.Commands
 {
-    // TODO: Limit who can send commands
     [Group("twitter")]
     [Description("Commands pertinent to the twitter relay functionality")]
     [ModuleLifespan(ModuleLifespan.Transient)]
+    [RequireUserPermissions(Permissions.ManageGuild)]
     public class TwitterModule : BaseCommandModule
     {
         private const string ENV_CLIENT_ID = "UVOCBOT_CLIENT_ID";
@@ -169,7 +169,6 @@ namespace UVOCBot.Commands
             }
         }
 
-        // TODO: Can only add this channel if uvocbot has permissions to post to it
         [Command("relay-channel")]
         [Aliases("channel", "relay")]
         [Description("Sets the channel to which tweets will be relayed")]
@@ -180,7 +179,7 @@ namespace UVOCBot.Commands
 
             Permissions channelPerms = channel.PermissionsFor(botMember);
 
-            if ((channelPerms & DSharpPlus.Permissions.SendMessages) == 0 || (channelPerms & Permissions.AccessChannels) == 0)
+            if ((channelPerms & Permissions.SendMessages) == 0 || (channelPerms & Permissions.AccessChannels) == 0)
             {
                 await ctx.RespondAsync($"{Program.NAME} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
                 return;

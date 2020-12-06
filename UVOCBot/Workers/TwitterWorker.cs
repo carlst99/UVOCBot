@@ -126,10 +126,7 @@ namespace UVOCBot.Workers
             try
             {
                 foreach (ITweet tweet in tweets)
-                {
-                    // TODO: Experiment with building a full message, rather than relying on the webhook to render
                     await channel.SendMessageAsync(tweet.Url).ConfigureAwait(false);
-                }
             }
             catch (Exception ex)
             {

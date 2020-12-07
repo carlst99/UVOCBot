@@ -19,16 +19,22 @@ namespace UVOCBot.Model
         /// </summary>
         public ulong? RelayChannelId { get; set; }
 
+        public bool IsEnabled { get; set; }
+
         /// <summary>
         /// Gets or sets a list of twitter user ids from whom to relay posts
         /// </summary>
         public ICollection<TwitterUser> TwitterUsers { get; } = new List<TwitterUser>();
 
-        public GuildTwitterSettings() { }
+        public GuildTwitterSettings()
+        {
+            IsEnabled = true;
+        }
 
         public GuildTwitterSettings(ulong guildId)
         {
             GuildId = guildId;
+            IsEnabled = true;
         }
     }
 }

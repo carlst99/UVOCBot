@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
+using System.Linq;
 using Tweetinvi.Models;
 using UVOCBot.Model;
 using UVOCBot.Utils;
@@ -42,7 +43,7 @@ namespace UVOCBot.Workers
                 int tweetCount = 0;
 
                 // Load all of the twitter users we should relay tweets from
-                foreach (GuildTwitterSettings settings in db.GuildTwitterSettings.Include(e => e.TwitterUsers))
+                foreach (GuildTwitterSettings settings in db.GuildTwitterSettings.Include(e => e.TwitterUsers).Where(s => s.IsEnabled))
                 {
                     foreach (TwitterUser user in settings.TwitterUsers)
                     {
@@ -64,10 +65,10 @@ namespace UVOCBot.Workers
                 // Update our time record
 #if DEBUG
                 // Give us six hours of play when debugging
-                if (db.ActualBotSettings.TimeOfLastTwitterFetch.AddHours(6) < DateTimeOffset.Now)
-                    db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.Now;
+                if (db.ActualBotSettings.TimeOfLastTwitterFetch.AddHours(6) < DateTimeOffset.UtcNow)
+                    db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.UtcNow;
 #else
-                db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.Now;
+                db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.UtcNow;
 #endif
                 await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
 
@@ -94,6 +95,8 @@ namespace UVOCBot.Workers
             List<ITweet> validTweets = new List<ITweet>();
             foreach (ITweet tweet in tweets)
             {
+                //if (tweet.CreatedAt < DateTimeOffset.UtcNow.Subtract(new TimeSpan(5, 0, 0, 0)))
+                    //break;
                 if (tweet.CreatedAt < lastFetch)
                     break;
 

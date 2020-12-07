@@ -9,7 +9,7 @@ namespace UVOCBot.Model
     {
         public static BotSettings Default => new BotSettings
         {
-            TimeOfLastTwitterFetch = DateTimeOffset.Now
+            TimeOfLastTwitterFetch = DateTimeOffset.UtcNow
         };
 
         public int Id { get; set; }

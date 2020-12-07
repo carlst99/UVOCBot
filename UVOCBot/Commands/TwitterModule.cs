@@ -175,6 +175,8 @@ namespace UVOCBot.Commands
         [Description("Displays the channel to which tweets will be relayed")]
         public async Task RelayChannelCommand(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
             GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
             if (settings == default)
             {
@@ -197,6 +199,8 @@ namespace UVOCBot.Commands
         [Description("Sets the channel to which tweets will be relayed")]
         public async Task RelayChannelCommand(CommandContext ctx, [Description("The channel that tweets should be relayed to")] DiscordChannel channel)
         {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
             ulong clientId = ulong.Parse(Environment.GetEnvironmentVariable(ENV_CLIENT_ID));
             DiscordMember botMember = await ctx.Guild.GetMemberAsync(clientId).ConfigureAwait(false);
 
@@ -219,6 +223,69 @@ namespace UVOCBot.Commands
             await DbContext.SaveChangesAsync().ConfigureAwait(false);
 
             await ctx.RespondAsync("Tweets will now be relayed to " + channel.Mention).ConfigureAwait(false);
+        }
+
+        [Command("disable")]
+        [Description("Disables the twitter relay feature")]
+        public async Task DisableCommand(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
+            if (settings == default)
+            {
+                settings = new GuildTwitterSettings(ctx.Guild.Id);
+                DbContext.Add(settings);
+            }
+
+            settings.IsEnabled = false;
+            await ctx.RespondAsync("Tweet relaying is now **disabled**").ConfigureAwait(false);
+
+            await DbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        [Command("enable")]
+        [Description("Enables the twitter relay feature")]
+        public async Task EnableCommand(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
+            if (settings == default)
+            {
+                settings = new GuildTwitterSettings(ctx.Guild.Id);
+                DbContext.Add(settings);
+            }
+
+            settings.IsEnabled = true;
+            await ctx.RespondAsync("Tweet relaying is now **enabled**").ConfigureAwait(false);
+
+            await DbContext.SaveChangesAsync().ConfigureAwait(false);
+        }
+
+        [Command("status")]
+        [Description("Gets the current status of the tweet relay feature")]
+        public async Task StatusCommand(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
+            if (settings == default)
+            {
+                await ctx.RespondAsync("Tweet relaying has not been setup").ConfigureAwait(false);
+            } else
+            {
+                StringBuilder sb = new StringBuilder("Tweet relaying is ");
+                if (settings.IsEnabled)
+                    sb.AppendLine("**enabled**");
+                else
+                    sb.AppendLine("**disabled**");
+
+                DiscordChannel relayChannel = ctx.Guild.GetChannel((ulong)settings.RelayChannelId);
+                sb.Append("Tweets are being relayed to ").Append(relayChannel.Mention);
+
+                await ctx.RespondAsync(sb.ToString()).ConfigureAwait(false);
+            }
         }
     }
 }

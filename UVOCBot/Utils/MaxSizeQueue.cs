@@ -13,7 +13,7 @@ namespace UVOCBot.Utils
 
         public MaxSizeQueue(int maxSize)
         {
-            if (_maxSize <= 0)
+            if (maxSize <= 0)
                 throw new ArgumentOutOfRangeException(nameof(maxSize), "Must be greater than zero");
             _maxSize = maxSize;
         }

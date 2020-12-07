@@ -7,6 +7,14 @@ namespace UVOCBot
 {
     public sealed class BotContext : DbContext
     {
+        /*
+         * Commands to setup migration variables
+         * $env:UVOCBOT_DB_SERVER='localhost'
+         * $env:UVOCBOT_DB_USER='uvocbot'
+         * $env:UVOCBOT_DB_PASSWD=''
+         * $env:UVOCBOT_DB_NAME='uvocbot'
+         */
+
         private const string ENV_DB_SERVER = "UVOCBOT_DB_SERVER";
         private const string ENV_DB_USER = "UVOCBOT_DB_USER";
         private const string ENV_DB_PASSWD = "UVOCBOT_DB_PASSWD";

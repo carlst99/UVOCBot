@@ -12,7 +12,7 @@ namespace UVOCBot
          * $env:UVOCBOT_DB_SERVER='localhost'
          * $env:UVOCBOT_DB_USER='uvocbot'
          * $env:UVOCBOT_DB_PASSWD=''
-         * $env:UVOCBOT_DB_NAME='uvocbot'
+         * $env:UVOCBOT_DB_NAME='uvocbot_test'
          */
 
         private const string ENV_DB_SERVER = "UVOCBOT_DB_SERVER";

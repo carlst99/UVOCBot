@@ -15,6 +15,7 @@ using UVOCBot.Model;
 namespace UVOCBot.Commands
 {
     [Group("twitter")]
+    [Aliases("tweet")]
     [Description("Commands pertinent to the twitter relay functionality")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     [RequireUserPermissions(Permissions.ManageGuild)]

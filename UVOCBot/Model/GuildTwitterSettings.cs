@@ -36,5 +36,10 @@ namespace UVOCBot.Model
             GuildId = guildId;
             IsEnabled = true;
         }
+
+        public override bool Equals(object obj) => obj is GuildTwitterSettings s
+            && s.GuildId.Equals(GuildId);
+
+        public override int GetHashCode() => GuildId.GetHashCode();
     }
 }

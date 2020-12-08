@@ -13,6 +13,7 @@ using System.Linq;
 using Tweetinvi.Models;
 using UVOCBot.Model;
 using UVOCBot.Utils;
+using Tweetinvi.Parameters;
 
 namespace UVOCBot.Workers
 {
@@ -21,7 +22,7 @@ namespace UVOCBot.Workers
         private readonly DiscordClient _discordClient;
         private readonly ITwitterClient _twitterClient;
 
-        private readonly MaxSizeQueue<ITweet> _previousTweets = new MaxSizeQueue<ITweet>(100);
+        private readonly MaxSizeQueue<long> _previousTweetIds = new MaxSizeQueue<long>(100);
 
         public TwitterWorker(
             DiscordClient discordClient,
@@ -37,7 +38,7 @@ namespace UVOCBot.Workers
             {
                 Log.Debug($"[{nameof(TwitterWorker)}] Getting tweets");
 
-                Dictionary<long, List<ITweet>> userTweetPairs = new Dictionary<long, List<ITweet>>();
+                Dictionary<TwitterUser, List<ITweet>> userTweetPairs = new Dictionary<TwitterUser, List<ITweet>>();
                 using BotContext db = new BotContext();
                 DateTimeOffset lastFetch = db.ActualBotSettings.TimeOfLastTwitterFetch;
                 int tweetCount = 0;
@@ -47,16 +48,17 @@ namespace UVOCBot.Workers
                 {
                     foreach (TwitterUser user in settings.TwitterUsers)
                     {
-                        if (userTweetPairs.ContainsKey(user.UserId))
+                        if (userTweetPairs.ContainsKey(user))
                         {
-                            await PostTweetsToChannel(settings, userTweetPairs[user.UserId]).ConfigureAwait(false);
+                            await PostTweetsToChannel(settings, userTweetPairs[user]).ConfigureAwait(false);
                         }
                         else
                         {
-                            List<ITweet> userTweets = await GetUserTweets(user.UserId, lastFetch).ConfigureAwait(false);
-                            tweetCount += userTweets.Count;
+                            List<ITweet> userTweets = await GetUserTweets(user, lastFetch).ConfigureAwait(false);
 
-                            userTweetPairs.Add(user.UserId, userTweets);
+                            tweetCount += userTweets.Count;
+                            userTweetPairs.Add(user, userTweets);
+
                             await PostTweetsToChannel(settings, userTweets).ConfigureAwait(false);
                         }
                     }
@@ -88,31 +90,41 @@ namespace UVOCBot.Workers
         /// <param name="userId">The ID of the twitter user to get tweets from</param>
         /// <param name="lastFetch">The earliest time to fetch tweets from</param>
         /// <returns></returns>
-        private async Task<List<ITweet>> GetUserTweets(long userId, DateTimeOffset lastFetch)
+        private async Task<List<ITweet>> GetUserTweets(TwitterUser user, DateTimeOffset lastFetch)
         {
-            ITweet[] tweets = await _twitterClient.Timelines.GetUserTimelineAsync(userId).ConfigureAwait(false);
+            GetUserTimelineParameters timelineParameters = new GetUserTimelineParameters(user.UserId)
+            {
+                ExcludeReplies = true,
+                IncludeRetweets = true,
+                PageSize = 25,
+                SinceId = user.LastRelayedTweetId
+            };
+
+            ITweet[] tweets = await _twitterClient.Timelines.GetUserTimelineAsync(timelineParameters).ConfigureAwait(false);
+            if (tweets.Length > 0)
+                user.LastRelayedTweetId = tweets[0].Id;
+            Array.Reverse(tweets);
 
             List<ITweet> validTweets = new List<ITweet>();
             foreach (ITweet tweet in tweets)
             {
-                //if (tweet.CreatedAt < DateTimeOffset.UtcNow.Subtract(new TimeSpan(5, 0, 0, 0)))
-                    //break;
                 if (tweet.CreatedAt < lastFetch)
-                    break;
+                    continue;
+                // Following for testing purposes only
+                //if (tweet.CreatedAt < DateTimeOffset.UtcNow.Subtract(new TimeSpan(1, 0, 0, 0)))
+                    //continue;
 
                 // Filter out retweets of tweets that we have already posted
+                long tweetId;
                 if (tweet.IsRetweet)
-                {
-                    if (!_previousTweets.Contains(tweet.RetweetedTweet))
-                    {
-                        validTweets.Add(tweet);
-                        _previousTweets.Enqueue(tweet.RetweetedTweet);
-                    }
-                }
+                    tweetId = tweet.RetweetedTweet.Id;
                 else
+                    tweetId = tweet.Id;
+
+                if (!_previousTweetIds.Contains(tweetId))
                 {
                     validTweets.Add(tweet);
-                    _previousTweets.Enqueue(tweet);
+                    _previousTweetIds.Enqueue(tweetId);
                 }
             }
             return validTweets;

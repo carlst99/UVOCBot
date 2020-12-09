@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace UVOCBot.Commands
@@ -16,7 +17,7 @@ namespace UVOCBot.Commands
 
         [Command("coinflip")]
         [Description("Flips a coin")]
-        public async Task CoinFlip(CommandContext ctx)
+        public async Task CoinFlipCommand(CommandContext ctx)
         {
             Random rnd = new Random();
             int result = rnd.Next(0, 2);
@@ -24,6 +25,13 @@ namespace UVOCBot.Commands
                 await ctx.RespondAsync("You flipped a **heads**!").ConfigureAwait(false);
             else
                 await ctx.RespondAsync("You flipped a **tails**!").ConfigureAwait(false);
+        }
+
+        [Command("version")]
+        [Description("Gets the current version of this instance of UVOCBot")]
+        public async Task VersionCommand(CommandContext ctx)
+        {
+            await ctx.RespondAsync($"I'm version **{Assembly.GetEntryAssembly().GetName().Version}**!").ConfigureAwait(false);
         }
     }
 }

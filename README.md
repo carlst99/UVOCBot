@@ -15,9 +15,10 @@ To my knowledge, there isn't a publicly hosted copy of UVOCBot available. You sh
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a name and icon, and most importantly, **add a bot** to the application. Ensure that you enable the `Presence Intent` and `Server Members Intent`, found under the Bot tab of your application
 2. Install [.NET 5](https://dotnet.microsoft.com/download/dotnet/5.0) on your system. You should only need the Runtime package, but if this fails to work try with the SDK installed.
 3. Install and setup either MySQL or MariaDB. **It is recommended you create a low-privilege user**. Create a new database for UVOCBot, and grant the respective user access to it. (Instructions coming!)
-3. Download the latest binary from releases. Included in the release is a startup script, and an optional systemd service file. (Instructions coming!)
+3. Download the latest binary from releases. Included in the release is a startup script, a SQL migration script, and an optional systemd service file. (Instructions coming!)
 4. Modify the startup script by placing your various tokens and settings in the respective places. The script explains it.
-5. Done! Startup UVOCBot through `systemctl` or by invoking the startup script.
+5. Apply the migration script to the database. Instructions can be found in the wiki page for [Updating a Hosted Instance](https://github.com/carlst99/UVOCBot/wiki/Updating-a-Hosted-Instance)
+6. Done! Startup UVOCBot through `systemctl` or by invoking the startup script.
 
 # Acknowledgements
 

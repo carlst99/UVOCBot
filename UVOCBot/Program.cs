@@ -66,12 +66,7 @@ namespace UVOCBot
                     services.AddHostedService<DiscordWorker>();
                     services.AddHostedService<TwitterWorker>();
                     services.AddDbContext<BotContext>();
-                    services.AddSingleton<ITwitterClient>(new TwitterClient(new ConsumerOnlyCredentials
-                    {
-                        ConsumerKey = Environment.GetEnvironmentVariable(TWITTER_API_KEY_ENV),
-                        ConsumerSecret = Environment.GetEnvironmentVariable(TWITTER_API_SECRET_ENV),
-                        BearerToken = Environment.GetEnvironmentVariable(TWITTER_API_BEARER_ENV)
-                    }));
+                    services.AddTransient(TwitterClientFactory);
                     services.AddSingleton(DiscordClientFactory);
                 })
                 .UseSerilog();
@@ -112,6 +107,16 @@ namespace UVOCBot
                 .WriteTo.Console()
                 .WriteTo.File(GetAppdataFilePath("log.log"), rollingInterval: RollingInterval.Day)
                 .CreateLogger();
+        }
+
+        private static ITwitterClient TwitterClientFactory(IServiceProvider services)
+        {
+            return new TwitterClient(new ConsumerOnlyCredentials
+            {
+                ConsumerKey = Environment.GetEnvironmentVariable(TWITTER_API_KEY_ENV),
+                ConsumerSecret = Environment.GetEnvironmentVariable(TWITTER_API_SECRET_ENV),
+                BearerToken = Environment.GetEnvironmentVariable(TWITTER_API_BEARER_ENV)
+            });
         }
 
         private static DiscordClient DiscordClientFactory(IServiceProvider services)

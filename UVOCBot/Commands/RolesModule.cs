@@ -23,8 +23,14 @@ namespace UVOCBot.Commands
             [Description("The role that should be assigned to each user")] DiscordRole role,
             [Description("The reaction emoji")] DiscordEmoji emoji)
         {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
             DiscordMessage message = await channel.GetMessageAsync(messageId).ConfigureAwait(false);
-            await ctx.RespondAsync("2: " + message.Content).ConfigureAwait(false);
+            if (message is null)
+            {
+                await ctx.RespondAsync("Could not get the provided message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was posted in").ConfigureAwait(false);
+                return;
+            }
         }
     }
 }

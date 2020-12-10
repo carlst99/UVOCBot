@@ -16,7 +16,6 @@ namespace UVOCBot.Commands
     [Description("Commands pertinent to role management")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     [RequireUserPermissions(Permissions.ManageRoles)]
-    [Hidden]
     public class RolesModule : BaseCommandModule
     {
         [Command("add-by-reaction")]

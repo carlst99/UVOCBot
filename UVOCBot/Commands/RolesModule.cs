@@ -16,11 +16,12 @@ namespace UVOCBot.Commands
     [Description("Commands pertinent to role management")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     [RequireUserPermissions(Permissions.ManageRoles)]
+    [RequireGuild]
     public class RolesModule : BaseCommandModule
     {
         [Command("add-by-reaction")]
         [Aliases("abr", "by-reaction")]
-        [Description("Gives the specified emoji to all users who have reacted to a message with a particular emoji")]
+        [Description("Gives the specified role to all users who have reacted to a message with a particular emoji")]
         public async Task AddByReactionCommand(
             CommandContext ctx,
             [Description("The channel that the message was sent in")] DiscordChannel channel,
@@ -66,7 +67,26 @@ namespace UVOCBot.Commands
             foreach (DiscordUser user in users)
             {
                 DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id).ConfigureAwait(false);
-                if (!member.Roles.Contains(role) && await GrantRoleToUserAsync(ctx, role, user).ConfigureAwait(false))
+                if (await GrantRoleToUserAsync(ctx, role, user).ConfigureAwait(false))
+                    responseBuilder.Append(member.GetFriendlyName()).Append(", ");
+            }
+
+            await ctx.RespondAsync(responseBuilder.ToString().Trim(',', ' ')).ConfigureAwait(false);
+        }
+
+        [Command("remove-from-all")]
+        [Aliases("rfa")]
+        [Description("Removes a role from all users who have it")]
+        public async Task RemoveFromAllCommand(CommandContext ctx, [Description("The role to remove")] DiscordRole role)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            StringBuilder responseBuilder = new StringBuilder("The role **").Append(role.Name).AppendLine("** was revoked from the following users:");
+            IReadOnlyCollection<DiscordMember> guildMembers = await ctx.Guild.GetAllMembersAsync().ConfigureAwait(false);
+
+            foreach (DiscordMember member in guildMembers)
+            {
+                if (await RevokeRoleFromUserAsync(ctx, role, member).ConfigureAwait(false))
                     responseBuilder.Append(member.GetFriendlyName()).Append(", ");
             }
 
@@ -75,10 +95,29 @@ namespace UVOCBot.Commands
 
         private static async Task<bool> GrantRoleToUserAsync(CommandContext ctx, DiscordRole role, DiscordUser user)
         {
-            DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id).ConfigureAwait(false);
+            DiscordMember member;
+            try
+            {
+                member = await ctx.Guild.GetMemberAsync(user.Id).ConfigureAwait(false);
+            }
+            catch
+            {
+                return false;
+            }
+
             if (!member.Roles.Contains(role))
             {
                 await member.GrantRoleAsync(role, $"Role grant requested by {ctx.User.Username}").ConfigureAwait(false);
+                return true;
+            }
+            return false;
+        }
+
+        private static async Task<bool> RevokeRoleFromUserAsync(CommandContext ctx, DiscordRole role, DiscordMember member)
+        {
+            if (member.Roles.Contains(role))
+            {
+                await member.RevokeRoleAsync(role, $"Role revokation requested by {ctx.User.Username}").ConfigureAwait(false);
                 return true;
             }
             return false;

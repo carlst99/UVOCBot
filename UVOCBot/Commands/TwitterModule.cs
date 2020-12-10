@@ -20,6 +20,7 @@ namespace UVOCBot.Commands
     [Description("Commands pertinent to the twitter relay functionality")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     [RequireUserPermissions(Permissions.ManageGuild)]
+    [RequireGuild]
     public class TwitterModule : BaseCommandModule
     {
         private const string ENV_CLIENT_ID = "UVOCBOT_CLIENT_ID";

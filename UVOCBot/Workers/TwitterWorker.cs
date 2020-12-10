@@ -87,7 +87,7 @@ namespace UVOCBot.Workers
                 Log.Information($"[{nameof(TwitterWorker)}] Finished getting {tweetCount} tweets");
 
 #if DEBUG
-                await Task.Delay(120000, stoppingToken).ConfigureAwait(false);
+                await Task.Delay(30000, stoppingToken).ConfigureAwait(false);
 #else
                 await Task.Delay(900000, stoppingToken).ConfigureAwait(false);
 #endif

@@ -41,7 +41,9 @@ namespace UVOCBot.Workers
                 Dictionary<TwitterUser, List<ITweet>> userTweetPairs = new Dictionary<TwitterUser, List<ITweet>>();
                 using BotContext db = new BotContext();
                 DateTimeOffset lastFetch = db.ActualBotSettings.TimeOfLastTwitterFetch;
+
                 int tweetCount = 0;
+                int failureCount = 0;
 
                 // Load all of the twitter users we should relay tweets from
                 foreach (GuildTwitterSettings settings in db.GuildTwitterSettings.Include(e => e.TwitterUsers).Where(s => s.IsEnabled))
@@ -50,16 +52,24 @@ namespace UVOCBot.Workers
                     {
                         if (userTweetPairs.ContainsKey(user))
                         {
-                            await PostTweetsToChannel(settings, userTweetPairs[user]).ConfigureAwait(false);
+                            await PostTweetsToChannelAsync(settings, userTweetPairs[user]).ConfigureAwait(false);
                         }
                         else
                         {
-                            List<ITweet> userTweets = await GetUserTweets(user, lastFetch).ConfigureAwait(false);
+                            List<ITweet> userTweets = await GetUserTweetsAsync(user, lastFetch).ConfigureAwait(false);
+                            if (userTweets is null)
+                            {
+                                failureCount++;
+                                if (failureCount == 3)
+                                    return;
+
+                                continue;
+                            }
 
                             tweetCount += userTweets.Count;
                             userTweetPairs.Add(user, userTweets);
 
-                            await PostTweetsToChannel(settings, userTweets).ConfigureAwait(false);
+                            await PostTweetsToChannelAsync(settings, userTweets).ConfigureAwait(false);
                         }
                     }
                 }
@@ -77,7 +87,7 @@ namespace UVOCBot.Workers
                 Log.Information($"[{nameof(TwitterWorker)}] Finished getting {tweetCount} tweets");
 
 #if DEBUG
-                await Task.Delay(30000, stoppingToken).ConfigureAwait(false);
+                await Task.Delay(120000, stoppingToken).ConfigureAwait(false);
 #else
                 await Task.Delay(900000, stoppingToken).ConfigureAwait(false);
 #endif
@@ -90,7 +100,7 @@ namespace UVOCBot.Workers
         /// <param name="userId">The ID of the twitter user to get tweets from</param>
         /// <param name="lastFetch">The earliest time to fetch tweets from</param>
         /// <returns></returns>
-        private async Task<List<ITweet>> GetUserTweets(TwitterUser user, DateTimeOffset lastFetch)
+        private async Task<List<ITweet>> GetUserTweetsAsync(TwitterUser user, DateTimeOffset lastFetch)
         {
             GetUserTimelineParameters timelineParameters = new GetUserTimelineParameters(user.UserId)
             {
@@ -100,7 +110,16 @@ namespace UVOCBot.Workers
                 SinceId = user.LastRelayedTweetId
             };
 
-            ITweet[] tweets = await _twitterClient.Timelines.GetUserTimelineAsync(timelineParameters).ConfigureAwait(false);
+            ITweet[] tweets;
+            try
+            {
+                tweets = await _twitterClient.Timelines.GetUserTimelineAsync(timelineParameters).ConfigureAwait(false);
+            } catch (Exception ex)
+            {
+                Log.Error(ex, "Couldn't get user timeline");
+                return null;
+            }
+
             if (tweets.Length > 0)
                 user.LastRelayedTweetId = tweets[0].Id;
             Array.Reverse(tweets);
@@ -130,7 +149,20 @@ namespace UVOCBot.Workers
             return validTweets;
         }
 
-        private async Task PostTweetsToChannel(GuildTwitterSettings settings, List<ITweet> tweets)
+        private async Task PostTweetsToChannelAsync(GuildTwitterSettings settings, List<ITweet> tweets)
+        {
+            try
+            {
+                foreach (ITweet tweet in tweets)
+                    await SendMessageAsync(settings, tweet.Url).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"[{nameof(TwitterWorker)}] Could not send tweet");
+            }
+        }
+
+        private async Task SendMessageAsync(GuildTwitterSettings settings, string message)
         {
             DiscordChannel channel;
             try
@@ -150,15 +182,7 @@ namespace UVOCBot.Workers
                 return;
             }
 
-            try
-            {
-                foreach (ITweet tweet in tweets)
-                    await channel.SendMessageAsync(tweet.Url).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"[{nameof(TwitterWorker)}] Could not send tweet");
-            }
+            await channel.SendMessageAsync(message).ConfigureAwait(false);
         }
     }
 }

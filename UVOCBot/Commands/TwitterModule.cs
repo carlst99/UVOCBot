@@ -4,6 +4,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -41,7 +42,16 @@ namespace UVOCBot.Commands
             }
 
             // Get the user info from Twitter
-            UserV2Response user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
+            UserV2Response user;
+            try
+            {
+                user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
+            } catch (Exception ex)
+            {
+                Log.Error(ex, "Could not get twitter user information");
+                await ctx.RespondAsync("Sorry, an error occured! Please try again").ConfigureAwait(false);
+                return;
+            }
             if (user.User is null)
             {
                 await ctx.RespondAsync("That Twitter user doesn't exist!").ConfigureAwait(false);
@@ -49,7 +59,10 @@ namespace UVOCBot.Commands
             }
 
             // Find or create the guild twitter settings record
-            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings
+                .Include(e => e.TwitterUsers)
+                .FirstOrDefaultAsync(e => e.GuildId == ctx.Guild.Id)
+                .ConfigureAwait(false);
             if (settings == default)
             {
                 settings = new GuildTwitterSettings(ctx.Guild.Id);
@@ -66,7 +79,8 @@ namespace UVOCBot.Commands
                 DbContext.TwitterUsers.Add(twitterUser);
             }
 
-            settings.TwitterUsers.Add(twitterUser);
+            if (!settings.TwitterUsers.Contains(twitterUser))
+                settings.TwitterUsers.Add(twitterUser);
 
             await DbContext.SaveChangesAsync().ConfigureAwait(false);
 
@@ -91,7 +105,17 @@ namespace UVOCBot.Commands
             }
 
             // Get the user info from Twitter
-            UserV2Response user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
+            UserV2Response user;
+            try
+            {
+                user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not get twitter user information");
+                await ctx.RespondAsync("Sorry, an error occured! Please try again").ConfigureAwait(false);
+                return;
+            }
             if (user.User is null)
             {
                 await ctx.RespondAsync("That Twitter user doesn't exist!").ConfigureAwait(false);
@@ -99,11 +123,14 @@ namespace UVOCBot.Commands
             }
 
             // Find or create the guild twitter settings record
-            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings
+                .Include(e => e.TwitterUsers)
+                .FirstOrDefaultAsync(e => e.GuildId == ctx.Guild.Id)
+                .ConfigureAwait(false);
             if (settings == default)
             {
-                settings = new GuildTwitterSettings(ctx.Guild.Id);
-                DbContext.GuildTwitterSettings.Add(settings);
+                await ctx.RespondAsync($"You aren't relaying tweets from **{username}**").ConfigureAwait(false);
+                return;
             }
 
             // Get the stored Twitter user
@@ -160,7 +187,18 @@ namespace UVOCBot.Commands
 
                 foreach (TwitterUser user in settings.TwitterUsers)
                 {
-                    UserV2Response actualUser = await TwitterClient.UsersV2.GetUserByIdAsync(user.UserId).ConfigureAwait(false);
+                    // Get the user info from Twitter
+                    UserV2Response actualUser;
+                    try
+                    {
+                        actualUser = await TwitterClient.UsersV2.GetUserByIdAsync(user.UserId).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Could not get twitter user information");
+                        await ctx.RespondAsync("Sorry, an error occured! Please try again").ConfigureAwait(false);
+                        return;
+                    }
                     if (actualUser.User is null)
                         sb.Append("Invalid User (Recorded ID: ").Append(user.UserId).AppendLine(")");
                     else

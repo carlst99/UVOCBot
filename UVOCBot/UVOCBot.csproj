@@ -6,6 +6,10 @@
     <UserSecretsId>dotnet-UVOCBot-50875F72-6188-46E3-AAD3-240E24100BB5</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;CA1822</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="DSharpPlus" Version="4.0.0-rc1" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-rc1" />

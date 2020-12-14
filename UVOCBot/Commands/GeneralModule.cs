@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -32,6 +33,26 @@ namespace UVOCBot.Commands
         public async Task VersionCommand(CommandContext ctx)
         {
             await ctx.RespondAsync($"I'm version **{Assembly.GetEntryAssembly().GetName().Version}**!").ConfigureAwait(false);
+        }
+
+        [Command("test-embed")]
+        [RequireOwner]
+        public async Task TestEmbedCommand(CommandContext ctx)
+        {
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
+            {
+                Color = DiscordColor.Aquamarine,
+                Description = "Test Description",
+                Footer = new DiscordEmbedBuilder.EmbedFooter { Text = "Test Footer" },
+                Author = new DiscordEmbedBuilder.EmbedAuthor { Name = "Test Author" },
+                Timestamp = DateTimeOffset.UtcNow,
+                Title = "Test Title"
+            };
+            builder.AddField("TestFieldName", "TestFieldValue");
+            builder.AddField("TestFieldName2", "TestFieldValue2");
+            builder.AddField("TestInlineFieldName", "TestInlineFieldValue", true);
+            builder.AddField("TestInlineFieldName2", "TestInlineFieldValue2", true);
+            await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }
     }
 }

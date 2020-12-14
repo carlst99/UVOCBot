@@ -24,6 +24,7 @@ namespace UVOCBot.Commands
     public class TwitterModule : BaseCommandModule
     {
         private const string ENV_CLIENT_ID = "UVOCBOT_CLIENT_ID";
+        public const string TWITTER_USERNAME_REGEX = "^[A-Za-z0-9_]{1,15}$";
 
         public ITwitterClient TwitterClient { private get; set; }
         public BotContext DbContext { private get; set; }
@@ -36,28 +37,15 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Check that the username conforms to Twitters standards
-            if (!Regex.IsMatch(username, "^[A-Za-z0-9_]{1,15}$"))
+            if (!Regex.IsMatch(username, TWITTER_USERNAME_REGEX))
             {
                 await ctx.RespondAsync("Invalid username! Twitter usernames can only contain letters and numbers, and must be between 1-15 characters long").ConfigureAwait(false);
                 return;
             }
 
-            // Get the user info from Twitter
-            UserV2Response user;
-            try
-            {
-                user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
-            } catch (Exception ex)
-            {
-                Log.Error(ex, "Could not get twitter user information");
-                await ctx.RespondAsync("Sorry, an error occured! Please try again").ConfigureAwait(false);
+            UserV2Response user = await GetTwitterUserByUsernameAsync(ctx, username).ConfigureAwait(false);
+            if (user is null)
                 return;
-            }
-            if (user.User is null)
-            {
-                await ctx.RespondAsync("That Twitter user doesn't exist!").ConfigureAwait(false);
-                return;
-            }
 
             // Find or create the guild twitter settings record
             GuildTwitterSettings settings = await DbContext.GuildTwitterSettings
@@ -99,29 +87,15 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Check that the username conforms to Twitter's standards
-            if (!Regex.IsMatch(username, "^[A-Za-z0-9_]{1,15}$"))
+            if (!Regex.IsMatch(username, TWITTER_USERNAME_REGEX))
             {
                 await ctx.RespondAsync("Invalid username! Twitter usernames can only contain letters and numbers, and must be between 1-15 characters long").ConfigureAwait(false);
                 return;
             }
 
-            // Get the user info from Twitter
-            UserV2Response user;
-            try
-            {
-                user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Could not get twitter user information");
-                await ctx.RespondAsync("Sorry, an error occured! Please try again").ConfigureAwait(false);
+            UserV2Response user = await GetTwitterUserByUsernameAsync(ctx, username).ConfigureAwait(false);
+            if (user is null)
                 return;
-            }
-            if (user.User is null)
-            {
-                await ctx.RespondAsync("That Twitter user doesn't exist!").ConfigureAwait(false);
-                return;
-            }
 
             // Find or create the guild twitter settings record
             GuildTwitterSettings settings = await DbContext.GuildTwitterSettings
@@ -326,6 +300,36 @@ namespace UVOCBot.Commands
 
                 await ctx.RespondAsync(sb.ToString()).ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Fetches a twitter user
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="username">The username of the twitter user</param>
+        /// <returns></returns>
+        private async Task<UserV2Response> GetTwitterUserByUsernameAsync(CommandContext ctx, string username)
+        {
+            // Get the user info from Twitter
+            UserV2Response user;
+            try
+            {
+                user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not get twitter user information");
+                await ctx.RespondAsync("Sorry, an error occurred! Please try again").ConfigureAwait(false);
+                return null;
+            }
+
+            if (user.User is null)
+            {
+                await ctx.RespondAsync("That Twitter user doesn't exist!").ConfigureAwait(false);
+                return null;
+            }
+
+            return user;
         }
     }
 }

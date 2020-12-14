@@ -12,9 +12,8 @@ using UVOCBot.Extensions;
 namespace UVOCBot.Commands
 {
     [Group("roles")]
-    [Aliases("role", "r")]
+    [Aliases("role", "perms", "permissions")]
     [Description("Commands pertinent to role management")]
-    [ModuleLifespan(ModuleLifespan.Transient)]
     [RequireUserPermissions(Permissions.ManageRoles)]
     [RequireGuild]
     public class RolesModule : BaseCommandModule
@@ -31,44 +30,22 @@ namespace UVOCBot.Commands
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
-            // Attempt to find the message
-            DiscordMessage message;
-            try
-            {
-                message = await channel.GetMessageAsync(messageId).ConfigureAwait(false);
-            }
-            catch (NotFoundException)
-            {
-                await ctx.RespondAsync("Could not get the provided message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was posted in").ConfigureAwait(false);
+            DiscordMessage message = await GetMessageAsync(ctx, channel, messageId).ConfigureAwait(false);
+            if (message != null)
                 return;
-            }
 
-            // Check that the message has the specified reaction emoji
-            bool reactionFound = false;
-            int userCount = 0;
-            foreach (DiscordReaction reaction in message.Reactions)
-            {
-                if (reaction.Emoji.Equals(emoji))
-                {
-                    reactionFound = true;
-                    userCount = reaction.Count;
-                    break;
-                }
-            }
-            if (!reactionFound)
-            {
-                await ctx.RespondAsync("The provided message didn't have any reactions with that emoji").ConfigureAwait(false);
+            int? reactionCount = await CheckForReactionAsync(ctx, message, emoji).ConfigureAwait(false);
+            if (reactionCount is null)
                 return;
-            }
 
             // Add the role to users who don't have it
-            IReadOnlyList<DiscordUser> users = await message.GetReactionsAsync(emoji, userCount).ConfigureAwait(false);
+            IReadOnlyList<DiscordUser> users = await message.GetReactionsAsync(emoji, (int)reactionCount).ConfigureAwait(false);
             StringBuilder responseBuilder = new StringBuilder("The role **").Append(role.Name).AppendLine("** was granted to the following users:");
             foreach (DiscordUser user in users)
             {
                 DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id).ConfigureAwait(false);
                 if (await GrantRoleToUserAsync(ctx, role, user).ConfigureAwait(false))
-                    responseBuilder.Append(member.GetFriendlyName()).Append(", ");
+                    responseBuilder.Append(member.DisplayName).Append(", ");
             }
 
             await ctx.RespondAsync(responseBuilder.ToString().Trim(',', ' ')).ConfigureAwait(false);
@@ -87,10 +64,75 @@ namespace UVOCBot.Commands
             foreach (DiscordMember member in guildMembers)
             {
                 if (await RevokeRoleFromUserAsync(ctx, role, member).ConfigureAwait(false))
-                    responseBuilder.Append(member.GetFriendlyName()).Append(", ");
+                    responseBuilder.Append(member.DisplayName).Append(", ");
             }
 
             await ctx.RespondAsync(responseBuilder.ToString().Trim(',', ' ')).ConfigureAwait(false);
+        }
+
+        [Command("track-reactions")]
+        [Aliases("tr", "track")]
+        [Description("Continuously grants and revokes a role from people who react (and un-react) with a certain emoji")]
+        public async Task TrackReactionsCommand(
+            CommandContext ctx,
+            [Description("The channel that the message was sent in")] DiscordChannel channel,
+            [Description("The ID of the message")] ulong messageId,
+            [Description("The role that should be assigned to each user")] DiscordRole role,
+            [Description("The reaction emoji")] DiscordEmoji emoji,
+            [Description("Grants the role to those who have already added a reaction. This is the default behaviour")] bool grantToPreviousReactions = true)
+        {
+            // TODO: Check that we don't lose permissions half-way through
+            // TODO: Keep a record of what messages etc. we are tracking
+            // TODO: Check that the message or role isn't deleted halfway through
+            // TODO: Keep a record of who is initially assigned the role, so we can recover from a crash by revoking it from those who have un-reacted in the interim period?
+
+
+        }
+
+        private static async Task<DiscordMessage> GetMessageAsync(CommandContext ctx, DiscordChannel channel, ulong messageId)
+        {
+            try
+            {
+                return await channel.GetMessageAsync(messageId).ConfigureAwait(false);
+            }
+            catch (NotFoundException)
+            {
+                await ctx.RespondAsync("Could not get the provided message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was posted in").ConfigureAwait(false);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Checks that a message contains the specified reaction
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="message">The message to check</param>
+        /// <param name="emoji">The emoji that the users reacted with</param>
+        /// <returns>The number of users who reacted</returns>
+        private static async Task<int?> CheckForReactionAsync(CommandContext ctx, DiscordMessage message, DiscordEmoji emoji)
+        {
+            // Check that the message has the specified reaction emoji
+            bool reactionFound = false;
+            int userCount = 0;
+            foreach (DiscordReaction reaction in message.Reactions)
+            {
+                if (reaction.Emoji.Equals(emoji))
+                {
+                    reactionFound = true;
+                    userCount = reaction.Count;
+                    break;
+                }
+            }
+
+            if (!reactionFound)
+            {
+                await ctx.RespondAsync("The provided message didn't have any reactions of that emoji").ConfigureAwait(false);
+                return null;
+            }
+            else
+            {
+                return userCount;
+            }
         }
 
         private static async Task<bool> GrantRoleToUserAsync(CommandContext ctx, DiscordRole role, DiscordUser user)

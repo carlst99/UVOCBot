@@ -1,19 +1,17 @@
 ﻿using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
-using System.Linq;
 using Tweetinvi.Models;
+using Tweetinvi.Parameters;
 using UVOCBot.Model;
 using UVOCBot.Utils;
-using Tweetinvi.Parameters;
 
 namespace UVOCBot.Workers
 {
@@ -74,14 +72,7 @@ namespace UVOCBot.Workers
                     }
                 }
 
-                // Update our time record
-#if DEBUG
-                // Give us six hours of play when debugging
-                if (db.ActualBotSettings.TimeOfLastTwitterFetch.AddHours(6) < DateTimeOffset.UtcNow)
-                    db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.UtcNow;
-#else
                 db.ActualBotSettings.TimeOfLastTwitterFetch = DateTimeOffset.UtcNow;
-#endif
                 await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
 
                 Log.Information($"[{nameof(TwitterWorker)}] Finished getting {tweetCount} tweets");
@@ -113,6 +104,7 @@ namespace UVOCBot.Workers
             ITweet[] tweets;
             try
             {
+                // TODO: Determine if a twitter user has been deleted
                 tweets = await _twitterClient.Timelines.GetUserTimelineAsync(timelineParameters).ConfigureAwait(false);
             } catch (Exception ex)
             {
@@ -120,8 +112,10 @@ namespace UVOCBot.Workers
                 return null;
             }
 
-            if (tweets.Length > 0)
-                user.LastRelayedTweetId = tweets[0].Id;
+            if (tweets.Length == 0)
+                return null;
+
+            user.LastRelayedTweetId = tweets[0].Id;
             Array.Reverse(tweets);
 
             List<ITweet> validTweets = new List<ITweet>();
@@ -151,38 +145,28 @@ namespace UVOCBot.Workers
 
         private async Task PostTweetsToChannelAsync(GuildTwitterSettings settings, List<ITweet> tweets)
         {
+            ChannelReturnedInfo channelInfo = DiscordClientUtils.TryGetGuildChannel(_discordClient, settings.GuildId, settings.RelayChannelId);
+
+            switch (channelInfo.Status)
+            {
+                case ChannelReturnedInfo.GetChannelStatus.Failure:
+                    return;
+                case ChannelReturnedInfo.GetChannelStatus.GuildNotFound:
+                    return; // TODO: Do something if the guild was not found
+                case ChannelReturnedInfo.GetChannelStatus.Fallback:
+                    await channelInfo.Channel.SendMessageAsync($"The tweet relay channel could not be found. Please reset it using the `{Program.PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+                    break;
+            }
+
             try
             {
                 foreach (ITweet tweet in tweets)
-                    await SendMessageAsync(settings, tweet.Url).ConfigureAwait(false);
+                    await channelInfo.Channel.SendMessageAsync(tweet.Url).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"[{nameof(TwitterWorker)}] Could not send tweet");
             }
-        }
-
-        private async Task SendMessageAsync(GuildTwitterSettings settings, string message)
-        {
-            DiscordChannel channel;
-            try
-            {
-                if (settings.RelayChannelId is null)
-                    throw new Exception();
-                channel = await _discordClient.GetChannelAsync((ulong)settings.RelayChannelId).ConfigureAwait(false);
-            }
-            catch (NotFoundException)
-            {
-                channel = (await _discordClient.GetGuildAsync(settings.GuildId).ConfigureAwait(false)).GetDefaultChannel();
-                await channel.SendMessageAsync($":warning: {Program.NAME} can't find the Twitter relay channel. Has it been deleted? Please reset it using the `{Program.PREFIX}twitter relay-channel`").ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"[{nameof(TwitterWorker)}] Could not get channel to send tweets to");
-                return;
-            }
-
-            await channel.SendMessageAsync(message).ConfigureAwait(false);
         }
     }
 }

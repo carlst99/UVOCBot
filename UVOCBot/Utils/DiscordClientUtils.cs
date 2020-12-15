@@ -5,6 +5,13 @@ namespace UVOCBot.Utils
 {
     public static class DiscordClientUtils
     {
+        /// <summary>
+        /// Attempts to get a guild channel. If it cannot be found, a suitable fallback channel will instead be chosen
+        /// </summary>
+        /// <param name="client">The discord client associated with the guild</param>
+        /// <param name="guildId">The ID of the guild in which the channel belongs</param>
+        /// <param name="channelId">The ID of the channel to obtain</param>
+        /// <returns></returns>
         public static ChannelReturnedInfo TryGetGuildChannel(DiscordClient client, ulong guildId, ulong? channelId)
         {
             // Try and get the guild to send messages in

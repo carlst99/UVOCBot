@@ -201,10 +201,13 @@ namespace UVOCBot.Commands
                 try
                 {
                     DiscordChannel channel = ctx.Guild.GetChannel((ulong)settings.RelayChannelId);
-                    await ctx.RespondAsync($"Tweets are being relayed to {channel.Mention}").ConfigureAwait(false);
-                } catch (NotFoundException)
+                    if (channel is not null)
+                        await ctx.RespondAsync($"Tweets are being relayed to {channel.Mention}").ConfigureAwait(false);
+                    else
+                        await ctx.RespondAsync($"Your relay channel no longer exists. Please reset it using the `{Program.PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+                } catch (Exception)
                 {
-                    await ctx.RespondAsync("An invalid channel is currently set as the relay endpoint. Please reset it").ConfigureAwait(false);
+                    await ctx.RespondAsync("Failed to get your relay channel. Perhaps try resetting it").ConfigureAwait(false);
                 }
             }
         }
@@ -295,8 +298,11 @@ namespace UVOCBot.Commands
                 else
                     sb.AppendLine("**disabled**");
 
-                DiscordChannel relayChannel = ctx.Guild.GetChannel((ulong)settings.RelayChannelId);
-                sb.Append("Tweets are being relayed to ").Append(relayChannel.Mention);
+                DiscordChannel channel = ctx.Guild.GetChannel((ulong)settings.RelayChannelId);
+                if (channel is not null)
+                    sb.Append("Tweets are being relayed to ").Append(channel.Mention);
+                else
+                    sb.Append("Your relay channel no longer exists. Please reset it using the `").Append(Program.PREFIX).Append("twitter relay-channel` command");
 
                 await ctx.RespondAsync(sb.ToString()).ConfigureAwait(false);
             }

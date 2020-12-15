@@ -35,6 +35,7 @@ namespace UVOCBot.Commands
             await ctx.RespondAsync($"I'm version **{Assembly.GetEntryAssembly().GetName().Version}**!").ConfigureAwait(false);
         }
 
+#if DEBUG
         [Command("test-embed")]
         [RequireOwner]
         public async Task TestEmbedCommand(CommandContext ctx)
@@ -54,5 +55,6 @@ namespace UVOCBot.Commands
             builder.AddField("TestInlineFieldName2", "TestInlineFieldValue2", true);
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }
+#endif
     }
 }

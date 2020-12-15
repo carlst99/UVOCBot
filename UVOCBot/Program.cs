@@ -60,6 +60,7 @@ namespace UVOCBot
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .UseSerilog()
                 .UseSystemd()
                 .ConfigureServices((_, services) =>
                 {
@@ -68,8 +69,7 @@ namespace UVOCBot
                     services.AddDbContext<BotContext>();
                     services.AddTransient(TwitterClientFactory);
                     services.AddSingleton(DiscordClientFactory);
-                })
-                .UseSerilog();
+                });
 
         /// <summary>
         /// Gets the path to the specified file, assuming that it is in our appdata store

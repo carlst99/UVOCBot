@@ -3,11 +3,13 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UVOCBot.Extensions;
+using UVOCBot.Utils;
 
 namespace UVOCBot.Commands
 {
@@ -43,8 +45,8 @@ namespace UVOCBot.Commands
             StringBuilder responseBuilder = new StringBuilder("The role **").Append(role.Name).AppendLine("** was granted to the following users:");
             foreach (DiscordUser user in users)
             {
-                DiscordMember member = await ctx.Guild.GetMemberAsync(user.Id).ConfigureAwait(false);
-                if (await GrantRoleToUserAsync(ctx, role, user).ConfigureAwait(false))
+                DiscordMember member = await GrantRoleToUserAsync(ctx, role, user).ConfigureAwait(false);
+                if (member is not null)
                     responseBuilder.Append(member.DisplayName).Append(", ");
             }
 
@@ -100,6 +102,12 @@ namespace UVOCBot.Commands
                 await ctx.RespondAsync("Could not get the provided message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was posted in").ConfigureAwait(false);
                 return null;
             }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not get message");
+                await ctx.RespondAsync("An error occured. Please try again").ConfigureAwait(false);
+                return null;
+            }
         }
 
         /// <summary>
@@ -135,32 +143,49 @@ namespace UVOCBot.Commands
             }
         }
 
-        private static async Task<bool> GrantRoleToUserAsync(CommandContext ctx, DiscordRole role, DiscordUser user)
+        /// <summary>
+        /// Gets the user as a guild member and assigns them the role
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="role"></param>
+        /// <param name="user"></param>
+        /// <returns>The member, if the role was successfully assigned</returns>
+        private static async Task<DiscordMember> GrantRoleToUserAsync(CommandContext ctx, DiscordRole role, DiscordUser user)
         {
-            DiscordMember member;
-            try
-            {
-                member = await ctx.Guild.GetMemberAsync(user.Id).ConfigureAwait(false);
-            }
-            catch
-            {
-                return false;
-            }
+            MemberReturnedInfo memberInfo = await DiscordClientUtils.TryGetGuildMemberAsync(ctx.Guild, user.Id).ConfigureAwait(false);
+            if (memberInfo.Status == MemberReturnedInfo.GetMemberStatus.Failure)
+                return null;
 
-            if (!member.Roles.Contains(role))
+            if (!memberInfo.Member.Roles.Contains(role))
             {
-                await member.GrantRoleAsync(role, $"Role grant requested by {ctx.User.Username}").ConfigureAwait(false);
-                return true;
+                try
+                {
+                    await memberInfo.Member.GrantRoleAsync(role, $"Role grant requested by {ctx.User.Username}").ConfigureAwait(false);
+                    return memberInfo.Member;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Cannot grant role to member");
+                    return null;
+                }
             }
-            return false;
+            return null;
         }
 
         private static async Task<bool> RevokeRoleFromUserAsync(CommandContext ctx, DiscordRole role, DiscordMember member)
         {
             if (member.Roles.Contains(role))
             {
-                await member.RevokeRoleAsync(role, $"Role revokation requested by {ctx.User.Username}").ConfigureAwait(false);
-                return true;
+                try
+                {
+                    await member.RevokeRoleAsync(role, $"Role revokation requested by {ctx.User.Username}").ConfigureAwait(false);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Cannot revoke role from member");
+                    return false;
+                }
             }
             return false;
         }

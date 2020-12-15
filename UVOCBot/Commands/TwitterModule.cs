@@ -2,7 +2,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System;

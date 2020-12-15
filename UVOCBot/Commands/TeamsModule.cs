@@ -1,14 +1,12 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using UVOCBot.Extensions;
 using System;
-using UVOCBot.Exceptions;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using UVOCBot.Exceptions;
 
 namespace UVOCBot.Commands
 {
@@ -20,7 +18,7 @@ namespace UVOCBot.Commands
     {
         [Command("random-teams")]
         [Aliases("rt", "random")]
-        [Description("Generates any number of random teams from a ")]
+        [Description("Generates any number of random teams from members with a particular role")]
         public async Task RandomTeamsCommand(
             CommandContext ctx,
             [Description("Anyone with this role will be randomised into teams")] DiscordRole randomiseMembersOf,
@@ -73,6 +71,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("random-teams")]
+        [Description("Generates any number of random teams from the given members")]
         public async Task RandomTeamsCommand(
             CommandContext ctx,
             [Description("The number of teams to generate")] int numberOfTeams,

@@ -7,7 +7,7 @@ using Refit;
 using Serilog;
 using Serilog.Events;
 using System;
-using System.IO;
+using System.IO.Abstractions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Tweetinvi;
@@ -40,12 +40,8 @@ namespace UVOCBot
 
         public static int Main(string[] args)
         {
-            SetupLogging();
-            Log.Information("Appdata stored in " + GetAppdataFilePath(null));
-
             try
             {
-                Log.Information("Starting host");
                 CreateHostBuilder(args).Build().Run();
                 return 0;
             }
@@ -66,13 +62,20 @@ namespace UVOCBot
                 .UseSystemd()
                 .ConfigureServices((_, services) =>
                 {
-                    services.AddHostedService<DiscordWorker>();
-                    services.AddHostedService<TwitterWorker>();
-                    services.AddTransient(TwitterClientFactory);
+                    IFileSystem fileSystem = new FileSystem();
+                    services.AddSingleton(fileSystem);
+
+                    // Setup Serilog
+                    SetupLogging(fileSystem);
+                    Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
+
+                    services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
                     services.AddSingleton(DiscordClientFactory);
-                    services.AddSingleton<ISettingsService>(new SettingsService());
+                    services.AddTransient(TwitterClientFactory);
                     services.AddRefitClient<IBotApi>()
                         .ConfigureHttpClient(c => c.BaseAddress = new Uri("http://localhost:5000/api"));
+                    services.AddHostedService<DiscordWorker>();
+                    services.AddHostedService<TwitterWorker>();
                 });
 
         /// <summary>
@@ -81,23 +84,23 @@ namespace UVOCBot
         /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory</param>
         /// <remarks>Data is stored in the local appdata</remarks>
         /// <returns></returns>
-        public static string GetAppdataFilePath(string fileName)
+        public static string GetAppdataFilePath(IFileSystem fileSystem, string fileName)
         {
             string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
             if (fileName is not null)
-                directory = Path.Combine(directory, "UVOCBot");
+                directory = fileSystem.Path.Combine(directory, "UVOCBot");
 
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            if (!fileSystem.Directory.Exists(directory))
+                fileSystem.Directory.CreateDirectory(directory);
 
             if (fileName is not null)
-                return Path.Combine(directory, fileName);
+                return fileSystem.Path.Combine(directory, fileName);
             else
                 return directory;
         }
 
-        private static void SetupLogging()
+        private static void SetupLogging(IFileSystem fileSystem)
         {
             Log.Logger = new LoggerConfiguration()
 #if DEBUG
@@ -109,7 +112,7 @@ namespace UVOCBot
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.File(GetAppdataFilePath("log.log"), rollingInterval: RollingInterval.Day)
+                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), rollingInterval: RollingInterval.Day)
                 .CreateLogger();
         }
 

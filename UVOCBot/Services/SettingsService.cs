@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,10 +11,16 @@ namespace UVOCBot.Services
 {
     public class SettingsService : ISettingsService
     {
+        private readonly IFileSystem _fileSystem;
         private readonly Dictionary<Type, ISettings> _cache = new Dictionary<Type, ISettings>();
         private readonly Mutex _readMutex = new Mutex(false);
         private readonly Mutex _writeMutex = new Mutex(false);
         private bool _isDisposed;
+
+        public SettingsService(IFileSystem fileSystem)
+        {
+            _fileSystem = fileSystem;
+        }
 
         public async Task<T> LoadSettings<T>() where T : ISettings, new()
         {
@@ -32,9 +39,9 @@ namespace UVOCBot.Services
             {
                 string filePath = GetFilePath<T>();
 
-                if (File.Exists(filePath))
+                if (_fileSystem.File.Exists(filePath))
                 {
-                    using FileStream fs = new FileStream(GetFilePath<T>(), FileMode.Open, FileAccess.Read);
+                    using Stream fs = _fileSystem.File.OpenWrite(GetFilePath<T>());
                     settings = await JsonSerializer.DeserializeAsync<T>(fs).ConfigureAwait(false);
                 }
                 else
@@ -57,8 +64,8 @@ namespace UVOCBot.Services
             if (!_writeMutex.WaitOne(1000))
                 throw new TimeoutException("Failed to acquire read mutex");
 
-            using FileStream fs = new FileStream(GetFilePath<T>(), FileMode.Create, FileAccess.Write);
-            await JsonSerializer.SerializeAsync(fs, settings).ConfigureAwait(false);
+            using Stream readStream = _fileSystem.File.OpenRead(GetFilePath<T>());
+            await JsonSerializer.SerializeAsync(readStream, settings).ConfigureAwait(false);
 
             _cache[typeof(T)] = settings;
             _writeMutex.ReleaseMutex();
@@ -67,7 +74,7 @@ namespace UVOCBot.Services
         private string GetFilePath<T>()
         {
             string filePath = typeof(T).Name;
-            return Program.GetAppdataFilePath(filePath);
+            return Program.GetAppdataFilePath(_fileSystem, filePath);
         }
 
         protected virtual void Dispose(bool disposing)

@@ -42,7 +42,7 @@ namespace UVOCBot.Workers
             {
                 Log.Debug($"[{nameof(TwitterWorker)}] Getting tweets");
 
-                BotSettings botSettings = await _settingsService.LoadSettings<BotSettings>().ConfigureAwait(false;
+                BotSettings botSettings = await _settingsService.LoadSettings<BotSettings>().ConfigureAwait(false);
 
                 Dictionary<TwitterUserDTO, List<ITweet>> userTweetPairs = new Dictionary<TwitterUserDTO, List<ITweet>>();
                 DateTimeOffset lastFetch = botSettings.TimeOfLastTweetFetch;

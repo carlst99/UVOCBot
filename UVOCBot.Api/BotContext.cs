@@ -6,18 +6,10 @@ namespace UVOCBot.Api
 {
     public sealed class BotContext : DbContext
     {
-        /*
-         * Commands to setup migration variables
-         * $env:UVOCBOT_DB_SERVER='localhost'
-         * $env:UVOCBOT_DB_USER='uvocbot'
-         * $env:UVOCBOT_DB_PASSWD=''
-         * $env:UVOCBOT_DB_NAME='uvocbot_test'
-         */
-
-        private const string ENV_DB_SERVER = "UVOCBot.Api_DB_SERVER";
-        private const string ENV_DB_USER = "UVOCBot.Api_DB_USER";
-        private const string ENV_DB_PASSWD = "UVOCBot.Api_DB_PASSWD";
-        private const string ENV_DB_NAME = "UVOCBot.Api_DB_NAME";
+        private const string ENV_DB_SERVER = "UVOCBOTAPI_DB_SERVER";
+        private const string ENV_DB_USER = "UVOCBOTAPI_DB_USER";
+        private const string ENV_DB_PASSWD = "UVOCBOTAPI_DB_PASSWD";
+        private const string ENV_DB_NAME = "UVOCBOTAPI_DB_NAME";
 
         public DbSet<GuildSettings> GuildSettings { get; set; }
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
@@ -30,7 +22,7 @@ namespace UVOCBot.Api
             string dbPasswd = Environment.GetEnvironmentVariable(ENV_DB_PASSWD);
             string dbName = Environment.GetEnvironmentVariable(ENV_DB_NAME);
 #if DEBUG
-            string connectionString = "server = localhost; user = uvocbot_test; database = uvocbot_test";
+            const string connectionString = "server = localhost; user = uvocbot_test; database = uvocbot_test";
 #else
             string connectionString = $"server = {dbServer}; user = {dbUser}; password = {dbPasswd}; database = {dbName}";
 #endif

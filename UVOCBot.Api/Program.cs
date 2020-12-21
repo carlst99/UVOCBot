@@ -34,10 +34,7 @@ namespace UVOCBot.Api
             Host.CreateDefaultBuilder(args)
                 .UseSerilog()
                 .UseSystemd()
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+                .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>());
 
         private static void SetupLogging()
         {

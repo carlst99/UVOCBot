@@ -68,7 +68,7 @@ namespace UVOCBot.Commands
             }
 
             if (!settings.TwitterUsers.Contains(twitterUser.UserId))
-                await DbApi.CreateGuildTwitterLink(settings, twitterUser).ConfigureAwait(false);
+                await DbApi.CreateGuildTwitterLink(settings.GuildId, twitterUser.UserId).ConfigureAwait(false);
 
             await ctx.RespondAsync($"Now relaying tweets from **{username}**!").ConfigureAwait(false);
 
@@ -114,7 +114,7 @@ namespace UVOCBot.Commands
 
             if (settings.TwitterUsers.Contains(twitterUser.UserId))
             {
-                await DbApi.DeleteGuildTwitterLink(settings, twitterUser).ConfigureAwait(false);
+                await DbApi.DeleteGuildTwitterLink(settings.GuildId, twitterUser.UserId).ConfigureAwait(false);
                 await ctx.RespondAsync($"Tweets from **{username}** are no longer being relayed").ConfigureAwait(false);
             }
             else

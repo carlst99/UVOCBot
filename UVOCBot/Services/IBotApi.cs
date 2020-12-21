@@ -9,55 +9,49 @@ namespace UVOCBot.Services
     {
         #region TwitterUser
 
-        public const string TWITTER_USER_ROUTE = "twitteruser";
-
-        [Get(TWITTER_USER_ROUTE)]
+        [Get("/twitteruser")]
         Task<List<TwitterUserDTO>> GetTwitterUsers();
 
-        [Get(TWITTER_USER_ROUTE + "/{id}")]
+        [Get("/twitteruser/{id}")]
         Task<TwitterUserDTO> GetTwitterUser(long id);
 
-        [Put(TWITTER_USER_ROUTE)]
+        [Put("/twitteruser")]
         Task UpdateTwitterUser(TwitterUserDTO user);
 
-        [Post(TWITTER_USER_ROUTE)]
+        [Post("/twitteruser")]
         Task<TwitterUserDTO> CreateTwitterUser(TwitterUserDTO user);
 
-        [Delete(TWITTER_USER_ROUTE + "/{id}")]
+        [Delete("/twitteruser/{id}")]
         Task DeleteTwitterUser(long id);
 
         #endregion
 
         #region GuildTwitterSettings
 
-        public const string GUILD_TWITTER_SETTINGS_ROUTE = "guildtwittersettings";
-
-        [Get(GUILD_TWITTER_SETTINGS_ROUTE)]
+        [Get("/guildtwittersettings")]
         Task<List<GuildTwitterSettingsDTO>> GetGuildTwitterSettings([Query] bool filterByEnabled);
 
-        [Get(GUILD_TWITTER_SETTINGS_ROUTE + "/{id}")]
+        [Get("/guildtwittersettings/{id}")]
         Task<GuildTwitterSettingsDTO> GetGuildTwitterSetting(ulong id);
 
-        [Put(GUILD_TWITTER_SETTINGS_ROUTE)]
+        [Put("/guildtwittersettings")]
         Task UpdateGuildTwitterSetting(GuildTwitterSettingsDTO settings);
 
-        [Post(GUILD_TWITTER_SETTINGS_ROUTE)]
+        [Post("/guildtwittersettings")]
         Task<GuildTwitterSettingsDTO> CreateGuildTwitterSettings(GuildTwitterSettingsDTO settings);
 
-        [Delete(TWITTER_USER_ROUTE + "/{id}")]
+        [Delete("/guildtwittersettings/{id}")]
         Task DeleteGuildTwitterSettings(ulong id);
 
         #endregion
 
         #region GuildTwitterLinks
 
-        public const string GUILD_TWITTER_LINKS_ROUTE = "guildtwitterlinks";
+        [Post("/guildtwitterlinks")]
+        Task CreateGuildTwitterLink(ulong guildTwitterSettingsId, long twitterUserId);
 
-        [Post(GUILD_TWITTER_LINKS_ROUTE)]
-        Task CreateGuildTwitterLink(GuildTwitterSettingsDTO guildTwitterSettings, TwitterUserDTO twitterUser);
-
-        [Delete(GUILD_TWITTER_LINKS_ROUTE)]
-        Task DeleteGuildTwitterLink(GuildTwitterSettingsDTO guildTwitterSettings, TwitterUserDTO twitterUser);
+        [Delete("/guildtwitterlinks")]
+        Task DeleteGuildTwitterLink(ulong guildTwitterSettingsId, long twitterUserId);
 
         #endregion
     }

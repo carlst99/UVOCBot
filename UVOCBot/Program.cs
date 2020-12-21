@@ -34,6 +34,7 @@ namespace UVOCBot
         private const string TWITTER_API_KEY_ENV = "UVOCBOT_TWITTERAPI_KEY";
         private const string TWITTER_API_SECRET_ENV = "UVOCBOT_TWITTERAPI_SECRET";
         private const string TWITTER_API_BEARER_ENV = "UVOCBOT_TWITTERAPI_BEARER_TOKEN";
+        private const string API_ENDPOINT_ENV = "UVOCBOT_API_ENDPOINT";
 
         public const string PREFIX = "ub!";
         public const string NAME = "UVOCBot";
@@ -72,8 +73,7 @@ namespace UVOCBot
                     services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
                     services.AddSingleton(DiscordClientFactory);
                     services.AddTransient(TwitterClientFactory);
-                    services.AddRefitClient<IBotApi>()
-                        .ConfigureHttpClient(c => c.BaseAddress = new Uri("http://localhost:5000/api"));
+                    services.AddSingleton(RestService.For<IBotApi>(Environment.GetEnvironmentVariable(API_ENDPOINT_ENV)));
                     services.AddHostedService<DiscordWorker>();
                     services.AddHostedService<TwitterWorker>();
                 });

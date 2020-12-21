@@ -1,12 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
-namespace UVOCBot.Model
+namespace UVOCBot.Core.Model
 {
-    /// <summary>
-    /// Contains guild-specific settings regarding their twitter preferences
-    /// </summary>
-    public sealed class GuildTwitterSettings
+    public class GuildTwitterSettingsDTO
     {
         /// <summary>
         /// Gets or sets the guild that these Twitter settings are for
@@ -23,20 +19,20 @@ namespace UVOCBot.Model
         /// <summary>
         /// Gets or sets a list of twitter user ids from whom to relay posts
         /// </summary>
-        public ICollection<TwitterUser> TwitterUsers { get; } = new List<TwitterUser>();
+        public IReadOnlyCollection<long> TwitterUsers { get; set; } = new List<long>();
 
-        public GuildTwitterSettings()
+        public GuildTwitterSettingsDTO()
         {
             IsEnabled = true;
         }
 
-        public GuildTwitterSettings(ulong guildId)
+        public GuildTwitterSettingsDTO(ulong guildId)
         {
             GuildId = guildId;
             IsEnabled = true;
         }
 
-        public override bool Equals(object obj) => obj is GuildTwitterSettings s
+        public override bool Equals(object obj) => obj is GuildTwitterSettingsDTO s
             && s.GuildId.Equals(GuildId);
 
         public override int GetHashCode() => GuildId.GetHashCode();

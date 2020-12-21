@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace UVOCBotApi.Model
+namespace UVOCBot.Api.Model
 {
     /// <summary>
     /// Contains settings pertinent to a guild's preferences

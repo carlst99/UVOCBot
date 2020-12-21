@@ -3,6 +3,7 @@ using DSharpPlus.CommandsNext;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Refit;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -11,6 +12,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
+using UVOCBot.Services;
 using UVOCBot.Workers;
 
 namespace UVOCBot
@@ -66,9 +68,10 @@ namespace UVOCBot
                 {
                     services.AddHostedService<DiscordWorker>();
                     services.AddHostedService<TwitterWorker>();
-                    services.AddDbContext<BotContext>();
                     services.AddTransient(TwitterClientFactory);
                     services.AddSingleton(DiscordClientFactory);
+                    services.AddRefitClient<IBotApi>()
+                        .ConfigureHttpClient(c => c.BaseAddress = new Uri("http://localhost:5000/api"));
                 });
 
         /// <summary>

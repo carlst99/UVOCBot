@@ -2,12 +2,54 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace UVOCBot.Migrations
+namespace UVOCBot.Api.Migrations
 {
-    public partial class InitialCreate : Migration
+    public partial class RemoveTwitterManyToMany : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "BotSettings");
+
+            migrationBuilder.AddColumn<ulong>(
+                name: "GuildTwitterSettingsGuildId",
+                table: "TwitterUsers",
+                type: "bigint unsigned",
+                nullable: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TwitterUsers_GuildTwitterSettingsGuildId",
+                table: "TwitterUsers",
+                column: "GuildTwitterSettingsGuildId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_TwitterUsers_GuildTwitterSettings_GuildTwitterSettingsGuildId",
+                table: "TwitterUsers",
+                column: "GuildTwitterSettingsGuildId",
+                principalTable: "GuildTwitterSettings",
+                principalColumn: "GuildId",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.Sql("INSERT INTO TwitterUsers(GuildTwitterSettingsGuildId) SELECT GuildsGuildId FROM GuildTwitterSettingsTwitterUser");
+
+            migrationBuilder.DropTable(
+                name: "GuildTwitterSettingsTwitterUser");
+        }
+
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropForeignKey(
+                name: "FK_TwitterUsers_GuildTwitterSettings_GuildTwitterSettingsGuildId",
+                table: "TwitterUsers");
+
+            migrationBuilder.DropIndex(
+                name: "IX_TwitterUsers_GuildTwitterSettingsGuildId",
+                table: "TwitterUsers");
+
+            migrationBuilder.DropColumn(
+                name: "GuildTwitterSettingsGuildId",
+                table: "TwitterUsers");
+
             migrationBuilder.CreateTable(
                 name: "BotSettings",
                 columns: table => new
@@ -19,43 +61,6 @@ namespace UVOCBot.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BotSettings", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "GuildSettings",
-                columns: table => new
-                {
-                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GuildSettings", x => x.GuildId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "GuildTwitterSettings",
-                columns: table => new
-                {
-                    GuildId = table.Column<ulong>(type: "bigint unsigned", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    RelayChannelId = table.Column<ulong>(type: "bigint unsigned", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GuildTwitterSettings", x => x.GuildId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TwitterUsers",
-                columns: table => new
-                {
-                    UserId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TwitterUsers", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
@@ -86,24 +91,6 @@ namespace UVOCBot.Migrations
                 name: "IX_GuildTwitterSettingsTwitterUser_TwitterUsersUserId",
                 table: "GuildTwitterSettingsTwitterUser",
                 column: "TwitterUsersUserId");
-        }
-
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropTable(
-                name: "BotSettings");
-
-            migrationBuilder.DropTable(
-                name: "GuildSettings");
-
-            migrationBuilder.DropTable(
-                name: "GuildTwitterSettingsTwitterUser");
-
-            migrationBuilder.DropTable(
-                name: "GuildTwitterSettings");
-
-            migrationBuilder.DropTable(
-                name: "TwitterUsers");
         }
     }
 }

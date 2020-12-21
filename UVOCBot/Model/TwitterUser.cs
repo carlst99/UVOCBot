@@ -1,25 +1,16 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-
-namespace UVOCBot.Model
+﻿namespace UVOCBot.Model
 {
     public class TwitterUser
     {
         /// <summary>
         /// The twitter ID of this user
         /// </summary>
-        [Key]
         public long UserId { get; set; }
 
         /// <summary>
         /// The last tweet that was relayed from this user
         /// </summary>
         public long? LastRelayedTweetId { get; set; }
-
-        /// <summary>
-        /// Guilds that are relaying tweets from this user
-        /// </summary>
-        public ICollection<GuildTwitterSettings> Guilds { get; } = new List<GuildTwitterSettings>();
 
         public TwitterUser() { }
 

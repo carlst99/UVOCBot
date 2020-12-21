@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace UVOCBotApi.Model
+namespace UVOCBot.Api.Model
 {
-    public class TwitterUser
+    public sealed class TwitterUser
     {
         /// <summary>
         /// The twitter ID of this user
@@ -19,7 +19,7 @@ namespace UVOCBotApi.Model
         /// <summary>
         /// Guilds that are relaying tweets from this user
         /// </summary>
-        public ICollection<GuildTwitterSettings> Guilds { get; } = new List<GuildTwitterSettings>();
+        public ICollection<GuildTwitterSettings> Guilds { get; set; } = new List<GuildTwitterSettings>();
 
         public TwitterUser() { }
 

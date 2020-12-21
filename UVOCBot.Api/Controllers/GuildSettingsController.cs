@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBotApi.Model;
+using UVOCBot.Api.Model;
 
-namespace UVOCBotApi.Controllers
+namespace UVOCBot.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -70,6 +70,7 @@ namespace UVOCBot
                     services.AddHostedService<TwitterWorker>();
                     services.AddTransient(TwitterClientFactory);
                     services.AddSingleton(DiscordClientFactory);
+                    services.AddSingleton<ISettingsService>(new SettingsService());
                     services.AddRefitClient<IBotApi>()
                         .ConfigureHttpClient(c => c.BaseAddress = new Uri("http://localhost:5000/api"));
                 });

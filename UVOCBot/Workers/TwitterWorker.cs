@@ -9,6 +9,7 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 using UVOCBot.Core.Model;
+using UVOCBot.Model;
 using UVOCBot.Services;
 using UVOCBot.Utils;
 
@@ -19,17 +20,20 @@ namespace UVOCBot.Workers
         private readonly DiscordClient _discordClient;
         private readonly ITwitterClient _twitterClient;
         private readonly IBotApi _dbApi;
+        private readonly ISettingsService _settingsService;
 
         private readonly MaxSizeQueue<long> _previousTweetIds = new MaxSizeQueue<long>(100);
 
         public TwitterWorker(
             DiscordClient discordClient,
             ITwitterClient twitterClient,
-            IBotApi dbApi)
+            IBotApi dbApi,
+            ISettingsService settingsService)
         {
             _discordClient = discordClient;
             _twitterClient = twitterClient;
             _dbApi = dbApi;
+            _settingsService = settingsService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,8 +42,10 @@ namespace UVOCBot.Workers
             {
                 Log.Debug($"[{nameof(TwitterWorker)}] Getting tweets");
 
+                BotSettings botSettings = await _settingsService.LoadSettings<BotSettings>().ConfigureAwait(false;
+
                 Dictionary<TwitterUserDTO, List<ITweet>> userTweetPairs = new Dictionary<TwitterUserDTO, List<ITweet>>();
-                DateTimeOffset lastFetch = DateTimeOffset.Now; // TODO: Get last fetch time from datastore
+                DateTimeOffset lastFetch = botSettings.TimeOfLastTweetFetch;
 
                 int tweetCount = 0;
                 int failureCount = 0;
@@ -77,7 +83,8 @@ namespace UVOCBot.Workers
                         break;
                 }
 
-                // TODO: Update last fetch time
+                botSettings.TimeOfLastTweetFetch = DateTimeOffset.Now;
+                await _settingsService.SaveSettings(botSettings).ConfigureAwait(false);
                 failureCount = 0;
                 Log.Information($"[{nameof(TwitterWorker)}] Finished getting {tweetCount} tweets");
 

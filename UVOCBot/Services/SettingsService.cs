@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -12,9 +13,9 @@ namespace UVOCBot.Services
     public class SettingsService : ISettingsService
     {
         private readonly IFileSystem _fileSystem;
+
         private readonly Dictionary<Type, ISettings> _cache = new Dictionary<Type, ISettings>();
-        private readonly Mutex _readMutex = new Mutex(false);
-        private readonly Mutex _writeMutex = new Mutex(false);
+        private readonly Semaphore _semaphore = new Semaphore(1, 1);
         private bool _isDisposed;
 
         public SettingsService(IFileSystem fileSystem)
@@ -24,51 +25,67 @@ namespace UVOCBot.Services
 
         public async Task<T> LoadSettings<T>() where T : ISettings, new()
         {
-            if (_isDisposed)
-                throw new ObjectDisposedException(nameof(SettingsService));
-
-            T settings;
-            if (!_readMutex.WaitOne(1000))
-                throw new TimeoutException("Failed to acquire read mutex");
-
-            if (_cache.ContainsKey(typeof(T)))
+            try
             {
-                settings = (T)_cache[typeof(T)];
-            }
-            else
-            {
-                string filePath = GetFilePath<T>();
+                if (_isDisposed)
+                    throw new ObjectDisposedException(nameof(SettingsService));
 
-                if (_fileSystem.File.Exists(filePath))
+                T settings;
+
+                if (!_semaphore.WaitOne(1000))
+                    throw new TimeoutException("Failed to acquire read mutex");
+
+                if (_cache.ContainsKey(typeof(T)))
                 {
-                    using Stream fs = _fileSystem.File.OpenWrite(GetFilePath<T>());
-                    settings = await JsonSerializer.DeserializeAsync<T>(fs).ConfigureAwait(false);
+                    settings = (T)_cache[typeof(T)];
                 }
                 else
                 {
-                    settings = (T)new T().Default;
+                    string filePath = GetFilePath<T>();
+
+                    if (_fileSystem.File.Exists(filePath))
+                    {
+                        using Stream readStream = _fileSystem.File.OpenRead(GetFilePath<T>());
+                        settings = await JsonSerializer.DeserializeAsync<T>(readStream).ConfigureAwait(true);
+                    }
+                    else
+                    {
+                        settings = (T)new T().Default;
+                    }
+
+                    _cache.Add(typeof(T), settings);
                 }
 
-                _cache.Add(typeof(T), settings);
+                _semaphore.Release();
+                return settings;
             }
-
-            _readMutex.ReleaseMutex();
-            return settings;
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not load settings");
+                throw;
+            }
         }
 
         public async Task SaveSettings<T>(T settings) where T : ISettings
         {
-            if (_isDisposed)
-                throw new ObjectDisposedException(nameof(SettingsService));
+            try
+            {
+                if (_isDisposed)
+                    throw new ObjectDisposedException(nameof(SettingsService));
 
-            if (!_writeMutex.WaitOne(1000))
-                throw new TimeoutException("Failed to acquire read mutex");
+                if (!_semaphore.WaitOne(1000))
+                    throw new TimeoutException("Failed to acquire read mutex");
 
-            using Stream readStream = _fileSystem.File.OpenRead(GetFilePath<T>());
-            await JsonSerializer.SerializeAsync(readStream, settings).ConfigureAwait(false);
+                using Stream writeStream = _fileSystem.File.OpenWrite(GetFilePath<T>());
+                await JsonSerializer.SerializeAsync(writeStream, settings).ConfigureAwait(false);
 
-            _cache[typeof(T)] = settings;
-            _writeMutex.ReleaseMutex();
+                _cache[typeof(T)] = settings;
+                _semaphore.Release();
+            } catch (Exception ex)
+            {
+                Log.Error(ex, "Could not save settings");
+                throw;
+            }
         }
 
         private string GetFilePath<T>()
@@ -83,7 +100,7 @@ namespace UVOCBot.Services
             {
                 if (disposing)
                 {
-                    _readMutex.Dispose();
+                    _semaphore.Dispose();
                 }
 
                 _cache.Clear();

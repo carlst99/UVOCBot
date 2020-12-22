@@ -39,6 +39,12 @@ namespace UVOCBot.Api.Controllers
             return guildTwitterSettings == default ? NotFound() : ToDTO(guildTwitterSettings);
         }
 
+        [HttpGet("exists/{id}")]
+        public async Task<ActionResult<bool>> Exists(ulong id)
+        {
+            return await _context.GuildTwitterSettings.FindAsync(id).ConfigureAwait(false) != null;
+        }
+
         // PUT: api/GuildTwitterSettings/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutGuildTwitterSettings(ulong id, GuildTwitterSettingsDTO guildTwitterSettings)

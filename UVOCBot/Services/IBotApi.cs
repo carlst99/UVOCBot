@@ -15,8 +15,11 @@ namespace UVOCBot.Services
         [Get("/twitteruser/{id}")]
         Task<TwitterUserDTO> GetTwitterUser(long id);
 
-        [Put("/twitteruser")]
-        Task UpdateTwitterUser(TwitterUserDTO user);
+        [Get("/twitteruser/exists/{id}")]
+        Task<bool> TwitterUserExists(long id);
+
+        [Put("/twitteruser/{id}")]
+        Task UpdateTwitterUser(long id, TwitterUserDTO user);
 
         [Post("/twitteruser")]
         Task<TwitterUserDTO> CreateTwitterUser(TwitterUserDTO user);
@@ -34,8 +37,11 @@ namespace UVOCBot.Services
         [Get("/guildtwittersettings/{id}")]
         Task<GuildTwitterSettingsDTO> GetGuildTwitterSetting(ulong id);
 
-        [Put("/guildtwittersettings")]
-        Task UpdateGuildTwitterSetting(GuildTwitterSettingsDTO settings);
+        [Get("/guildtwittersettings/exists/{id}")]
+        Task<bool> GuildTwitterSettingsExists(ulong id);
+
+        [Put("/guildtwittersettings/{id}")]
+        Task UpdateGuildTwitterSetting(ulong id, GuildTwitterSettingsDTO settings);
 
         [Post("/guildtwittersettings")]
         Task<GuildTwitterSettingsDTO> CreateGuildTwitterSettings(GuildTwitterSettingsDTO settings);

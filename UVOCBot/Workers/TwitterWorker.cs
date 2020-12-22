@@ -70,6 +70,10 @@ namespace UVOCBot.Workers
                                     break;
 
                                 continue;
+                            } else
+                            {
+                                // We've changed the last fetched tweet ID, so update the database
+                                await _dbApi.UpdateTwitterUser(twitterUserId, twitterUser).ConfigureAwait(false);
                             }
 
                             tweetCount += userTweets.Count;

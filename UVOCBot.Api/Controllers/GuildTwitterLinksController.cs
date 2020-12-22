@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using UVOCBot.Api.Model;
 
@@ -39,8 +40,8 @@ namespace UVOCBot.Api.Controllers
         [HttpDelete]
         public async Task<IActionResult> DeleteLink(ulong guildTwitterSettingsId, long twitterUserId)
         {
-            GuildTwitterSettings settings = await _context.FindAsync<GuildTwitterSettings>(guildTwitterSettingsId).ConfigureAwait(false);
-            if (settings is null)
+            GuildTwitterSettings settings = await _context.GuildTwitterSettings.Include(e => e.TwitterUsers).FirstOrDefaultAsync(e => e.GuildId == guildTwitterSettingsId).ConfigureAwait(false);
+            if (settings == default)
                 return BadRequest();
 
             TwitterUser user = await _context.FindAsync<TwitterUser>(twitterUserId).ConfigureAwait(false);
@@ -49,8 +50,6 @@ namespace UVOCBot.Api.Controllers
 
             if (settings.TwitterUsers.Contains(user))
                 settings.TwitterUsers.Remove(user);
-            else
-                return BadRequest();
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
             return NoContent();

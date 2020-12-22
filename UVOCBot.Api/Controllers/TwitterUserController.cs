@@ -10,23 +10,23 @@ namespace UVOCBot.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TwitterUsersController : ControllerBase
+    public class TwitterUserController : ControllerBase
     {
         private readonly BotContext _context;
 
-        public TwitterUsersController(BotContext context)
+        public TwitterUserController(BotContext context)
         {
             _context = context;
         }
 
-        // GET: api/TwitterUsers
+        // GET: api/TwitterUser
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TwitterUserDTO>>> GetTwitterUsers()
         {
             return (await _context.TwitterUsers.ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
         }
 
-        // GET: api/TwitterUsers/5
+        // GET: api/TwitterUser/5
         [HttpGet("{id}")]
         public async Task<ActionResult<TwitterUserDTO>> GetTwitterUser(long id)
         {
@@ -35,14 +35,20 @@ namespace UVOCBot.Api.Controllers
             return twitterUser == default ? NotFound() : ToDTO(twitterUser);
         }
 
-        // PUT: api/TwitterUsers/5
+        [HttpGet("exists/{id}")]
+        public async Task<ActionResult<bool>> Exists(long id)
+        {
+            return await _context.TwitterUsers.FindAsync(id).ConfigureAwait(false) != null;
+        }
+
+        // PUT: api/TwitterUser/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTwitterUser(long id, TwitterUserDTO twitterUser)
         {
             if (id != twitterUser.UserId)
                 return BadRequest();
 
-            _context.Entry(FromDTO(twitterUser)).State = EntityState.Modified;
+            _context.Entry(await FromDTO(twitterUser).ConfigureAwait(false)).State = EntityState.Modified;
 
             try
             {
@@ -56,7 +62,7 @@ namespace UVOCBot.Api.Controllers
             return NoContent();
         }
 
-        // POST: api/TwitterUsers
+        // POST: api/TwitterUser
         [HttpPost]
         public async Task<ActionResult<TwitterUserDTO>> PostTwitterUser(TwitterUserDTO twitterUser)
         {
@@ -66,7 +72,7 @@ namespace UVOCBot.Api.Controllers
             return CreatedAtAction(nameof(GetTwitterUser), new { id = twitterUser.UserId }, twitterUser);
         }
 
-        // DELETE: api/TwitterUsers/5
+        // DELETE: api/TwitterUser/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTwitterUser(long id)
         {

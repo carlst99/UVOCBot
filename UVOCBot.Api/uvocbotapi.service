@@ -1,0 +1,14 @@
+﻿[Unit]
+Description=UVOC Discord bot API
+
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/pi/programs/StartUVOCBotAPI.sh
+Restart=always
+RestartSec=30
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Model
+namespace UVOCBot.Commands
 {
     [Group("scrim")]
     [Description("Commands pertinent to scrim organisation")]

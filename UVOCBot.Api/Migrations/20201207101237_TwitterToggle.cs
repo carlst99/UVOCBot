@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace UVOCBot.Migrations
+namespace UVOCBot.Api.Migrations
 {
     public partial class TwitterToggle : Migration
     {

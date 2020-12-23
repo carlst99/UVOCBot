@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace UVOCBot.Model
+namespace UVOCBot.Api.Model
 {
     /// <summary>
     /// Contains guild-specific settings regarding their twitter preferences
@@ -24,7 +24,7 @@ namespace UVOCBot.Model
         /// <summary>
         /// Gets or sets a list of twitter user ids from whom to relay posts
         /// </summary>
-        public ICollection<TwitterUser> TwitterUsers { get; } = new List<TwitterUser>();
+        public ICollection<TwitterUser> TwitterUsers { get; set; } = new List<TwitterUser>();
 
         public GuildTwitterSettings()
         {

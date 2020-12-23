@@ -1,19 +1,16 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 
 namespace UVOCBot.Model
 {
-    /// <summary>
-    /// Contains settings pertinent to the bot's services
-    /// </summary>
-    public sealed class BotSettings
+    public class BotSettings : ISettings
     {
-        public static BotSettings Default => new BotSettings
+        [JsonIgnore]
+        public ISettings Default => new BotSettings
         {
-            TimeOfLastTwitterFetch = DateTimeOffset.UtcNow
+            TimeOfLastTweetFetch = DateTimeOffset.Now
         };
 
-        public int Id { get; set; }
-
-        public DateTimeOffset TimeOfLastTwitterFetch { get; set; }
+        public DateTimeOffset TimeOfLastTweetFetch { get; set; }
     }
 }

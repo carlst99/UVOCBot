@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace UVOCBot.Migrations
+namespace UVOCBot.Api.Migrations
 {
     public partial class InitialCreate : Migration
     {

@@ -1,44 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
-using System.Linq;
-using UVOCBot.Model;
+using UVOCBot.Api.Model;
 
-namespace UVOCBot
+namespace UVOCBot.Api
 {
     public sealed class BotContext : DbContext
     {
-        /*
-         * Commands to setup migration variables
-         * $env:UVOCBOT_DB_SERVER='localhost'
-         * $env:UVOCBOT_DB_USER='uvocbot'
-         * $env:UVOCBOT_DB_PASSWD=''
-         * $env:UVOCBOT_DB_NAME='uvocbot_test'
-         */
-
-        private const string ENV_DB_SERVER = "UVOCBOT_DB_SERVER";
-        private const string ENV_DB_USER = "UVOCBOT_DB_USER";
-        private const string ENV_DB_PASSWD = "UVOCBOT_DB_PASSWD";
-        private const string ENV_DB_NAME = "UVOCBOT_DB_NAME";
-
-        public DbSet<BotSettings> BotSettings { get; set; }
-
-        public BotSettings ActualBotSettings
-        {
-            get
-            {
-                if (BotSettings.Any())
-                {
-                    return BotSettings.First();
-                }
-                else
-                {
-                    BotSettings settings = UVOCBot.Model.BotSettings.Default;
-                    BotSettings.Add(settings);
-                    SaveChanges();
-                    return settings;
-                }
-            }
-        }
+        private const string ENV_DB_SERVER = "UVOCBOTAPI_DB_SERVER";
+        private const string ENV_DB_USER = "UVOCBOTAPI_DB_USER";
+        private const string ENV_DB_PASSWD = "UVOCBOTAPI_DB_PASSWD";
+        private const string ENV_DB_NAME = "UVOCBOTAPI_DB_NAME";
 
         public DbSet<GuildSettings> GuildSettings { get; set; }
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
@@ -50,7 +21,11 @@ namespace UVOCBot
             string dbUser = Environment.GetEnvironmentVariable(ENV_DB_USER);
             string dbPasswd = Environment.GetEnvironmentVariable(ENV_DB_PASSWD);
             string dbName = Environment.GetEnvironmentVariable(ENV_DB_NAME);
+#if DEBUG
+            const string connectionString = "server = localhost; user = uvocbot_test; database = uvocbot_test";
+#else
             string connectionString = $"server = {dbServer}; user = {dbUser}; password = {dbPasswd}; database = {dbName}";
+#endif
 
             string dbPath = Program.GetAppdataFilePath("datastore.db");
             options.UseMySql(

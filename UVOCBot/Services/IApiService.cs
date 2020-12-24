@@ -5,7 +5,7 @@ using UVOCBot.Core.Model;
 
 namespace UVOCBot.Services
 {
-    public interface IBotApi
+    public interface IApiService
     {
         #region TwitterUser
 

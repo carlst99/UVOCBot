@@ -1,4 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using System;
@@ -16,6 +17,8 @@ namespace UVOCBot.Commands
     [RequireGuild]
     public class TeamsModule : BaseCommandModule
     {
+        public DiscordClient Client { private get; set; }
+
         [Command("random-teams")]
         [Aliases("rt", "random")]
         [Description("Generates any number of random teams from members with a particular role")]
@@ -24,8 +27,10 @@ namespace UVOCBot.Commands
             [Description("Anyone with this role will be randomised into teams")] DiscordRole randomiseMembersOf,
             [Description("These people will be the team captains")] params DiscordMember[] captains)
         {
-            IEnumerable<DiscordMember> allMembers = await ctx.Guild.GetAllMembersAsync().ConfigureAwait(false);
-            List<DiscordMember> roleMembers = allMembers.Where(m => m.Roles.Contains(randomiseMembersOf)).ToList();
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+            await ctx.Guild.RequestMembersAsync().ConfigureAwait(false);
+            //IEnumerable<DiscordMember> allMembers = await ctx.Guild.GetAllMembersAsync().ConfigureAwait(false);
+            List<DiscordMember> roleMembers = ctx.Guild.Members.Values.Where(m => m.Roles.Contains(randomiseMembersOf)).ToList();
 
             foreach (DiscordMember c in captains)
             {
@@ -60,14 +65,19 @@ namespace UVOCBot.Commands
             [Description("Anyone with this role will be randomised into teams")] DiscordRole randomiseMembersOf,
             [Description("The number of teams to generate")] int numberOfTeams)
         {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
             IEnumerable<DiscordMember> allMembers = await ctx.Guild.GetAllMembersAsync().ConfigureAwait(false);
-            List<DiscordMember> roleMembers = allMembers.Where(m => m.Roles.Contains(randomiseMembersOf)).ToList();
+            List<DiscordMember> roleMembers = ctx.Guild.Members.Values.Where(m => m.Roles.Contains(randomiseMembersOf)).ToList();
 
             if (roleMembers.Count < numberOfTeams)
             {
                 await ctx.RespondAsync("There cannot be more teams than team members").ConfigureAwait(false);
                 return;
             }
+
+            List<List<DiscordMember>> teams = await CreateRandomTeams(roleMembers, numberOfTeams).ConfigureAwait(false);
+
+            await ctx.RespondAsync(embed: BuildTeamsEmbed(teams, null, "Random Teams")).ConfigureAwait(false);
         }
 
         [Command("random-teams")]
@@ -78,6 +88,8 @@ namespace UVOCBot.Commands
             [Description("True if the first members listed should be designated as team captains")] bool firstListedMembersAsCaptains = false,
             [Description("The members from whom to form teams")] params DiscordMember[] teamMembers)
         {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
             if (numberOfTeams > teamMembers.Length)
             {
                 await ctx.RespondAsync("There cannot be more teams than team members").ConfigureAwait(false);
@@ -101,7 +113,7 @@ namespace UVOCBot.Commands
                 for (int i = 0; i < memberPool.Count; i++)
                 {
                     teams[teamPos++].Add(memberPool[i]);
-                    if (teamPos == memberPool.Count)
+                    if (teamPos == teamCount)
                         teamPos = 0;
                 }
             }).ConfigureAwait(false);
@@ -179,7 +191,11 @@ namespace UVOCBot.Commands
                 foreach (DiscordMember m in teams[i])
                     sb.Append("- ").AppendLine(m.DisplayName);
 
-                builder.AddField($"Team {i} - Captain {captains[i].DisplayName}", sb.ToString());
+                string teamTitle = $"Team {i}";
+                if (captains is not null)
+                    teamTitle += $" - Captain {captains[i].DisplayName}";
+
+                builder.AddField(teamTitle, sb.ToString());
             }
 
             return builder.Build();

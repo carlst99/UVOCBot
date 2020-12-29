@@ -1,14 +1,20 @@
-﻿[Unit]
+[Unit]
 Description=UVOC Discord bot
 
 Wants=network.target
 
 [Service]
 Type=notify
-ExecStart=/home/pi/programs/StartUVOCBot.sh
+Environment="DOTNET_ROOT=path/to/your/dotnet/installation"
+Environment="UVOCBOT_TWITTERAPI_KEY=Your Twitter API key"
+Environment="UVOCBOT_BOT_TOKEN=Your Discord application Bot Token"
+Environment="DOTNET_ENVIRONMENT=Release"
+Environment="UVOCBOT_TWITTERAPI_SECRET=Your Twitter API secret"
+Environment="UVOCBOT_TWITTERAPI_BEARER_TOKEN=Your Twitter API bearer token"
+Environment="UVOCBOT_API_ENDPOINT=http://localhost:52728/api"
+ExecStart="/path/to/your/UVOCBot/executable"
 Restart=always
 RestartSec=30
-KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target

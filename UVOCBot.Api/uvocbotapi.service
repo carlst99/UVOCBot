@@ -4,7 +4,7 @@ Description=UVOC Discord bot API
 Wants=network.target
 
 [Service]
-Type=simple
+Type=notify
 ExecStart=/home/pi/programs/StartUVOCBotAPI.sh
 Restart=always
 RestartSec=30

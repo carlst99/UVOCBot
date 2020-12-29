@@ -5,13 +5,7 @@ Wants=network.target
 
 [Service]
 Type=notify
-Environment="DOTNET_ROOT=path/to/your/dotnet/installation"
-Environment="ASPNETCORE_ENVIRONMENT=Release"
-Environment="ASPNETCORE_URLS=http://localhost:52728"
-Environment="UVOCBOTAPI_DB_PASSWD=The password for your database user"
-Environment="UVOCBOTAPI_DB_USER=The user for your database"
-Environment="UVOCBOTAPI_DB_NAME=The name of your database"
-Environment="UVOCBOTAPI_DB_SERVER=The address of your database server"
+EnvironmentFile=/etc/systemd/system/uvocbotapi.env
 ExecStart="/path/to/your/UVOCBotApi/executable"
 Restart=always
 RestartSec=30

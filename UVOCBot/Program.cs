@@ -139,6 +139,7 @@ namespace UVOCBot
                             | DiscordIntents.GuildMessages
                             | DiscordIntents.Guilds
                             | DiscordIntents.GuildVoiceStates
+                            | DiscordIntents.GuildMembers
             });
 
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration

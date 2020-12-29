@@ -19,7 +19,7 @@ namespace UVOCBot.Workers
     {
         private readonly DiscordClient _discordClient;
         private readonly ITwitterClient _twitterClient;
-        private readonly IBotApi _dbApi;
+        private readonly IApiService _dbApi;
         private readonly ISettingsService _settingsService;
 
         private readonly MaxSizeQueue<long> _previousTweetIds = new MaxSizeQueue<long>(100);
@@ -27,7 +27,7 @@ namespace UVOCBot.Workers
         public TwitterWorker(
             DiscordClient discordClient,
             ITwitterClient twitterClient,
-            IBotApi dbApi,
+            IApiService dbApi,
             ISettingsService settingsService)
         {
             _discordClient = discordClient;

@@ -1,4 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using System;
@@ -7,11 +8,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Exceptions;
+using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
-    [Group("team")]
-    [Aliases("teams")]
+    [Group("teams")]
+    [Aliases("team")]
     [Description("Commands that help with generating team lists")]
     [RequireGuild]
     public class TeamsModule : BaseCommandModule
@@ -24,19 +26,13 @@ namespace UVOCBot.Commands
             [Description("Anyone with this role will be randomised into teams")] DiscordRole randomiseMembersOf,
             [Description("These people will be the team captains")] params DiscordMember[] captains)
         {
-            IEnumerable<DiscordMember> allMembers = await ctx.Guild.GetAllMembersAsync().ConfigureAwait(false);
-            List<DiscordMember> roleMembers = allMembers.Where(m => m.Roles.Contains(randomiseMembersOf)).ToList();
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+            List<DiscordMember> roleMembers = await GetMembersWithRoleAsync(ctx.Guild, randomiseMembersOf).ConfigureAwait(false);
 
             foreach (DiscordMember c in captains)
             {
                 if (roleMembers.Contains(c))
                     roleMembers.Remove(c);
-            }
-
-            if (roleMembers.Count < captains.Length)
-            {
-                await ctx.RespondAsync("There cannot be more team captains than team members").ConfigureAwait(false);
-                return;
             }
 
             List<DiscordMember> teamCaptains;
@@ -49,9 +45,7 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            List<List<DiscordMember>> teams = await CreateRandomTeams(roleMembers, teamCaptains.Count).ConfigureAwait(false);
-
-            await ctx.RespondAsync(embed: BuildTeamsEmbed(teams, teamCaptains, "Random Teams")).ConfigureAwait(false);
+            await SendRandomTeams(ctx, roleMembers, teamCaptains.Count, "Random Teams", teamCaptains).ConfigureAwait(false);
         }
 
         [Command("random-teams")]
@@ -60,14 +54,16 @@ namespace UVOCBot.Commands
             [Description("Anyone with this role will be randomised into teams")] DiscordRole randomiseMembersOf,
             [Description("The number of teams to generate")] int numberOfTeams)
         {
-            IEnumerable<DiscordMember> allMembers = await ctx.Guild.GetAllMembersAsync().ConfigureAwait(false);
-            List<DiscordMember> roleMembers = allMembers.Where(m => m.Roles.Contains(randomiseMembersOf)).ToList();
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+            List<DiscordMember> roleMembers = await GetMembersWithRoleAsync(ctx.Guild, randomiseMembersOf).ConfigureAwait(false);
 
             if (roleMembers.Count < numberOfTeams)
             {
                 await ctx.RespondAsync("There cannot be more teams than team members").ConfigureAwait(false);
                 return;
             }
+
+            await SendRandomTeams(ctx, roleMembers, numberOfTeams, "Random Teams").ConfigureAwait(false);
         }
 
         [Command("random-teams")]
@@ -75,67 +71,48 @@ namespace UVOCBot.Commands
         public async Task RandomTeamsCommand(
             CommandContext ctx,
             [Description("The number of teams to generate")] int numberOfTeams,
-            [Description("True if the first members listed should be designated as team captains")] bool firstListedMembersAsCaptains = false,
+            [Description("True if the first members listed should be designated as team captains")] bool firstListedMembersAsCaptains,
             [Description("The members from whom to form teams")] params DiscordMember[] teamMembers)
         {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
             if (numberOfTeams > teamMembers.Length)
             {
                 await ctx.RespondAsync("There cannot be more teams than team members").ConfigureAwait(false);
                 return;
             }
+
+            List<DiscordMember> memberPool;
+            try
+            {
+                memberPool = await CheckForDuplicateMembers(teamMembers).ConfigureAwait(false);
+            }
+            catch (DuplicateItemException<DiscordMember> diex)
+            {
+                await ctx.RespondAsync("There cannot be duplicate members - " + diex.DuplicateItem.DisplayName).ConfigureAwait(false);
+                return;
+            }
+
+            List<DiscordMember> teamCaptains = null;
+            if (firstListedMembersAsCaptains)
+            {
+                teamCaptains = memberPool.Take(numberOfTeams).ToList();
+                memberPool.RemoveRange(0, numberOfTeams);
+            }
+
+            await SendRandomTeams(ctx, memberPool, numberOfTeams, "Random Teams", teamCaptains).ConfigureAwait(false);
         }
 
-        private async Task<List<List<DiscordMember>>> CreateRandomTeams(List<DiscordMember> memberPool, int teamCount = 2)
+        /// <summary>
+        /// Gets all the members in a guild who have a particular role
+        /// </summary>
+        /// <param name="guild"></param>
+        /// <param name="role"></param>
+        /// <returns></returns>
+        private async Task<List<DiscordMember>> GetMembersWithRoleAsync(DiscordGuild guild, DiscordRole role)
         {
-            if (teamCount < 1)
-                throw new ArgumentOutOfRangeException(nameof(teamCount), "At least one team is required");
-
-            List<List<DiscordMember>> teams = new List<List<DiscordMember>>(teamCount);
-
-            await Task.Run(() =>
-            {
-                for (int i = 0; i < teamCount; i++)
-                    teams.Add(new List<DiscordMember>());
-
-                int teamPos = 0;
-                for (int i = 0; i < memberPool.Count; i++)
-                {
-                    teams[teamPos++].Add(memberPool[i]);
-                    if (teamPos == memberPool.Count)
-                        teamPos = 0;
-                }
-            }).ConfigureAwait(false);
-
-            //int teamMemberCount = memberPool.Count / teamCount;
-            //if (teamMemberCount == 0)
-            //    throw new ArgumentOutOfRangeException(nameof(teamCount), "Each team must have at least one member");
-
-            //await Task.Run(() =>
-            //{
-            //    memberPool.Shuffle();
-
-            //    for (int i = 0; i < memberPool.Count; i++)
-            //    {
-            //        List<DiscordMember> teamMembers = new List<DiscordMember>();
-            //        for (int j = i * teamMemberCount; j < (i * teamMemberCount) + teamMemberCount; j++)
-            //            teamMembers.Add(memberPool[j]);
-
-            //        teams.Add(teamMembers);
-            //    }
-
-            //    if (teamMemberCount * teamCount < memberPool.Count)
-            //    {
-            //        int pos = 0;
-            //        for (int i = teamMemberCount * teamCount; i < memberPool.Count; i++)
-            //        {
-            //            teams[pos++].Add(memberPool[i]);
-            //            if (pos == memberPool.Count)
-            //                pos = 0;
-            //        }
-            //    }
-            //}).ConfigureAwait(false);
-
-            return teams;
+            IReadOnlyCollection<DiscordMember> allMembers = await guild.GetAllMembersAsync().ConfigureAwait(false);
+            return allMembers.Where(m => m.Roles.Contains(role)).ToList();
         }
 
         /// <summary>
@@ -162,9 +139,38 @@ namespace UVOCBot.Commands
             return teamCaptains;
         }
 
-        private DiscordEmbed BuildTeamsEmbed(List<List<DiscordMember>> teams, List<DiscordMember> captains, string embedTitle)
+        private async Task<List<List<DiscordMember>>> CreateRandomTeams(IList<DiscordMember> memberPool, int teamCount = 2)
+        {
+            if (teamCount < 1)
+                throw new ArgumentOutOfRangeException(nameof(teamCount), "At least one team is required");
+
+            List<List<DiscordMember>> teams = new List<List<DiscordMember>>(teamCount);
+
+            await Task.Run(() =>
+            {
+                memberPool.Shuffle();
+
+                for (int i = 0; i < teamCount; i++)
+                    teams.Add(new List<DiscordMember>());
+
+                int teamPos = 0;
+                for (int i = 0; i < memberPool.Count; i++)
+                {
+                    teams[teamPos++].Add(memberPool[i]);
+                    if (teamPos == teamCount)
+                        teamPos = 0;
+                }
+            }).ConfigureAwait(false);
+
+            return teams;
+        }
+
+        private DiscordEmbed BuildTeamsEmbed(List<List<DiscordMember>> teams, IList<DiscordMember> captains, string embedTitle)
         {
             // TODO: Add support for teams that will exceed longer than 6000 characters
+
+            if (captains is not null && teams.Count != captains.Count)
+                throw new ArgumentOutOfRangeException(nameof(captains), "There must be the same number of captains as team members");
 
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
             {
@@ -176,13 +182,49 @@ namespace UVOCBot.Commands
             for (int i = 0; i < teams.Count; i++)
             {
                 StringBuilder sb = new StringBuilder();
-                foreach (DiscordMember m in teams[i])
-                    sb.Append("- ").AppendLine(m.DisplayName);
 
-                builder.AddField($"Team {i} - Captain {captains[i].DisplayName}", sb.ToString());
+                if (teams[i].Count != 0)
+                {
+                    foreach (DiscordMember m in teams[i])
+                    sb.Append("- ").AppendLine(m.DisplayName);
+                } else
+                {
+                    sb.Append("- No Members");
+                }
+
+                string teamTitle = $"Team {i + 1}";
+                if (captains is not null)
+                    teamTitle += $" - Captain {captains[i].DisplayName}";
+
+                builder.AddField(teamTitle, sb.ToString());
             }
 
             return builder.Build();
+        }
+
+        /// <summary>
+        /// Creates a replies with a random team
+        /// </summary>
+        /// <param name="ctx">The context to reply to</param>
+        /// <param name="memberPool">The members to build the teams from</param>
+        /// <param name="teamCount">The number of teams to create</param>
+        /// <param name="embedName">The name of the teams embed</param>
+        /// <param name="teamCaptains">Team captains, if applicable</param>
+        /// <returns></returns>
+        private async Task SendRandomTeams(CommandContext ctx, IList<DiscordMember> memberPool, int teamCount, string embedName, IList<DiscordMember> teamCaptains = null)
+        {
+            List<List<DiscordMember>> teams = await CreateRandomTeams(memberPool, teamCount).ConfigureAwait(false);
+
+            try
+            {
+                DiscordEmbed embed = BuildTeamsEmbed(teams, teamCaptains, embedName);
+                await ctx.RespondAsync(embed: embed).ConfigureAwait(false);
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                await ctx.RespondAsync(ex.Message).ConfigureAwait(false);
+                throw;
+            }
         }
     }
 }

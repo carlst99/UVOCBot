@@ -1,14 +1,14 @@
-﻿[Unit]
+[Unit]
 Description=UVOC Discord bot API
 
 Wants=network.target
 
 [Service]
-Type=simple
-ExecStart=/home/pi/programs/StartUVOCBotAPI.sh
+Type=notify
+EnvironmentFile=/etc/systemd/system/uvocbotapi.env
+ExecStart="/path/to/your/UVOCBotApi/executable"
 Restart=always
 RestartSec=30
-KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target

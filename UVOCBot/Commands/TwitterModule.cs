@@ -28,7 +28,7 @@ namespace UVOCBot.Commands
 
         public ITwitterClient TwitterClient { private get; set; }
 
-        public IBotApi DbApi { get; set; }
+        public IApiService DbApi { get; set; }
 
         [Command("add-user")]
         [Aliases("add")]

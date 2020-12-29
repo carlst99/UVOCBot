@@ -73,7 +73,7 @@ namespace UVOCBot
                     services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
                     services.AddSingleton(DiscordClientFactory);
                     services.AddTransient(TwitterClientFactory);
-                    services.AddSingleton(RestService.For<IBotApi>(Environment.GetEnvironmentVariable(API_ENDPOINT_ENV)));
+                    services.AddSingleton(RestService.For<IApiService>(Environment.GetEnvironmentVariable(API_ENDPOINT_ENV)));
                     services.AddHostedService<DiscordWorker>();
                     services.AddHostedService<TwitterWorker>();
                 });
@@ -139,6 +139,7 @@ namespace UVOCBot
                             | DiscordIntents.GuildMessages
                             | DiscordIntents.Guilds
                             | DiscordIntents.GuildVoiceStates
+                            | DiscordIntents.GuildMembers
             });
 
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration

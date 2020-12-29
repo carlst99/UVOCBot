@@ -12,8 +12,8 @@ using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
-    [Group("team")]
-    [Aliases("teams")]
+    [Group("teams")]
+    [Aliases("team")]
     [Description("Commands that help with generating team lists")]
     [RequireGuild]
     public class TeamsModule : BaseCommandModule
@@ -45,12 +45,6 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            if (roleMembers.Count < teamCaptains.Count)
-            {
-                await ctx.RespondAsync("There cannot be more team captains than team members").ConfigureAwait(false);
-                return;
-            }
-
             await SendRandomTeams(ctx, roleMembers, teamCaptains.Count, "Random Teams", teamCaptains).ConfigureAwait(false);
         }
 
@@ -77,7 +71,7 @@ namespace UVOCBot.Commands
         public async Task RandomTeamsCommand(
             CommandContext ctx,
             [Description("The number of teams to generate")] int numberOfTeams,
-            [Description("True if the first members listed should be designated as team captains")] bool firstListedMembersAsCaptains = false,
+            [Description("True if the first members listed should be designated as team captains")] bool firstListedMembersAsCaptains,
             [Description("The members from whom to form teams")] params DiscordMember[] teamMembers)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
@@ -87,6 +81,26 @@ namespace UVOCBot.Commands
                 await ctx.RespondAsync("There cannot be more teams than team members").ConfigureAwait(false);
                 return;
             }
+
+            List<DiscordMember> memberPool;
+            try
+            {
+                memberPool = await CheckForDuplicateMembers(teamMembers).ConfigureAwait(false);
+            }
+            catch (DuplicateItemException<DiscordMember> diex)
+            {
+                await ctx.RespondAsync("There cannot be duplicate members - " + diex.DuplicateItem.DisplayName).ConfigureAwait(false);
+                return;
+            }
+
+            List<DiscordMember> teamCaptains = null;
+            if (firstListedMembersAsCaptains)
+            {
+                teamCaptains = memberPool.Take(numberOfTeams).ToList();
+                memberPool.RemoveRange(0, numberOfTeams);
+            }
+
+            await SendRandomTeams(ctx, memberPool, numberOfTeams, "Random Teams", teamCaptains).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -148,35 +162,6 @@ namespace UVOCBot.Commands
                 }
             }).ConfigureAwait(false);
 
-            //int teamMemberCount = memberPool.Count / teamCount;
-            //if (teamMemberCount == 0)
-            //    throw new ArgumentOutOfRangeException(nameof(teamCount), "Each team must have at least one member");
-
-            //await Task.Run(() =>
-            //{
-            //    memberPool.Shuffle();
-
-            //    for (int i = 0; i < memberPool.Count; i++)
-            //    {
-            //        List<DiscordMember> teamMembers = new List<DiscordMember>();
-            //        for (int j = i * teamMemberCount; j < (i * teamMemberCount) + teamMemberCount; j++)
-            //            teamMembers.Add(memberPool[j]);
-
-            //        teams.Add(teamMembers);
-            //    }
-
-            //    if (teamMemberCount * teamCount < memberPool.Count)
-            //    {
-            //        int pos = 0;
-            //        for (int i = teamMemberCount * teamCount; i < memberPool.Count; i++)
-            //        {
-            //            teams[pos++].Add(memberPool[i]);
-            //            if (pos == memberPool.Count)
-            //                pos = 0;
-            //        }
-            //    }
-            //}).ConfigureAwait(false);
-
             return teams;
         }
 
@@ -198,8 +183,14 @@ namespace UVOCBot.Commands
             {
                 StringBuilder sb = new StringBuilder();
 
-                foreach (DiscordMember m in teams[i])
+                if (teams[i].Count != 0)
+                {
+                    foreach (DiscordMember m in teams[i])
                     sb.Append("- ").AppendLine(m.DisplayName);
+                } else
+                {
+                    sb.Append("- No Members");
+                }
 
                 string teamTitle = $"Team {i + 1}";
                 if (captains is not null)

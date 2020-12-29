@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Exceptions;
+using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
@@ -133,6 +134,8 @@ namespace UVOCBot.Commands
 
             await Task.Run(() =>
             {
+                memberPool.Shuffle();
+
                 for (int i = 0; i < teamCount; i++)
                     teams.Add(new List<DiscordMember>());
 
@@ -198,7 +201,7 @@ namespace UVOCBot.Commands
                 foreach (DiscordMember m in teams[i])
                     sb.Append("- ").AppendLine(m.DisplayName);
 
-                string teamTitle = $"Team {i}";
+                string teamTitle = $"Team {i + 1}";
                 if (captains is not null)
                     teamTitle += $" - Captain {captains[i].DisplayName}";
 

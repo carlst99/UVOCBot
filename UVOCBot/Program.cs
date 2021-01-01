@@ -35,6 +35,7 @@ namespace UVOCBot
         private const string TWITTER_API_SECRET_ENV = "UVOCBOT_TWITTERAPI_SECRET";
         private const string TWITTER_API_BEARER_ENV = "UVOCBOT_TWITTERAPI_BEARER_TOKEN";
         private const string API_ENDPOINT_ENV = "UVOCBOT_API_ENDPOINT";
+        private const string CENSUS_API_KEY = "UVOCBOT_DBG_CENSUS_KEY";
 
         public const string PREFIX = "ub!";
         public const string NAME = "UVOCBot";
@@ -76,6 +77,8 @@ namespace UVOCBot
                     services.AddSingleton(RestService.For<IApiService>(Environment.GetEnvironmentVariable(API_ENDPOINT_ENV)));
                     services.AddHostedService<DiscordWorker>();
                     services.AddHostedService<TwitterWorker>();
+                    services.AddCensusServices(options =>
+                        options.CensusServiceId = Environment.GetEnvironmentVariable(CENSUS_API_KEY));
                 });
 
         /// <summary>

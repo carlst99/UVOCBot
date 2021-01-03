@@ -43,12 +43,11 @@ namespace UVOCBot.Services
                 {
                     string filePath = GetFilePath<T>();
 
-                    if (_fileSystem.File.Exists(filePath))
+                    try
                     {
                         using Stream readStream = _fileSystem.FileStream.Create(GetFilePath<T>(), FileMode.Open, FileAccess.Read);
                         settings = await JsonSerializer.DeserializeAsync<T>(readStream).ConfigureAwait(true);
-                    }
-                    else
+                    } catch
                     {
                         settings = (T)new T().Default;
                     }

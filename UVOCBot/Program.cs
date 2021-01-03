@@ -75,10 +75,11 @@ namespace UVOCBot
                     services.AddSingleton(DiscordClientFactory);
                     services.AddTransient(TwitterClientFactory);
                     services.AddSingleton(RestService.For<IApiService>(Environment.GetEnvironmentVariable(API_ENDPOINT_ENV)));
-                    services.AddHostedService<DiscordWorker>();
-                    services.AddHostedService<TwitterWorker>();
                     services.AddCensusServices(options =>
                         options.CensusServiceId = Environment.GetEnvironmentVariable(CENSUS_API_KEY));
+                    services.AddHostedService<DiscordWorker>();
+                    services.AddHostedService<TwitterWorker>();
+                    services.AddHostedService<PlanetsideWorker>();
                 });
 
         /// <summary>

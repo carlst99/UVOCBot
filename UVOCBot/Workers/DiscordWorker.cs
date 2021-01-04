@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace UVOCBot.Workers
 {
-    public class DiscordWorker : BackgroundService
+    public sealed class DiscordWorker : BackgroundService
     {
         private readonly DiscordClient _discordClient;
 

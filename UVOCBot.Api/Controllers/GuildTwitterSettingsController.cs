@@ -68,7 +68,7 @@ namespace UVOCBot.Api.Controllers
 
         // POST: api/GuildTwitterSettings
         [HttpPost]
-        public async Task<ActionResult<GuildTwitterSettings>> PostGuildTwitterSettings(GuildTwitterSettingsDTO guildTwitterSettings)
+        public async Task<ActionResult<GuildTwitterSettingsDTO>> PostGuildTwitterSettings(GuildTwitterSettingsDTO guildTwitterSettings)
         {
             _context.GuildTwitterSettings.Add(FromDTO(guildTwitterSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);

@@ -1,4 +1,5 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using System;
@@ -33,6 +34,15 @@ namespace UVOCBot.Commands
         public async Task VersionCommand(CommandContext ctx)
         {
             await ctx.RespondAsync($"I'm version **{Assembly.GetEntryAssembly().GetName().Version}**!").ConfigureAwait(false);
+        }
+
+        [Command("bonk")]
+        [Aliases("goToHornyJail")]
+        [Description("Sends a voice member to horny jail")]
+        [RequireGuild]
+        public async Task BonkCommand(CommandContext ctx, DiscordMember memberToBonk)
+        {
+
         }
 
 #if DEBUG

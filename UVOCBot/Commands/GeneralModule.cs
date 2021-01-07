@@ -45,7 +45,7 @@ namespace UVOCBot.Commands
         [Description("Sends a voice member to horny jail")]
         [RequireGuild]
         [RequirePermissions(Permissions.MoveMembers)]
-        public async Task BonkCommand(CommandContext ctx, DiscordMember memberToBonk)
+        public async Task BonkCommand(CommandContext ctx, [Description("The member to bonk")] DiscordMember memberToBonk)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
@@ -64,38 +64,38 @@ namespace UVOCBot.Commands
             }
 
             // Check that UVOCBot can move members out of the current channel
-            DiscordChannel currentAudioChannel = ctx.Member.VoiceState.Channel;
-
-            if (!CheckMemberHasMovePermissionInChannel(currentAudioChannel, ctx.Guild.CurrentMember))
+            if (!CheckPermission(ctx.Member.VoiceState.Channel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
                 await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members from your current channel").ConfigureAwait(false);
                 return;
             }
 
-            // Find or create the guild twitter settings record
+            // Find or create the guild settings record
             GuildSettingsDTO settings = await GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
-            // Check that a bonk target has been set
+
+            // Check that a bonk channel has been set
             if (settings.BonkChannelId is null)
             {
                 await ctx.RespondAsync($"You haven't yet setup a target voice channel for the bonk command. Please use {Program.PREFIX}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 
-            // Check that the bonk target still exists
-            DiscordChannel moveToChannel = ctx.Guild.GetChannel((ulong)settings.BonkChannelId);
-            if (moveToChannel == default)
+            // Check that the bonk channel still exists
+            DiscordChannel bonkChannel = ctx.Guild.GetChannel((ulong)settings.BonkChannelId);
+            if (bonkChannel == default)
             {
                 await ctx.RespondAsync($"The bonk voice chat no longer exists. Please reset it using {Program.PREFIX}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 
-            if (!CheckMemberHasMovePermissionInChannel(moveToChannel, ctx.Guild.CurrentMember))
+            // Check that UVOCBot can move members into the bonk channel
+            if (!CheckPermission(bonkChannel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
                 await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
                 return;
             }
 
-            await moveToChannel.PlaceMemberAsync(memberToBonk).ConfigureAwait(false);
+            await bonkChannel.PlaceMemberAsync(memberToBonk).ConfigureAwait(false);
             await ctx.RespondAsync($"**{memberToBonk.DisplayName}** has been bonked :smirk::hammer:").ConfigureAwait(false);
         }
 
@@ -116,7 +116,7 @@ namespace UVOCBot.Commands
             settings.BonkChannelId = bonkChannel.Id;
             await DbApi.UpdateGuildSettings(settings.GuildId, settings).ConfigureAwait(false);
 
-            await ctx.RespondAsync($"The bonk channel has been successfully set to {bonkChannel.Mention}").ConfigureAwait(false);
+            await ctx.RespondAsync($"The bonk channel has been successfully set to **{bonkChannel.Name}**").ConfigureAwait(false);
         }
 
 #if DEBUG
@@ -141,10 +141,17 @@ namespace UVOCBot.Commands
         }
 #endif
 
-        private bool CheckMemberHasMovePermissionInChannel(DiscordChannel channel, DiscordMember member)
+        /// <summary>
+        /// Checks that a member has been granted a certain permission in a channel
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <param name="member"></param>
+        /// <param name="permission"></param>
+        /// <returns></returns>
+        private bool CheckPermission(DiscordChannel channel, DiscordMember member, Permissions permission)
         {
             Permissions permissions = channel.PermissionsFor(member);
-            return (permissions & Permissions.MoveMembers) != 0;
+            return (permissions & permission) != 0;
         }
 
         private async Task<GuildSettingsDTO> GetGuildSettingsAsync(ulong id)

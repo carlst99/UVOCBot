@@ -52,14 +52,14 @@ namespace UVOCBot.Commands
             // Limit command abuse by making sure the user is actively in the voice channel
             if (ctx.Member.VoiceState.Channel is null)
             {
-                await ctx.RespondAsync("You must be a voice channel to use this command").ConfigureAwait(false);
+                await ctx.RespondAsync("You must be in a voice channel to use this command").ConfigureAwait(false);
                 return;
             }
 
-            // Ensure that the target is part of the same voice channel
+            // Ensure that the target is part of the same voice channel as the sender
             if (!memberToBonk.VoiceState.Channel.Equals(ctx.Member.VoiceState.Channel))
             {
-                await ctx.RespondAsync("You must be in the same voice channel as the member you are trying to bonk").ConfigureAwait(false);
+                await ctx.RespondAsync("Bonking can only be used on members in the same voice channel").ConfigureAwait(false);
                 return;
             }
 

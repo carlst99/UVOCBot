@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace UVOCBot.Commands
 {
-    public class GeneralModule : BaseCommandModule
+    public sealed class GeneralModule : BaseCommandModule
     {
         [Command("ping")]
         [Description("Pong! Tells you whether the bot is listening")]

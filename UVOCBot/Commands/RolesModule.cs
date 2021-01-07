@@ -18,7 +18,7 @@ namespace UVOCBot.Commands
     [Description("Commands pertinent to role management")]
     [RequireUserPermissions(Permissions.ManageRoles)]
     [RequireGuild]
-    public class RolesModule : BaseCommandModule
+    public sealed class RolesModule : BaseCommandModule
     {
         [Command("add-by-reaction")]
         [Aliases("abr", "by-reaction")]

@@ -1,5 +1,8 @@
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,13 +20,14 @@ using UVOCBot.Workers;
 
 namespace UVOCBot
 {
-    // Permissions integer: 268504128
+    // Permissions integer: 268635200
     // - Manage Roles
+    // - View Channels
     // - Send Messages
     // - Read Message History
+    // - Mention Everyone
     // - Add Reactions
-    // - View Channels
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268504128&scope=bot
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268635200&scope=bot
 
     public static class Program
     {
@@ -149,6 +153,8 @@ namespace UVOCBot
             });
             commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
+
+            client.UseInteractivity();
 
             return client;
         }

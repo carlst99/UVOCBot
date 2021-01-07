@@ -60,5 +60,24 @@ namespace UVOCBot.Services
         Task DeleteGuildTwitterLink(ulong guildTwitterSettingsId, long twitterUserId);
 
         #endregion
+
+        #region GuildSettings
+
+        [Get("/guildsettings")]
+        Task<List<GuildSettingsDTO>> GetGuildSettings();
+
+        [Get("/guildsettings/{id}")]
+        Task<GuildSettingsDTO> GetGuildSetting(ulong id);
+
+        [Put("/guildsettings/{id}")]
+        Task UpdateGuildSettings(ulong id, GuildSettingsDTO user);
+
+        [Post("/guildsettings")]
+        Task<GuildSettingsDTO> CreateGuildSettings(GuildSettingsDTO user);
+
+        [Delete("/guildsettings/{id}")]
+        Task DeleteGuildSettings(ulong id);
+
+        #endregion
     }
 }

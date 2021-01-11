@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Api.Model;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Controllers
 {
@@ -20,29 +21,29 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/GuildSettings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GuildSettings>>> GetGuildSettings()
+        public async Task<ActionResult<IEnumerable<GuildSettingsDTO>>> GetGuildSettings()
         {
-            return await _context.GuildSettings.ToListAsync().ConfigureAwait(false);
+            return (await _context.GuildSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
         }
 
         // GET: api/GuildSettings/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<GuildSettings>> GetGuildSettings(ulong id)
+        public async Task<ActionResult<GuildSettingsDTO>> GetGuildSettings(ulong id)
         {
             var guildSettings = await _context.GuildSettings.FindAsync(id).ConfigureAwait(false);
 
-            return guildSettings ?? (ActionResult<GuildSettings>)NotFound();
+            return guildSettings == default ? NotFound() : ToDTO(guildSettings);
         }
 
         // PUT: api/GuildSettings/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGuildSettings(ulong id, GuildSettings guildSettings)
+        public async Task<IActionResult> PutGuildSettings(ulong id, GuildSettingsDTO guildSettings)
         {
             if (id != guildSettings.GuildId)
                 return BadRequest();
 
-            _context.Entry(guildSettings).State = EntityState.Modified;
+            _context.Entry(FromDTO(guildSettings)).State = EntityState.Modified;
 
             try
             {
@@ -59,9 +60,9 @@ namespace UVOCBot.Api.Controllers
         // POST: api/GuildSettings
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<GuildSettings>> PostGuildSettings(GuildSettings guildSettings)
+        public async Task<ActionResult<GuildSettingsDTO>> PostGuildSettings(GuildSettingsDTO guildSettings)
         {
-            _context.GuildSettings.Add(guildSettings);
+            _context.GuildSettings.Add(FromDTO(guildSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction("GetGuildSettings", new { id = guildSettings.GuildId }, guildSettings);
@@ -79,6 +80,24 @@ namespace UVOCBot.Api.Controllers
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
+        }
+
+        private static GuildSettingsDTO ToDTO(GuildSettings settings)
+        {
+            return new GuildSettingsDTO
+            {
+                GuildId = settings.GuildId,
+                BonkChannelId = settings.BonkChannelId
+            };
+        }
+
+        private static GuildSettings FromDTO(GuildSettingsDTO dto)
+        {
+            return new GuildSettings
+            {
+                GuildId = dto.GuildId,
+                BonkChannelId = dto.BonkChannelId
+            };
         }
 
         private bool GuildSettingsExists(ulong id)

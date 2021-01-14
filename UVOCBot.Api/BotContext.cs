@@ -10,6 +10,7 @@ namespace UVOCBot.Api
         private const string ENV_DB_USER = "UVOCBOTAPI_DB_USER";
         private const string ENV_DB_PASSWD = "UVOCBOTAPI_DB_PASSWD";
         private const string ENV_DB_NAME = "UVOCBOTAPI_DB_NAME";
+        private const string ENV_DB_VERSION = "UVOCBOTAPI_DB_VERSION";
 
         public DbSet<GuildSettings> GuildSettings { get; set; }
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
@@ -21,16 +22,17 @@ namespace UVOCBot.Api
             string dbUser = Environment.GetEnvironmentVariable(ENV_DB_USER);
             string dbPasswd = Environment.GetEnvironmentVariable(ENV_DB_PASSWD);
             string dbName = Environment.GetEnvironmentVariable(ENV_DB_NAME);
+            string dbVersion = Environment.GetEnvironmentVariable(ENV_DB_VERSION);
+
 #if DEBUG
             const string connectionString = "server = localhost; user = uvocbot_test; database = uvocbot_test";
 #else
             string connectionString = $"server = {dbServer}; user = {dbUser}; password = {dbPasswd}; database = {dbName}";
+            Console.WriteLine(connectionString);
 #endif
-
-            string dbPath = Program.GetAppdataFilePath("datastore.db");
             options.UseMySql(
                 connectionString,
-                new MariaDbServerVersion(new Version(10, 3, 27)),
+                new MariaDbServerVersion(new Version(dbVersion)),
                 mySqlOptions => mySqlOptions
                     .CharSetBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.CharSetBehavior.NeverAppend))
 #if DEBUG

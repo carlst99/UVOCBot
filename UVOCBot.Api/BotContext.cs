@@ -28,7 +28,6 @@ namespace UVOCBot.Api
             const string connectionString = "server = localhost; user = uvocbot_test; database = uvocbot_test";
 #else
             string connectionString = $"server = {dbServer}; user = {dbUser}; password = {dbPasswd}; database = {dbName}";
-            Console.WriteLine(connectionString);
 #endif
             options.UseMySql(
                 connectionString,

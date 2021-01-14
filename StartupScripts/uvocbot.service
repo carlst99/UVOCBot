@@ -5,7 +5,7 @@ Wants=network.target
 
 [Service]
 Type=notify
-EnvironmentFile=/etc/systemd/system/uvocbot.env
+EnvironmentFile=/path/to/your/uvocbot/environment/file
 ExecStart="/path/to/your/UVOCBot/executable"
 Restart=always
 RestartSec=30

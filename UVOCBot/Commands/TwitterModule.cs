@@ -23,7 +23,6 @@ namespace UVOCBot.Commands
     [RequireGuild]
     public class TwitterModule : BaseCommandModule
     {
-        private const string ENV_CLIENT_ID = "UVOCBOT_CLIENT_ID";
         public const string TWITTER_USERNAME_REGEX = "^[A-Za-z0-9_]{1,15}$";
 
         public ITwitterClient TwitterClient { private get; set; }
@@ -170,9 +169,7 @@ namespace UVOCBot.Commands
         public async Task RelayChannelCommand(CommandContext ctx, [Description("The channel that tweets should be relayed to")] DiscordChannel channel)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
-
-            ulong clientId = ulong.Parse(Environment.GetEnvironmentVariable(ENV_CLIENT_ID));
-            DiscordMember botMember = await ctx.Guild.GetMemberAsync(clientId).ConfigureAwait(false);
+            DiscordMember botMember = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id).ConfigureAwait(false);
 
             Permissions channelPerms = channel.PermissionsFor(botMember);
 

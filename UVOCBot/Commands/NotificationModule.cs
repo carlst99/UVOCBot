@@ -3,10 +3,12 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using System;
 using System.Threading.Tasks;
+using UVOCBot.Core.Model;
 using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
@@ -24,6 +26,7 @@ namespace UVOCBot.Commands
         private readonly IArgumentConverter<DiscordRole> _roleConverter = new DiscordRoleConverter();
         private readonly IArgumentConverter<DiscordChannel> _channelConverter = new DiscordChannelConverter();
         private readonly IArgumentConverter<DateTimeOffset> _dateTimeOffsetConverter = new CustomDateTimeOffsetConverter(DATETIME_FORMAT);
+        private readonly IArgumentConverter<uint> _uintConverter = new Uint32Converter();
 
         [Command("schedule")]
         [Description("Lets the sender schedule a one-off or recurring notification")]
@@ -51,11 +54,21 @@ namespace UVOCBot.Commands
                 return;
 
             // Get repeats and repeat count
+            Optional<Tuple<NotificationRepeatPeriod, uint>> repeat = await GetRepeat(ctx).ConfigureAwait(false);
+            if (!repeat.HasValue)
+                return;
 
             Optional<DateTimeOffset> sendTime = await GetTime(ctx).ConfigureAwait(false);
 
-            string message = $"Great! Your notification (ID: {{id}}) has been scheduled for {sendTime.Value.ToString(DATETIME_FORMAT)}. " +
-                $"Users with the role `{role.Value.Name}` will be notified in {channel.Value.Mention} with the message:";
+            string message = $"Great! Your notification (ID: `{{id}}`) has been scheduled for `{sendTime.Value.ToString(DATETIME_FORMAT)} UTC`. " +
+                $"It will repeat `{repeat.Value.Item1}`";
+
+            if (repeat.Value.Item2 != 0)
+                message += $" for `{repeat.Value.Item2}` times. ";
+            else
+                message += ". ";
+
+            message += $"Users with the role `{role.Value.Name}` will be notified in {channel.Value.Mention} with the message:";
 
             await ctx.RespondAsync(message).ConfigureAwait(false);
             await ctx.RespondAsync(notificationContent.Result.Content).ConfigureAwait(false);
@@ -117,9 +130,55 @@ namespace UVOCBot.Commands
             }
         }
 
-        private async Task<Optional<>> GetRepeat()
+        private async Task<Optional<Tuple<NotificationRepeatPeriod, uint>>> GetRepeat(CommandContext ctx)
         {
+            const string request = "How often would you like this notification to repeat?\n" +
+                ":zero:: No Repeat\n" +
+                ":one:: Daily\n" +
+                ":two:: Weekly\n" +
+                ":three:: Monthly";
 
+            DiscordMessage message = await ctx.RespondAsync(request).ConfigureAwait(false);
+            await message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":zero:")).ConfigureAwait(false);
+            await message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":one:")).ConfigureAwait(false);
+            await message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":two:")).ConfigureAwait(false);
+            await message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":three:")).ConfigureAwait(false);
+
+            InteractivityResult<MessageReactionAddEventArgs> reaction = await message.WaitForReactionAsync(ctx.User).ConfigureAwait(false);
+            if (reaction.TimedOut)
+                return Optional.FromNoValue<Tuple<NotificationRepeatPeriod, uint>>();
+
+            NotificationRepeatPeriod repeatPeriod = NotificationRepeatPeriod.NoRepeat;
+            DiscordEmoji emoji = reaction.Result.Emoji;
+            switch (emoji.GetDiscordName())
+            {
+                case "zero":
+                    repeatPeriod = NotificationRepeatPeriod.NoRepeat;
+                    break;
+                case "one":
+                    repeatPeriod = NotificationRepeatPeriod.Daily;
+                    break;
+                case "two":
+                    repeatPeriod = NotificationRepeatPeriod.Weekly;
+                    break;
+                case "three":
+                    repeatPeriod = NotificationRepeatPeriod.Monthly;
+                    break;
+            }
+
+            if (repeatPeriod == NotificationRepeatPeriod.NoRepeat)
+                return new Tuple<NotificationRepeatPeriod, uint>(repeatPeriod, 0);
+
+            Optional<uint> repeatCount = await GetValueFromMessageWithReattemptsAsync<uint>(
+                ctx,
+                _uintConverter,
+                "Specify, if applicable, the maximum number of times this notification should repeat. Otherwise, enter `0`",
+                $"Please enter a number between 0 and {uint.MaxValue},").ConfigureAwait(false);
+
+            if (repeatCount.HasValue)
+                return new Tuple<NotificationRepeatPeriod, uint>(repeatPeriod, repeatCount.Value);
+            else
+                return new Tuple<NotificationRepeatPeriod, uint>(repeatPeriod, 0);
         }
 
         /// <summary>

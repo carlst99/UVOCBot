@@ -4,10 +4,10 @@ namespace UVOCBot.Core.Model
 {
     public enum NotificationRepeatPeriod
     {
-        None,
-        Daily,
-        Weekly,
-        Monthly
+        NoRepeat = 0,
+        Daily = 1,
+        Weekly = 2,
+        Monthly = 3
     }
 
     public sealed class ScheduledNotificationDTO
@@ -40,7 +40,12 @@ namespace UVOCBot.Core.Model
         /// <summary>
         /// Gets or sets the total number of times this notification should repeat
         /// </summary>
-        public int RepeatCount { get; set; }
+        public uint RepeatCount { get; set; }
+
+        /// <summary>
+        /// Gets the number of times this notification has been repeated, if <see cref="RepeatCount"/> has been set
+        /// </summary>
+        public uint TimesRepeated { get; set; }
 
         /// <summary>
         /// Gets or sets the id of the channel in which to send the notification

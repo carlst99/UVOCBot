@@ -7,6 +7,7 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using System;
 using System.Threading.Tasks;
+using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
@@ -17,21 +18,17 @@ namespace UVOCBot.Commands
     public sealed class NotificationModule : BaseCommandModule
     {
         private const string CANCEL_WORD = Program.PREFIX + "cancel";
+        private const string DATETIME_FORMAT = "dd/MM/yyyy HH:mm";
+        private const string DATETIME_FORMAT_EXAMPLE = "02/11/2032 18:30";
 
         private readonly IArgumentConverter<DiscordRole> _roleConverter = new DiscordRoleConverter();
         private readonly IArgumentConverter<DiscordChannel> _channelConverter = new DiscordChannelConverter();
-        private readonly IArgumentConverter<DateTimeOffset> _dateTimeOffsetConverter = new DateTimeOffsetConverter();
+        private readonly IArgumentConverter<DateTimeOffset> _dateTimeOffsetConverter = new CustomDateTimeOffsetConverter(DATETIME_FORMAT);
 
         [Command("schedule")]
         [Description("Lets the sender schedule a one-off or recurring notification")]
         public async Task ScheduleCommand(CommandContext ctx)
         {
-            Optional<DateTimeOffset> sendTimeTest = await GetValueFromMessageWithReattemptsAsync(
-                ctx, _dateTimeOffsetConverter, "What date and time would you like to send the message at? (MM/DD/YYYY HH:mm:ss)", "Could not parse that date, please use the format MM/DD/YYYY HH:mm:ss").ConfigureAwait(false);
-
-            await ctx.RespondAsync(sendTimeTest.Value.ToString()).ConfigureAwait(false);
-            return;
-
             await ctx.RespondAsync($"{Program.NAME} will now walk you through creating a scheduled notification. If you would like to cancel this process at any stage, type {CANCEL_WORD}").ConfigureAwait(false);
 
             Optional<DiscordChannel> channel = await GetValueFromMessageWithReattemptsAsync(
@@ -53,10 +50,11 @@ namespace UVOCBot.Commands
             if (notificationContent.TimedOut)
                 return;
 
-            Optional<DateTimeOffset> sendTime = await GetValueFromMessageWithReattemptsAsync(
-                ctx, _dateTimeOffsetConverter, "What date and time would you like to send the message at? (MM/DD/YYYY HH:mm:ss)", "Could not parse that date, please use the format MM/DD/YYYY HH:mm:ss").ConfigureAwait(false);
+            // Get repeats and repeat count
 
-            string message = "Great! Your notification (ID: {id}) has been scheduled for {DD @ HH:MM}. " +
+            Optional<DateTimeOffset> sendTime = await GetTime(ctx).ConfigureAwait(false);
+
+            string message = $"Great! Your notification (ID: {{id}}) has been scheduled for {sendTime.Value.ToString(DATETIME_FORMAT)}. " +
                 $"Users with the role `{role.Value.Name}` will be notified in {channel.Value.Mention} with the message:";
 
             await ctx.RespondAsync(message).ConfigureAwait(false);
@@ -72,13 +70,13 @@ namespace UVOCBot.Commands
         /// <param name="initialMessage">The initial message to send, to ask the user for a certain value. This message is only sent once</param>
         /// <param name="onFailureMessage">The message to send when a user fails to provide a correct value</param>
         /// <returns></returns>
-        private async Task<Optional<T>> GetValueFromMessageWithReattemptsAsync<T>(CommandContext ctx, IArgumentConverter<T> converter, string initialMessage, string onFailureMessage)
+        private async Task<Optional<T>> GetValueFromMessageWithReattemptsAsync<T>(CommandContext ctx, IArgumentConverter<T> converter, string initialMessage, string onFailureMessage, TimeSpan? timeoutOverride = null)
         {
             await ctx.RespondAsync(initialMessage).ConfigureAwait(false);
 
             while (true)
             {
-                InteractivityResult<DiscordMessage> result = await ctx.Message.GetNextMessageAsync().ConfigureAwait(false);
+                InteractivityResult<DiscordMessage> result = await ctx.Message.GetNextMessageAsync(timeoutOverride).ConfigureAwait(false);
 
                 if (!result.TimedOut)
                 {
@@ -97,6 +95,31 @@ namespace UVOCBot.Commands
                     return Optional.FromNoValue<T>();
                 }
             }
+        }
+
+        private async Task<Optional<DateTimeOffset>> GetTime(CommandContext ctx)
+        {
+            Optional<DateTimeOffset> sendTime = Optional.FromNoValue<DateTimeOffset>();
+            while (true)
+            {
+                sendTime = await GetValueFromMessageWithReattemptsAsync(
+                    ctx,
+                    _dateTimeOffsetConverter,
+                    $"What date and time **(in UTC)** would you like to send the message at? ({DATETIME_FORMAT}, e.g. {DATETIME_FORMAT_EXAMPLE})",
+                    $"Could not parse that date, please use the format {DATETIME_FORMAT}, e.g. {DATETIME_FORMAT_EXAMPLE} for a **UTC** date/time").ConfigureAwait(false);
+
+                if (!sendTime.HasValue)
+                    return Optional.FromNoValue<DateTimeOffset>();
+                else if (sendTime.Value < DateTimeOffset.UtcNow)
+                    await ctx.RespondAsync("You can't pick a date/time in the past!").ConfigureAwait(false);
+                else
+                    return sendTime.Value;
+            }
+        }
+
+        private async Task<Optional<>> GetRepeat()
+        {
+
         }
 
         /// <summary>

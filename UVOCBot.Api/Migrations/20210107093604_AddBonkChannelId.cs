@@ -10,7 +10,7 @@ namespace UVOCBot.Api.Migrations
                 name: "BonkChannelId",
                 table: "GuildSettings",
                 type: "bigint unsigned",
-                nullable: false,
+                nullable: true,
                 defaultValue: 0ul);
         }
 

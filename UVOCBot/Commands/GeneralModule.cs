@@ -99,7 +99,8 @@ namespace UVOCBot.Commands
             await ctx.RespondAsync($"**{memberToBonk.DisplayName}** has been bonked :smirk::hammer:").ConfigureAwait(false);
         }
 
-        [Command("bonk")]
+        [Command("bonk-channel")]
+        [Description("Sets the voice channel for the bonk command")]
         [RequireGuild]
         [RequirePermissions(Permissions.MoveMembers)]
         public async Task BonkCommand(CommandContext ctx, [Description("The voice channel to send members to when they are bonked")] DiscordChannel bonkChannel)

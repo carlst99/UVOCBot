@@ -1,6 +1,6 @@
 ﻿namespace UVOCBot.Model.Planetside
 {
-    public enum Zone
+    public enum ZoneType
     {
         Indar = 2,
         Hossin = 4,

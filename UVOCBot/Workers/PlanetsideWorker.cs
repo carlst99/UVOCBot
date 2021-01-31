@@ -64,7 +64,7 @@ namespace UVOCBot.Workers
                 return;
             }
 
-            Log.Information($"Received census message: {msg}");
+            Log.Verbose($"Received census message: {msg}");
         }
 
         private Task OnCensusDisconnect(DisconnectionInfo info)

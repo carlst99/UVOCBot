@@ -12,6 +12,8 @@ namespace UVOCBot.Commands
 {
     public class GeneralModule : BaseCommandModule
     {
+        public const string RELEASE_NOTES = "- Added a Planetside 2 server status/population command: **ub!help planetside server**";
+
         public IApiService DbApi { get; set; }
 
         [Command("ping")]
@@ -37,7 +39,15 @@ namespace UVOCBot.Commands
         [Description("Gets the current version of this instance of UVOCBot")]
         public async Task VersionCommand(CommandContext ctx)
         {
-            await ctx.RespondAsync($"I'm version **{Assembly.GetEntryAssembly().GetName().Version}**!").ConfigureAwait(false);
+            DiscordEmbedBuilder builder = new DiscordEmbedBuilder
+            {
+                Title = $"Version {Assembly.GetEntryAssembly().GetName().Version}",
+                Color = DiscordColor.Purple,
+                Timestamp = DateTimeOffset.Now
+            };
+            builder.AddField("Release Notes", RELEASE_NOTES);
+
+            await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }
 
         [Command("bonk")]

@@ -12,5 +12,10 @@ namespace UVOCBot.Api.Model
         /// </summary>
         [Key]
         public ulong GuildId { get; set; }
+
+        /// <summary>
+        /// The channel to send users to when the bonk command is used
+        /// </summary>
+        public ulong? BonkChannelId { get; set; }
     }
 }

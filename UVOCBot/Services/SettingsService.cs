@@ -43,13 +43,19 @@ namespace UVOCBot.Services
                 {
                     string filePath = GetFilePath<T>();
 
+                    Stream readStream = null;
                     try
                     {
-                        using Stream readStream = _fileSystem.FileStream.Create(GetFilePath<T>(), FileMode.Open, FileAccess.Read);
+                        readStream = _fileSystem.FileStream.Create(GetFilePath<T>(), FileMode.Open, FileAccess.Read);
                         settings = await JsonSerializer.DeserializeAsync<T>(readStream).ConfigureAwait(true);
-                    } catch
+                    }
+                    catch
                     {
                         settings = (T)new T().Default;
+                    }
+                    finally
+                    {
+                        readStream?.Dispose();
                     }
 
                     _cache.Add(typeof(T), settings);
@@ -75,7 +81,7 @@ namespace UVOCBot.Services
                 if (!_semaphore.WaitOne(1000))
                     throw new TimeoutException("Failed to acquire read mutex");
 
-                Stream writeStream = _fileSystem.FileStream.Create(GetFilePath<T>(), FileMode.Create, FileAccess.Write);
+                using Stream writeStream = _fileSystem.FileStream.Create(GetFilePath<T>(), FileMode.Create, FileAccess.Write);
                 await JsonSerializer.SerializeAsync(writeStream, settings).ConfigureAwait(false);
 
                 _cache[typeof(T)] = settings;

@@ -1,6 +1,6 @@
 # UVOCBot
 
-![.NET Core](https://github.com/carlst99/UVOCBot/workflows/.NET%20Core/badge.svg)
+![Stable Release](https://github.com/carlst99/UVOCBot/workflows/Stable%20Release/badge.svg)
 
 Provides various functions to assist with the Planetside experience of the UVOC outfit Discord server. Current features include:
 
@@ -18,16 +18,16 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a name and icon, and most importantly, **add a bot** to the application. Ensure that you enable the `Presence Intent` and `Server Members Intent`, found under the Bot tab of your application.
 2. Install both the [.NET 5 Runtime and ASP.NET Core 5](https://dotnet.microsoft.com/download/dotnet/5.0) runtime packages. If this fails to work try installing the SDK instead.
-3. Install and setup either [MariaDB](https://mariadb.org/) or [MySQL](https://www.mysql.com). **It is recommended you create a low-privilege user** for the API to connect with. Create a new database for UVOCBot, and grant the respective user access to it.
-3. Download the latest binaries from releases. You'll need both `UVOCBot` and `UVOCBot.Api`. Included in the release is a SQL migration script and optional systemd service files.
-4. If you'll be using systemd to manage UVOCBot, modify the *environment variable files* (`*.env`). Place them and the service files in `/etc/systemd/system/` and enable the service.
+3. Install and setup [MariaDB](https://mariadb.org/). **It is recommended you create a low-privilege user** for the API to connect with. Create a new database for UVOCBot, and grant the respective user access to it.
+3. Download the latest binaries from releases. You'll need both `UVOCBot` and `UVOCBot.Api`. Included in the release are startup scripts, a SQL migration script, and optional systemd service files.
+4. Modify the startup scripts by placing your various tokens and settings in the respective places. Additionally, if you'll be using the systemd service files, modify them to point towards the startup scripts.
 5. Apply the migration script to the database. Instructions can be found in the wiki page for [Updating a Hosted Instance](https://github.com/carlst99/UVOCBot/wiki/Updating-a-Hosted-Instance).
 7. Done! Run UVOCBot using either `systemctl` or the startup scripts. Ensure that you start the API service before running UVOCBot.
 
 # Building and Developing
 
-1. Install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0).
-2. Install [MariaDB](https://mariadb.org/) or [MySQL](https://www.mysql.com). Create a database.
+1. Install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) installed.
+2. Install [MariaDB](https://mariadb.org/). Create a database.
 3. In the `UVOCBot.Api.BotContext` class, customise the database connection string to suit your setup.
 4. Update the database to the latest migration. If you are using the .NET Core CLI, run the `dotnet ef database update` command. If you are using the Visual Studio Package Manager, run the `Update-Database` command.
 5. Set the required environment variables (you can find them in the systemd environment files; `uvocbot.env` and `evocbotapi.env`). I recommend doing this through the `launchSettings.json` file.

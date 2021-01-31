@@ -33,7 +33,7 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             DiscordMessage message = await GetMessageAsync(ctx, channel, messageId).ConfigureAwait(false);
-            if (message != null)
+            if (message is null)
                 return;
 
             int? reactionCount = await CheckForReactionAsync(ctx, message, emoji).ConfigureAwait(false);

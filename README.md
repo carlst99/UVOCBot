@@ -8,7 +8,7 @@ Provides various functions to assist with the Planetside experience of the UVOC 
 - Random team generation
 - Reaction-based role assignment
 
-To my knowledge, there isn't a publicly hosting instance of UVOCBot available. Hence, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
+To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
 
 # Setup
 
@@ -22,7 +22,6 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 3. Download the latest binaries from releases. You'll need both `UVOCBot` and `UVOCBot.Api`. Included in the release are startup scripts, a SQL migration script, and optional systemd service files.
 4. Modify the startup scripts by placing your various tokens and settings in the respective places. Additionally, if you'll be using the systemd service files, modify them to point towards the startup scripts.
 5. Apply the migration script to the database. Instructions can be found in the wiki page for [Updating a Hosted Instance](https://github.com/carlst99/UVOCBot/wiki/Updating-a-Hosted-Instance).
-6. If you'll be managing the UVOCBot components with systemd, place the service files in `/etc/systemd/system/` and enable them.
 7. Done! Run UVOCBot using either `systemctl` or the startup scripts. Ensure that you start the API service before running UVOCBot.
 
 # Building and Developing
@@ -31,8 +30,8 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 2. Install [MariaDB](https://mariadb.org/). Create a database.
 3. In the `UVOCBot.Api.BotContext` class, customise the database connection string to suit your setup.
 4. Update the database to the latest migration. If you are using the .NET Core CLI, run the `dotnet ef database update` command. If you are using the Visual Studio Package Manager, run the `Update-Database` command.
-5. Set the required environment variables (you can find them in the startup scripts; `StartUVOCBot.sh` and `StartUVOCBotAPI.sh`). I recommend doing this through the `launchSettings.json` file.
-6. If you're building with Visual Studio and will be working on a feature that interacts with the RESTful API, I recommend utilising the Multiple Startup feature.
+5. Set the required environment variables (you can find them in the systemd environment files; `uvocbot.env` and `evocbotapi.env`). I recommend doing this through the `launchSettings.json` file.
+6. If you're building with Visual Studio and will be working on a feature that interacts with the RESTful API, I recommend utilising the Multiple Startup feature so that you can easily debug both projects
 
 ### Project Structure
 

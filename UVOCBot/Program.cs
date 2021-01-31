@@ -35,6 +35,7 @@ namespace UVOCBot
         private const string TWITTER_API_SECRET_ENV = "UVOCBOT_TWITTERAPI_SECRET";
         private const string TWITTER_API_BEARER_ENV = "UVOCBOT_TWITTERAPI_BEARER_TOKEN";
         private const string API_ENDPOINT_ENV = "UVOCBOT_API_ENDPOINT";
+        private const string CENSUS_API_KEY = "UVOCBOT_DBG_CENSUS_KEY";
 
         public const string PREFIX = "ub!";
         public const string NAME = "UVOCBot";
@@ -57,9 +58,11 @@ namespace UVOCBot
             }
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .UseSerilog()
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            Serilog.ILogger logger = null;
+
+            return Host.CreateDefaultBuilder(args)
                 .UseSystemd()
                 .ConfigureServices((_, services) =>
                 {
@@ -67,16 +70,25 @@ namespace UVOCBot
                     services.AddSingleton(fileSystem);
 
                     // Setup Serilog
-                    SetupLogging(fileSystem);
+                    logger = SetupLogging(fileSystem);
                     Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
 
                     services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
                     services.AddSingleton(DiscordClientFactory);
                     services.AddTransient(TwitterClientFactory);
+
                     services.AddSingleton(RestService.For<IApiService>(Environment.GetEnvironmentVariable(API_ENDPOINT_ENV)));
+                    services.AddSingleton(RestService.For<IFisuApiService>("https://ps2.fisu.pw/api"));
+
+                    services.AddCensusServices(options =>
+                        options.CensusServiceId = Environment.GetEnvironmentVariable(CENSUS_API_KEY));
+
                     services.AddHostedService<DiscordWorker>();
                     services.AddHostedService<TwitterWorker>();
-                });
+                    //services.AddHostedService<PlanetsideWorker>();
+                })
+                .UseSerilog(logger);
+        }
 
         /// <summary>
         /// Gets the path to the specified file, assuming that it is in our appdata store
@@ -100,9 +112,9 @@ namespace UVOCBot
                 return directory;
         }
 
-        private static void SetupLogging(IFileSystem fileSystem)
+        private static Serilog.ILogger SetupLogging(IFileSystem fileSystem)
         {
-            Log.Logger = new LoggerConfiguration()
+            Serilog.ILogger logger = new LoggerConfiguration()
 #if DEBUG
                 .MinimumLevel.Debug()
 #else
@@ -110,10 +122,14 @@ namespace UVOCBot
 #endif
                 .MinimumLevel.Override("DSharpPlus", LogEventLevel.Information)
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
                 .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), rollingInterval: RollingInterval.Day)
                 .CreateLogger();
+
+            Log.Logger = logger;
+            return logger;
         }
 
         private static ITwitterClient TwitterClientFactory(IServiceProvider services)

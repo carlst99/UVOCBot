@@ -72,25 +72,6 @@ namespace UVOCBot.Commands
             await ctx.RespondAsync(responseBuilder.ToString().Trim(',', ' ')).ConfigureAwait(false);
         }
 
-        [Command("track-reactions")]
-        [Aliases("tr", "track")]
-        [Description("Continuously grants and revokes a role from people who react (and un-react) with a certain emoji")]
-        public async Task TrackReactionsCommand(
-            CommandContext ctx,
-            [Description("The channel that the message was sent in")] DiscordChannel channel,
-            [Description("The ID of the message")] ulong messageId,
-            [Description("The role that should be assigned to each user")] DiscordRole role,
-            [Description("The reaction emoji")] DiscordEmoji emoji,
-            [Description("Grants the role to those who have already added a reaction. This is the default behaviour")] bool grantToPreviousReactions = true)
-        {
-            // TODO: Check that we don't lose permissions half-way through
-            // TODO: Keep a record of what messages etc. we are tracking
-            // TODO: Check that the message or role isn't deleted halfway through
-            // TODO: Keep a record of who is initially assigned the role, so we can recover from a crash by revoking it from those who have un-reacted in the interim period?
-
-
-        }
-
         private static async Task<DiscordMessage> GetMessageAsync(CommandContext ctx, DiscordChannel channel, ulong messageId)
         {
             try

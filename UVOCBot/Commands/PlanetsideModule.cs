@@ -15,7 +15,7 @@ namespace UVOCBot.Commands
     [Description("Commands that provide information about PlanetSide 2")]
     public class PlanetsideModule : BaseCommandModule
     {
-        public const int MAX_FACTION_POPULATION = 350; // This is a rough value
+        public const int MAX_FACTION_POPULATION = 400; // This is a rough value
 
         public IFisuApiService FisuApi { get; set; }
         public ICensusQueryFactory CensusFactory { get; set; }
@@ -23,7 +23,7 @@ namespace UVOCBot.Commands
         [Command("server")]
         [Aliases("s", "world")]
         [Description("Gets the status and population of a server")]
-        public async Task GetContinentStatusCommand(CommandContext ctx, [Description("The server to get the status of")] string server)
+        public async Task GetWorldStatusCommand(CommandContext ctx, [Description("The server to get the status of")] string server)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
@@ -56,10 +56,6 @@ namespace UVOCBot.Commands
                 Timestamp = DateTimeOffset.UtcNow,
                 Title = world.ToString()
             };
-
-            //builder.AddField(":purple_circle: VS", population.VS.ToString());
-            //builder.AddField(":blue_circle: NC", population.NC.ToString());
-            //builder.AddField(":red_circle: TR", population.TR.ToString());
 
             builder.AddField($":purple_circle: VS - {population.VS}", GetPopulationBar(population.VS));
             builder.AddField($":blue_circle: NC - {population.NC}", GetPopulationBar(population.NC));

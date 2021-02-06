@@ -2,11 +2,13 @@
 
 ![Stable Release](https://github.com/carlst99/UVOCBot/workflows/Stable%20Release/badge.svg)
 
-Provides various functions to assist with the Planetside experience of the UVOC outfit Discord server. Current features include:
+Provides various functions to assist with the experience of the UVOC outfit Discord server. Current features include:
 
 - Tweet relaying - Posts tweets from Twitter users into Discord channel
 - Random team generation
 - Reaction-based role assignment
+- PlanetSide 2 server population and status querying
+- Various other features, such as coinflips and bonking people :smirk:
 
 To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
 
@@ -30,7 +32,7 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 2. Install [MariaDB](https://mariadb.org/). Create a database.
 3. In the `UVOCBot.Api.BotContext` class, customise the database connection string to suit your setup.
 4. Update the database to the latest migration. If you are using the .NET Core CLI, run the `dotnet ef database update` command. If you are using the Visual Studio Package Manager, run the `Update-Database` command.
-5. Set the required environment variables (you can find them in the systemd environment files; `uvocbot.env` and `evocbotapi.env`). I recommend doing this through the `launchSettings.json` file.
+5. Set the required environment variables (you can find them in the environment files; `uvocbot.env` and `evocbotapi.env`). I recommend doing this through the `launchSettings.json` file.
 6. If you're building with Visual Studio and will be working on a feature that interacts with the RESTful API, I recommend utilising the Multiple Startup feature so that you can easily debug both projects
 
 ### Project Structure
@@ -46,6 +48,7 @@ There is also a shared project, `UVOCBot.Core`, which contains models common to 
 UVOCBot is built on the following amazing libraries and frameworks:
 
 - [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/)
+- [DaybreakGames.Census](https://github.com/Lampjaw/DaybreakGames.Census)
 - [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus)
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
 - [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)

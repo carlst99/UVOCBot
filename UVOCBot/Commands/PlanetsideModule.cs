@@ -92,8 +92,8 @@ namespace UVOCBot.Commands
 
         private string GetPopulationBar(int population)
         {
-            int percentage = (int)((double)population / MAX_FACTION_POPULATION * 10);
-            int remainder = 10 - percentage;
+            double percentage = Math.Ceiling((double)population / MAX_FACTION_POPULATION * 10);
+            double remainder = 10 - percentage;
             string result = string.Empty;
 
             for (int i = 0; i < percentage; i++)

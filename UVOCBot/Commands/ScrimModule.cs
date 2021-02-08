@@ -3,17 +3,15 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DSharpPlus.Interactivity.Extensions;
 using UVOCBot.Model;
-using DSharpPlus.Interactivity;
-using System;
-using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
-    [Group("scrim")]
     [Description("Commands pertinent to scrim organisation")]
     [RequireGuild]
     public class ScrimModule : BaseCommandModule
@@ -26,7 +24,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("distribute-accounts")]
-        [Aliases("da", "handout", "distribute")]
+        [Aliases("handout", "distribute")]
         [RequireGuild]
         [RequirePermissions(Permissions.SendMessages | Permissions.ManageRoles)]
         public async Task AccountDistributionCommand(
@@ -67,8 +65,6 @@ namespace UVOCBot.Commands
                 await dmChannel.TrySendDirectMessage("Your distribution request has timed out.", ctx, $"{ctx.Member.Mention}, your distribution request has timed out.").ConfigureAwait(false);
                 return;
             }
-
-
         }
     }
 }

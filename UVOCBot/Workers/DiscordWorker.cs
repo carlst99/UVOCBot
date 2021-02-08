@@ -20,7 +20,7 @@ namespace UVOCBot.Workers
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await _discordClient.ConnectAsync(new DiscordActivity(Program.PREFIX + "help", ActivityType.ListeningTo)).ConfigureAwait(false);
+            await _discordClient.ConnectAsync(new DiscordActivity(Program.DEFAULT_PREFIX + "help", ActivityType.ListeningTo)).ConfigureAwait(false);
             await Task.Delay(-1, stoppingToken).ConfigureAwait(false);
         }
 

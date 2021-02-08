@@ -12,7 +12,9 @@ namespace UVOCBot.Commands
 {
     public class GeneralModule : BaseCommandModule
     {
-        public const string RELEASE_NOTES = "- Added a Planetside 2 server status/population command: **ub!help planetside server**";
+        public const string RELEASE_NOTES = "- The in/famous `ub!ps2 s <world>` command is now simply `ub!pop <world>`" +
+            "\r\n- Incorrect command usage/command failure is now indicated" +
+            "\r\n- The command groups `planetside` and `teams` have been removed. All commands contained in those groups are now top-level";
 
         public IApiService DbApi { get; set; }
 

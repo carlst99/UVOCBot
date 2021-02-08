@@ -39,7 +39,6 @@ namespace UVOCBot
         private const string CENSUS_API_KEY = "UVOCBOT_DBG_CENSUS_KEY";
 
         public const string PREFIX = "ub!";
-        public const string NAME = "UVOCBot";
 
         public static int Main(string[] args)
         {

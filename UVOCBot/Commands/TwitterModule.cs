@@ -175,7 +175,7 @@ namespace UVOCBot.Commands
 
             if ((channelPerms & Permissions.SendMessages) == 0 || (channelPerms & Permissions.AccessChannels) == 0)
             {
-                await ctx.RespondAsync($"{Program.NAME} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
                 return;
             }
 

@@ -76,7 +76,7 @@ namespace UVOCBot.Commands
             // Check that UVOCBot can move members out of the current channel
             if (!CheckPermission(ctx.Member.VoiceState.Channel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
-                await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members from your current channel").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members from your current channel").ConfigureAwait(false);
                 return;
             }
 
@@ -101,7 +101,7 @@ namespace UVOCBot.Commands
             // Check that UVOCBot can move members into the bonk channel
             if (!CheckPermission(bonkChannel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
-                await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
                 return;
             }
 

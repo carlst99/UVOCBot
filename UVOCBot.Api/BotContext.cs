@@ -7,13 +7,13 @@ namespace UVOCBot.Api
 {
     public sealed class BotContext : DbContext
     {
-        private readonly DatabaseConfig _config;
+        private readonly DatabaseOptions _config;
 
         public DbSet<GuildSettings> GuildSettings { get; set; }
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
         public DbSet<TwitterUser> TwitterUsers { get; set; }
 
-        public BotContext(IOptions<DatabaseConfig> config)
+        public BotContext(IOptions<DatabaseOptions> config)
         {
             _config = config.Value;
         }

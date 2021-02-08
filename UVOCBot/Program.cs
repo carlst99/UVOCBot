@@ -4,6 +4,7 @@ using DSharpPlus.CommandsNext.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Refit;
 using Serilog;
 using Serilog.Events;
@@ -13,6 +14,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
+using UVOCBot.Config;
 using UVOCBot.Services;
 using UVOCBot.Workers;
 
@@ -28,17 +30,7 @@ namespace UVOCBot
 
     public static class Program
     {
-        /// <summary>
-        /// The name of the environment variable storing our bot token
-        /// </summary>
-        private const string BOT_TOKEN_ENV = "UVOCBOT_BOT_TOKEN";
-        private const string TWITTER_API_KEY_ENV = "UVOCBOT_TWITTERAPI_KEY";
-        private const string TWITTER_API_SECRET_ENV = "UVOCBOT_TWITTERAPI_SECRET";
-        private const string TWITTER_API_BEARER_ENV = "UVOCBOT_TWITTERAPI_BEARER_TOKEN";
-        private const string API_ENDPOINT_ENV = "UVOCBOT_API_ENDPOINT";
-        private const string CENSUS_API_KEY = "UVOCBOT_DBG_CENSUS_KEY";
-
-        public const string PREFIX = "ub!";
+        public const string DEFAULT_PREFIX = "ub!";
 
         public static int Main(string[] args)
         {
@@ -64,8 +56,11 @@ namespace UVOCBot
 
             return Host.CreateDefaultBuilder(args)
                 .UseSystemd()
-                .ConfigureServices((_, services) =>
+                .ConfigureServices((c, services) =>
                 {
+                    services.Configure<TwitterOptions>(c.Configuration.GetSection(TwitterOptions.ConfigSectionName));
+                    services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
+
                     IFileSystem fileSystem = new FileSystem();
                     services.AddSingleton(fileSystem);
 
@@ -73,15 +68,21 @@ namespace UVOCBot
                     logger = SetupLogging(fileSystem);
                     Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
 
+                    // Setup 
                     services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
                     services.AddSingleton(DiscordClientFactory);
                     services.AddTransient(TwitterClientFactory);
 
-                    services.AddSingleton(RestService.For<IApiService>(Environment.GetEnvironmentVariable(API_ENDPOINT_ENV)));
+                    // Setup the API services
+                    services.AddSingleton((s) => RestService.For<IApiService>(
+                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
+
                     services.AddSingleton(RestService.For<IFisuApiService>("https://ps2.fisu.pw/api"));
 
+                    // Setup the Census services
+                    GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
                     services.AddCensusServices(options =>
-                        options.CensusServiceId = Environment.GetEnvironmentVariable(CENSUS_API_KEY));
+                        options.CensusServiceId = generalOptions.CensusApiKey);
 
                     services.AddHostedService<DiscordWorker>();
                     services.AddHostedService<TwitterWorker>();
@@ -134,19 +135,23 @@ namespace UVOCBot
 
         private static ITwitterClient TwitterClientFactory(IServiceProvider services)
         {
+            TwitterOptions options = services.GetRequiredService<IOptions<TwitterOptions>>().Value;
+
             return new TwitterClient(new ConsumerOnlyCredentials
             {
-                ConsumerKey = Environment.GetEnvironmentVariable(TWITTER_API_KEY_ENV),
-                ConsumerSecret = Environment.GetEnvironmentVariable(TWITTER_API_SECRET_ENV),
-                BearerToken = Environment.GetEnvironmentVariable(TWITTER_API_BEARER_ENV)
+                ConsumerKey = options.Key,
+                ConsumerSecret = options.Secret,
+                BearerToken = options.BearerToken
             });
         }
 
         private static DiscordClient DiscordClientFactory(IServiceProvider services)
         {
+            GeneralOptions options = services.GetRequiredService<IOptions<GeneralOptions>>().Value;
+
             DiscordClient client = new DiscordClient(new DiscordConfiguration
             {
-                Token = Environment.GetEnvironmentVariable(BOT_TOKEN_ENV, EnvironmentVariableTarget.Process),
+                Token = options.BotToken,
                 TokenType = TokenType.Bot,
                 LoggerFactory = new LoggerFactory().AddSerilog(),
                 Intents = DiscordIntents.DirectMessageReactions
@@ -166,7 +171,7 @@ namespace UVOCBot
 
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { PREFIX },
+                StringPrefixes = new string[] { DEFAULT_PREFIX },
                 Services = services
             });
             commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
@@ -176,13 +181,13 @@ namespace UVOCBot
             {
                 Type exceptionType = e.Exception.GetType();
                 if (exceptionType.Equals(typeof(ArgumentException)))
-                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{PREFIX}help` for more information.").ConfigureAwait(false);
+                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{DEFAULT_PREFIX}help` for more information.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(TargetInvocationException)))
                     await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(ChecksFailedException)))
                     await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(CommandNotFoundException)))
-                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{PREFIX}help` for a list of available commands.").ConfigureAwait(false);
+                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{DEFAULT_PREFIX}help` for a list of available commands.").ConfigureAwait(false);
                 else
                     await e.Context.RespondAsync("Command failed: " + e.Exception).ConfigureAwait(false);
             };

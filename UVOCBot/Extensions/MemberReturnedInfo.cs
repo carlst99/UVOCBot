@@ -1,6 +1,6 @@
 ﻿using DSharpPlus.Entities;
 
-namespace UVOCBot.Utils
+namespace UVOCBot.Extensions
 {
     public struct MemberReturnedInfo
     {

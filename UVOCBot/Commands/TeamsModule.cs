@@ -12,8 +12,6 @@ using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
-    [Group("teams")]
-    [Aliases("team")]
     [Description("Commands that help with generating team lists")]
     [RequireGuild]
     public class TeamsModule : BaseCommandModule

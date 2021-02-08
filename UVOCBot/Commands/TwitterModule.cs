@@ -48,10 +48,10 @@ namespace UVOCBot.Commands
                 return;
 
             // Find or create the guild twitter settings record
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             // Find or create the twitter user record
-            TwitterUserDTO twitterUser = await GetDbTwitterUserAsync(long.Parse(user.User.Id)).ConfigureAwait(false);
+            TwitterUserDTO twitterUser = await DbApi.GetDbTwitterUserAsync(long.Parse(user.User.Id)).ConfigureAwait(false);
 
             if (!settings.TwitterUsers.Contains(twitterUser.UserId))
                 await DbApi.CreateGuildTwitterLink(settings.GuildId, twitterUser.UserId).ConfigureAwait(false);
@@ -80,7 +80,7 @@ namespace UVOCBot.Commands
             if (user is null)
                 return;
 
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
             long twitterUserId = long.Parse(user.User.Id);
 
             if (settings.TwitterUsers.Contains(twitterUserId))
@@ -102,7 +102,7 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Find the settings record for the calling guild
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             if (settings.TwitterUsers.Count == 0)
             {
@@ -143,7 +143,7 @@ namespace UVOCBot.Commands
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
             if (settings.RelayChannelId is null)
             {
                 await ctx.RespondAsync("A relay channel has not yet been set").ConfigureAwait(false);
@@ -175,11 +175,11 @@ namespace UVOCBot.Commands
 
             if ((channelPerms & Permissions.SendMessages) == 0 || (channelPerms & Permissions.AccessChannels) == 0)
             {
-                await ctx.RespondAsync($"{Program.NAME} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
                 return;
             }
 
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             settings.RelayChannelId = channel.Id;
             await DbApi.UpdateGuildTwitterSetting(settings.GuildId, settings).ConfigureAwait(false);
@@ -193,7 +193,7 @@ namespace UVOCBot.Commands
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             settings.IsEnabled = false;
             await DbApi.UpdateGuildTwitterSetting(settings.GuildId, settings).ConfigureAwait(false);
@@ -207,7 +207,7 @@ namespace UVOCBot.Commands
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             settings.IsEnabled = true;
             await DbApi.UpdateGuildTwitterSetting(settings.GuildId, settings).ConfigureAwait(false);
@@ -221,7 +221,7 @@ namespace UVOCBot.Commands
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
-            GuildTwitterSettingsDTO settings = await GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
             StringBuilder sb = new StringBuilder("Tweet relaying is ");
 
             if (settings.IsEnabled)
@@ -269,38 +269,6 @@ namespace UVOCBot.Commands
             {
                 await ctx.RespondAsync($"The Twitter user **{username}** does not exist").ConfigureAwait(false);
                 return null;
-            }
-
-            return user;
-        }
-
-        private async Task<GuildTwitterSettingsDTO> GetGuildTwitterSettingsAsync(ulong id)
-        {
-            GuildTwitterSettingsDTO settings;
-            try
-            {
-                settings = await DbApi.GetGuildTwitterSetting(id).ConfigureAwait(false);
-            }
-            catch
-            {
-                settings = new GuildTwitterSettingsDTO(id);
-                await DbApi.CreateGuildTwitterSettings(settings).ConfigureAwait(false);
-            }
-
-            return settings;
-        }
-
-        private async Task<TwitterUserDTO> GetDbTwitterUserAsync(long id)
-        {
-            TwitterUserDTO user;
-            try
-            {
-                user = await DbApi.GetTwitterUser(id).ConfigureAwait(false);
-            }
-            catch
-            {
-                user = new TwitterUserDTO(id);
-                await DbApi.CreateTwitterUser(user).ConfigureAwait(false);
             }
 
             return user;

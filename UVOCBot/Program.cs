@@ -1,5 +1,6 @@
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,6 @@ namespace UVOCBot
         private const string CENSUS_API_KEY = "UVOCBOT_DBG_CENSUS_KEY";
 
         public const string PREFIX = "ub!";
-        public const string NAME = "UVOCBot";
 
         public static int Main(string[] args)
         {
@@ -158,6 +158,12 @@ namespace UVOCBot
                             | DiscordIntents.GuildMembers
             });
 
+            client.ClientErrored += (_, e) =>
+            {
+                Log.Error(e.Exception, "The event {event} errored", e.EventName);
+                return Task.CompletedTask;
+            };
+
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { PREFIX },
@@ -165,6 +171,21 @@ namespace UVOCBot
             });
             commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
+
+            commands.CommandErrored += async (_, e) =>
+            {
+                Type exceptionType = e.Exception.GetType();
+                if (exceptionType.Equals(typeof(ArgumentException)))
+                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{PREFIX}help` for more information.").ConfigureAwait(false);
+                else if (exceptionType.Equals(typeof(TargetInvocationException)))
+                    await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
+                else if (exceptionType.Equals(typeof(ChecksFailedException)))
+                    await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
+                else if (exceptionType.Equals(typeof(CommandNotFoundException)))
+                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{PREFIX}help` for a list of available commands.").ConfigureAwait(false);
+                else
+                    await e.Context.RespondAsync("Command failed: " + e.Exception).ConfigureAwait(false);
+            };
 
             return client;
         }

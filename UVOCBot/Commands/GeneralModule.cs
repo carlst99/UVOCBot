@@ -76,12 +76,12 @@ namespace UVOCBot.Commands
             // Check that UVOCBot can move members out of the current channel
             if (!CheckPermission(ctx.Member.VoiceState.Channel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
-                await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members from your current channel").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members from your current channel").ConfigureAwait(false);
                 return;
             }
 
             // Find or create the guild settings record
-            GuildSettingsDTO settings = await GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildSettingsDTO settings = await DbApi.GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             // Check that a bonk channel has been set
             if (settings.BonkChannelId is null)
@@ -101,7 +101,7 @@ namespace UVOCBot.Commands
             // Check that UVOCBot can move members into the bonk channel
             if (!CheckPermission(bonkChannel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
-                await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
                 return;
             }
 
@@ -123,7 +123,7 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            GuildSettingsDTO settings = await GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildSettingsDTO settings = await DbApi.GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
             settings.BonkChannelId = bonkChannel.Id;
             await DbApi.UpdateGuildSettings(settings.GuildId, settings).ConfigureAwait(false);
 
@@ -150,6 +150,13 @@ namespace UVOCBot.Commands
             builder.AddField("TestInlineFieldName2", "TestInlineFieldValue2", true);
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }
+
+        [Command("throw-exception")]
+        [RequireOwner]
+        public Task ThrowExceptionCommand(CommandContext ctx)
+        {
+            throw new Exception();
+        }
 #endif
 
         /// <summary>
@@ -163,22 +170,6 @@ namespace UVOCBot.Commands
         {
             Permissions permissions = channel.PermissionsFor(member);
             return (permissions & permission) != 0;
-        }
-
-        private async Task<GuildSettingsDTO> GetGuildSettingsAsync(ulong id)
-        {
-            GuildSettingsDTO settings;
-            try
-            {
-                settings = await DbApi.GetGuildSetting(id).ConfigureAwait(false);
-            }
-            catch
-            {
-                settings = new GuildSettingsDTO(id);
-                await DbApi.CreateGuildSettings(settings).ConfigureAwait(false);
-            }
-
-            return settings;
         }
     }
 }

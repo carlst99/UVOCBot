@@ -19,8 +19,9 @@ namespace UVOCBot.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<BotContext>();
-            services.AddControllers();
+            services.Configure<DatabaseConfig>(Configuration.GetSection(DatabaseConfig.ConfigSectionName))
+                    .AddDbContext<BotContext>()
+                    .AddControllers();
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo { Title = "UVOCBot.Api", Version = "v1" }));
         }
 

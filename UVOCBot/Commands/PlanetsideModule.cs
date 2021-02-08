@@ -10,8 +10,6 @@ using UVOCBot.Services;
 
 namespace UVOCBot.Commands
 {
-    [Group("planetside")]
-    [Aliases("ps2", "ps")]
     [Description("Commands that provide information about PlanetSide 2")]
     public class PlanetsideModule : BaseCommandModule
     {
@@ -20,8 +18,8 @@ namespace UVOCBot.Commands
         public IFisuApiService FisuApi { get; set; }
         public ICensusQueryFactory CensusFactory { get; set; }
 
-        [Command("server")]
-        [Aliases("s", "world")]
+        [Command("population")]
+        [Aliases("pop", "server-status")]
         [Description("Gets the status and population of a server")]
         public async Task GetWorldStatusCommand(CommandContext ctx, [Description("The server to get the status of")] string server)
         {

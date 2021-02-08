@@ -25,7 +25,7 @@ namespace UVOCBot.Commands
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
-            if (!Enum.TryParse(server, out WorldType world))
+            if (!Enum.TryParse(server, true, out WorldType world))
             {
                 await ctx.RespondAsync("That server does not exist").ConfigureAwait(false);
                 return;

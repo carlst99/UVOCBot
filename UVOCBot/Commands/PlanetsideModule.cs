@@ -5,6 +5,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using System;
 using System.Threading.Tasks;
+using UVOCBot.Core.Model;
 using UVOCBot.Model.Planetside;
 using UVOCBot.Services;
 
@@ -17,6 +18,27 @@ namespace UVOCBot.Commands
 
         public IFisuApiService FisuApi { get; set; }
         public ICensusQueryFactory CensusFactory { get; set; }
+        public IApiService DbApi { get; set; }
+
+        [Command("population")]
+        [Description("Gets the status and population of your default server")]
+        [RequireGuild]
+        public async Task GetWorldStatusCommand(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            PlanetsideSettingsDTO settings = await DbApi.GetPlanetsideSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            if (settings.DefaultWorld == null)
+            {
+                await ctx.RespondAsync("You haven't set a default server! Please do so using the `default-server` command").ConfigureAwait(false);
+                return;
+            }
+            else
+            {
+                WorldType world = (WorldType)((int)settings.DefaultWorld);
+                await GetWorldStatusCommand(ctx, world.ToString()).ConfigureAwait(false);
+            }
+        }
 
         [Command("population")]
         [Aliases("pop", "server-status")]
@@ -60,6 +82,24 @@ namespace UVOCBot.Commands
             builder.AddField($":red_circle: TR - {population.TR}", GetPopulationBar(population.TR));
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
+        }
+
+        [Command("default-server")]
+        [Description("Sets the default world for planetside-related commands")]
+        [RequireGuild]
+        public async Task DefaultWorldCommand(CommandContext ctx, string server)
+        {
+            if (!Enum.TryParse(server, true, out WorldType world))
+            {
+                await ctx.RespondAsync("That server does not exist").ConfigureAwait(false);
+                return;
+            }
+
+            PlanetsideSettingsDTO settings = await DbApi.GetPlanetsideSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            settings.DefaultWorld = (int)world;
+            await DbApi.UpdatePlanetsideSettings(ctx.Guild.Id, settings).ConfigureAwait(false);
+
+            await ctx.RespondAsync($"Your default server has been set to `{world}`").ConfigureAwait(false);
         }
 
         private async Task<string> GetWorldStatusString(WorldType world)

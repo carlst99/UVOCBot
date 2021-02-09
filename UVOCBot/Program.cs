@@ -1,6 +1,7 @@
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Exceptions;
+using DSharpPlus.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -31,6 +32,7 @@ namespace UVOCBot
     public static class Program
     {
         public const string DEFAULT_PREFIX = "ub!";
+        public static readonly DiscordColor DEFAULT_EMBED_COLOUR = DiscordColor.Purple;
 
         public static int Main(string[] args)
         {

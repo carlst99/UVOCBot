@@ -172,7 +172,7 @@ namespace UVOCBot.Commands
 
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
             {
-                Color = DiscordColor.Aquamarine,
+                Color = Program.DEFAULT_EMBED_COLOUR,
                 Timestamp = DateTimeOffset.UtcNow,
                 Title = embedTitle
             };

@@ -44,7 +44,7 @@ namespace UVOCBot.Commands
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder
             {
                 Title = $"Version {Assembly.GetEntryAssembly().GetName().Version}",
-                Color = DiscordColor.Purple,
+                Color = Program.DEFAULT_EMBED_COLOUR,
                 Timestamp = DateTimeOffset.Now
             };
             builder.AddField("Release Notes", RELEASE_NOTES);
@@ -139,7 +139,7 @@ namespace UVOCBot.Commands
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
             {
-                Color = DiscordColor.Aquamarine,
+                Color = Program.DEFAULT_EMBED_COLOUR,
                 Description = "Test Description",
                 Footer = new DiscordEmbedBuilder.EmbedFooter { Text = "Test Footer" },
                 Author = new DiscordEmbedBuilder.EmbedAuthor { Name = "Test Author" },

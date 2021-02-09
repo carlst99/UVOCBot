@@ -49,7 +49,7 @@ namespace UVOCBot.Commands
 
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
             {
-                Color = DiscordColor.Aquamarine,
+                Color = Program.DEFAULT_EMBED_COLOUR,
                 Description = await GetWorldStatusString(world).ConfigureAwait(false),
                 Timestamp = DateTimeOffset.UtcNow,
                 Title = world.ToString()

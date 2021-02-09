@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <Version>0.0.9</Version>
+    <Version>0.1.0</Version>
     <UserSecretsId>dotnet-UVOCBot-50875F72-6188-46E3-AAD3-240E24100BB5</UserSecretsId>
   </PropertyGroup>
 

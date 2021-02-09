@@ -14,9 +14,9 @@ namespace UVOCBot.Commands
 {
     public class GeneralModule : BaseCommandModule
     {
-        public const string RELEASE_NOTES = "- The in/famous `ub!ps2 s <world>` command is now simply `ub!pop <world>`" +
-            "\r\n- Incorrect command usage/command failure is now indicated" +
-            "\r\n- The command groups `planetside` and `teams` have been removed. All commands contained in those groups are now top-level";
+        public const string RELEASE_NOTES = "- **Custom prefixes!** Set a prefix to trigger commands using `ub!prefix`" +
+            "\r\n- **Purple embeds** - Standardised the embed colour to purple" +
+            "\r\n- **Default PlanetSide server** - PlanetSide commands that require a server can now do away with this argument. Use `ub!default-server` to set your default";
 
         public IApiService DbApi { get; set; }
         public IPrefixService PrefixService { get; set; }

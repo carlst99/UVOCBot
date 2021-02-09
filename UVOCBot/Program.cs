@@ -196,7 +196,7 @@ namespace UVOCBot
                 else if (exceptionType.Equals(typeof(CommandNotFoundException)))
                     await e.Context.RespondAsync($"That command doesn't exist! Please see `{options.CommandPrefix}help` for a list of available commands.").ConfigureAwait(false);
                 else
-                    await e.Context.RespondAsync("Command failed: " + e.Exception).ConfigureAwait(false);
+                    await e.Context.RespondAsync("Command failed. Please send this to the developers:\r\n" + e.Exception).ConfigureAwait(false);
             };
 
             return client;

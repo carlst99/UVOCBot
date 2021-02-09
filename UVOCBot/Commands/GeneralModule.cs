@@ -19,6 +19,7 @@ namespace UVOCBot.Commands
             "\r\n- The command groups `planetside` and `teams` have been removed. All commands contained in those groups are now top-level";
 
         public IApiService DbApi { get; set; }
+        public IPrefixService PrefixService { get; set; }
 
         public IOptions<GeneralOptions> GOptions { get; set; }
         public GeneralOptions GeneralOptions => GOptions.Value;
@@ -55,6 +56,25 @@ namespace UVOCBot.Commands
             builder.AddField("Release Notes", RELEASE_NOTES);
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
+        }
+        [Command("prefix")]
+        [Description("Removes your custom prefix")]
+        [RequireGuild]
+        [RequireUserPermissions(Permissions.ManageGuild)]
+        public async Task PrefixCommand(CommandContext ctx)
+        {
+            await PrefixService.RemovePrefixAsync(ctx.Guild.Id).ConfigureAwait(false);
+            await ctx.RespondAsync($"Your prefix has been unset. You can trigger commands with `{GeneralOptions.CommandPrefix}`").ConfigureAwait(false);
+        }
+
+        [Command("prefix")]
+        [Description("Lets you set a custom prefix with which to trigger commands")]
+        [RequireGuild]
+        [RequireUserPermissions(Permissions.ManageGuild)]
+        public async Task PrefixCommand(CommandContext ctx, string prefix)
+        {
+            await PrefixService.UpdatePrefixAsync(ctx.Guild.Id, prefix).ConfigureAwait(false);
+            await ctx.RespondAsync($"You can now trigger commands with the prefix `{prefix}`").ConfigureAwait(false);
         }
 
         [Command("bonk")]

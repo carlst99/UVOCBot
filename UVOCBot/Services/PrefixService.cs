@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UVOCBot.Config;
@@ -23,6 +24,9 @@ namespace UVOCBot.Services
 
         public string GetPrefix(ulong guildId)
         {
+            if (!IsSetup)
+                throw new InvalidOperationException("Please call SetupAsync() before using the " + nameof(PrefixService));
+
             if (_guildPrefixPairs.ContainsKey(guildId))
                 return _guildPrefixPairs[guildId];
             else
@@ -31,6 +35,9 @@ namespace UVOCBot.Services
 
         public async Task RemovePrefixAsync(ulong guildId)
         {
+            if (!IsSetup)
+                throw new InvalidOperationException("Please call SetupAsync() before using the " + nameof(PrefixService));
+
             _guildPrefixPairs.Remove(guildId);
             await UpdateDbPrefix(guildId, null).ConfigureAwait(false);
         }
@@ -46,13 +53,16 @@ namespace UVOCBot.Services
 
         public async Task UpdatePrefixAsync(ulong guildId, string newPrefix)
         {
+            if (!IsSetup)
+                throw new InvalidOperationException("Please call SetupAsync() before using the " + nameof(PrefixService));
+
             _guildPrefixPairs[guildId] = newPrefix;
             await UpdateDbPrefix(guildId, newPrefix).ConfigureAwait(false);
         }
 
         private async Task UpdateDbPrefix(ulong guildId, string newPrefix)
         {
-            GuildSettingsDTO settings = await _dbApi.GetGuildSetting(guildId).ConfigureAwait(false);
+            GuildSettingsDTO settings = await _dbApi.GetGuildSettingsAsync(guildId).ConfigureAwait(false);
             settings.Prefix = newPrefix;
             await _dbApi.UpdateGuildSettings(guildId, settings).ConfigureAwait(false);
         }

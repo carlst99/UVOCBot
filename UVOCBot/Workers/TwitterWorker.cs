@@ -56,7 +56,7 @@ namespace UVOCBot.Workers
                 int failureCount = 0;
 
                 // Load all of the twitter users we should relay tweets from
-                foreach (GuildTwitterSettingsDTO settings in await _dbApi.GetGuildTwitterSettings(true).ConfigureAwait(false))
+                foreach (GuildTwitterSettingsDTO settings in await _dbApi.GetAllGuildTwitterSettings(true).ConfigureAwait(false))
                 {
                     foreach (long twitterUserId in settings.TwitterUsers)
                     {

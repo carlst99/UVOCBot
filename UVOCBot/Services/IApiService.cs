@@ -32,10 +32,10 @@ namespace UVOCBot.Services
         #region GuildTwitterSettings
 
         [Get("/guildtwittersettings")]
-        Task<List<GuildTwitterSettingsDTO>> GetGuildTwitterSettings([Query] bool filterByEnabled);
+        Task<List<GuildTwitterSettingsDTO>> GetAllGuildTwitterSettings([Query] bool filterByEnabled);
 
         [Get("/guildtwittersettings/{id}")]
-        Task<GuildTwitterSettingsDTO> GetGuildTwitterSetting(ulong id);
+        Task<GuildTwitterSettingsDTO> GetGuildTwitterSettings(ulong id);
 
         [Get("/guildtwittersettings/exists/{id}")]
         Task<bool> GuildTwitterSettingsExists(ulong id);
@@ -64,10 +64,10 @@ namespace UVOCBot.Services
         #region GuildSettings
 
         [Get("/guildsettings")]
-        Task<List<GuildSettingsDTO>> GetGuildSettings([Query] bool hasPrefix = false);
+        Task<List<GuildSettingsDTO>> GetAllGuildSettings([Query] bool hasPrefix = false);
 
         [Get("/guildsettings/{id}")]
-        Task<GuildSettingsDTO> GetGuildSetting(ulong id);
+        Task<GuildSettingsDTO> GetGuildSettings(ulong id);
 
         [Put("/guildsettings/{id}")]
         Task UpdateGuildSettings(ulong id, GuildSettingsDTO settings);
@@ -77,6 +77,25 @@ namespace UVOCBot.Services
 
         [Delete("/guildsettings/{id}")]
         Task DeleteGuildSettings(ulong id);
+
+        #endregion
+
+        #region PlanetsideSettings
+
+        [Get("/planetsidesettings")]
+        Task<List<PlanetsideSettingsDTO>> GetAllPlanetsideSettings();
+
+        [Get("/planetsidesettings/{id}")]
+        Task<PlanetsideSettingsDTO> GetPlanetsideSettings(ulong id);
+
+        [Put("/planetsidesettings/{id}")]
+        Task UpdatePlanetsideSettings(ulong id, PlanetsideSettingsDTO settings);
+
+        [Post("/planetsidesettings")]
+        Task<PlanetsideSettingsDTO> CreatePlanetsideSettings(PlanetsideSettingsDTO settings);
+
+        [Delete("/planetsidesettings/{id}")]
+        Task DeletePlanetsideSettings(ulong id);
 
         #endregion
     }

@@ -44,7 +44,7 @@ namespace UVOCBot.Services
 
         public async Task SetupAsync()
         {
-            List<GuildSettingsDTO> guildSettings = await _dbApi.GetGuildSettings(true).ConfigureAwait(false);
+            List<GuildSettingsDTO> guildSettings = await _dbApi.GetAllGuildSettings(true).ConfigureAwait(false);
             foreach (GuildSettingsDTO dto in guildSettings)
                 _guildPrefixPairs.Add(dto.GuildId, dto.Prefix);
 

@@ -10,7 +10,7 @@ namespace UVOCBot.Services
             GuildTwitterSettingsDTO settings;
             try
             {
-                settings = await service.GetGuildTwitterSetting(id).ConfigureAwait(false);
+                settings = await service.GetGuildTwitterSettings(id).ConfigureAwait(false);
             }
             catch
             {
@@ -42,12 +42,28 @@ namespace UVOCBot.Services
             GuildSettingsDTO settings;
             try
             {
-                settings = await service.GetGuildSetting(id).ConfigureAwait(false);
+                settings = await service.GetGuildSettings(id).ConfigureAwait(false);
             }
             catch
             {
                 settings = new GuildSettingsDTO(id);
                 await service.CreateGuildSettings(settings).ConfigureAwait(false);
+            }
+
+            return settings;
+        }
+
+        public static async Task<PlanetsideSettingsDTO> GetPlanetsideSettingsAsync(this IApiService service, ulong id)
+        {
+            PlanetsideSettingsDTO settings;
+            try
+            {
+                settings = await service.GetPlanetsideSettings(id).ConfigureAwait(false);
+            }
+            catch
+            {
+                settings = new PlanetsideSettingsDTO(id);
+                await service.CreatePlanetsideSettings(settings).ConfigureAwait(false);
             }
 
             return settings;

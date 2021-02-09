@@ -21,9 +21,12 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/GuildSettings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GuildSettingsDTO>>> GetGuildSettings()
+        public async Task<ActionResult<IEnumerable<GuildSettingsDTO>>> GetGuildSettings([FromQuery] bool hasPrefix)
         {
-            return (await _context.GuildSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+            if (hasPrefix)
+                return (await _context.GuildSettings.Where(s => !string.IsNullOrEmpty(s.Prefix)).ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+            else
+                return (await _context.GuildSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
         }
 
         // GET: api/GuildSettings/5
@@ -87,7 +90,8 @@ namespace UVOCBot.Api.Controllers
             return new GuildSettingsDTO
             {
                 GuildId = settings.GuildId,
-                BonkChannelId = settings.BonkChannelId
+                BonkChannelId = settings.BonkChannelId,
+                Prefix = settings.Prefix
             };
         }
 
@@ -96,7 +100,8 @@ namespace UVOCBot.Api.Controllers
             return new GuildSettings
             {
                 GuildId = dto.GuildId,
-                BonkChannelId = dto.BonkChannelId
+                BonkChannelId = dto.BonkChannelId,
+                Prefix = dto.Prefix
             };
         }
 

@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Options;
 using Serilog;
 using System;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models.V2;
+using UVOCBot.Config;
 using UVOCBot.Core.Model;
 using UVOCBot.Services;
 
@@ -28,6 +30,9 @@ namespace UVOCBot.Commands
         public ITwitterClient TwitterClient { private get; set; }
 
         public IApiService DbApi { get; set; }
+
+        public IOptions<GeneralOptions> GOptions { get; set; }
+        public GeneralOptions GeneralOptions => GOptions.Value;
 
         [Command("add-user")]
         [Aliases("add")]
@@ -59,7 +64,7 @@ namespace UVOCBot.Commands
             await ctx.RespondAsync($"Now relaying tweets from **{username}**!").ConfigureAwait(false);
 
             if (settings.RelayChannelId is null)
-                await ctx.RespondAsync($"You haven't set a channel to relay tweets to. Please use the `{Program.DEFAULT_PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+                await ctx.RespondAsync($"You haven't set a channel to relay tweets to. Please use the `{GeneralOptions.CommandPrefix}twitter relay-channel` command").ConfigureAwait(false);
         }
 
         [Command("remove-user")]
@@ -156,7 +161,7 @@ namespace UVOCBot.Commands
                     if (channel is not null)
                         await ctx.RespondAsync($"Tweets are being relayed to {channel.Mention}").ConfigureAwait(false);
                     else
-                        await ctx.RespondAsync($"Your relay channel no longer exists. Please reset it using the `{Program.DEFAULT_PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+                        await ctx.RespondAsync($"Your relay channel no longer exists. Please reset it using the `{GeneralOptions.CommandPrefix}twitter relay-channel` command").ConfigureAwait(false);
                 } catch (Exception)
                 {
                     await ctx.RespondAsync("Failed to get your relay channel. Perhaps try resetting it").ConfigureAwait(false);
@@ -238,7 +243,7 @@ namespace UVOCBot.Commands
                 if (channel is not null)
                     sb.Append("Tweets are being relayed to ").AppendLine(channel.Mention);
                 else
-                    sb.Append("Your relay channel no longer exists. Please reset it using the `").Append(Program.DEFAULT_PREFIX).AppendLine("twitter relay-channel` command");
+                    sb.Append("Your relay channel no longer exists. Please reset it using the `").Append(GeneralOptions.CommandPrefix).AppendLine("twitter relay-channel` command");
             }
 
             await ctx.RespondAsync(sb.ToString()).ConfigureAwait(false);

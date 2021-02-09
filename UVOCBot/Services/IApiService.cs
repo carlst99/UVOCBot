@@ -64,16 +64,16 @@ namespace UVOCBot.Services
         #region GuildSettings
 
         [Get("/guildsettings")]
-        Task<List<GuildSettingsDTO>> GetGuildSettings();
+        Task<List<GuildSettingsDTO>> GetGuildSettings([Query] bool hasPrefix = false);
 
         [Get("/guildsettings/{id}")]
         Task<GuildSettingsDTO> GetGuildSetting(ulong id);
 
         [Put("/guildsettings/{id}")]
-        Task UpdateGuildSettings(ulong id, GuildSettingsDTO user);
+        Task UpdateGuildSettings(ulong id, GuildSettingsDTO settings);
 
         [Post("/guildsettings")]
-        Task<GuildSettingsDTO> CreateGuildSettings(GuildSettingsDTO user);
+        Task<GuildSettingsDTO> CreateGuildSettings(GuildSettingsDTO settings);
 
         [Delete("/guildsettings/{id}")]
         Task DeleteGuildSettings(ulong id);

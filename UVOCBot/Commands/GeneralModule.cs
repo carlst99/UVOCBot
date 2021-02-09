@@ -88,7 +88,7 @@ namespace UVOCBot.Commands
             // Check that a bonk channel has been set
             if (settings.BonkChannelId is null)
             {
-                await ctx.RespondAsync($"You haven't yet setup a target voice channel for the bonk command. Please use {Program.DEFAULT_PREFIX}bonk <channel>").ConfigureAwait(false);
+                await ctx.RespondAsync($"You haven't yet setup a target voice channel for the bonk command. Please use {IPrefixService.DEFAULT_PREFIX}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 
@@ -96,7 +96,7 @@ namespace UVOCBot.Commands
             DiscordChannel bonkChannel = ctx.Guild.GetChannel((ulong)settings.BonkChannelId);
             if (bonkChannel == default)
             {
-                await ctx.RespondAsync($"The bonk voice chat no longer exists. Please reset it using {Program.DEFAULT_PREFIX}bonk <channel>").ConfigureAwait(false);
+                await ctx.RespondAsync($"The bonk voice chat no longer exists. Please reset it using {IPrefixService.DEFAULT_PREFIX}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 

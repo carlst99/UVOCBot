@@ -59,9 +59,17 @@ namespace UVOCBot
                 .UseSystemd()
                 .ConfigureServices((c, services) =>
                 {
+                    // Setup the configuration bindings
                     services.Configure<TwitterOptions>(c.Configuration.GetSection(TwitterOptions.ConfigSectionName));
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
 
+                    // Setup the API services
+                    services.AddSingleton((s) => RestService.For<IApiService>(
+                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
+
+                    services.AddSingleton(RestService.For<IFisuApiService>("https://ps2.fisu.pw/api"));
+
+                    // Create and setup the filesystem
                     IFileSystem fileSystem = new FileSystem();
                     services.AddSingleton(fileSystem);
 
@@ -69,16 +77,12 @@ namespace UVOCBot
                     logger = SetupLogging(fileSystem);
                     Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
 
-                    // Setup 
-                    services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
+                    // Setup own services
+                    //services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
+                    services.AddSingleton<ISettingsService, SettingsService>();
+                    services.AddSingleton<IPrefixService, PrefixService>();
                     services.AddSingleton(DiscordClientFactory);
                     services.AddTransient(TwitterClientFactory);
-
-                    // Setup the API services
-                    services.AddSingleton((s) => RestService.For<IApiService>(
-                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
-
-                    services.AddSingleton(RestService.For<IFisuApiService>("https://ps2.fisu.pw/api"));
 
                     // Setup the Census services
                     GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
@@ -172,7 +176,7 @@ namespace UVOCBot
 
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { DEFAULT_PREFIX },
+                StringPrefixes = new string[] { IPrefixService.DEFAULT_PREFIX },
                 Services = services
             });
             commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
@@ -182,13 +186,13 @@ namespace UVOCBot
             {
                 Type exceptionType = e.Exception.GetType();
                 if (exceptionType.Equals(typeof(ArgumentException)))
-                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{DEFAULT_PREFIX}help` for more information.").ConfigureAwait(false);
+                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{IPrefixService.DEFAULT_PREFIX}help` for more information.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(TargetInvocationException)))
                     await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(ChecksFailedException)))
                     await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(CommandNotFoundException)))
-                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{DEFAULT_PREFIX}help` for a list of available commands.").ConfigureAwait(false);
+                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{IPrefixService.DEFAULT_PREFIX}help` for a list of available commands.").ConfigureAwait(false);
                 else
                     await e.Context.RespondAsync("Command failed: " + e.Exception).ConfigureAwait(false);
             };

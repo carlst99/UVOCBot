@@ -169,7 +169,7 @@ namespace UVOCBot.Workers
                 case ChannelReturnedInfo.GetChannelStatus.GuildNotFound:
                     return; // TODO: Do something if the guild was not found
                 case ChannelReturnedInfo.GetChannelStatus.Fallback:
-                    await channelInfo.Channel.SendMessageAsync($"The tweet relay channel could not be found. Please reset it using the `{Program.DEFAULT_PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+                    await channelInfo.Channel.SendMessageAsync($"The tweet relay channel could not be found. Please reset it using the `{IPrefixService.DEFAULT_PREFIX}twitter relay-channel` command").ConfigureAwait(false);
                     break;
             }
 

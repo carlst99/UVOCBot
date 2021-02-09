@@ -6,8 +6,6 @@ namespace UVOCBot.Services
 {
     public class PrefixService : IPrefixService
     {
-        public const string DEFAULT_PREFIX = "ub!";
-
         private readonly IApiService _dbApi;
         private readonly Dictionary<ulong, string> _guildPrefixPairs;
 
@@ -24,7 +22,7 @@ namespace UVOCBot.Services
             if (_guildPrefixPairs.ContainsKey(guildId))
                 return _guildPrefixPairs[guildId];
             else
-                return DEFAULT_PREFIX;
+                return IPrefixService.DEFAULT_PREFIX;
         }
 
         public async Task RemovePrefixAsync(ulong guildId)

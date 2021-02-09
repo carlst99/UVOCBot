@@ -165,7 +165,7 @@ namespace UVOCBot.Commands
 
         private DiscordEmbed BuildTeamsEmbed(List<List<DiscordMember>> teams, IList<DiscordMember> captains, string embedTitle)
         {
-            // TODO: Add support for teams that will exceed longer than 6000 characters
+            // TODO: Add support for teams that will exceed longer than 6000 characters. See #22
 
             if (captains is not null && teams.Count != captains.Count)
                 throw new ArgumentOutOfRangeException(nameof(captains), "There must be the same number of captains as team members");

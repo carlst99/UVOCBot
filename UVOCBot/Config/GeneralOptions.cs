@@ -7,5 +7,6 @@
         public string BotToken { get; set; }
         public string ApiEndpoint { get; set; }
         public string CensusApiKey { get; set; }
+        public string CommandPrefix { get; set; }
     }
 }

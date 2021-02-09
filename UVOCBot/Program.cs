@@ -176,7 +176,7 @@ namespace UVOCBot
 
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { IPrefixService.DEFAULT_PREFIX },
+                StringPrefixes = new string[] { options.CommandPrefix },
                 Services = services,
                 PrefixResolver = (m) => CustomPrefixResolver(m, services.GetRequiredService<IPrefixService>())
             });
@@ -188,13 +188,13 @@ namespace UVOCBot
             {
                 Type exceptionType = e.Exception.GetType();
                 if (exceptionType.Equals(typeof(ArgumentException)))
-                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{IPrefixService.DEFAULT_PREFIX}help` for more information.").ConfigureAwait(false);
+                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{options.CommandPrefix}help` for more information.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(TargetInvocationException)))
                     await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(ChecksFailedException)))
                     await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
                 else if (exceptionType.Equals(typeof(CommandNotFoundException)))
-                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{IPrefixService.DEFAULT_PREFIX}help` for a list of available commands.").ConfigureAwait(false);
+                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{options.CommandPrefix}help` for a list of available commands.").ConfigureAwait(false);
                 else
                     await e.Context.RespondAsync("Command failed: " + e.Exception).ConfigureAwait(false);
             };

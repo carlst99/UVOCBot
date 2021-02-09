@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
+using UVOCBot.Config;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
 using UVOCBot.Services;
@@ -21,6 +23,7 @@ namespace UVOCBot.Workers
         private readonly ITwitterClient _twitterClient;
         private readonly IApiService _dbApi;
         private readonly ISettingsService _settingsService;
+        private readonly GeneralOptions _generalOptions;
 
         private readonly MaxSizeQueue<long> _previousTweetIds = new MaxSizeQueue<long>(100);
 
@@ -28,12 +31,14 @@ namespace UVOCBot.Workers
             DiscordClient discordClient,
             ITwitterClient twitterClient,
             IApiService dbApi,
-            ISettingsService settingsService)
+            ISettingsService settingsService,
+            IOptions<GeneralOptions> generalOptions)
         {
             _discordClient = discordClient;
             _twitterClient = twitterClient;
             _dbApi = dbApi;
             _settingsService = settingsService;
+            _generalOptions = generalOptions.Value;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -169,7 +174,7 @@ namespace UVOCBot.Workers
                 case ChannelReturnedInfo.GetChannelStatus.GuildNotFound:
                     return; // TODO: Do something if the guild was not found
                 case ChannelReturnedInfo.GetChannelStatus.Fallback:
-                    await channelInfo.Channel.SendMessageAsync($"The tweet relay channel could not be found. Please reset it using the `{IPrefixService.DEFAULT_PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+                    await channelInfo.Channel.SendMessageAsync($"The tweet relay channel could not be found. Please reset it using the `{_generalOptions.CommandPrefix}twitter relay-channel` command").ConfigureAwait(false);
                     break;
             }
 

@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using UVOCBot.Config;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Services
@@ -7,13 +9,15 @@ namespace UVOCBot.Services
     public class PrefixService : IPrefixService
     {
         private readonly IApiService _dbApi;
+        private readonly GeneralOptions _generalOptions;
         private readonly Dictionary<ulong, string> _guildPrefixPairs;
 
         public bool IsSetup { get; protected set; }
 
-        public PrefixService(IApiService dbApi)
+        public PrefixService(IApiService dbApi, IOptions<GeneralOptions> generalOptions)
         {
             _dbApi = dbApi;
+            _generalOptions = generalOptions.Value;
             _guildPrefixPairs = new Dictionary<ulong, string>();
         }
 
@@ -22,7 +26,7 @@ namespace UVOCBot.Services
             if (_guildPrefixPairs.ContainsKey(guildId))
                 return _guildPrefixPairs[guildId];
             else
-                return IPrefixService.DEFAULT_PREFIX;
+                return _generalOptions.CommandPrefix;
         }
 
         public async Task RemovePrefixAsync(ulong guildId)

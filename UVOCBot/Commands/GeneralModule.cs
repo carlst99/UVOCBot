@@ -2,9 +2,11 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Options;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using UVOCBot.Config;
 using UVOCBot.Core.Model;
 using UVOCBot.Services;
 
@@ -17,6 +19,9 @@ namespace UVOCBot.Commands
             "\r\n- The command groups `planetside` and `teams` have been removed. All commands contained in those groups are now top-level";
 
         public IApiService DbApi { get; set; }
+
+        public IOptions<GeneralOptions> GOptions { get; set; }
+        public GeneralOptions GeneralOptions => GOptions.Value;
 
         [Command("ping")]
         [Description("Pong! Tells you whether the bot is listening")]
@@ -88,7 +93,7 @@ namespace UVOCBot.Commands
             // Check that a bonk channel has been set
             if (settings.BonkChannelId is null)
             {
-                await ctx.RespondAsync($"You haven't yet setup a target voice channel for the bonk command. Please use {IPrefixService.DEFAULT_PREFIX}bonk <channel>").ConfigureAwait(false);
+                await ctx.RespondAsync($"You haven't yet setup a target voice channel for the bonk command. Please use {GeneralOptions.CommandPrefix}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 
@@ -96,7 +101,7 @@ namespace UVOCBot.Commands
             DiscordChannel bonkChannel = ctx.Guild.GetChannel((ulong)settings.BonkChannelId);
             if (bonkChannel == default)
             {
-                await ctx.RespondAsync($"The bonk voice chat no longer exists. Please reset it using {IPrefixService.DEFAULT_PREFIX}bonk <channel>").ConfigureAwait(false);
+                await ctx.RespondAsync($"The bonk voice chat no longer exists. Please reset it using {GeneralOptions.CommandPrefix}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 

@@ -89,6 +89,8 @@ namespace UVOCBot.Commands
         [RequireGuild]
         public async Task DefaultWorldCommand(CommandContext ctx, string server)
         {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
             if (!Enum.TryParse(server, true, out WorldType world))
             {
                 await ctx.RespondAsync("That server does not exist").ConfigureAwait(false);

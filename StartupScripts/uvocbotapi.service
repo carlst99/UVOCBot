@@ -5,8 +5,11 @@ Wants=network.target
 
 [Service]
 Type=notify
-EnvironmentFile=/path/to/your/uvocbotapi/environment/file
-ExecStart="/path/to/your/UVOCBot.Api/executable"
+Environment="DOTNET_ROOT=<path to your dotnet installation>"
+Environment="ASPNETCORE_ENVIRONMENT=Release"
+Environment="ASPNETCORE_URLS=http://localhost:42718"
+WorkingDirectory=<path to the working directory (usually the executable location)
+ExecStart="<path to your UVOCBot.Api executable>"
 Restart=always
 RestartSec=30
 

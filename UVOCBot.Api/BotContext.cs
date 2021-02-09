@@ -27,8 +27,8 @@ namespace UVOCBot.Api
                 mySqlOptions => mySqlOptions
                     .CharSetBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.CharSetBehavior.NeverAppend))
 #if DEBUG
-                .EnableSensitiveDataLogging()
-                .EnableDetailedErrors();
+                    .EnableSensitiveDataLogging()
+                    .EnableDetailedErrors();
 #else
                 ;
 #endif

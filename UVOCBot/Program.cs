@@ -177,8 +177,10 @@ namespace UVOCBot
             CommandsNextExtension commands = client.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { IPrefixService.DEFAULT_PREFIX },
-                Services = services
+                Services = services,
+                PrefixResolver = (m) => CustomPrefixResolver(m, services.GetRequiredService<IPrefixService>())
             });
+
             commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
 
@@ -198,6 +200,12 @@ namespace UVOCBot
             };
 
             return client;
+        }
+
+        private static Task<int> CustomPrefixResolver(DiscordMessage message, IPrefixService prefixService)
+        {
+            string prefix = prefixService.GetPrefix(message.Channel.GuildId);
+            return Task.FromResult(message.GetStringPrefixLength(prefix));
         }
     }
 }

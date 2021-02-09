@@ -12,11 +12,9 @@ namespace UVOCBot.Workers
         private readonly DiscordClient _discordClient;
 
         public DiscordWorker(
-            IHostApplicationLifetime appLifetime,
             DiscordClient discordClient)
         {
             _discordClient = discordClient;
-            appLifetime.ApplicationStopping.Register(OnStopping);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -25,9 +23,9 @@ namespace UVOCBot.Workers
             await Task.Delay(-1, stoppingToken).ConfigureAwait(false);
         }
 
-        private void OnStopping()
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            _discordClient.DisconnectAsync().Wait();
+            await _discordClient.DisconnectAsync().ConfigureAwait(false);
         }
     }
 }

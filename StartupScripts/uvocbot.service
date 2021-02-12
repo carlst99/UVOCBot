@@ -1,0 +1,16 @@
+[Unit]
+Description=UVOC Discord bot
+
+Wants=network.target
+
+[Service]
+Type=notify
+Environment="DOTNET_ROOT=<path to your dotnet installation>"
+Environment="DOTNET_ENVIRONMENT=Release"
+WorkingDirectory=<path to the working directory (usually the executable location)>
+ExecStart="<path to your UVOCBot executable>"
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

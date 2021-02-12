@@ -2,28 +2,37 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Serilog;
 using System;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models.V2;
-using UVOCBot.Model;
+using UVOCBot.Config;
+using UVOCBot.Core.Model;
+using UVOCBot.Services;
 
 namespace UVOCBot.Commands
 {
     [Group("twitter")]
+    [Aliases("tweet")]
     [Description("Commands pertinent to the twitter relay functionality")]
     [ModuleLifespan(ModuleLifespan.Transient)]
     [RequireUserPermissions(Permissions.ManageGuild)]
+    [RequireGuild]
     public class TwitterModule : BaseCommandModule
     {
-        private const string ENV_CLIENT_ID = "UVOCBOT_CLIENT_ID";
+        public const string TWITTER_USERNAME_REGEX = "^[A-Za-z0-9_]{1,15}$";
 
         public ITwitterClient TwitterClient { private get; set; }
-        public BotContext DbContext { private get; set; }
+
+        public IApiService DbApi { get; set; }
+
+        public IOptions<GeneralOptions> GOptions { get; set; }
+        public GeneralOptions GeneralOptions => GOptions.Value;
 
         [Command("add-user")]
         [Aliases("add")]
@@ -33,46 +42,29 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Check that the username conforms to Twitters standards
-            if (!Regex.IsMatch(username, "^[A-Za-z0-9_]{1,15}$"))
+            if (!Regex.IsMatch(username, TWITTER_USERNAME_REGEX))
             {
                 await ctx.RespondAsync("Invalid username! Twitter usernames can only contain letters and numbers, and must be between 1-15 characters long").ConfigureAwait(false);
                 return;
             }
 
-            // Get the user info from Twitter
-            UserV2Response user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
-            if (user.User is null)
-            {
-                await ctx.RespondAsync("That Twitter user doesn't exist!").ConfigureAwait(false);
+            UserV2Response user = await GetTwitterUserByUsernameAsync(ctx, username).ConfigureAwait(false);
+            if (user is null)
                 return;
-            }
 
             // Find or create the guild twitter settings record
-            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
-            if (settings == default)
-            {
-                settings = new GuildTwitterSettings(ctx.Guild.Id);
-                DbContext.GuildTwitterSettings.Add(settings);
-            }
-
-            long twitterUserId = long.Parse(user.User.Id);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             // Find or create the twitter user record
-            TwitterUser twitterUser = await DbContext.TwitterUsers.FindAsync(twitterUserId).ConfigureAwait(false);
-            if (twitterUser == default)
-            {
-                twitterUser = new TwitterUser(twitterUserId);
-                DbContext.TwitterUsers.Add(twitterUser);
-            }
+            TwitterUserDTO twitterUser = await DbApi.GetDbTwitterUserAsync(long.Parse(user.User.Id)).ConfigureAwait(false);
 
-            settings.TwitterUsers.Add(twitterUser);
+            if (!settings.TwitterUsers.Contains(twitterUser.UserId))
+                await DbApi.CreateGuildTwitterLink(settings.GuildId, twitterUser.UserId).ConfigureAwait(false);
 
-            await DbContext.SaveChangesAsync().ConfigureAwait(false);
-
-            await ctx.RespondAsync($"Now relaying tweets from **{username}!**").ConfigureAwait(false);
+            await ctx.RespondAsync($"Now relaying tweets from **{username}**!").ConfigureAwait(false);
 
             if (settings.RelayChannelId is null)
-                await ctx.RespondAsync($"You haven't set a channel to relay tweets to. Please use the `{Program.PREFIX}twitter relay-channel` command").ConfigureAwait(false);
+                await ctx.RespondAsync($"You haven't set a channel to relay tweets to. Please use the `{GeneralOptions.CommandPrefix}twitter relay-channel` command").ConfigureAwait(false);
         }
 
         [Command("remove-user")]
@@ -83,57 +75,28 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Check that the username conforms to Twitter's standards
-            if (!Regex.IsMatch(username, "^[A-Za-z0-9_]{1,15}$"))
+            if (!Regex.IsMatch(username, TWITTER_USERNAME_REGEX))
             {
                 await ctx.RespondAsync("Invalid username! Twitter usernames can only contain letters and numbers, and must be between 1-15 characters long").ConfigureAwait(false);
                 return;
             }
 
-            // Get the user info from Twitter
-            UserV2Response user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
-            if (user.User is null)
-            {
-                await ctx.RespondAsync("That Twitter user doesn't exist!").ConfigureAwait(false);
+            UserV2Response user = await GetTwitterUserByUsernameAsync(ctx, username).ConfigureAwait(false);
+            if (user is null)
                 return;
-            }
 
-            // Find or create the guild twitter settings record
-            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
-            if (settings == default)
-            {
-                settings = new GuildTwitterSettings(ctx.Guild.Id);
-                DbContext.GuildTwitterSettings.Add(settings);
-            }
-
-            // Get the stored Twitter user
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
             long twitterUserId = long.Parse(user.User.Id);
-            TwitterUser dbUser = await DbContext.TwitterUsers
-                .Include(e => e.Guilds)
-                .FirstOrDefaultAsync(e => e.UserId == twitterUserId).ConfigureAwait(false);
 
-            if (dbUser == default)
+            if (settings.TwitterUsers.Contains(twitterUserId))
             {
-                await ctx.RespondAsync($"You aren't relaying tweets from **{username}**").ConfigureAwait(false);
-                return;
-            }
-
-            if (settings.TwitterUsers.Contains(dbUser))
-            {
-                settings.TwitterUsers.Remove(dbUser);
+                await DbApi.DeleteGuildTwitterLink(settings.GuildId, twitterUserId).ConfigureAwait(false);
                 await ctx.RespondAsync($"Tweets from **{username}** are no longer being relayed").ConfigureAwait(false);
             }
             else
             {
                 await ctx.RespondAsync($"You aren't relaying tweets from **{username}**").ConfigureAwait(false);
             }
-
-            await DbContext.SaveChangesAsync().ConfigureAwait(false);
-
-            // Remove the user if there are no longer any guild relaying tweets from them
-            if (dbUser.Guilds.Count == 0)
-                DbContext.Remove(dbUser);
-
-            await DbContext.SaveChangesAsync().ConfigureAwait(false);
         }
 
         [Command("list-users")]
@@ -144,12 +107,9 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Find the settings record for the calling guild
-            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings
-                .Include(e => e.TwitterUsers)
-                .FirstOrDefaultAsync(e => e.GuildId == ctx.Guild.Id)
-                .ConfigureAwait(false);
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
-            if (settings == default || settings.TwitterUsers.Count == 0)
+            if (settings.TwitterUsers.Count == 0)
             {
                 await ctx.RespondAsync("You aren't relaying tweets from any users").ConfigureAwait(false);
             } else
@@ -157,13 +117,24 @@ namespace UVOCBot.Commands
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine("Tweets are being relayed from the following users:");
 
-                foreach (TwitterUser user in settings.TwitterUsers)
+                foreach (long twitterUserId in settings.TwitterUsers)
                 {
-                    UserV2Response actualUser = await TwitterClient.UsersV2.GetUserByIdAsync(user.UserId).ConfigureAwait(false);
-                    if (actualUser.User is null)
-                        sb.Append("Invalid User (Recorded ID: ").Append(user.UserId).AppendLine(")");
+                    // Get the user info from Twitter
+                    UserV2Response actualUser = null;
+                    try
+                    {
+                        actualUser = await TwitterClient.UsersV2.GetUserByIdAsync(twitterUserId).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Could not get twitter user information");
+                        sb.Append("<error> (Recorded ID: ").Append(twitterUserId).AppendLine(")");
+                    }
+
+                    if (actualUser is null || actualUser.User is null)
+                        sb.Append("Invalid User (Recorded ID: ").Append(twitterUserId).AppendLine(")");
                     else
-                        sb.Append(actualUser.User.Username).Append(" (ID: ").Append(user.UserId).AppendLine(")");
+                        sb.Append(actualUser.User.Username).Append(" (ID: ").Append(twitterUserId).AppendLine(")");
                 }
 
                 await ctx.RespondAsync(sb.ToString()).ConfigureAwait(false);
@@ -175,8 +146,10 @@ namespace UVOCBot.Commands
         [Description("Displays the channel to which tweets will be relayed")]
         public async Task RelayChannelCommand(CommandContext ctx)
         {
-            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
-            if (settings == default)
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            if (settings.RelayChannelId is null)
             {
                 await ctx.RespondAsync("A relay channel has not yet been set").ConfigureAwait(false);
             }
@@ -185,10 +158,13 @@ namespace UVOCBot.Commands
                 try
                 {
                     DiscordChannel channel = ctx.Guild.GetChannel((ulong)settings.RelayChannelId);
-                    await ctx.RespondAsync($"Tweets are being relayed to {channel.Mention}").ConfigureAwait(false);
-                } catch (NotFoundException)
+                    if (channel is not null)
+                        await ctx.RespondAsync($"Tweets are being relayed to {channel.Mention}").ConfigureAwait(false);
+                    else
+                        await ctx.RespondAsync($"Your relay channel no longer exists. Please reset it using the `{GeneralOptions.CommandPrefix}twitter relay-channel` command").ConfigureAwait(false);
+                } catch (Exception)
                 {
-                    await ctx.RespondAsync("An invalid channel is currently set as the relay endpoint. Please reset it").ConfigureAwait(false);
+                    await ctx.RespondAsync("Failed to get your relay channel. Perhaps try resetting it").ConfigureAwait(false);
                 }
             }
         }
@@ -197,28 +173,110 @@ namespace UVOCBot.Commands
         [Description("Sets the channel to which tweets will be relayed")]
         public async Task RelayChannelCommand(CommandContext ctx, [Description("The channel that tweets should be relayed to")] DiscordChannel channel)
         {
-            ulong clientId = ulong.Parse(Environment.GetEnvironmentVariable(ENV_CLIENT_ID));
-            DiscordMember botMember = await ctx.Guild.GetMemberAsync(clientId).ConfigureAwait(false);
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+            DiscordMember botMember = await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id).ConfigureAwait(false);
 
             Permissions channelPerms = channel.PermissionsFor(botMember);
 
             if ((channelPerms & Permissions.SendMessages) == 0 || (channelPerms & Permissions.AccessChannels) == 0)
             {
-                await ctx.RespondAsync($"{Program.NAME} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} needs permission to send messages to {channel.Mention}. Your relay channel has **not** been updated").ConfigureAwait(false);
                 return;
             }
 
-            GuildTwitterSettings settings = await DbContext.GuildTwitterSettings.FindAsync(ctx.Guild.Id).ConfigureAwait(false);
-            if (settings == default)
-            {
-                settings = new GuildTwitterSettings(ctx.Guild.Id);
-                DbContext.Add(settings);
-            }
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             settings.RelayChannelId = channel.Id;
-            await DbContext.SaveChangesAsync().ConfigureAwait(false);
+            await DbApi.UpdateGuildTwitterSetting(settings.GuildId, settings).ConfigureAwait(false);
 
             await ctx.RespondAsync("Tweets will now be relayed to " + channel.Mention).ConfigureAwait(false);
+        }
+
+        [Command("disable")]
+        [Description("Disables the twitter relay feature")]
+        public async Task DisableCommand(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+
+            settings.IsEnabled = false;
+            await DbApi.UpdateGuildTwitterSetting(settings.GuildId, settings).ConfigureAwait(false);
+
+            await ctx.RespondAsync("Tweet relaying is now **disabled**").ConfigureAwait(false);
+        }
+
+        [Command("enable")]
+        [Description("Enables the twitter relay feature")]
+        public async Task EnableCommand(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+
+            settings.IsEnabled = true;
+            await DbApi.UpdateGuildTwitterSetting(settings.GuildId, settings).ConfigureAwait(false);
+
+            await ctx.RespondAsync("Tweet relaying is now **enabled**").ConfigureAwait(false);
+        }
+
+        [Command("status")]
+        [Description("Gets the current status of the tweet relay feature")]
+        public async Task StatusCommand(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync().ConfigureAwait(false);
+
+            GuildTwitterSettingsDTO settings = await DbApi.GetGuildTwitterSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            StringBuilder sb = new StringBuilder("Tweet relaying is ");
+
+            if (settings.IsEnabled)
+                sb.AppendLine("**enabled**");
+            else
+                sb.AppendLine("**disabled**");
+
+            if (settings.RelayChannelId is null)
+            {
+                sb.AppendLine("You have not yet set a relay channel");
+            } else
+            {
+                DiscordChannel channel = ctx.Guild.GetChannel((ulong)settings.RelayChannelId);
+                if (channel is not null)
+                    sb.Append("Tweets are being relayed to ").AppendLine(channel.Mention);
+                else
+                    sb.Append("Your relay channel no longer exists. Please reset it using the `").Append(GeneralOptions.CommandPrefix).AppendLine("twitter relay-channel` command");
+            }
+
+            await ctx.RespondAsync(sb.ToString()).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Fetches a twitter user
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="username">The username of the twitter user</param>
+        /// <returns></returns>
+        private async Task<UserV2Response> GetTwitterUserByUsernameAsync(CommandContext ctx, string username)
+        {
+            // Get the user info from Twitter
+            UserV2Response user;
+            try
+            {
+                user = await TwitterClient.UsersV2.GetUserByNameAsync(username).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not get Twitter user information");
+                await ctx.RespondAsync("Sorry, an error occurred! Please try again").ConfigureAwait(false);
+                return null;
+            }
+
+            if (user.User is null)
+            {
+                await ctx.RespondAsync($"The Twitter user **{username}** does not exist").ConfigureAwait(false);
+                return null;
+            }
+
+            return user;
         }
     }
 }

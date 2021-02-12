@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot", "UVOCBot\UVOCBot.csproj", "{140E2FB2-1D5C-42C6-818E-DA4ADC8E9706}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Api", "UVOCBot.Api\UVOCBot.Api.csproj", "{A5D298FC-CB6F-412F-82F9-EF972E54946F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Core", "UVOCBot.Core\UVOCBot.Core.csproj", "{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{140E2FB2-1D5C-42C6-818E-DA4ADC8E9706}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{140E2FB2-1D5C-42C6-818E-DA4ADC8E9706}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{140E2FB2-1D5C-42C6-818E-DA4ADC8E9706}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -181,25 +181,10 @@ namespace UVOCBot
                 Services = services,
                 PrefixResolver = (m) => CustomPrefixResolver(m, services.GetRequiredService<IPrefixService>())
             });
+
             commands.SetHelpFormatter<CustomHelpFormatter>();
-
-            commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
-
-            commands.CommandErrored += async (_, e) =>
-            {
-                Type exceptionType = e.Exception.GetType();
-                if (exceptionType.Equals(typeof(ArgumentException)))
-                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{options.CommandPrefix}help` for more information.").ConfigureAwait(false);
-                else if (exceptionType.Equals(typeof(TargetInvocationException)))
-                    await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
-                else if (exceptionType.Equals(typeof(ChecksFailedException)))
-                    await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
-                else if (exceptionType.Equals(typeof(CommandNotFoundException)))
-                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{options.CommandPrefix}help` for a list of available commands.").ConfigureAwait(false);
-                else
-                    await e.Context.RespondAsync("Command failed. Please send this to the developers:\r\n" + e.Exception).ConfigureAwait(false);
-            };
+            commands.CommandErrored += async (_, e) => await HandleCommandError(e, options).ConfigureAwait(false);
 
             return client;
         }
@@ -208,6 +193,23 @@ namespace UVOCBot
         {
             string prefix = prefixService.GetPrefix(message.Channel.GuildId);
             return Task.FromResult(message.GetStringPrefixLength(prefix));
+        }
+
+        private static async Task HandleCommandError(CommandErrorEventArgs e, GeneralOptions options)
+        {
+            Log.Error(e.Exception, "Command {command} failed", e.Command);
+
+            Type exceptionType = e.Exception.GetType();
+            if (exceptionType.Equals(typeof(ArgumentException)))
+                await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{options.CommandPrefix}help` for more information.").ConfigureAwait(false);
+            else if (exceptionType.Equals(typeof(TargetInvocationException)))
+                await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
+            else if (exceptionType.Equals(typeof(ChecksFailedException)))
+                await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
+            else if (exceptionType.Equals(typeof(CommandNotFoundException)))
+                await e.Context.RespondAsync($"That command doesn't exist! Please see `{options.CommandPrefix}help` for a list of available commands.").ConfigureAwait(false);
+            else
+                await e.Context.RespondAsync("Command failed. Please send this to the developers:\r\n" + e.Exception).ConfigureAwait(false);
         }
     }
 }

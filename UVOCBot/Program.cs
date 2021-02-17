@@ -17,6 +17,7 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Config;
 using UVOCBot.Services;
+using UVOCBot.Utils;
 using UVOCBot.Workers;
 
 namespace UVOCBot
@@ -180,6 +181,7 @@ namespace UVOCBot
                 Services = services,
                 PrefixResolver = (m) => CustomPrefixResolver(m, services.GetRequiredService<IPrefixService>())
             });
+            commands.SetHelpFormatter<CustomHelpFormatter>();
 
             commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
             commands.RegisterCommands(Assembly.GetExecutingAssembly());

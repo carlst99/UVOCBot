@@ -2,9 +2,11 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Options;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using UVOCBot.Config;
 using UVOCBot.Core.Model;
 using UVOCBot.Services;
 
@@ -12,9 +14,15 @@ namespace UVOCBot.Commands
 {
     public class GeneralModule : BaseCommandModule
     {
-        public const string RELEASE_NOTES = "- Added a Planetside 2 server status/population command: **ub!help planetside server**";
+        public const string RELEASE_NOTES = "- **Custom prefixes!** Set a prefix to trigger commands using `ub!prefix`" +
+            "\r\n- **Purple embeds** - Standardised the embed colour to purple" +
+            "\r\n- **Default PlanetSide server** - PlanetSide commands that require a server can now do away with this argument. Use `ub!default-server` to set your default";
 
         public IApiService DbApi { get; set; }
+        public IPrefixService PrefixService { get; set; }
+
+        public IOptions<GeneralOptions> GOptions { get; set; }
+        public GeneralOptions GeneralOptions => GOptions.Value;
 
         [Command("ping")]
         [Description("Pong! Tells you whether the bot is listening")]
@@ -42,12 +50,31 @@ namespace UVOCBot.Commands
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder
             {
                 Title = $"Version {Assembly.GetEntryAssembly().GetName().Version}",
-                Color = DiscordColor.Purple,
+                Color = Program.DEFAULT_EMBED_COLOUR,
                 Timestamp = DateTimeOffset.Now
             };
             builder.AddField("Release Notes", RELEASE_NOTES);
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
+        }
+        [Command("prefix")]
+        [Description("Removes your custom prefix")]
+        [RequireGuild]
+        [RequireUserPermissions(Permissions.ManageGuild)]
+        public async Task PrefixCommand(CommandContext ctx)
+        {
+            await PrefixService.RemovePrefixAsync(ctx.Guild.Id).ConfigureAwait(false);
+            await ctx.RespondAsync($"Your prefix has been unset. You can trigger commands with `{GeneralOptions.CommandPrefix}`").ConfigureAwait(false);
+        }
+
+        [Command("prefix")]
+        [Description("Lets you set a custom prefix with which to trigger commands")]
+        [RequireGuild]
+        [RequireUserPermissions(Permissions.ManageGuild)]
+        public async Task PrefixCommand(CommandContext ctx, string prefix)
+        {
+            await PrefixService.UpdatePrefixAsync(ctx.Guild.Id, prefix).ConfigureAwait(false);
+            await ctx.RespondAsync($"You can now trigger commands with the prefix `{prefix}`").ConfigureAwait(false);
         }
 
         [Command("bonk")]
@@ -76,17 +103,17 @@ namespace UVOCBot.Commands
             // Check that UVOCBot can move members out of the current channel
             if (!CheckPermission(ctx.Member.VoiceState.Channel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
-                await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members from your current channel").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members from your current channel").ConfigureAwait(false);
                 return;
             }
 
             // Find or create the guild settings record
-            GuildSettingsDTO settings = await GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildSettingsDTO settings = await DbApi.GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
 
             // Check that a bonk channel has been set
             if (settings.BonkChannelId is null)
             {
-                await ctx.RespondAsync($"You haven't yet setup a target voice channel for the bonk command. Please use {Program.PREFIX}bonk <channel>").ConfigureAwait(false);
+                await ctx.RespondAsync($"You haven't yet setup a target voice channel for the bonk command. Please use {GeneralOptions.CommandPrefix}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 
@@ -94,14 +121,14 @@ namespace UVOCBot.Commands
             DiscordChannel bonkChannel = ctx.Guild.GetChannel((ulong)settings.BonkChannelId);
             if (bonkChannel == default)
             {
-                await ctx.RespondAsync($"The bonk voice chat no longer exists. Please reset it using {Program.PREFIX}bonk <channel>").ConfigureAwait(false);
+                await ctx.RespondAsync($"The bonk voice chat no longer exists. Please reset it using {GeneralOptions.CommandPrefix}bonk <channel>").ConfigureAwait(false);
                 return;
             }
 
             // Check that UVOCBot can move members into the bonk channel
             if (!CheckPermission(bonkChannel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
             {
-                await ctx.RespondAsync($"{Program.NAME} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
+                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
                 return;
             }
 
@@ -123,7 +150,7 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            GuildSettingsDTO settings = await GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
+            GuildSettingsDTO settings = await DbApi.GetGuildSettingsAsync(ctx.Guild.Id).ConfigureAwait(false);
             settings.BonkChannelId = bonkChannel.Id;
             await DbApi.UpdateGuildSettings(settings.GuildId, settings).ConfigureAwait(false);
 
@@ -137,7 +164,7 @@ namespace UVOCBot.Commands
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
             {
-                Color = DiscordColor.Aquamarine,
+                Color = Program.DEFAULT_EMBED_COLOUR,
                 Description = "Test Description",
                 Footer = new DiscordEmbedBuilder.EmbedFooter { Text = "Test Footer" },
                 Author = new DiscordEmbedBuilder.EmbedAuthor { Name = "Test Author" },
@@ -149,6 +176,13 @@ namespace UVOCBot.Commands
             builder.AddField("TestInlineFieldName", "TestInlineFieldValue", true);
             builder.AddField("TestInlineFieldName2", "TestInlineFieldValue2", true);
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
+        }
+
+        [Command("throw-exception")]
+        [RequireOwner]
+        public Task ThrowExceptionCommand(CommandContext ctx)
+        {
+            throw new Exception();
         }
 #endif
 
@@ -163,22 +197,6 @@ namespace UVOCBot.Commands
         {
             Permissions permissions = channel.PermissionsFor(member);
             return (permissions & permission) != 0;
-        }
-
-        private async Task<GuildSettingsDTO> GetGuildSettingsAsync(ulong id)
-        {
-            GuildSettingsDTO settings;
-            try
-            {
-                settings = await DbApi.GetGuildSetting(id).ConfigureAwait(false);
-            }
-            catch
-            {
-                settings = new GuildSettingsDTO(id);
-                await DbApi.CreateGuildSettings(settings).ConfigureAwait(false);
-            }
-
-            return settings;
         }
     }
 }

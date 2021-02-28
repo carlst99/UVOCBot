@@ -12,8 +12,6 @@ using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
-    [Group("teams")]
-    [Aliases("team")]
     [Description("Commands that help with generating team lists")]
     [RequireGuild]
     public class TeamsModule : BaseCommandModule
@@ -167,14 +165,14 @@ namespace UVOCBot.Commands
 
         private DiscordEmbed BuildTeamsEmbed(List<List<DiscordMember>> teams, IList<DiscordMember> captains, string embedTitle)
         {
-            // TODO: Add support for teams that will exceed longer than 6000 characters
+            // TODO: Add support for teams that will exceed longer than 6000 characters. See #22
 
             if (captains is not null && teams.Count != captains.Count)
                 throw new ArgumentOutOfRangeException(nameof(captains), "There must be the same number of captains as team members");
 
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
             {
-                Color = DiscordColor.Aquamarine,
+                Color = Program.DEFAULT_EMBED_COLOUR,
                 Timestamp = DateTimeOffset.UtcNow,
                 Title = embedTitle
             };

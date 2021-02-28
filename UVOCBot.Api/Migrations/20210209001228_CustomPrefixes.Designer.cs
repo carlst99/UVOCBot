@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UVOCBot.Api;
 
-namespace UVOCBot.Migrations
+namespace UVOCBot.Api.Migrations
 {
     [DbContext(typeof(BotContext))]
-    partial class BotContextModelSnapshot : ModelSnapshot
+    [Migration("20210209001228_CustomPrefixes")]
+    partial class CustomPrefixes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -64,20 +66,6 @@ namespace UVOCBot.Migrations
                     b.HasKey("GuildId");
 
                     b.ToTable("GuildTwitterSettings");
-                });
-
-            modelBuilder.Entity("UVOCBot.Api.Model.PlanetsideSettings", b =>
-                {
-                    b.Property<ulong>("GuildId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
-
-                    b.Property<int?>("DefaultWorld")
-                        .HasColumnType("int");
-
-                    b.HasKey("GuildId");
-
-                    b.ToTable("PlanetsideSettings");
                 });
 
             modelBuilder.Entity("UVOCBot.Api.Model.TwitterUser", b =>

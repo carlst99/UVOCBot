@@ -5,8 +5,10 @@ Wants=network.target
 
 [Service]
 Type=notify
-EnvironmentFile=/path/to/your/uvocbot/environment/file
-ExecStart="/path/to/your/UVOCBot/executable"
+Environment="DOTNET_ROOT=<path to your dotnet installation>"
+Environment="DOTNET_ENVIRONMENT=Release"
+WorkingDirectory=<path to the working directory (usually the executable location)>
+ExecStart="<path to your UVOCBot executable>"
 Restart=always
 RestartSec=30
 

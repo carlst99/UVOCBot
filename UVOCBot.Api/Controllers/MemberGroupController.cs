@@ -25,14 +25,18 @@ namespace UVOCBot.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<MemberGroupDTO>> Get(ulong id)
         {
-            return ToDTO(await _context.MemberGroups.FindAsync(id).ConfigureAwait(false));
+            MemberGroup group = await _context.MemberGroups.FindAsync(id).ConfigureAwait(false);
+
+            return group == null ? NotFound() : ToDTO(group);
         }
 
         // GET api/MemberGroup/?guildId=1&groupName=""
         [HttpGet]
-        public ActionResult<MemberGroupDTO> Get([FromQuery] ulong guildId, [FromQuery] string groupName)
+        public async Task<ActionResult<MemberGroupDTO>> Get([FromQuery] ulong guildId, [FromQuery] string groupName)
         {
-            return ToDTO(_context.MemberGroups.First(g => g.GuildId == guildId && g.GroupName == groupName));
+            MemberGroup group = await _context.MemberGroups.FirstOrDefaultAsync(g => g.GuildId == guildId && g.GroupName == groupName).ConfigureAwait(false);
+
+            return group == default ? NotFound() : ToDTO(group);
         }
 
         // POST api/MemberGroup
@@ -74,11 +78,11 @@ namespace UVOCBot.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(ulong id)
         {
-            MemberGroup memberGroup = await _context.MemberGroups.FindAsync(id).ConfigureAwait(false);
-            if (memberGroup == null)
+            MemberGroup group = await _context.MemberGroups.FindAsync(id).ConfigureAwait(false);
+            if (group is null)
                 return NotFound();
 
-            _context.MemberGroups.Remove(memberGroup);
+            _context.MemberGroups.Remove(group);
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
@@ -98,7 +102,7 @@ namespace UVOCBot.Api.Controllers
             return NoContent();
         }
 
-        public MemberGroupDTO ToDTO(MemberGroup group)
+        private static MemberGroupDTO ToDTO(MemberGroup group)
         {
             return new MemberGroupDTO
             {
@@ -110,7 +114,7 @@ namespace UVOCBot.Api.Controllers
             };
         }
 
-        public MemberGroup FromDTO(MemberGroupDTO dto)
+        private static MemberGroup FromDTO(MemberGroupDTO dto)
         {
             return new MemberGroup
             {

@@ -32,7 +32,7 @@ namespace UVOCBot.Api.Controllers
         {
             var planetsideSettings = await _context.PlanetsideSettings.FindAsync(id).ConfigureAwait(false);
 
-            return planetsideSettings == default ? NotFound() : ToDTO(planetsideSettings);
+            return planetsideSettings == null ? NotFound() : ToDTO(planetsideSettings);
         }
 
         // PUT: api/PlanetsideSettings/5

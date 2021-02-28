@@ -41,7 +41,7 @@ namespace UVOCBot.Api.Controllers
         [HttpGet("exists/{id}")]
         public async Task<ActionResult<bool>> Exists(ulong id)
         {
-            return await _context.GuildTwitterSettings.FindAsync(id).ConfigureAwait(false) != null;
+            return await _context.GuildTwitterSettings.AnyAsync(s => s.GuildId == id).ConfigureAwait(false);
         }
 
         // PUT: api/GuildTwitterSettings/5

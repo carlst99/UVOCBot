@@ -32,13 +32,13 @@ namespace UVOCBot.Api.Controllers
         {
             var twitterUser = await _context.TwitterUsers.FindAsync(id).ConfigureAwait(false);
 
-            return twitterUser == default ? NotFound() : ToDTO(twitterUser);
+            return twitterUser == null ? NotFound() : ToDTO(twitterUser);
         }
 
         [HttpGet("exists/{id}")]
         public async Task<ActionResult<bool>> Exists(long id)
         {
-            return await _context.TwitterUsers.FindAsync(id).ConfigureAwait(false) != null;
+            return await _context.TwitterUsers.AnyAsync(u => u.UserId == id).ConfigureAwait(false);
         }
 
         // PUT: api/TwitterUser/5

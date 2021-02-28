@@ -18,13 +18,5 @@ namespace UVOCBot.Commands
         {
 
         }
-
-        [Command("create")]
-        [Description("Creates a new group from the given role")]
-        public async Task CreateGroupCommand(
-            [Description("The unique name of the group")] string groupName,
-            [Description("Members with this role will be included in the group")] DiscordRole role)
-        {
-        }
     }
 }

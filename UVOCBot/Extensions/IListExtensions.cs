@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace UVOCBot.Extensions
+﻿namespace System.Collections.Generic
 {
     public static class IListExtensions
     {

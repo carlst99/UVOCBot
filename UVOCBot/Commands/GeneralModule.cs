@@ -81,7 +81,7 @@ namespace UVOCBot.Commands
         [Aliases("goToHornyJail")]
         [Description("Sends a voice member to horny jail")]
         [RequireGuild]
-        [RequirePermissions(Permissions.MoveMembers)]
+        [RequirePermissions(Permissions.MoveMembers | Permissions.SendMessages)]
         public async Task BonkCommand(CommandContext ctx, [Description("The member to bonk")] DiscordMember memberToBonk)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
@@ -139,7 +139,7 @@ namespace UVOCBot.Commands
         [Command("bonk-channel")]
         [Description("Sets the voice channel for the bonk command")]
         [RequireGuild]
-        [RequirePermissions(Permissions.MoveMembers)]
+        [RequirePermissions(Permissions.MoveMembers | Permissions.SendMessages)]
         public async Task BonkCommand(CommandContext ctx, [Description("The voice channel to send members to when they are bonked")] DiscordChannel bonkChannel)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);

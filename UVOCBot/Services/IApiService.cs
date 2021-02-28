@@ -98,5 +98,27 @@ namespace UVOCBot.Services
         Task DeletePlanetsideSettings(ulong id);
 
         #endregion
+
+        #region MemberGroups
+
+        [Get("/membergroup/{id}")]
+        Task<MemberGroupDTO> GetMemberGroup(ulong id);
+
+        [Get("/membergroup")]
+        Task<MemberGroupDTO> GetMemberGroup(ulong guildId, string groupName);
+
+        [Put("/membergroup/{id}")]
+        Task UpdateMemberGroup(ulong id, MemberGroupDTO group);
+
+        [Post("/membergroup")]
+        Task<MemberGroupDTO> CreateMemberGroup(MemberGroupDTO group);
+
+        [Delete("/membergroup/{id}")]
+        Task DeleteMemberGroup(ulong id);
+
+        [Delete("/membergroup")]
+        Task DeleteMemberGroup(ulong guildId, string groupName);
+
+        #endregion
     }
 }

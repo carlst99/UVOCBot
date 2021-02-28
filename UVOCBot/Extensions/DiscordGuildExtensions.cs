@@ -1,12 +1,13 @@
-﻿using DSharpPlus;
-using DSharpPlus.Entities;
-using Serilog;
+﻿using Serilog;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using UVOCBot.Extensions;
 
-namespace UVOCBot.Utils
+namespace DSharpPlus.Entities
 {
-    public static class DiscordClientUtils
+    public static class DiscordGuildExtensions
     {
         /// <summary>
         /// Attempts to get a guild channel. If it cannot be found, a suitable fallback channel will instead be chosen
@@ -14,7 +15,7 @@ namespace UVOCBot.Utils
         /// <param name="guild">The guild that contains the specified channel</param>
         /// <param name="channelId">The ID of the channel to obtain</param>
         /// <returns></returns>
-        public static ChannelReturnedInfo TryGetGuildChannel(DiscordGuild guild, ulong? channelId)
+        public static ChannelReturnedInfo TryGetChannel(this DiscordGuild guild, ulong? channelId)
         {
             if (channelId is not null && guild.Channels.ContainsKey((ulong)channelId))
                 return new ChannelReturnedInfo(guild.Channels[(ulong)channelId], ChannelReturnedInfo.GetChannelStatus.Success);
@@ -26,26 +27,7 @@ namespace UVOCBot.Utils
                 return new ChannelReturnedInfo(null, ChannelReturnedInfo.GetChannelStatus.Failure);
         }
 
-        /// <summary>
-        /// Attempts to get a guild channel. If it cannot be found, a suitable fallback channel will instead be chosen
-        /// </summary>
-        /// <param name="client">The discord client associated with the guild</param>
-        /// <param name="guildId">The ID of the guild in which the channel belongs</param>
-        /// <param name="channelId">The ID of the channel to obtain</param>
-        /// <returns></returns>
-        public static ChannelReturnedInfo TryGetGuildChannel(DiscordClient client, ulong guildId, ulong? channelId)
-        {
-            // Try and get the guild to send messages in
-            DiscordGuild guild;
-            if (client.Guilds.ContainsKey(guildId))
-                guild = client.Guilds[guildId];
-            else
-                return new ChannelReturnedInfo(null, ChannelReturnedInfo.GetChannelStatus.GuildNotFound);
-
-            return TryGetGuildChannel(guild, channelId);
-        }
-
-        public static async Task<MemberReturnedInfo> TryGetGuildMemberAsync(DiscordGuild guild, ulong memberId)
+        public static async Task<MemberReturnedInfo> TryGetMemberAsync(this DiscordGuild guild, ulong memberId)
         {
             // Try and pull the member from cache in the first instance
             if (guild.Members.ContainsKey(memberId))
@@ -67,16 +49,24 @@ namespace UVOCBot.Utils
             }
         }
 
-        public static async Task<MemberReturnedInfo> TryGetGuildMemberAsync(DiscordClient client, ulong guildId, ulong memberId)
+        /// <summary>
+        /// Gets all members of a guild who have the specified role
+        /// </summary>
+        /// <param name="guild"></param>
+        /// <param name="role"></param>
+        /// <returns></returns>
+        public static async Task<List<DiscordMember>> GetMembersWithRoleAsync(this DiscordGuild guild, DiscordRole role)
         {
-            // Try and get the guild to send messages in
-            DiscordGuild guild;
-            if (client.Guilds.ContainsKey(guildId))
-                guild = client.Guilds[guildId];
-            else
-                return new MemberReturnedInfo(null, MemberReturnedInfo.GetMemberStatus.GuildNotFound);
+            IReadOnlyCollection<DiscordMember> guildMembers = await guild.GetAllMembersAsync().ConfigureAwait(false);
+            List<DiscordMember> roleOwners = new List<DiscordMember>();
 
-            return await TryGetGuildMemberAsync(guild, memberId).ConfigureAwait(false);
+            foreach (DiscordMember member in guildMembers)
+            {
+                if (member.Roles.Contains(role))
+                    roleOwners.Add(member);
+            }
+
+            return roleOwners;
         }
     }
 }

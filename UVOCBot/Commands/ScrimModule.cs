@@ -14,6 +14,7 @@ namespace UVOCBot.Commands
 {
     [Description("Commands pertinent to scrim organisation")]
     [RequireGuild]
+    [RequireOwner]
     public class ScrimModule : BaseCommandModule
     {
         private readonly List<AccountDistributionRequest> _distributionRequests;

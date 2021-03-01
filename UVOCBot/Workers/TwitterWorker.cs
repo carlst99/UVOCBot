@@ -11,6 +11,7 @@ using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 using UVOCBot.Config;
 using UVOCBot.Core.Model;
+using UVOCBot.Extensions;
 using UVOCBot.Model;
 using UVOCBot.Services;
 using UVOCBot.Utils;
@@ -165,7 +166,7 @@ namespace UVOCBot.Workers
 
         private async Task PostTweetsToChannelAsync(GuildTwitterSettingsDTO settings, List<ITweet> tweets)
         {
-            ChannelReturnedInfo channelInfo = DiscordClientUtils.TryGetGuildChannel(_discordClient, settings.GuildId, settings.RelayChannelId);
+            ChannelReturnedInfo channelInfo = _discordClient.TryGetGuildChannel(settings.GuildId, settings.RelayChannelId);
 
             switch (channelInfo.Status)
             {

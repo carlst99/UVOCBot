@@ -35,10 +35,10 @@ namespace UVOCBot.Commands
         };
 
         [Command("move")]
-        [Description("Moves everyone from the channel the command caller is currently connected to, to the specified channel")]
+        [Description("Moves everyone from the voice channel the command caller is currently connected to to another")]
         public async Task MoveCommand(
             CommandContext ctx,
-            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")] string channelName)
+            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")] string moveTo)
         {
             if (ctx.Member.VoiceState is null || ctx.Member.VoiceState.Channel is null)
             {
@@ -46,14 +46,40 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            DiscordChannel moveTo = await ResolveChannel(ctx, channelName).ConfigureAwait(false);
-            if (moveTo is null)
+            DiscordChannel moveToChannel = await ResolveChannel(ctx, moveTo).ConfigureAwait(false);
+            if (moveToChannel is null)
                 return;
+
+            foreach (DiscordMember user in ctx.Member.VoiceState.Channel.Users)
+                await moveToChannel.PlaceMemberAsync(user).ConfigureAwait(false);
+
+            await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
+        }
+
+        [Command("move")]
+        [Description("Moves everyone from one voice channel to another")]
+        public async Task MoveCommand(
+            CommandContext ctx,
+            string moveFrom,
+            string moveTo)
+        {
+            DiscordChannel moveFromChannel = await ResolveChannel(ctx, moveFrom).ConfigureAwait(false);
+            if (moveFromChannel is null)
+                return;
+
+            DiscordChannel moveToChannel = await ResolveChannel(ctx, moveTo).ConfigureAwait(false);
+            if (moveToChannel is null)
+                return;
+
+            foreach (DiscordMember user in moveFromChannel.Users)
+                await moveToChannel.PlaceMemberAsync(user).ConfigureAwait(false);
+
+            await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
         }
 
         private async Task<DiscordChannel> ResolveChannel(CommandContext ctx, string channelName)
         {
-            if (ulong.TryParse(channelName, out ulong channelId) && ctx.Guild.Channels.ContainsKey(channelId))
+            if (ulong.TryParse(channelName, out ulong channelId) && ctx.Guild.Channels.ContainsKey(channelId) && ctx.Guild.Channels[channelId].Type == ChannelType.Voice)
                 return ctx.Guild.Channels[channelId];
 
             IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c => c.Name.StartsWith(channelName) && c.Type == ChannelType.Voice);

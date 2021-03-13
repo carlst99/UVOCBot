@@ -26,7 +26,7 @@ namespace UVOCBot.Api.Workers
 
                     foreach (MemberGroup group in db.MemberGroups)
                     {
-                        if (group.CreatedAt.AddHours(MemberGroup.MAX_LIFETIME_HOURS) > DateTimeOffset.UtcNow)
+                        if (group.CreatedAt.AddHours(MemberGroup.MAX_LIFETIME_HOURS) < DateTimeOffset.UtcNow)
                             db.MemberGroups.Remove(group);
                     }
 

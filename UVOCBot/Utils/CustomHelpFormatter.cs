@@ -12,6 +12,8 @@ namespace UVOCBot.Utils
 {
     public class CustomHelpFormatter : BaseHelpFormatter
     {
+        protected readonly string _prefix;
+
         protected DiscordEmbedBuilder _embedBuilder;
         protected StringBuilder _builder;
         protected Command _command;
@@ -25,8 +27,9 @@ namespace UVOCBot.Utils
                 Title = "Help",
                 Url = "https://github.com/carlst99/UVOCBot"
             };
-            _embedBuilder.AddField("Prefix", Formatter.InlineCode(prefixService.GetPrefix(ctx.Guild.Id)));
+
             _builder = new StringBuilder();
+            _prefix = prefixService.GetPrefix(ctx.Guild.Id);
         }
 
         public override CommandHelpMessage Build()
@@ -77,6 +80,7 @@ namespace UVOCBot.Utils
         {
             if (_command is null)
             {
+                _embedBuilder.AddField("Prefix", Formatter.InlineCode(_prefix));
                 AddCommands(subcommands.Where(c => c is CommandGroup), "Command Groups");
                 AddCommands(subcommands.Where(c => c is not CommandGroup), "Top-level Commands");
             }

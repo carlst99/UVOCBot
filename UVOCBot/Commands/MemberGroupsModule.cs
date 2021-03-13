@@ -2,7 +2,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using Refit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,7 +80,7 @@ namespace UVOCBot.Commands
 
                 await ctx.RespondAsync(builder).ConfigureAwait(false);
             }
-            catch (ValidationApiException va) when (va.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch (Refit.ValidationApiException va) when (va.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 await ctx.RespondWithErrorAsync("That group does not exist.").ConfigureAwait(false);
                 return;
@@ -110,9 +109,17 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            if (members.Length < 2 || members.Length > 50)
+            if (members.Length > 50)
             {
-                await ctx.RespondWithErrorAsync("A group must contain between two and 50 members.").ConfigureAwait(false);
+                await ctx.RespondWithErrorAsync("A group cannot have more than 50 members.").ConfigureAwait(false);
+                return;
+            }
+
+            members = members.Distinct().ToArray();
+
+            if (members.Length < 2)
+            {
+                await ctx.RespondWithErrorAsync("A group cannot have less than two members, excluding duplicates.").ConfigureAwait(false);
                 return;
             }
 

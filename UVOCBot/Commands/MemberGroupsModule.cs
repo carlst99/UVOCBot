@@ -21,7 +21,7 @@ namespace UVOCBot.Commands
 
         [Command("list")]
         [Description("Gets all of the groups created in this guild")]
-        public async Task GetGroupsCommand(CommandContext ctx)
+        public async Task ListGroupsCommand(CommandContext ctx)
         {
             List<MemberGroupDTO> groups = await DbApi.GetAllGuildMemberGroups(ctx.Guild.Id).ConfigureAwait(false);
 
@@ -39,7 +39,11 @@ namespace UVOCBot.Commands
                     sb.AppendLine(groupCreator.Member.Mention);
             }
 
-            await ctx.RespondAsync(sb.ToString()).ConfigureAwait(false);
+            DiscordMessageBuilder builder = new();
+            builder.WithContent(sb.ToString());
+            builder.WithAllowedMentions(Mentions.None);
+
+            await ctx.RespondAsync(builder).ConfigureAwait(false);
         }
 
         [Command("create")]

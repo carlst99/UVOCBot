@@ -26,11 +26,11 @@ namespace UVOCBot.Api.Workers
 
                     foreach (MemberGroup group in db.MemberGroups)
                     {
-                        if (group.CreatedAt.AddHours(MemberGroup.MAX_LIFETIME_HOURS) > DateTimeOffset.Now)
+                        if (group.CreatedAt.AddHours(MemberGroup.MAX_LIFETIME_HOURS) > DateTimeOffset.UtcNow)
                             db.MemberGroups.Remove(group);
                     }
 
-                    await db.SaveChangesAsync().ConfigureAwait(false);
+                    await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
                 }
 
                 await Task.Delay(900000, stoppingToken).ConfigureAwait(false); // Work every 15min

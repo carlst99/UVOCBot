@@ -107,6 +107,9 @@ namespace UVOCBot.Services
         [Get("/membergroup")]
         Task<MemberGroupDTO> GetMemberGroup(ulong guildId, string groupName);
 
+        [Get("/membergroup/guildgroups/{guildId}")]
+        Task<List<MemberGroupDTO>> GetAllGuildMemberGroups(ulong guildId);
+
         [Put("/membergroup/{id}")]
         Task UpdateMemberGroup(ulong id, MemberGroupDTO group);
 

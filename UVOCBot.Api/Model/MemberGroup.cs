@@ -18,6 +18,11 @@ namespace UVOCBot.Api.Model
         public ulong GuildId { get; set; }
 
         /// <summary>
+        /// The ID of the Discord user that created this group
+        /// </summary>
+        public ulong CreatorId { get; set; }
+
+        /// <summary>
         /// Gets or sets the time that this group was created at
         /// </summary>
         public DateTimeOffset CreatedAt { get; set; }

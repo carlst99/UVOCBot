@@ -23,16 +23,25 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/MemberGroup/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<MemberGroupDTO>> Get(ulong id)
+        public async Task<ActionResult<MemberGroupDTO>> GetMemberGroup(ulong id)
         {
             MemberGroup group = await _context.MemberGroups.FindAsync(id).ConfigureAwait(false);
 
             return group == null ? NotFound() : ToDTO(group);
         }
 
+        // GET api/MemberGroup/guildGroups/5
+        [HttpGet("guildgroups/{id}")]
+        public async Task<ActionResult<List<MemberGroupDTO>>> GetGuildGroups(ulong id)
+        {
+            List<MemberGroup> groups = await _context.MemberGroups.Where(g => g.GuildId == id).ToListAsync().ConfigureAwait(false);
+
+            return groups.ConvertAll(g => ToDTO(g));
+        }
+
         // GET api/MemberGroup/?guildId=1&groupName=""
         [HttpGet]
-        public async Task<ActionResult<MemberGroupDTO>> Get([FromQuery] ulong guildId, [FromQuery] string groupName)
+        public async Task<ActionResult<MemberGroupDTO>> GetMemberGroup([FromQuery] ulong guildId, [FromQuery] string groupName)
         {
             MemberGroup group = await _context.MemberGroups.FirstOrDefaultAsync(g => g.GuildId == guildId && g.GroupName == groupName).ConfigureAwait(false);
 
@@ -41,16 +50,16 @@ namespace UVOCBot.Api.Controllers
 
         // POST api/MemberGroup
         [HttpPost]
-        public async Task<ActionResult<MemberGroupDTO>> Post(MemberGroupDTO memberGroup)
+        public async Task<ActionResult<MemberGroupDTO>> Post(MemberGroupDTO group)
         {
-            IQueryable<MemberGroup> guildGroups = _context.MemberGroups.Where(g => g.GuildId.Equals(memberGroup.GuildId));
-            if (guildGroups.Any(g => g.GroupName.Equals(memberGroup.GroupName)))
+            IQueryable<MemberGroup> guildGroups = _context.MemberGroups.Where(g => g.GuildId.Equals(group.GuildId));
+            if (guildGroups.Any(g => g.GroupName.Equals(group.GroupName)))
                 return Conflict();
 
-            _context.MemberGroups.Add(FromDTO(memberGroup));
+            _context.MemberGroups.Add(FromDTO(group));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            return CreatedAtAction("GetMemberGroup", new { id = memberGroup.Id }, memberGroup);
+            return CreatedAtAction(nameof(GetMemberGroup), new { id = group.Id }, group);
         }
 
         // PUT api/MemberGroup/5
@@ -108,6 +117,7 @@ namespace UVOCBot.Api.Controllers
             {
                 Id = group.Id,
                 GuildId = group.GuildId,
+                CreatorId = group.CreatorId,
                 CreatedAt = group.CreatedAt,
                 GroupName = group.GroupName,
                 UserIds = new List<ulong>(group.UserIds.Split('\n').Select(s => ulong.Parse(s)))
@@ -120,6 +130,7 @@ namespace UVOCBot.Api.Controllers
             {
                 Id = dto.Id,
                 GuildId = dto.GuildId,
+                CreatorId = dto.CreatorId,
                 CreatedAt = dto.CreatedAt,
                 GroupName = dto.GroupName,
                 UserIds = string.Join('\n', dto.UserIds.Select(i => i.ToString()))

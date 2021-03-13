@@ -7,7 +7,7 @@ namespace UVOCBot.Extensions
         public enum GetMemberStatus
         {
             /// <summary>
-            /// The guild member was successfully received
+            /// The guild member was successfully retrieved
             /// </summary>
             Success = 0,
 
@@ -17,7 +17,7 @@ namespace UVOCBot.Extensions
             GuildNotFound = 1,
 
             /// <summary>
-            /// Fetching the channel failed
+            /// The guild member could not be retrieved
             /// </summary>
             Failure = 2
         }

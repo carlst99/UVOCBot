@@ -15,6 +15,11 @@ namespace UVOCBot.Core.Model
         public ulong GuildId { get; set; }
 
         /// <summary>
+        /// The ID of the Discord user that created this group
+        /// </summary>
+        public ulong CreatorId { get; set; }
+
+        /// <summary>
         /// Gets or sets the UTC time that this group was created at
         /// </summary>
         public DateTimeOffset CreatedAt { get; set; }
@@ -28,10 +33,11 @@ namespace UVOCBot.Core.Model
 
         public MemberGroupDTO() { }
 
-        public MemberGroupDTO(string groupName, ulong guildId, List<ulong> userIds)
+        public MemberGroupDTO(string groupName, ulong guildId, ulong creatorId, List<ulong> userIds)
         {
             GroupName = groupName;
             GuildId = guildId;
+            CreatorId = creatorId;
             UserIds = userIds;
             CreatedAt = DateTimeOffset.UtcNow;
         }

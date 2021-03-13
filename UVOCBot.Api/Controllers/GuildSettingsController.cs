@@ -68,7 +68,7 @@ namespace UVOCBot.Api.Controllers
             _context.GuildSettings.Add(FromDTO(guildSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            return CreatedAtAction("GetGuildSettings", new { id = guildSettings.GuildId }, guildSettings);
+            return CreatedAtAction(nameof(GetGuildSettings), new { id = guildSettings.GuildId }, guildSettings);
         }
 
         // DELETE: api/GuildSettings/5

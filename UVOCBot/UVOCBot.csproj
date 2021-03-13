@@ -17,17 +17,17 @@
 
   <ItemGroup>
     <PackageReference Include="DaybreakGames.Census" Version="3.1.0" />
-    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00805" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00805" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00805" />
+    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00814" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00814" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00814" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
     <PackageReference Include="Refit" Version="6.0.24" />
     <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="4.1.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="4.1.2" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
-    <PackageReference Include="System.IO.Abstractions" Version="13.2.23" />
+    <PackageReference Include="System.IO.Abstractions" Version="13.2.25" />
     <PackageReference Include="TweetinviAPI" Version="5.0.3" />
   </ItemGroup>
 

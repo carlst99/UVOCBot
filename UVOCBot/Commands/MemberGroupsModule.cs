@@ -52,39 +52,31 @@ namespace UVOCBot.Commands
         [Description("Gets information about a group")]
         public async Task GetGroupCommand(CommandContext ctx, [Description("The name of the group to retrieve")] string groupName)
         {
-            try
+            MemberGroupDTO group = await GetGroup(ctx, groupName).ConfigureAwait(false);
+
+            StringBuilder sb = new();
+            sb.Append("Group: ").AppendLine(Formatter.InlineCode(group.GroupName))
+                .Append(group.UserIds.Count).AppendLine(" members")
+                .Append("Created by ");
+
+            await AppendMember(ctx.Guild, group.CreatorId, sb).ConfigureAwait(false);
+            sb.AppendLine();
+
+            sb.Append("Expiring in ").AppendLine((group.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"))
+                .AppendLine()
+                .AppendLine(Formatter.Bold("Members"));
+
+            foreach (ulong userId in group.UserIds)
             {
-                MemberGroupDTO group = await DbApi.GetMemberGroup(ctx.Guild.Id, groupName).ConfigureAwait(false);
-
-                StringBuilder sb = new();
-                sb.Append("Group: ").AppendLine(Formatter.InlineCode(group.GroupName))
-                    .Append(group.UserIds.Count).AppendLine(" members")
-                    .Append("Created by ");
-
-                await AppendMember(ctx.Guild, group.CreatorId, sb).ConfigureAwait(false);
-                sb.AppendLine();
-
-                sb.Append("Expiring in ").AppendLine((group.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"))
-                    .AppendLine()
-                    .AppendLine(Formatter.Bold("Members"));
-
-                foreach (ulong userId in group.UserIds)
-                {
-                    await AppendMember(ctx.Guild, userId, sb).ConfigureAwait(false);
-                    sb.Append(' ');
-                }
-
-                DiscordMessageBuilder builder = new();
-                builder.WithContent(sb.ToString());
-                builder.WithAllowedMentions(Mentions.None);
-
-                await ctx.RespondAsync(builder).ConfigureAwait(false);
+                await AppendMember(ctx.Guild, userId, sb).ConfigureAwait(false);
+                sb.Append(' ');
             }
-            catch (Refit.ValidationApiException va) when (va.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                await ctx.RespondWithErrorAsync("That group does not exist.").ConfigureAwait(false);
-                return;
-            }
+
+            DiscordMessageBuilder builder = new();
+            builder.WithContent(sb.ToString());
+            builder.WithAllowedMentions(Mentions.None);
+
+            await ctx.RespondAsync(builder).ConfigureAwait(false);
         }
 
         private async Task AppendMember(DiscordGuild guild, ulong memberId, StringBuilder sb)
@@ -100,7 +92,7 @@ namespace UVOCBot.Commands
         [Description("Creates a new group from the given members")]
         public async Task CreateGroupCommand(
             CommandContext ctx,
-            [Description("The unique name of the group")] string groupName,
+            [Description("The name of the group")] string groupName,
             [Description("The members to include in the group")] params DiscordMember[] members)
         {
             if (string.IsNullOrEmpty(groupName) || groupName.Length < 3)
@@ -140,9 +132,37 @@ namespace UVOCBot.Commands
         [Description("Deletes a group")]
         public async Task DeleteGroupCommand(
             CommandContext ctx,
-            [Description("The unique name of the guild")] string groupName)
+            [Description("The name of the group")] string groupName)
         {
+            MemberGroupDTO group = await GetGroup(ctx, groupName).ConfigureAwait(false);
+            if (group is null)
+                return;
 
+            if (ctx.Member.Id != group.CreatorId)
+            {
+                Permissions senderPerms = ctx.Member.PermissionsIn(ctx.Channel);
+                if ((senderPerms & (Permissions.Administrator | Permissions.ManageGuild | Permissions.ManageRoles)) == 0)
+                {
+                    await ctx.RespondWithErrorAsync("You must either be the group owner, or have guild/role management permissions, to remove a group.").ConfigureAwait(false);
+                    return;
+                }
+            }
+
+            await DbApi.DeleteMemberGroup(group.Id).ConfigureAwait(false);
+            await ctx.RespondWithSuccessAsync($"The group {group.GroupName} was successfully deleted.").ConfigureAwait(false);
+        }
+
+        private async Task<MemberGroupDTO> GetGroup(CommandContext ctx, string groupName)
+        {
+            try
+            {
+                return await DbApi.GetMemberGroup(ctx.Guild.Id, groupName).ConfigureAwait(false);
+            }
+            catch (Refit.ValidationApiException va) when (va.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                await ctx.RespondWithErrorAsync("That group does not exist.").ConfigureAwait(false);
+                return null;
+            }
         }
     }
 }

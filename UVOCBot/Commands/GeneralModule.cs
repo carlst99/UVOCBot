@@ -24,13 +24,6 @@ namespace UVOCBot.Commands
         public IOptions<GeneralOptions> GOptions { get; set; }
         public GeneralOptions GeneralOptions => GOptions.Value;
 
-        [Command("ping")]
-        [Description("Pong! Tells you whether the bot is listening")]
-        public async Task PingCommand(CommandContext ctx)
-        {
-            await ctx.RespondAsync("pong!").ConfigureAwait(false);
-        }
-
         [Command("coinflip")]
         [Description("Flips a coin")]
         public async Task CoinFlipCommand(CommandContext ctx)

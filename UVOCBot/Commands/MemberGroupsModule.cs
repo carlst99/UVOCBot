@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using Refit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,19 +28,18 @@ namespace UVOCBot.Commands
             List<MemberGroupDTO> groups = await DbApi.GetAllGuildMemberGroups(ctx.Guild.Id).ConfigureAwait(false);
 
             StringBuilder sb = new();
-            sb.Append("Showing ").Append(Formatter.InlineCode(groups.Count.ToString())).Append(" groups for ").AppendLine(Formatter.InlineCode(ctx.Guild.Name)).AppendLine();
+            sb.Append("Showing ").Append(Formatter.InlineCode(groups.Count.ToString())).Append(" groups for ")
+                .AppendLine(Formatter.InlineCode(ctx.Guild.Name))
+                .AppendLine();
 
             foreach (MemberGroupDTO g in groups)
             {
                 sb.Append("• ").Append(Formatter.InlineCode(g.GroupName)).Append(" (").Append(g.UserIds.Count).Append(" members) - created by ");
 
-                MemberReturnedInfo groupCreator = await ctx.Guild.TryGetMemberAsync(g.CreatorId).ConfigureAwait(false);
-                if (groupCreator.Status == MemberReturnedInfo.GetMemberStatus.Failure)
-                    sb.Append("`unknown member`");
-                else
-                    sb.Append(groupCreator.Member.Mention);
+                await AppendMember(ctx.Guild, g.CreatorId, sb).ConfigureAwait(false);
 
-                sb.Append(", expiring in ").AppendLine((g.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"));
+                sb.Append(", expiring in ")
+                    .AppendLine((g.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"));
             }
 
             DiscordMessageBuilder builder = new();
@@ -47,6 +47,54 @@ namespace UVOCBot.Commands
             builder.WithAllowedMentions(Mentions.None);
 
             await ctx.RespondAsync(builder).ConfigureAwait(false);
+        }
+
+        [Command("info")]
+        [Description("Gets information about a group")]
+        public async Task GetGroupCommand(CommandContext ctx, [Description("The name of the group to retrieve")] string groupName)
+        {
+            try
+            {
+                MemberGroupDTO group = await DbApi.GetMemberGroup(ctx.Guild.Id, groupName).ConfigureAwait(false);
+
+                StringBuilder sb = new();
+                sb.Append("Group: ").AppendLine(Formatter.InlineCode(group.GroupName))
+                    .Append(group.UserIds.Count).AppendLine(" members")
+                    .Append("Created by ");
+
+                await AppendMember(ctx.Guild, group.CreatorId, sb).ConfigureAwait(false);
+                sb.AppendLine();
+
+                sb.Append("Expiring in ").AppendLine((group.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"))
+                    .AppendLine()
+                    .AppendLine(Formatter.Bold("Members"));
+
+                foreach (ulong userId in group.UserIds)
+                {
+                    await AppendMember(ctx.Guild, userId, sb).ConfigureAwait(false);
+                    sb.Append(' ');
+                }
+
+                DiscordMessageBuilder builder = new();
+                builder.WithContent(sb.ToString());
+                builder.WithAllowedMentions(Mentions.None);
+
+                await ctx.RespondAsync(builder).ConfigureAwait(false);
+            }
+            catch (ValidationApiException va) when (va.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                await ctx.RespondWithErrorAsync("That group does not exist.").ConfigureAwait(false);
+                return;
+            }
+        }
+
+        private async Task AppendMember(DiscordGuild guild, ulong memberId, StringBuilder sb)
+        {
+            MemberReturnedInfo member = await guild.TryGetMemberAsync(memberId).ConfigureAwait(false);
+            if (member.Status == MemberReturnedInfo.GetMemberStatus.Failure)
+                sb.Append(Formatter.InlineCode("unknown"));
+            else
+                sb.Append(member.Member.Mention);
         }
 
         [Command("create")]

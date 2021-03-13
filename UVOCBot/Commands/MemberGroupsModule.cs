@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,9 +35,11 @@ namespace UVOCBot.Commands
 
                 MemberReturnedInfo groupCreator = await ctx.Guild.TryGetMemberAsync(g.CreatorId).ConfigureAwait(false);
                 if (groupCreator.Status == MemberReturnedInfo.GetMemberStatus.Failure)
-                    sb.AppendLine("`unknown member`");
+                    sb.Append("`unknown member`");
                 else
-                    sb.AppendLine(groupCreator.Member.Mention);
+                    sb.Append(groupCreator.Member.Mention);
+
+                sb.Append(", expiring in ").AppendLine((g.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"));
             }
 
             DiscordMessageBuilder builder = new();

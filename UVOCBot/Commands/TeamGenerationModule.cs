@@ -14,7 +14,7 @@ namespace UVOCBot.Commands
 {
     [Description("Commands that help with generating team lists")]
     [RequireGuild]
-    public class TeamsModule : BaseCommandModule
+    public class TeamGenerationModule : BaseCommandModule
     {
         [Command("random-teams")]
         [Aliases("rt", "random")]

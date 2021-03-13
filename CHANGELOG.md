@@ -1,5 +1,16 @@
 # Changelog
 
+## Release X - XXX
+
+- Implemented a member grouping system for guilds. The following commands are utilised:
+    - `create`: Creates a new group from the given members
+    - `delete`: Deletes a group
+    - `info`: Gets information about a group
+    - `list`: Gets all of the groups created in this guild
+
+Technical Notes:
+- Added a `CleanupWorker` to the API project. Currently, this removes expired member groups every 15m, but it could be expanded to perform significantly more work that would be more efficient to perform locally, rather than transferring data to the client.
+
 ## Release v0.1.0 - 12/02/2021
 
 This is the first generally available release, as I am finally happy with the architecture and design patterns being utilised.

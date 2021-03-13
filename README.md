@@ -41,7 +41,7 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 
 UVOCBot has two main components:
 - The bot itself, `UVOCBot`. This is a .NET 5 Worker project, based on the `Microsoft.Extensions.Hosting` framework.
-- A RESTful API that abstracts the MariaDB database, `UVOCBot.Api`. This is built using `ASP.NET Core` and `Entity Framework Core`. This is simply a data abstraction layer; no data manipulation should occur here.
+- A RESTful API that abstracts the MariaDB database, `UVOCBot.Api`. This is built using `ASP.NET Core` and `Entity Framework Core`. This is by and large a data abstraction layer; very little data manipulation occurs here, except for where it would be inefficient for the client to perform non-user dependent actions.
 
 There is also a shared project, `UVOCBot.Core`, which contains models common to both projects.
 

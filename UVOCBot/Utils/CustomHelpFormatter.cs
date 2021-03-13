@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UVOCBot.Services;
 
 namespace UVOCBot.Utils
 {
@@ -15,14 +16,16 @@ namespace UVOCBot.Utils
         protected StringBuilder _builder;
         protected Command _command;
 
-        public CustomHelpFormatter(CommandContext ctx)
+        public CustomHelpFormatter(CommandContext ctx, IPrefixService prefixService)
             : base(ctx)
         {
             _embedBuilder = new DiscordEmbedBuilder
             {
                 Color = Program.DEFAULT_EMBED_COLOUR,
-                Title = "Help"
+                Title = "Help",
+                Url = "https://github.com/carlst99/UVOCBot"
             };
+            _embedBuilder.AddField("Prefix", Formatter.InlineCode(prefixService.GetPrefix(ctx.Guild.Id)));
             _builder = new StringBuilder();
         }
 

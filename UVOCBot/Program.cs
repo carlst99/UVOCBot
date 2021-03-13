@@ -155,7 +155,7 @@ namespace UVOCBot
         {
             GeneralOptions options = services.GetRequiredService<IOptions<GeneralOptions>>().Value;
 
-            DiscordClient client = new DiscordClient(new DiscordConfiguration
+            DiscordClient client = new(new DiscordConfiguration
             {
                 Token = options.BotToken,
                 TokenType = TokenType.Bot,

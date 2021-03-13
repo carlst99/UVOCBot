@@ -36,16 +36,37 @@ namespace UVOCBot.Commands
                 await ctx.RespondAsync("You flipped a **tails**!").ConfigureAwait(false);
         }
 
-        [Command("version")]
-        [Description("Gets the current version of this instance of UVOCBot")]
+        [Command("about")]
+        [Aliases("info", "version")]
+        [Description("Gets information about UVOCBot")]
         public async Task VersionCommand(CommandContext ctx)
         {
             DiscordEmbedBuilder builder = new DiscordEmbedBuilder
             {
-                Title = $"Version {Assembly.GetEntryAssembly().GetName().Version}",
+                Title = "UVOCBot",
+                Description = "A general-purpose bot providing functions to assist with the gaming (in particular, PlanetSide 2) experience of a Discord server",
+                Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
+                {
+                    Url = "https://cdn.discordapp.com/app-icons/747683069737041970/91cb442e9f1811fabfa7611e4b564acd.png",
+                    Height = 96,
+                    Width = 96
+                },
+                Author = new DiscordEmbedBuilder.EmbedAuthor()
+                {
+                    Name = "Written by Carl, A.K.A FalconEye",
+                    Url = "https://github.com/carlst99",
+                    IconUrl = "https://cdn.discordapp.com/avatars/165629177221873664/c1bb057dd76dfec6ed8c2de62dc1c185.png"
+                },
+                Footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = $"Version {Assembly.GetEntryAssembly().GetName().Version}"
+                },
                 Color = Program.DEFAULT_EMBED_COLOUR,
-                Timestamp = DateTimeOffset.Now
+                Timestamp = DateTimeOffset.Now,
+                Url = "https://github.com/carlst99/UVOCBot"
             };
+
+            builder.AddField("Prefix", Formatter.InlineCode(PrefixService.GetPrefix(ctx.Guild.Id)));
             builder.AddField("Release Notes", RELEASE_NOTES);
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);

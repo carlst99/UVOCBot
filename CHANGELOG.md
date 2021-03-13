@@ -7,6 +7,7 @@
     - `delete`: Deletes a group
     - `info`: Gets information about a group
     - `list`: Gets all of the groups created in this guild
+- Improve information discovery in the `help` and `version` (now `about`) commands
 
 Technical Notes:
 - Added a `CleanupWorker` to the API project. Currently, this removes expired member groups every 15m, but it could be expanded to perform significantly more work that would be more efficient to perform locally, rather than transferring data to the client.

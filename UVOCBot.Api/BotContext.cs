@@ -13,6 +13,7 @@ namespace UVOCBot.Api
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
         public DbSet<TwitterUser> TwitterUsers { get; set; }
         public DbSet<PlanetsideSettings> PlanetsideSettings { get; set; }
+        public DbSet<MemberGroup> MemberGroups { get; set; }
 
         public BotContext(IOptions<DatabaseOptions> config)
         {

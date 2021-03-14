@@ -14,9 +14,10 @@ namespace UVOCBot.Commands
 {
     public class GeneralModule : BaseCommandModule
     {
-        public const string RELEASE_NOTES = "- **Custom prefixes!** Set a prefix to trigger commands using `ub!prefix`" +
-            "\r\n- **Purple embeds** - Standardised the embed colour to purple" +
-            "\r\n- **Default PlanetSide server** - PlanetSide commands that require a server can now do away with this argument. Use `ub!default-server` to set your default";
+        public const string RELEASE_NOTES = "- **Temporary groups** - Place 2-50 members into a group that lasts 24hrs, and can be used with other group-oriented commands. See `help group` for more info" +
+            "\r\n- **Bulk voice-chat movement** - Easily move members or groups between voice channels. See `help move` and `help move-group` for more info";
+
+        private static Random _rndGen;
 
         public IApiService DbApi { get; set; }
         public IPrefixService PrefixService { get; set; }
@@ -24,35 +25,53 @@ namespace UVOCBot.Commands
         public IOptions<GeneralOptions> GOptions { get; set; }
         public GeneralOptions GeneralOptions => GOptions.Value;
 
-        [Command("ping")]
-        [Description("Pong! Tells you whether the bot is listening")]
-        public async Task PingCommand(CommandContext ctx)
+        public GeneralModule()
         {
-            await ctx.RespondAsync("pong!").ConfigureAwait(false);
+            _rndGen = new Random();
         }
 
         [Command("coinflip")]
         [Description("Flips a coin")]
         public async Task CoinFlipCommand(CommandContext ctx)
         {
-            Random rnd = new Random();
-            int result = rnd.Next(0, 2);
+            int result = _rndGen.Next(0, 2);
             if (result == 0)
                 await ctx.RespondAsync("You flipped a **heads**!").ConfigureAwait(false);
             else
                 await ctx.RespondAsync("You flipped a **tails**!").ConfigureAwait(false);
         }
 
-        [Command("version")]
-        [Description("Gets the current version of this instance of UVOCBot")]
+        [Command("about")]
+        [Aliases("info", "version")]
+        [Description("Gets information about UVOCBot")]
         public async Task VersionCommand(CommandContext ctx)
         {
-            DiscordEmbedBuilder builder = new DiscordEmbedBuilder
+            DiscordEmbedBuilder builder = new()
             {
-                Title = $"Version {Assembly.GetEntryAssembly().GetName().Version}",
+                Title = "UVOCBot",
+                Description = "A general-purpose bot providing functions to assist with the gaming (in particular, PlanetSide 2) experience of a Discord server",
+                Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
+                {
+                    Url = "https://cdn.discordapp.com/app-icons/747683069737041970/91cb442e9f1811fabfa7611e4b564acd.png",
+                    Height = 96,
+                    Width = 96
+                },
+                Author = new DiscordEmbedBuilder.EmbedAuthor()
+                {
+                    Name = "Written by Carl, A.K.A FalconEye",
+                    Url = "https://github.com/carlst99",
+                    IconUrl = "https://cdn.discordapp.com/avatars/165629177221873664/c1bb057dd76dfec6ed8c2de62dc1c185.png"
+                },
+                Footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = $"Version {Assembly.GetEntryAssembly().GetName().Version}"
+                },
                 Color = Program.DEFAULT_EMBED_COLOUR,
-                Timestamp = DateTimeOffset.Now
+                Timestamp = DateTimeOffset.Now,
+                Url = "https://github.com/carlst99/UVOCBot"
             };
+
+            builder.AddField("Prefix", Formatter.InlineCode(PrefixService.GetPrefix(ctx.Guild.Id)));
             builder.AddField("Release Notes", RELEASE_NOTES);
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
@@ -81,7 +100,6 @@ namespace UVOCBot.Commands
         [Aliases("goToHornyJail")]
         [Description("Sends a voice member to horny jail")]
         [RequireGuild]
-        [RequirePermissions(Permissions.MoveMembers)]
         public async Task BonkCommand(CommandContext ctx, [Description("The member to bonk")] DiscordMember memberToBonk)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
@@ -100,10 +118,10 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            // Check that UVOCBot can move members out of the current channel
-            if (!CheckPermission(ctx.Member.VoiceState.Channel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
+            // Check for permission to move members out of the current channel
+            if (!ctx.Member.VoiceState.Channel.MemberHasPermissions(Permissions.MoveMembers, ctx.Guild.CurrentMember, ctx.Member))
             {
-                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members from your current channel").ConfigureAwait(false);
+                await ctx.RespondAsync("Either you or I do not have permissions to move members from your current channel").ConfigureAwait(false);
                 return;
             }
 
@@ -125,10 +143,10 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            // Check that UVOCBot can move members into the bonk channel
-            if (!CheckPermission(bonkChannel, ctx.Guild.CurrentMember, Permissions.MoveMembers))
+            // Check for permission to move members into the bonk channel
+            if (!bonkChannel.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember))
             {
-                await ctx.RespondAsync($"{ctx.Guild.CurrentMember.DisplayName} does not have permissions to move members to the bonk channel").ConfigureAwait(false);
+                await ctx.RespondAsync("Either you or I do not have permissions to move members to the bonk channel").ConfigureAwait(false);
                 return;
             }
 
@@ -139,7 +157,6 @@ namespace UVOCBot.Commands
         [Command("bonk-channel")]
         [Description("Sets the voice channel for the bonk command")]
         [RequireGuild]
-        [RequirePermissions(Permissions.MoveMembers)]
         public async Task BonkCommand(CommandContext ctx, [Description("The voice channel to send members to when they are bonked")] DiscordChannel bonkChannel)
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
@@ -185,18 +202,5 @@ namespace UVOCBot.Commands
             throw new Exception();
         }
 #endif
-
-        /// <summary>
-        /// Checks that a member has been granted a certain permission in a channel
-        /// </summary>
-        /// <param name="channel"></param>
-        /// <param name="member"></param>
-        /// <param name="permission"></param>
-        /// <returns></returns>
-        private bool CheckPermission(DiscordChannel channel, DiscordMember member, Permissions permission)
-        {
-            Permissions permissions = channel.PermissionsFor(member);
-            return (permissions & permission) != 0;
-        }
     }
 }

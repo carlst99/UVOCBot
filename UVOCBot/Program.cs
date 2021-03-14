@@ -2,6 +2,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,17 +18,19 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Config;
 using UVOCBot.Services;
+using UVOCBot.Utils;
 using UVOCBot.Workers;
 
 namespace UVOCBot
 {
-    // Permissions integer: 268504128
+    // Permissions integer: 285281344
     // - Manage Roles
+    // - View Channels
     // - Send Messages
     // - Read Message History
     // - Add Reactions
-    // - View Channels
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268504128&scope=bot
+    // - Move Members
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=285281344&scope=bot
 
     public static class Program
     {
@@ -78,7 +81,6 @@ namespace UVOCBot
                     Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
 
                     // Setup own services
-                    //services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
                     services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<IPrefixService, PrefixService>();
                     services.AddSingleton(DiscordClientFactory);
@@ -154,7 +156,7 @@ namespace UVOCBot
         {
             GeneralOptions options = services.GetRequiredService<IOptions<GeneralOptions>>().Value;
 
-            DiscordClient client = new DiscordClient(new DiscordConfiguration
+            DiscordClient client = new(new DiscordConfiguration
             {
                 Token = options.BotToken,
                 TokenType = TokenType.Bot,
@@ -181,23 +183,11 @@ namespace UVOCBot
                 PrefixResolver = (m) => CustomPrefixResolver(m, services.GetRequiredService<IPrefixService>())
             });
 
-            commands.CommandErrored += (_, a) => { Log.Error(a.Exception, "Command {command} failed", a.Command); return Task.CompletedTask; };
+            commands.SetHelpFormatter<CustomHelpFormatter>();
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
+            commands.CommandErrored += async (_, e) => await HandleCommandError(e, options).ConfigureAwait(false);
 
-            commands.CommandErrored += async (_, e) =>
-            {
-                Type exceptionType = e.Exception.GetType();
-                if (exceptionType.Equals(typeof(ArgumentException)))
-                    await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{options.CommandPrefix}help` for more information.").ConfigureAwait(false);
-                else if (exceptionType.Equals(typeof(TargetInvocationException)))
-                    await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
-                else if (exceptionType.Equals(typeof(ChecksFailedException)))
-                    await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
-                else if (exceptionType.Equals(typeof(CommandNotFoundException)))
-                    await e.Context.RespondAsync($"That command doesn't exist! Please see `{options.CommandPrefix}help` for a list of available commands.").ConfigureAwait(false);
-                else
-                    await e.Context.RespondAsync("Command failed. Please send this to the developers:\r\n" + e.Exception).ConfigureAwait(false);
-            };
+            client.UseInteractivity();
 
             return client;
         }
@@ -206,6 +196,33 @@ namespace UVOCBot
         {
             string prefix = prefixService.GetPrefix(message.Channel.GuildId);
             return Task.FromResult(message.GetStringPrefixLength(prefix));
+        }
+
+        private static async Task HandleCommandError(CommandErrorEventArgs e, GeneralOptions options)
+        {
+            Type exceptionType = e.Exception.GetType();
+            if (exceptionType.Equals(typeof(ArgumentException)))
+            {
+                await e.Context.RespondAsync($"You haven't provided valid parameters. Please see `{options.CommandPrefix}help` for more information.").ConfigureAwait(false);
+            }
+            else if (exceptionType.Equals(typeof(TargetInvocationException)))
+            {
+                await e.Context.RespondAsync("Oops! Something went wrong while running that command. Please try again.").ConfigureAwait(false);
+                Log.Error(e.Exception, "Command {command} failed", e.Command);
+            }
+            else if (exceptionType.Equals(typeof(ChecksFailedException)))
+            {
+                await e.Context.RespondAsync("Either you or me don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
+            }
+            else if (exceptionType.Equals(typeof(CommandNotFoundException)))
+            {
+                await e.Context.RespondAsync($"That command doesn't exist! Please see `{options.CommandPrefix}help` for a list of available commands.").ConfigureAwait(false);
+            }
+            else
+            {
+                await e.Context.RespondAsync("Command failed. Please send this to the developers:\r\n" + e.Exception).ConfigureAwait(false);
+                Log.Error(e.Exception, "Command {command} failed", e.Command);
+            }
         }
     }
 }

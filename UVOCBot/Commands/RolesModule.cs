@@ -2,14 +2,13 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using DSharpPlus.Exceptions;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UVOCBot.Utils;
+using UVOCBot.Extensions;
 
 namespace UVOCBot.Commands
 {
@@ -32,7 +31,7 @@ namespace UVOCBot.Commands
         {
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
-            DiscordMessage message = await GetMessageAsync(ctx, channel, messageId).ConfigureAwait(false);
+            DiscordMessage message = await channel.GetMessageAsync(ctx, messageId).ConfigureAwait(false);
             if (message is null)
                 return;
 
@@ -70,25 +69,6 @@ namespace UVOCBot.Commands
             }
 
             await ctx.RespondAsync(responseBuilder.ToString().Trim(',', ' ')).ConfigureAwait(false);
-        }
-
-        private static async Task<DiscordMessage> GetMessageAsync(CommandContext ctx, DiscordChannel channel, ulong messageId)
-        {
-            try
-            {
-                return await channel.GetMessageAsync(messageId).ConfigureAwait(false);
-            }
-            catch (NotFoundException)
-            {
-                await ctx.RespondAsync("Could not get the provided message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was posted in").ConfigureAwait(false);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Could not get message");
-                await ctx.RespondAsync("An error occured. Please try again").ConfigureAwait(false);
-                return null;
-            }
         }
 
         /// <summary>
@@ -133,7 +113,7 @@ namespace UVOCBot.Commands
         /// <returns>The member, if the role was successfully assigned</returns>
         private static async Task<DiscordMember> GrantRoleToUserAsync(CommandContext ctx, DiscordRole role, DiscordUser user)
         {
-            MemberReturnedInfo memberInfo = await DiscordClientUtils.TryGetGuildMemberAsync(ctx.Guild, user.Id).ConfigureAwait(false);
+            MemberReturnedInfo memberInfo = await ctx.Guild.TryGetMemberAsync(user.Id).ConfigureAwait(false);
             if (memberInfo.Status == MemberReturnedInfo.GetMemberStatus.Failure)
                 return null;
 

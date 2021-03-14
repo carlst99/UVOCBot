@@ -32,7 +32,7 @@ namespace UVOCBot.Api.Controllers
         {
             var planetsideSettings = await _context.PlanetsideSettings.FindAsync(id).ConfigureAwait(false);
 
-            return planetsideSettings == default ? NotFound() : ToDTO(planetsideSettings);
+            return planetsideSettings == null ? NotFound() : ToDTO(planetsideSettings);
         }
 
         // PUT: api/PlanetsideSettings/5
@@ -65,7 +65,7 @@ namespace UVOCBot.Api.Controllers
             _context.PlanetsideSettings.Add(FromDTO(planetsideSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
-            return CreatedAtAction("GetPlanetsideSettings", new { id = planetsideSettings.GuildId }, planetsideSettings);
+            return CreatedAtAction(nameof(GetPlanetsideSettings), new { id = planetsideSettings.GuildId }, planetsideSettings);
         }
 
         // DELETE: api/PlanetsideSettings/5

@@ -2,6 +2,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -22,13 +23,14 @@ using UVOCBot.Workers;
 
 namespace UVOCBot
 {
-    // Permissions integer: 268504128
+    // Permissions integer: 285281344
     // - Manage Roles
+    // - View Channels
     // - Send Messages
     // - Read Message History
     // - Add Reactions
-    // - View Channels
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=268504128&scope=bot
+    // - Move Members
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=285281344&scope=bot
 
     public static class Program
     {
@@ -79,7 +81,6 @@ namespace UVOCBot
                     Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
 
                     // Setup own services
-                    //services.AddSingleton<ISettingsService>((s) => new SettingsService(s.GetService<IFileSystem>()));
                     services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<IPrefixService, PrefixService>();
                     services.AddSingleton(DiscordClientFactory);
@@ -186,6 +187,8 @@ namespace UVOCBot
             commands.RegisterCommands(Assembly.GetExecutingAssembly());
             commands.CommandErrored += async (_, e) => await HandleCommandError(e, options).ConfigureAwait(false);
 
+            client.UseInteractivity();
+
             return client;
         }
 
@@ -209,7 +212,7 @@ namespace UVOCBot
             }
             else if (exceptionType.Equals(typeof(ChecksFailedException)))
             {
-                await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
+                await e.Context.RespondAsync("Either you or me don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
             }
             else if (exceptionType.Equals(typeof(CommandNotFoundException)))
             {

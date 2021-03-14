@@ -56,7 +56,7 @@ namespace DSharpPlus.Entities
             }
             catch (UnauthorizedException)
             {
-                await RespondWithDMFailureMessage(ctx, failureMessage).ConfigureAwait(false);
+                await ctx.RespondWithDMFailureMessage(failureMessage).ConfigureAwait(false);
                 return false;
             }
         }
@@ -70,7 +70,7 @@ namespace DSharpPlus.Entities
             }
             catch (UnauthorizedException)
             {
-                await RespondWithDMFailureMessage(ctx, failureMessage).ConfigureAwait(false);
+                await ctx.RespondWithDMFailureMessage(failureMessage).ConfigureAwait(false);
                 return false;
             }
         }
@@ -84,28 +84,14 @@ namespace DSharpPlus.Entities
             }
             catch (UnauthorizedException)
             {
-                await RespondWithDMFailureMessage(ctx, failureMessage).ConfigureAwait(false);
+                await ctx.RespondWithDMFailureMessage(failureMessage).ConfigureAwait(false);
                 return false;
-            }
-        }
-
-        public static async Task RespondWithDMFailureMessage(this CommandContext ctx, string failureMessage = null)
-        {
-            if (string.IsNullOrEmpty(failureMessage))
-            {
-                await ctx.RespondAsync($"{ctx.Member.Mention} I need to send you a direct message, but you've either disabled them or blocked me." +
-                " Please either, **unblock me** or adjust your *Privacy & Safety* settings to **Allow direct messages from server members**." +
-                " You can do this for every server (general settings) or just this one (right-click on the icon -> Privacy Settings).").ConfigureAwait(false);
-            }
-            else
-            {
-                await ctx.RespondAsync(failureMessage).ConfigureAwait(false);
             }
         }
 
         #endregion
 
-        public  static async Task<DiscordMessage> GetMessageAsync(this DiscordChannel channel, CommandContext ctx, ulong messageId)
+        public static async Task<DiscordMessage> GetMessageAsync(this DiscordChannel channel, CommandContext ctx, ulong messageId)
         {
             try
             {
@@ -116,6 +102,24 @@ namespace DSharpPlus.Entities
                 await ctx.RespondAsync("Could not get the provided message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was posted in").ConfigureAwait(false);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Checks that all the specified members have certain permissions within this channel
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <param name="permissions"></param>
+        /// <param name="members"></param>
+        /// <returns></returns>
+        public static bool HasPermissions(this DiscordChannel channel, Permissions permissions, params DiscordMember[] members)
+        {
+            foreach (DiscordMember member in members)
+            {
+                if ((channel.PermissionsFor(member) & permissions) == 0)
+                    return false;
+            }
+
+            return true;
         }
     }
 }

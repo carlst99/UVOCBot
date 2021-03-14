@@ -212,7 +212,7 @@ namespace UVOCBot
             }
             else if (exceptionType.Equals(typeof(ChecksFailedException)))
             {
-                await e.Context.RespondAsync("You don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
+                await e.Context.RespondAsync("Either you or me don't have the necessary permissions to perform this command. Please contact your server administrator/s.").ConfigureAwait(false);
             }
             else if (exceptionType.Equals(typeof(CommandNotFoundException)))
             {

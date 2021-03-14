@@ -9,11 +9,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UVOCBot.Core.Model;
+using UVOCBot.Extensions;
+using UVOCBot.Services;
 
 namespace UVOCBot.Commands
 {
     [RequireGuild]
-    [RequirePermissions(Permissions.MoveMembers)]
     public class MovementModule : BaseCommandModule
     {
         private static readonly Dictionary<int, string> INT_TO_EMOJI_STRING_TABLE = new Dictionary<int, string>
@@ -34,6 +36,8 @@ namespace UVOCBot.Commands
             { ":five:", 5 }
         };
 
+        public IApiService DbApi { get; set; }
+
         [Command("move")]
         [Description("Moves everyone from the voice channel the command caller is currently connected to to another")]
         public async Task MoveCommand(
@@ -46,7 +50,7 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            DiscordChannel moveToChannel = await ResolveChannel(ctx, moveTo).ConfigureAwait(false);
+            DiscordChannel moveToChannel = await TryResolveChannelAsync(ctx, moveTo).ConfigureAwait(false);
             if (moveToChannel is null)
                 return;
 
@@ -60,14 +64,14 @@ namespace UVOCBot.Commands
         [Description("Moves everyone from one voice channel to another")]
         public async Task MoveCommand(
             CommandContext ctx,
-            string moveFrom,
-            string moveTo)
+            [Description("The voice channel name/ID to move people from. Including a partial channel name will search for the most relevant channel")] string moveFrom,
+            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")] string moveTo)
         {
-            DiscordChannel moveFromChannel = await ResolveChannel(ctx, moveFrom).ConfigureAwait(false);
+            DiscordChannel moveFromChannel = await TryResolveChannelAsync(ctx, moveFrom).ConfigureAwait(false);
             if (moveFromChannel is null)
                 return;
 
-            DiscordChannel moveToChannel = await ResolveChannel(ctx, moveTo).ConfigureAwait(false);
+            DiscordChannel moveToChannel = await TryResolveChannelAsync(ctx, moveTo).ConfigureAwait(false);
             if (moveToChannel is null)
                 return;
 
@@ -77,17 +81,76 @@ namespace UVOCBot.Commands
             await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
         }
 
-        private async Task<DiscordChannel> ResolveChannel(CommandContext ctx, string channelName)
+        [Command("move-group")]
+        [Description("Moves a group from one voice channel to another")]
+        public async Task MoveGroupCommand(
+            CommandContext ctx,
+            [Description("The member group to move. See the group commands for more info")] string groupName,
+            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")] string moveTo)
         {
-            if (ulong.TryParse(channelName, out ulong channelId) && ctx.Guild.Channels.ContainsKey(channelId) && ctx.Guild.Channels[channelId].Type == ChannelType.Voice)
-                return ctx.Guild.Channels[channelId];
+            if (ctx.Member.VoiceState is null || ctx.Member.VoiceState.Channel is null)
+            {
+                await ctx.RespondWithErrorAsync("You are not connected to a voice channel. Please also specifiy a channel to move people out of, i.e. " + Formatter.InlineCode("move <moveFrom> <moveTo>")).ConfigureAwait(false);
+                return;
+            }
 
-            IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c => c.Name.StartsWith(channelName) && c.Type == ChannelType.Voice);
+            DiscordChannel moveToChannel = await TryResolveChannelAsync(ctx, moveTo).ConfigureAwait(false);
+            if (moveToChannel is null)
+                return;
+
+            List<DiscordMember> groupMembers = await TryGetGroupMembersAsync(ctx, groupName).ConfigureAwait(false);
+            foreach (DiscordMember member in groupMembers)
+            {
+                if (ctx.Member.VoiceState.Channel.Users.Contains(member))
+                    await member.PlaceInAsync(moveToChannel).ConfigureAwait(false);
+            }
+
+            await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
+        }
+
+        [Command("move-group")]
+        [Description("Moves a group from one voice channel to another")]
+        public async Task MoveGroupCommand(
+            CommandContext ctx,
+            [Description("The member group to move. See the group commands for more info")] string groupName,
+            [Description("The voice channel name/ID to move people from. Including a partial channel name will search for the most relevant channel")] string moveFrom,
+            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")] string moveTo)
+        {
+            DiscordChannel moveFromChannel = await TryResolveChannelAsync(ctx, moveFrom).ConfigureAwait(false);
+            if (moveFromChannel is null)
+                return;
+
+            DiscordChannel moveToChannel = await TryResolveChannelAsync(ctx, moveTo).ConfigureAwait(false);
+            if (moveToChannel is null)
+                return;
+
+            List<DiscordMember> groupMembers = await TryGetGroupMembersAsync(ctx, groupName).ConfigureAwait(false);
+            foreach (DiscordMember member in groupMembers)
+            {
+                if (moveFromChannel.Users.Contains(member))
+                    await member.PlaceInAsync(moveToChannel).ConfigureAwait(false);
+            }
+
+            await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
+        }
+
+        private async Task<DiscordChannel> TryResolveChannelAsync(CommandContext ctx, string channelName)
+        {
+            if (ulong.TryParse(channelName, out ulong channelId) && ctx.Guild.Channels.ContainsKey(channelId))
+            {
+                DiscordChannel channel = ctx.Guild.Channels[channelId];
+                if (channel.Type == ChannelType.Voice && channel.HasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember))
+                    return channel;
+            }
+
+            IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c => c.Name.StartsWith(channelName)
+                && c.Type == ChannelType.Voice
+                && c.HasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember));
 
             int channelCount = validChannels.Count();
             if (channelCount == 0)
             {
-                await ctx.RespondWithErrorAsync("Could not find a relevant voice channel.").ConfigureAwait(false);
+                await ctx.RespondWithErrorAsync("Could not find a relevant voice channel (excluding those for which you or I don't have permissions to move members).").ConfigureAwait(false);
                 return null;
             }
             else if (channelCount == 1)
@@ -126,6 +189,30 @@ namespace UVOCBot.Commands
                 string name = reaction.Result.Emoji.GetDiscordName();
                 int position = EMOJI_STRING_TO_INT_TABLE[name];
                 return validChannels.ElementAt(position - 1);
+            }
+        }
+
+        private async Task<List<DiscordMember>> TryGetGroupMembersAsync(CommandContext ctx, string groupName)
+        {
+            try
+            {
+                List<DiscordMember> groupMembers = new();
+
+                MemberGroupDTO group = await DbApi.GetMemberGroup(ctx.Guild.Id, groupName).ConfigureAwait(false);
+
+                foreach (ulong userId in group.UserIds)
+                {
+                    MemberReturnedInfo mri = await ctx.Guild.TryGetMemberAsync(userId).ConfigureAwait(false);
+                    if (mri.Status == MemberReturnedInfo.GetMemberStatus.Success)
+                        groupMembers.Add(mri.Member);
+                }
+
+                return groupMembers;
+            }
+            catch (Refit.ValidationApiException vaex) when (vaex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                await ctx.RespondWithErrorAsync("That group doesn't exist.").ConfigureAwait(false);
+                return null;
             }
         }
     }

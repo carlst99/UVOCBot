@@ -18,7 +18,7 @@ namespace UVOCBot.Commands
     [RequireGuild]
     public class MovementModule : BaseCommandModule
     {
-        private static readonly Dictionary<int, string> INT_TO_EMOJI_STRING_TABLE = new Dictionary<int, string>
+        private static readonly Dictionary<int, string> INT_TO_EMOJI_STRING_TABLE = new()
         {
             { 1, ":one:" },
             { 2, ":two:" },
@@ -27,7 +27,7 @@ namespace UVOCBot.Commands
             { 5, ":five:" }
         };
 
-        private static readonly Dictionary<string, int> EMOJI_STRING_TO_INT_TABLE = new Dictionary<string, int>
+        private static readonly Dictionary<string, int> EMOJI_STRING_TO_INT_TABLE = new()
         {
             { ":one:", 1 },
             { ":two:", 2 },
@@ -143,9 +143,12 @@ namespace UVOCBot.Commands
                     return channel;
             }
 
-            IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c => c.Name.StartsWith(channelName)
-                && c.Type == ChannelType.Voice
-                && c.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember));
+            IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c =>
+            {
+                return c.Name.Contains(channelName, System.StringComparison.OrdinalIgnoreCase)
+                    && c.Type == ChannelType.Voice
+                    && c.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember);
+            });
 
             int channelCount = validChannels.Count();
             if (channelCount == 0)

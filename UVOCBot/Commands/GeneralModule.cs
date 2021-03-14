@@ -14,9 +14,8 @@ namespace UVOCBot.Commands
 {
     public class GeneralModule : BaseCommandModule
     {
-        public const string RELEASE_NOTES = "- **Custom prefixes!** Set a prefix to trigger commands using `ub!prefix`" +
-            "\r\n- **Purple embeds** - Standardised the embed colour to purple" +
-            "\r\n- **Default PlanetSide server** - PlanetSide commands that require a server can now do away with this argument. Use `ub!default-server` to set your default";
+        public const string RELEASE_NOTES = "- **Temporary groups** - Place 2-50 members into a group that lasts 24hrs, and can be used with other group-oriented commands. See `help group` for more info" +
+            "\r\n- **Bulk voice-chat movement** - Easily move members or groups between voice channels. See `help move` and `help move-group` for more info" +
 
         private static Random _rndGen;
 

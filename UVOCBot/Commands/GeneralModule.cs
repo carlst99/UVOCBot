@@ -105,7 +105,7 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Limit command abuse by making sure the user is actively in the voice channel
-            if (ctx.Member.VoiceState.Channel is null)
+            if (ctx.Member.VoiceState is null || ctx.Member.VoiceState.Channel is null)
             {
                 await ctx.RespondAsync("You must be in a voice channel to use this command").ConfigureAwait(false);
                 return;

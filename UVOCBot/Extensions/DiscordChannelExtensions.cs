@@ -111,7 +111,7 @@ namespace DSharpPlus.Entities
         /// <param name="permissions"></param>
         /// <param name="members"></param>
         /// <returns></returns>
-        public static bool HasPermissions(this DiscordChannel channel, Permissions permissions, params DiscordMember[] members)
+        public static bool MemberHasPermissions(this DiscordChannel channel, Permissions permissions, params DiscordMember[] members)
         {
             foreach (DiscordMember member in members)
             {

@@ -139,13 +139,13 @@ namespace UVOCBot.Commands
             if (ulong.TryParse(channelName, out ulong channelId) && ctx.Guild.Channels.ContainsKey(channelId))
             {
                 DiscordChannel channel = ctx.Guild.Channels[channelId];
-                if (channel.Type == ChannelType.Voice && channel.HasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember))
+                if (channel.Type == ChannelType.Voice && channel.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember))
                     return channel;
             }
 
             IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c => c.Name.StartsWith(channelName)
                 && c.Type == ChannelType.Voice
-                && c.HasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember));
+                && c.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember));
 
             int channelCount = validChannels.Count();
             if (channelCount == 0)

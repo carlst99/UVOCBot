@@ -16,6 +16,7 @@ jobs:
       with:
         dotnet-version: 5.0.101
     - name: Install dependencies
+      run: dotnet nuget add source https://nuget.emzi0767.com/api/v3/index.json -n DSharpPlus
       run: dotnet restore
     - name: Build
       run: dotnet build --configuration Release --no-restore

@@ -196,13 +196,6 @@ namespace UVOCBot.Commands
             builder.AddField("TestInlineFieldName2", "TestInlineFieldValue2", true);
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }
-
-        [Command("throw-exception")]
-        [RequireOwner]
-        public Task ThrowExceptionCommand(CommandContext ctx)
-        {
-            throw new Exception();
-        }
 #endif
     }
 }

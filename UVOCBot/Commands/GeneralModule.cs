@@ -97,6 +97,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("bonk")]
+        [Hidden]
         [Aliases("goToHornyJail")]
         [Description("Sends a voice member to horny jail")]
         [RequireGuild]
@@ -111,17 +112,17 @@ namespace UVOCBot.Commands
                 return;
             }
 
-            // Ensure that the target is part of the same voice channel as the sender
-            if (!memberToBonk.VoiceState.Channel.Equals(ctx.Member.VoiceState.Channel))
-            {
-                await ctx.RespondAsync("Bonking can only be used on members in the same voice channel").ConfigureAwait(false);
-                return;
-            }
-
             // Check for permission to move members out of the current channel
             if (!ctx.Member.VoiceState.Channel.MemberHasPermissions(Permissions.MoveMembers, ctx.Guild.CurrentMember, ctx.Member))
             {
                 await ctx.RespondAsync("Either you or I do not have permissions to move members from your current channel").ConfigureAwait(false);
+                return;
+            }
+
+            // Ensure that the target is part of the same voice channel as the sender
+            if (!memberToBonk.VoiceState.Channel.Equals(ctx.Member.VoiceState.Channel))
+            {
+                await ctx.RespondAsync("Bonking can only be used on members in the same voice channel").ConfigureAwait(false);
                 return;
             }
 
@@ -155,6 +156,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("bonk-channel")]
+        [Hidden]
         [Description("Sets the voice channel for the bonk command")]
         [RequireGuild]
         public async Task BonkCommand(CommandContext ctx, [Description("The voice channel to send members to when they are bonked")] DiscordChannel bonkChannel)

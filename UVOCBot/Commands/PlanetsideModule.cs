@@ -69,17 +69,22 @@ namespace UVOCBot.Commands
                 };
             }
 
-            DiscordEmbedBuilder builder = new DiscordEmbedBuilder()
+            DiscordEmbedBuilder builder = new()
             {
                 Color = Program.DEFAULT_EMBED_COLOUR,
                 Description = await GetWorldStatusString(world).ConfigureAwait(false),
                 Timestamp = DateTimeOffset.UtcNow,
-                Title = world.ToString()
+                Title = world.ToString() + " - " + population.Total.ToString(),
+                Footer = new DiscordEmbedBuilder.EmbedFooter
+                {
+                    Text = "Data gratefully taken from ps2.fisu.pw"
+                }
             };
 
             builder.AddField($":purple_circle: VS - {population.VS}", GetPopulationBar(population.VS));
             builder.AddField($":blue_circle: NC - {population.NC}", GetPopulationBar(population.NC));
             builder.AddField($":red_circle: TR - {population.TR}", GetPopulationBar(population.TR));
+            builder.AddField($":white_circle: NS - {population.NS}", GetPopulationBar(population.NS));
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }

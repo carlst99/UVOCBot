@@ -54,7 +54,8 @@ namespace UVOCBot.Commands
             if (moveToChannel is null)
                 return;
 
-            foreach (DiscordMember user in ctx.Member.VoiceState.Channel.Users)
+            DiscordChannel channel = ctx.Guild.GetChannel(ctx.Member.VoiceState.Channel.Id);
+            foreach (DiscordMember user in channel.Users)
                 await moveToChannel.PlaceMemberAsync(user).ConfigureAwait(false);
 
             await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
@@ -76,7 +77,7 @@ namespace UVOCBot.Commands
                 return;
 
             foreach (DiscordMember user in moveFromChannel.Users)
-                await moveToChannel.PlaceMemberAsync(user).ConfigureAwait(false);
+                await user.PlaceInAsync(moveToChannel).ConfigureAwait(false);
 
             await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
         }
@@ -99,9 +100,11 @@ namespace UVOCBot.Commands
                 return;
 
             List<DiscordMember> groupMembers = await TryGetGroupMembersAsync(ctx, groupName).ConfigureAwait(false);
+            DiscordChannel moveFromChannel = ctx.Guild.GetChannel(ctx.Member.VoiceState.Channel.Id);
+
             foreach (DiscordMember member in groupMembers)
             {
-                if (ctx.Member.VoiceState.Channel.Users.Contains(member))
+                if (moveFromChannel.Users.Contains(member))
                     await member.PlaceInAsync(moveToChannel).ConfigureAwait(false);
             }
 
@@ -138,7 +141,7 @@ namespace UVOCBot.Commands
         {
             if (ulong.TryParse(channelName, out ulong channelId) && ctx.Guild.Channels.ContainsKey(channelId))
             {
-                DiscordChannel channel = ctx.Guild.Channels[channelId];
+                DiscordChannel channel = ctx.Guild.GetChannel(channelId);
                 if (channel.Type == ChannelType.Voice && channel.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember))
                     return channel;
             }

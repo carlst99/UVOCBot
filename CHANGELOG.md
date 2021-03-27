@@ -1,5 +1,13 @@
 # Changelog
 
+## Release v0.1.2 - 27/03/2021
+
+- Fix a NullReferenceException that occurs when using the `bonk` command on a member not currently in a voice channel
+- Hide the bonk command
+- Remove the exception testing command
+- Fix the `move` commands to reliably move *everyone* in the channel
+- Improve the `population` command to include total and NS pop values, along with attribution to https://ps2.fisu.pw
+
 ## Release v0.1.1 - 14/03/2021
 
 - Implemented a member grouping system for guilds. The following commands are utilised:

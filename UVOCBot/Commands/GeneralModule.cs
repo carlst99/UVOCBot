@@ -58,7 +58,7 @@ namespace UVOCBot.Commands
                 },
                 Author = new DiscordEmbedBuilder.EmbedAuthor()
                 {
-                    Name = "Written by Carl, A.K.A FalconEye",
+                    Name = "Written by FalconEye",
                     Url = "https://github.com/carlst99",
                     IconUrl = "https://cdn.discordapp.com/avatars/165629177221873664/c1bb057dd76dfec6ed8c2de62dc1c185.png"
                 },
@@ -97,6 +97,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("bonk")]
+        [Hidden]
         [Aliases("goToHornyJail")]
         [Description("Sends a voice member to horny jail")]
         [RequireGuild]
@@ -105,16 +106,9 @@ namespace UVOCBot.Commands
             await ctx.TriggerTypingAsync().ConfigureAwait(false);
 
             // Limit command abuse by making sure the user is actively in the voice channel
-            if (ctx.Member.VoiceState.Channel is null)
+            if (ctx.Member.VoiceState is null || ctx.Member.VoiceState.Channel is null)
             {
                 await ctx.RespondAsync("You must be in a voice channel to use this command").ConfigureAwait(false);
-                return;
-            }
-
-            // Ensure that the target is part of the same voice channel as the sender
-            if (!memberToBonk.VoiceState.Channel.Equals(ctx.Member.VoiceState.Channel))
-            {
-                await ctx.RespondAsync("Bonking can only be used on members in the same voice channel").ConfigureAwait(false);
                 return;
             }
 
@@ -122,6 +116,13 @@ namespace UVOCBot.Commands
             if (!ctx.Member.VoiceState.Channel.MemberHasPermissions(Permissions.MoveMembers, ctx.Guild.CurrentMember, ctx.Member))
             {
                 await ctx.RespondAsync("Either you or I do not have permissions to move members from your current channel").ConfigureAwait(false);
+                return;
+            }
+
+            // Ensure that the target is part of the same voice channel as the sender
+            if (!memberToBonk.VoiceState.Channel.Equals(ctx.Member.VoiceState.Channel))
+            {
+                await ctx.RespondAsync("Bonking can only be used on members in the same voice channel").ConfigureAwait(false);
                 return;
             }
 
@@ -155,6 +156,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("bonk-channel")]
+        [Hidden]
         [Description("Sets the voice channel for the bonk command")]
         [RequireGuild]
         public async Task BonkCommand(CommandContext ctx, [Description("The voice channel to send members to when they are bonked")] DiscordChannel bonkChannel)
@@ -193,13 +195,6 @@ namespace UVOCBot.Commands
             builder.AddField("TestInlineFieldName", "TestInlineFieldValue", true);
             builder.AddField("TestInlineFieldName2", "TestInlineFieldValue2", true);
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
-        }
-
-        [Command("throw-exception")]
-        [RequireOwner]
-        public Task ThrowExceptionCommand(CommandContext ctx)
-        {
-            throw new Exception();
         }
 #endif
     }

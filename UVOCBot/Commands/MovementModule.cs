@@ -18,7 +18,7 @@ namespace UVOCBot.Commands
     [RequireGuild]
     public class MovementModule : BaseCommandModule
     {
-        private static readonly Dictionary<int, string> INT_TO_EMOJI_STRING_TABLE = new Dictionary<int, string>
+        private static readonly Dictionary<int, string> INT_TO_EMOJI_STRING_TABLE = new()
         {
             { 1, ":one:" },
             { 2, ":two:" },
@@ -27,7 +27,7 @@ namespace UVOCBot.Commands
             { 5, ":five:" }
         };
 
-        private static readonly Dictionary<string, int> EMOJI_STRING_TO_INT_TABLE = new Dictionary<string, int>
+        private static readonly Dictionary<string, int> EMOJI_STRING_TO_INT_TABLE = new()
         {
             { ":one:", 1 },
             { ":two:", 2 },
@@ -54,7 +54,8 @@ namespace UVOCBot.Commands
             if (moveToChannel is null)
                 return;
 
-            foreach (DiscordMember user in ctx.Member.VoiceState.Channel.Users)
+            DiscordChannel channel = ctx.Guild.GetChannel(ctx.Member.VoiceState.Channel.Id);
+            foreach (DiscordMember user in channel.Users)
                 await moveToChannel.PlaceMemberAsync(user).ConfigureAwait(false);
 
             await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
@@ -76,7 +77,7 @@ namespace UVOCBot.Commands
                 return;
 
             foreach (DiscordMember user in moveFromChannel.Users)
-                await moveToChannel.PlaceMemberAsync(user).ConfigureAwait(false);
+                await user.PlaceInAsync(moveToChannel).ConfigureAwait(false);
 
             await ctx.RespondAsync(":white_check_mark:").ConfigureAwait(false);
         }
@@ -99,9 +100,11 @@ namespace UVOCBot.Commands
                 return;
 
             List<DiscordMember> groupMembers = await TryGetGroupMembersAsync(ctx, groupName).ConfigureAwait(false);
+            DiscordChannel moveFromChannel = ctx.Guild.GetChannel(ctx.Member.VoiceState.Channel.Id);
+
             foreach (DiscordMember member in groupMembers)
             {
-                if (ctx.Member.VoiceState.Channel.Users.Contains(member))
+                if (moveFromChannel.Users.Contains(member))
                     await member.PlaceInAsync(moveToChannel).ConfigureAwait(false);
             }
 
@@ -138,14 +141,17 @@ namespace UVOCBot.Commands
         {
             if (ulong.TryParse(channelName, out ulong channelId) && ctx.Guild.Channels.ContainsKey(channelId))
             {
-                DiscordChannel channel = ctx.Guild.Channels[channelId];
+                DiscordChannel channel = ctx.Guild.GetChannel(channelId);
                 if (channel.Type == ChannelType.Voice && channel.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember))
                     return channel;
             }
 
-            IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c => c.Name.StartsWith(channelName)
-                && c.Type == ChannelType.Voice
-                && c.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember));
+            IEnumerable<DiscordChannel> validChannels = ctx.Guild.Channels.Values.Where(c =>
+            {
+                return c.Name.Contains(channelName, System.StringComparison.OrdinalIgnoreCase)
+                    && c.Type == ChannelType.Voice
+                    && c.MemberHasPermissions(Permissions.MoveMembers, ctx.Member, ctx.Guild.CurrentMember);
+            });
 
             int channelCount = validChannels.Count();
             if (channelCount == 0)

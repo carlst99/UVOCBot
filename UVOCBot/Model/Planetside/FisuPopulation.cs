@@ -20,5 +20,6 @@ namespace UVOCBot.Model.Planetside
         public int NC => Result[0].NC;
         public int TR => Result[0].TR;
         public int NS => Result[0].NS;
+        public int Total => VS + NC + TR + NS;
     }
 }

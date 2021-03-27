@@ -58,7 +58,7 @@ namespace UVOCBot.Commands
                 },
                 Author = new DiscordEmbedBuilder.EmbedAuthor()
                 {
-                    Name = "Written by Carl, A.K.A FalconEye",
+                    Name = "Written by FalconEye",
                     Url = "https://github.com/carlst99",
                     IconUrl = "https://cdn.discordapp.com/avatars/165629177221873664/c1bb057dd76dfec6ed8c2de62dc1c185.png"
                 },

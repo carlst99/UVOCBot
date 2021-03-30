@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Api", "UVOCBot.Api\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Core", "UVOCBot.Core\UVOCBot.Core.csproj", "{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBotRemora", "UVOCBotRemora\UVOCBotRemora.csproj", "{B59EA60A-0958-4536-BEC3-A220FB6D71CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B59EA60A-0958-4536-BEC3-A220FB6D71CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B59EA60A-0958-4536-BEC3-A220FB6D71CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B59EA60A-0958-4536-BEC3-A220FB6D71CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B59EA60A-0958-4536-BEC3-A220FB6D71CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

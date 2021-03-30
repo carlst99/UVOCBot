@@ -42,7 +42,7 @@ namespace UVOCBot.Commands
         [Description("Moves everyone from the voice channel the command caller is currently connected to to another")]
         public async Task MoveCommand(
             CommandContext ctx,
-            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")] string moveTo)
+            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")][RemainingText] string moveTo)
         {
             if (ctx.Member.VoiceState is null || ctx.Member.VoiceState.Channel is null)
             {
@@ -87,7 +87,7 @@ namespace UVOCBot.Commands
         public async Task MoveGroupCommand(
             CommandContext ctx,
             [Description("The member group to move. See the group commands for more info")] string groupName,
-            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")] string moveTo)
+            [Description("The voice channel name/ID to move people to. Including a partial channel name will search for the most relevant channel")][RemainingText] string moveTo)
         {
             if (ctx.Member.VoiceState is null || ctx.Member.VoiceState.Channel is null)
             {

@@ -85,11 +85,9 @@ namespace UVOCBotRemora
                     });
                     services.AddSingleton(gatewayClientOptions);
 
-                    //ResponderService responderService = new();
                     services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                             .AddDiscordCommands(true)
                             .AddResponder<ReadyResponder>();
-                            //.AddSingleton<IResponderTypeRepository>(responderService);
 
                     // Setup own services
                     services.AddSingleton(fileSystem);

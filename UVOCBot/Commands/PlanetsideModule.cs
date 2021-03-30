@@ -14,8 +14,6 @@ namespace UVOCBot.Commands
     [Description("Commands that provide information about PlanetSide 2")]
     public class PlanetsideModule : BaseCommandModule
     {
-        public const int MAX_FACTION_POPULATION = 400; // This is a rough value
-
         public IFisuApiService FisuApi { get; set; }
         public ICensusQueryFactory CensusFactory { get; set; }
         public IApiService DbApi { get; set; }
@@ -81,10 +79,10 @@ namespace UVOCBot.Commands
                 }
             };
 
-            builder.AddField($":purple_circle: VS - {population.VS}", GetPopulationBar(population.VS));
-            builder.AddField($":blue_circle: NC - {population.NC}", GetPopulationBar(population.NC));
-            builder.AddField($":red_circle: TR - {population.TR}", GetPopulationBar(population.TR));
-            builder.AddField($":white_circle: NS - {population.NS}", GetPopulationBar(population.NS));
+            builder.AddField($":purple_circle: VS - {population.VS}", GetPopulationBar(population.VS, population.Total));
+            builder.AddField($":blue_circle: NC - {population.NC}", GetPopulationBar(population.NC, population.Total));
+            builder.AddField($":red_circle: TR - {population.TR}", GetPopulationBar(population.TR, population.Total));
+            builder.AddField($":white_circle: NS - {population.NS}", GetPopulationBar(population.NS, population.Total));
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }
@@ -135,17 +133,20 @@ namespace UVOCBot.Commands
                 return "Status: Unknown :black_circle:";
         }
 
-        private string GetPopulationBar(int population)
+        private string GetPopulationBar(int population, int totalPopulation)
         {
-            double percentage = Math.Ceiling((double)population / MAX_FACTION_POPULATION * 10);
-            double remainder = 10 - percentage;
+            double tensPercentage = Math.Ceiling((double)population / totalPopulation * 10);
+            double remainder = 10 - tensPercentage;
             string result = string.Empty;
 
-            for (int i = 0; i < percentage; i++)
+            for (int i = 0; i < tensPercentage; i++)
                 result += ":green_square:";
 
             for (int i = 0; i < remainder; i++)
                 result += ":black_large_square:";
+
+            string stringPercentage = ((double)population / totalPopulation * 100).ToString("F1");
+            result += $"**   **({stringPercentage}%)";
 
             return result;
         }

@@ -36,7 +36,7 @@ namespace UVOCBotRemora.Config
         /// <summary>
         /// Gets or sets the ID of the guilds used for debugging slash commands
         /// </summary>
-        public List<ulong> DebugGuildId { get; set; }
+        public List<ulong> DebugGuildIds { get; set; }
 
 #nullable restore
     }

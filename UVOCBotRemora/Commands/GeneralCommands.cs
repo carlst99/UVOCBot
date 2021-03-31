@@ -1,0 +1,80 @@
+﻿using Remora.Commands.Attributes;
+using Remora.Commands.Groups;
+using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Contexts;
+using Remora.Results;
+using System;
+using System.ComponentModel;
+using System.Drawing;
+using System.Threading.Tasks;
+
+namespace UVOCBotRemora.Commands
+{
+    public class GeneralCommands : CommandGroup
+    {
+        private readonly ICommandContext _context;
+        private readonly IDiscordRestChannelAPI _channelAPI;
+        private readonly Random _rndGen;
+
+        public GeneralCommands(ICommandContext context, IDiscordRestChannelAPI channelAPI)
+        {
+            _context = context;
+            _channelAPI = channelAPI;
+
+            _rndGen = new Random();
+        }
+
+        [Command("coinflip")]
+        [Description("Flips a coin")]
+        public async Task<IResult> CoinFlipCommandAsync()
+        {
+            int result = _rndGen.Next(0, 2);
+            Embed embed;
+
+            if (result == 0)
+            {
+                embed = new Embed
+                {
+                    Colour = Color.Gold,
+                    Description = ":coin: You flipped a **heads**! :coin:"
+                };
+            }
+            else
+            {
+                embed = new Embed
+                {
+                    Colour = Color.Gold,
+                    Description = ":coin: You flipped a **tails**! :coin:"
+                };
+            }
+
+            Result<IMessage> reply = await _channelAPI.CreateMessageAsync(_context.ChannelID, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+
+            return !reply.IsSuccess
+                ? Result.FromError(reply)
+                : Result.FromSuccess();
+        }
+
+        [Command("http-cat")]
+        [Description("Posts a cat image that represents the given HTTP error code.")]
+        public async Task<IResult> PostHttpCatAsync([Description("The HTTP code.")] int httpCode)
+        {
+            var embedImage = new EmbedImage($"https://http.cat/{httpCode}");
+            var embedFooter = new EmbedFooter("Image from http.cat");
+
+            var embed = new Embed
+            {
+                Image = embedImage,
+                Footer = embedFooter
+            };
+
+            var reply = await _channelAPI.CreateMessageAsync(_context.ChannelID, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+
+            return !reply.IsSuccess
+                ? Result.FromError(reply)
+                : Result.FromSuccess();
+        }
+    }
+}

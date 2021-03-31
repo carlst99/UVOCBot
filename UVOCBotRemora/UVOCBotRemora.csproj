@@ -18,6 +18,8 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
     <PackageReference Include="Refit" Version="6.0.38" />
     <PackageReference Include="Remora.Discord" Version="3.0.23" />
+    <PackageReference Include="Remora.Discord.Caching" Version="1.1.8" />
+    <PackageReference Include="Remora.Discord.Commands" Version="3.7.4" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="4.1.2" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />

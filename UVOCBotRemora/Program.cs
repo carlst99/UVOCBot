@@ -2,12 +2,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Refit;
+using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
+using Remora.Discord.Caching.Extensions;
 using Remora.Discord.Commands.Extensions;
+using Remora.Discord.Commands.Services;
+using Remora.Discord.Core;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
-using Remora.Discord.Gateway.Services;
 using Remora.Discord.Hosting.Services;
+using Remora.Results;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -17,6 +21,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
+using UVOCBotRemora.Commands;
 using UVOCBotRemora.Config;
 using UVOCBotRemora.Responders;
 using UVOCBotRemora.Services;
@@ -55,36 +60,39 @@ namespace UVOCBotRemora
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
+            IFileSystem fileSystem = new FileSystem();
+            ILogger logger = SetupLogging(fileSystem);
+
             return Host.CreateDefaultBuilder(args)
                 .UseSystemd()
+                .UseSerilog(logger)
                 .ConfigureServices((c, services) =>
                 {
                     // Setup the configuration bindings
                     services.Configure<TwitterOptions>(c.Configuration.GetSection(TwitterOptions.ConfigSectionName));
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
 
-                    // Setup API services
+                    //Setup API services
                     services.AddSingleton((s) => RestService.For<IApiService>(
                             s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
                     services.AddSingleton((s) => RestService.For<IFisuApiService>(
                             s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
 
-                    services.AddSingleton<IFileSystem>(new FileSystem());
-                    services.AddSingleton<ISettingsService, SettingsService>();
-                    services.AddSingleton<IPrefixService, PrefixService>();
-                    services.AddTransient(TwitterClientFactory);
-                    services.AddDiscordServices();
+                    services.AddSingleton(fileSystem)
+                            .AddSingleton<ISettingsService, SettingsService>()
+                            .AddSingleton<IPrefixService, PrefixService>()
+                            .AddTransient(TwitterClientFactory)
+                            .AddDiscordServices();
 
                     // Setup the Daybreak Census services
                     GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
                     services.AddCensusServices(options =>
                         options.CensusServiceId = generalOptions.CensusApiKey);
 
-                    services.AddHostedService<DiscordService>();
-                    services.AddHostedService<TwitterWorker>();
+                    services.AddHostedService<DiscordService>()
+                            .AddHostedService<TwitterWorker>();
                     //services.AddHostedService<PlanetsideWorker>();
-                })
-                .UseSerilog(SetupLogging);
+                });
         }
 
         /// <summary>
@@ -109,11 +117,9 @@ namespace UVOCBotRemora
                 return directory;
         }
 
-        private static void SetupLogging(HostBuilderContext c, IServiceProvider services, LoggerConfiguration config)
+        private static ILogger SetupLogging(IFileSystem fileSystem)
         {
-            IFileSystem fileSystem = services.GetRequiredService<IFileSystem>();
-
-            config
+            Log.Logger = new LoggerConfiguration()
 #if DEBUG
                 .MinimumLevel.Debug()
 #else
@@ -121,11 +127,13 @@ namespace UVOCBotRemora
 #endif
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
+                .MinimumLevel.Override("Remora", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), rollingInterval: RollingInterval.Day);
+                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), rollingInterval: RollingInterval.Day)
+                .CreateLogger();
 
-            Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
+            return Log.Logger;
         }
 
         private static ITwitterClient TwitterClientFactory(IServiceProvider services)
@@ -156,7 +164,31 @@ namespace UVOCBotRemora
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(true)
-                    .AddResponder<ReadyResponder>();
+                    .AddCommandGroup<GeneralCommands>()
+                    .AddResponder<ReadyResponder>()
+                    .AddDiscordCaching()
+                    .AddHttpClient();
+
+            ServiceProvider serviceProvider = services.BuildServiceProvider(true);
+            IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();
+            SlashService slashService = serviceProvider.GetRequiredService<SlashService>();
+
+            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
+            Result slashCommandsSupported = slashService.SupportsSlashCommands();
+
+            if (!slashCommandsSupported.IsSuccess)
+            {
+                Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Unwrap().Message);
+            }
+            else
+            {
+                foreach (Snowflake guild in debugServerSnowflakes)
+                {
+                    Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
+                    if (!updateSlashCommandsResult.IsSuccess)
+                        Log.Warning("Could not update slash commands for the debug guild {id}", guild.Value);
+                }
+            }
 
             return services;
         }

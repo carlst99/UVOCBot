@@ -14,6 +14,9 @@ using UVOCBotRemora.Services;
 
 namespace UVOCBotRemora.Responders
 {
+    /// <summary>
+    /// Performs setup actions once a connection has been established to the Discord gateway
+    /// </summary>
     public class ReadyResponder : IResponder<IReady>
     {
         private readonly DiscordGatewayClient _client;

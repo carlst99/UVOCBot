@@ -72,28 +72,11 @@ namespace UVOCBotRemora
                     services.AddSingleton((s) => RestService.For<IFisuApiService>(
                             s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
 
-                    // Setup the Discord gateway client
-                    IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
-                    {
-                        Intents = GatewayIntents.DirectMessageReactions
-                            | GatewayIntents.DirectMessages
-                            | GatewayIntents.GuildMessageReactions
-                            | GatewayIntents.GuildMessages
-                            | GatewayIntents.Guilds
-                            | GatewayIntents.GuildVoiceStates
-                            | GatewayIntents.GuildMembers
-                    });
-                    services.AddSingleton(gatewayClientOptions);
-
-                    services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                            .AddDiscordCommands(true)
-                            .AddResponder<ReadyResponder>();
-
-                    // Setup own services
                     services.AddSingleton(fileSystem);
                     services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<IPrefixService, PrefixService>();
                     services.AddTransient(TwitterClientFactory);
+                    services.SetupDiscord();
 
                     // Setup the Daybreak Census services
                     GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
@@ -158,6 +141,27 @@ namespace UVOCBotRemora
                 ConsumerSecret = options.Secret,
                 BearerToken = options.BearerToken
             });
+        }
+
+        private static IServiceCollection SetupDiscord(this IServiceCollection services)
+        {
+            IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
+            {
+                Intents = GatewayIntents.DirectMessageReactions
+                    | GatewayIntents.DirectMessages
+                    | GatewayIntents.GuildMessageReactions
+                    | GatewayIntents.GuildMessages
+                    | GatewayIntents.Guilds
+                    | GatewayIntents.GuildVoiceStates
+                    | GatewayIntents.GuildMembers
+            });
+            services.AddSingleton(gatewayClientOptions);
+
+            services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
+                    .AddDiscordCommands(true)
+                    .AddResponder<ReadyResponder>();
+
+            return services;
         }
     }
 }

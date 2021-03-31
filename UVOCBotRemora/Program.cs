@@ -7,6 +7,7 @@ using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
 using Remora.Discord.Gateway.Services;
+using Remora.Discord.Hosting.Services;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -72,14 +73,14 @@ namespace UVOCBotRemora
                     services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<IPrefixService, PrefixService>();
                     services.AddTransient(TwitterClientFactory);
-                    services.SetupDiscord();
+                    services.AddDiscordServices();
 
                     // Setup the Daybreak Census services
                     GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
                     services.AddCensusServices(options =>
                         options.CensusServiceId = generalOptions.CensusApiKey);
 
-                    services.AddHostedService<DiscordWorker>();
+                    services.AddHostedService<DiscordService>();
                     services.AddHostedService<TwitterWorker>();
                     //services.AddHostedService<PlanetsideWorker>();
                 })
@@ -139,7 +140,7 @@ namespace UVOCBotRemora
             });
         }
 
-        private static IServiceCollection SetupDiscord(this IServiceCollection services)
+        private static IServiceCollection AddDiscordServices(this IServiceCollection services)
         {
             IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
             {

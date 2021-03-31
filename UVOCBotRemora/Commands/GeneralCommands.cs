@@ -1,8 +1,8 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 using System;
@@ -15,13 +15,13 @@ namespace UVOCBotRemora.Commands
     public class GeneralCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly IDiscordRestChannelAPI _channelAPI;
+        private readonly CommandContextReponses _responder;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ICommandContext context, IDiscordRestChannelAPI channelAPI)
+        public GeneralCommands(ICommandContext context, CommandContextReponses responder)
         {
             _context = context;
-            _channelAPI = channelAPI;
+            _responder = responder;
 
             _rndGen = new Random();
         }
@@ -50,16 +50,16 @@ namespace UVOCBotRemora.Commands
                 };
             }
 
-            Result<IMessage> reply = await _channelAPI.CreateMessageAsync(_context.ChannelID, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            Result<IMessage> reply = await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
 
             return !reply.IsSuccess
-                ? Result.FromError(reply)
-                : Result.FromSuccess();
+                    ? Result.FromError(reply)
+                    : Result.FromSuccess();
         }
 
         [Command("http-cat")]
         [Description("Posts a cat image that represents the given HTTP error code.")]
-        public async Task<IResult> PostHttpCatAsync([Description("The HTTP code.")] int httpCode)
+        public async Task<IResult> PostHttpCatAsync([Description("The HTTP code.")] [DiscordTypeHint(TypeHint.Integer)] int httpCode)
         {
             var embedImage = new EmbedImage($"https://http.cat/{httpCode}");
             var embedFooter = new EmbedFooter("Image from http.cat");
@@ -70,7 +70,7 @@ namespace UVOCBotRemora.Commands
                 Footer = embedFooter
             };
 
-            var reply = await _channelAPI.CreateMessageAsync(_context.ChannelID, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            var reply = await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
 
             return !reply.IsSuccess
                 ? Result.FromError(reply)

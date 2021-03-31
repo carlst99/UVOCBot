@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Linq;
-using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBotRemora.Commands;
@@ -82,7 +81,8 @@ namespace UVOCBotRemora
                             .AddSingleton<ISettingsService, SettingsService>()
                             .AddSingleton<IPrefixService, PrefixService>()
                             .AddTransient(TwitterClientFactory)
-                            .AddDiscordServices();
+                            .AddDiscordServices()
+                            .AddSingleton<CommandContextReponses>();
 
                     // Setup the Daybreak Census services
                     GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
@@ -182,12 +182,31 @@ namespace UVOCBotRemora
             }
             else
             {
+#if DEBUG
+                // Use the following to get rid of troublesome commands
+
+                //IDiscordRestApplicationAPI applicationAPI = serviceProvider.GetRequiredService<IDiscordRestApplicationAPI>();
+                //var applicationCommands = applicationAPI.GetGlobalApplicationCommandsAsync(new Snowflake(options.Value.DiscordApplicationClientId)).Result;
+
+                //if (applicationCommands.IsSuccess)
+                //{
+                //    foreach (IApplicationCommand command in applicationCommands.Entity)
+                //    {
+                //        applicationAPI.DeleteGlobalApplicationCommandAsync(new Snowflake(options.Value.DiscordApplicationClientId), command.ID).Wait();
+                //    }
+                //}
+
                 foreach (Snowflake guild in debugServerSnowflakes)
                 {
                     Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
                     if (!updateSlashCommandsResult.IsSuccess)
                         Log.Warning("Could not update slash commands for the debug guild {id}", guild.Value);
                 }
+#else
+                Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
+                if (!updateSlashCommandsResult.IsSuccess)
+                    Log.Warning("Could not update global application commands");
+#endif
             }
 
             return services;

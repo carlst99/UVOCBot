@@ -14,6 +14,11 @@ namespace UVOCBotRemora.Config
         public string BotToken { get; set; }
 
         /// <summary>
+        /// Gets or sets the client ID of the Discord application that the bot is part of
+        /// </summary>
+        public ulong DiscordApplicationClientId { get; set; }
+
+        /// <summary>
         /// Gets or sets the endpoint at which the data layer API can be found
         /// </summary>
         public string ApiEndpoint { get; set; }

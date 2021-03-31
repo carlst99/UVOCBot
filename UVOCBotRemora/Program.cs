@@ -54,10 +54,6 @@ namespace UVOCBotRemora
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
-            IFileSystem fileSystem = new FileSystem();
-            ILogger logger = SetupLogging(fileSystem);
-            Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
-
             return Host.CreateDefaultBuilder(args)
                 .UseSystemd()
                 .ConfigureServices((c, services) =>
@@ -72,7 +68,7 @@ namespace UVOCBotRemora
                     services.AddSingleton((s) => RestService.For<IFisuApiService>(
                             s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
 
-                    services.AddSingleton(fileSystem);
+                    services.AddSingleton<IFileSystem>(new FileSystem());
                     services.AddSingleton<ISettingsService, SettingsService>();
                     services.AddSingleton<IPrefixService, PrefixService>();
                     services.AddTransient(TwitterClientFactory);
@@ -87,7 +83,7 @@ namespace UVOCBotRemora
                     services.AddHostedService<TwitterWorker>();
                     //services.AddHostedService<PlanetsideWorker>();
                 })
-                .UseSerilog(logger);
+                .UseSerilog(SetupLogging);
         }
 
         /// <summary>
@@ -112,9 +108,11 @@ namespace UVOCBotRemora
                 return directory;
         }
 
-        private static ILogger SetupLogging(IFileSystem fileSystem)
+        private static void SetupLogging(HostBuilderContext c, IServiceProvider services, LoggerConfiguration config)
         {
-            ILogger logger = new LoggerConfiguration()
+            IFileSystem fileSystem = services.GetRequiredService<IFileSystem>();
+
+            config
 #if DEBUG
                 .MinimumLevel.Debug()
 #else
@@ -124,11 +122,9 @@ namespace UVOCBotRemora
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
-                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), rollingInterval: RollingInterval.Day);
 
-            Log.Logger = logger;
-            return logger;
+            Log.Information("Appdata stored in " + GetAppdataFilePath(fileSystem, null));
         }
 
         private static ITwitterClient TwitterClientFactory(IServiceProvider services)

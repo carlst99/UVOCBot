@@ -8,7 +8,6 @@
         Emerald = 17,
         Jaeger = 19,
         Apex = 24,
-        Briggs = 25,
         Soltech = 40,
     }
 }

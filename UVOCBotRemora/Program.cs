@@ -6,6 +6,7 @@ using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
 using Remora.Discord.Commands.Extensions;
+using Remora.Discord.Commands.Responders;
 using Remora.Discord.Commands.Services;
 using Remora.Discord.Core;
 using Remora.Discord.Gateway;
@@ -16,6 +17,7 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO.Abstractions;
 using System.Linq;
 using Tweetinvi;
@@ -39,6 +41,8 @@ namespace UVOCBotRemora
 
     public static class Program
     {
+        public static readonly Color DEFAULT_EMBED_COLOUR = Color.Purple;
+
         public static int Main(string[] args)
         {
             try
@@ -70,6 +74,7 @@ namespace UVOCBotRemora
                     // Setup the configuration bindings
                     services.Configure<TwitterOptions>(c.Configuration.GetSection(TwitterOptions.ConfigSectionName));
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
+                    services.Configure<CommandResponderOptions>(c.Configuration.GetSection(nameof(CommandResponderOptions)));
 
                     //Setup API services
                     services.AddSingleton((s) => RestService.For<IApiService>(
@@ -79,10 +84,13 @@ namespace UVOCBotRemora
 
                     services.AddSingleton(fileSystem)
                             .AddSingleton<ISettingsService, SettingsService>()
+                            .AddTransient(TwitterClientFactory);
+
+                    // Add Discord-related services
+                    services.AddDiscordServices()
                             .AddSingleton<IPrefixService, PrefixService>()
-                            .AddTransient(TwitterClientFactory)
-                            .AddDiscordServices()
-                            .AddSingleton<CommandContextReponses>();
+                            .AddSingleton<CommandContextReponses>()
+                            .AddSingleton<IExecutionEventService, ExecutionEventService>();
 
                     // Setup the Daybreak Census services
                     GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
@@ -164,13 +172,18 @@ namespace UVOCBotRemora
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(true)
-                    .AddCommandGroup<GeneralCommands>()
                     .AddResponder<ReadyResponder>()
                     .AddDiscordCaching()
                     .AddHttpClient();
 
+            // Add commands
+            services.AddCommandGroup<GeneralCommands>()
+                    .AddCommandGroup<RoleCommands>()
+                    .AddCommandGroup<PlanetsideCommands>();
+
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();
+            IOptions<CommandResponderOptions> cOptions = serviceProvider.GetRequiredService<IOptions<CommandResponderOptions>>();
             SlashService slashService = serviceProvider.GetRequiredService<SlashService>();
 
             IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));

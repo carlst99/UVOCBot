@@ -38,7 +38,7 @@ namespace UVOCBotRemora.Commands
                 embed = new Embed
                 {
                     Colour = Color.Gold,
-                    Description = ":coin: You flipped a **heads**! :coin:"
+                    Description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("heads")}! {Formatter.Emoji("coin")}"
                 };
             }
             else
@@ -46,7 +46,7 @@ namespace UVOCBotRemora.Commands
                 embed = new Embed
                 {
                     Colour = Color.Gold,
-                    Description = ":coin: You flipped a **tails**! :coin:"
+                    Description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("tails")}! {Formatter.Emoji("coin")}"
                 };
             }
 
@@ -70,7 +70,7 @@ namespace UVOCBotRemora.Commands
                 Footer = embedFooter
             };
 
-            var reply = await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            Result<IMessage> reply = await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
 
             return !reply.IsSuccess
                 ? Result.FromError(reply)

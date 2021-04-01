@@ -6,9 +6,9 @@
 
 #nullable disable
 
-        public string Key { get; set; }
-        public string Secret { get; set; }
-        public string BearerToken { get; set; }
+        public string Key { get; init; }
+        public string Secret { get; init; }
+        public string BearerToken { get; init; }
 
 #nullable restore
     }

@@ -42,7 +42,9 @@ namespace Remora.Discord.API.Abstractions.Rest
             if (!reactions.IsSuccess)
                 Result.FromError(reactions);
 
+#nullable disable
             usersOut.AddRange(reactions.Entity);
+#nullable restore
 
             if (reactions.Entity.Count % MAX_REACTION_PAGE_SIZE != 0)
             {

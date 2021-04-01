@@ -59,9 +59,11 @@ namespace UVOCBotRemora.Commands
                 return Result.FromError(messageResult);
             }
 
+#nullable disable // No need to null check messageResult.Entity. If we've passed the above check then it's not-null
             // Check that the provided reaction exists
             if (!messageResult.Entity.Reactions.Value.Any(r => r.Emoji.Name.Equals(emoji)))
                 return await _responder.RespondWithErrorAsync(_context, $"The emoji {emoji} doesn't exist as a reaction on that message", ct: CancellationToken).ConfigureAwait(false);
+#nullable restore
 
             // Attempt to get all the users who reacted to the message
             Result<IReadOnlyList<IUser>> usersWhoReacted = await _channelAPI.GetAllReactionsAsync(channel.ID, messageSnowflake, emoji, ct: CancellationToken).ConfigureAwait(false);
@@ -86,15 +88,13 @@ namespace UVOCBotRemora.Commands
                 }
             }
 
-            // Include user mentions if less than 25 members had the role applied, otherwise include number
-            string messageContent = $"The role {Formatter.RoleMention(role.ID)} was granted to ";
-            string usersContent = usersWhoReacted.Entity.Count <= 25
-                ? userListBuilder.ToString()
-                : userCount + " users.";
+            // Include user mentions if less than 50 members had the role applied (to fit within embed limits, and to not look ridiculous).
+            // I did the math in April 2021 and we technically could fit 76 usernames within the limits.
+            string messageContent = $"The role {Formatter.RoleMention(role.ID)} was granted to  {Formatter.Bold(userCount.ToString())} users. ";
+            if (userCount <= 50)
+                messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 
-            // TODO: Do math on max username (well, mention string) length and embed.Description max length, and set maximum entity count for listing usernames as so
-
-            return await _responder.RespondWithSuccessAsync(_context, messageContent + usersContent, new AllowedMentions(), CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(_context, messageContent, new AllowedMentions(), CancellationToken).ConfigureAwait(false);
         }
     }
 }

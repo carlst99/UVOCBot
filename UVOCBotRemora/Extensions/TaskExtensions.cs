@@ -1,10 +1,11 @@
 ﻿namespace System.Threading.Tasks
 {
+#nullable disable
     public static class TaskExtensions
     {
         public static async Task WithCancellation(this Task task, CancellationToken cancellationToken)
         {
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> tcs = new();
             using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
             {
                 if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
@@ -14,7 +15,7 @@
 
         public static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken)
         {
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> tcs = new();
             using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
             {
                 if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
@@ -24,4 +25,5 @@
             return task.Result;
         }
     }
+#nullable restore
 }

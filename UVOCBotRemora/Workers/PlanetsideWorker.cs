@@ -19,7 +19,7 @@ namespace UVOCBotRemora.Workers
         private readonly ICensusQueryFactory _censusQueryFactory;
         private readonly IApiService _dbApi;
 
-        private readonly CensusStreamSubscription _censusSubscription = new CensusStreamSubscription
+        private readonly CensusStreamSubscription _censusSubscription = new()
         {
             Worlds = new[] { "all" },
             EventNames = new[] { "ContinentLock", "ContinentUnlock", "MetagameEvent" }

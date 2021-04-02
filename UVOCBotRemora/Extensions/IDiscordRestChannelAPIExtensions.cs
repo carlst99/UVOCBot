@@ -3,8 +3,8 @@ using Remora.Discord.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Remora.Discord.API.Abstractions.Rest
 {
@@ -12,48 +12,26 @@ namespace Remora.Discord.API.Abstractions.Rest
     {
         private const int MAX_REACTION_PAGE_SIZE = 100;
 
-        // TODO: Convert to enumerator. This means that we aren't bringing huge lists into memory for large guilds
-        public static async Task<Result<IReadOnlyList<IUser>>> GetAllReactionsAsync(
+        public static async IAsyncEnumerable<Result<IReadOnlyList<IUser>>> GetAllReactionsAsync(
             this IDiscordRestChannelAPI channelAPI,
             Snowflake channelID,
             Snowflake messageID,
             string emoji,
-            CancellationToken ct = default)
+            [EnumeratorCancellation] CancellationToken ct = default)
         {
-            List<IUser> users = new();
-            Result res = await GetAllReactionsRecursiveAsync(channelAPI, users, channelID, messageID, emoji, ct: ct).ConfigureAwait(false);
+            Result<IReadOnlyList<IUser>> reactions;
+            Snowflake afterID = new(0);
 
-            return res.IsSuccess
-                ? Result<IReadOnlyList<IUser>>.FromSuccess(users.AsReadOnly())
-                : Result<IReadOnlyList<IUser>>.FromError(res);
-        }
-
-        private static async Task<Result> GetAllReactionsRecursiveAsync(
-            IDiscordRestChannelAPI channelAPI,
-            List<IUser> usersOut,
-            Snowflake channelID,
-            Snowflake messageID,
-            string emoji,
-            Optional<Snowflake> lastUserId = default,
-            CancellationToken ct = default)
-        {
-            Result<IReadOnlyList<IUser>> reactions = await channelAPI.GetReactionsAsync(channelID, messageID, emoji, after: lastUserId, limit: 100, ct: ct).ConfigureAwait(false);
-
-            if (!reactions.IsSuccess)
-                Result.FromError(reactions);
-
-#nullable disable
-            usersOut.AddRange(reactions.Entity);
-#nullable restore
-
-            if (reactions.Entity.Count % MAX_REACTION_PAGE_SIZE != 0)
+            do
             {
-                Result recursiveRes = await GetAllReactionsRecursiveAsync(channelAPI, usersOut, channelID, messageID, emoji, reactions.Entity.Max(u => u.ID), ct).ConfigureAwait(false);
-                if (!recursiveRes.IsSuccess)
-                    return recursiveRes;
-            }
+                reactions = await channelAPI.GetReactionsAsync(channelID, messageID, emoji, after: afterID, limit: MAX_REACTION_PAGE_SIZE, ct: ct).ConfigureAwait(false);
+                yield return reactions;
 
-            return Result.FromSuccess();
+                if (!reactions.IsSuccess)
+                    yield break;
+
+                afterID = reactions.Entity.Max(u => u.ID);
+            } while (reactions.Entity.Count == MAX_REACTION_PAGE_SIZE);
         }
     }
 }

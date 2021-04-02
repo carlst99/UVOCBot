@@ -8,7 +8,6 @@ using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -20,6 +19,12 @@ namespace UVOCBotRemora.Commands
     [Group("role")]
     public class RoleCommands : CommandGroup
     {
+        /// <summary>
+        /// The maximum number of usernames that we put into a message embed.
+        /// This amount is limited by both Discord embed limitations and our desire to keep messages looking clean
+        /// </summary>
+        private const int MAX_USERNAMES_IN_LIST = 50;
+
         private readonly ICommandContext _context;
         private readonly CommandContextReponses _responder;
         private readonly IDiscordRestChannelAPI _channelAPI;
@@ -36,6 +41,7 @@ namespace UVOCBotRemora.Commands
         [Command("add-by-reaction")]
         [Description("Adds a role to all users who have reacted to a message")]
         [RequireContext(ChannelContext.Guild)]
+        [RequireUserGuildPermission(DiscordPermission.ManageRoles)]
         public async Task<IResult> GetServerPopulationCommandAsync(
             [Description("The channel that the message was sent in")][DiscordTypeHint(TypeHint.Channel)] IChannel channel,
             [Description("The numeric ID of the message")] string messageID,
@@ -49,7 +55,7 @@ namespace UVOCBotRemora.Commands
             // Attempt to get the method
             Snowflake messageSnowflake = new(messageIDParsed);
             Result<IMessage> messageResult = await _channelAPI.GetChannelMessageAsync(channel.ID, messageSnowflake, CancellationToken).ConfigureAwait(false);
-            if (!messageResult.IsSuccess)
+            if (!messageResult.IsSuccess || messageResult.Entity is null || !messageResult.Entity.Reactions.HasValue) // Not using conditional access here prevents the need to disable nullability warnings further down. Roslyn do be like that
             {
                 await _responder.RespondWithErrorAsync(
                     _context,
@@ -59,39 +65,43 @@ namespace UVOCBotRemora.Commands
                 return Result.FromError(messageResult);
             }
 
-#nullable disable // No need to null check messageResult.Entity. If we've passed the above check then it's not-null
             // Check that the provided reaction exists
             if (!messageResult.Entity.Reactions.Value.Any(r => r.Emoji.Name.Equals(emoji)))
                 return await _responder.RespondWithErrorAsync(_context, $"The emoji {emoji} doesn't exist as a reaction on that message", ct: CancellationToken).ConfigureAwait(false);
-#nullable restore
+
+            StringBuilder userListBuilder = new();
+            int userCount = 0;
 
             // Attempt to get all the users who reacted to the message
-            Result<IReadOnlyList<IUser>> usersWhoReacted = await _channelAPI.GetAllReactionsAsync(channel.ID, messageSnowflake, emoji, ct: CancellationToken).ConfigureAwait(false);
-            if (!usersWhoReacted.IsSuccess)
+            await foreach (Result<IReadOnlyList<IUser>> usersWhoReacted in _channelAPI.GetAllReactionsAsync(channel.ID, messageSnowflake, emoji).WithCancellation(CancellationToken).ConfigureAwait(false))
             {
-                await _responder.RespondWithErrorAsync(_context, "Could not get the members who have reacted with " + emoji, ct: CancellationToken).ConfigureAwait(false);
-                return Result.FromError(usersWhoReacted);
+                if (!usersWhoReacted.IsSuccess || usersWhoReacted.Entity is null)
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Could not get the members who have reacted with " + emoji, ct: CancellationToken).ConfigureAwait(false);
+                    return Result.FromError(usersWhoReacted);
+                }
+
+                // TODO: Verify that we can assign the role
+                foreach (IUser user in usersWhoReacted.Entity)
+                {
+                    Result roleAddResult = await _guildAPI.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, CancellationToken).ConfigureAwait(false);
+                    if (roleAddResult.IsSuccess)
+                    {
+                        // Don't flood the stringbuilder with more names than we'll actually ever use when sending the success message
+                        if (userCount < MAX_USERNAMES_IN_LIST)
+                            userListBuilder.Append(Formatter.UserMention(user.ID)).Append(", ");
+
+                        userCount++;
+                    }
+                }
             }
 
             // TODO: Verify that we can assign the role
 
-            // Add the role to all users and build a string list of all of them
-            StringBuilder userListBuilder = new();
-            int userCount = 0;
-            foreach (IUser user in usersWhoReacted.Entity)
-            {
-                Result roleAddResult = await _guildAPI.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, CancellationToken).ConfigureAwait(false);
-                if (roleAddResult.IsSuccess)
-                {
-                    userListBuilder.Append(Formatter.UserMention(user.ID)).Append(", ");
-                    userCount++;
-                }
-            }
-
             // Include user mentions if less than 50 members had the role applied (to fit within embed limits, and to not look ridiculous).
             // I did the math in April 2021 and we technically could fit 76 usernames within the limits.
             string messageContent = $"The role {Formatter.RoleMention(role.ID)} was granted to  {Formatter.Bold(userCount.ToString())} users. ";
-            if (userCount <= 50)
+            if (userCount <= MAX_USERNAMES_IN_LIST)
                 messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 
             return await _responder.RespondWithSuccessAsync(_context, messageContent, new AllowedMentions(), CancellationToken).ConfigureAwait(false);

@@ -42,38 +42,28 @@ namespace UVOCBotRemora.Commands
         [Description("Adds a role to all users who have reacted to a message")]
         [RequireContext(ChannelContext.Guild)]
         [RequireUserGuildPermission(DiscordPermission.ManageRoles)]
-        public async Task<IResult> GetServerPopulationCommandAsync(
+        public async Task<IResult> AddByReactionCommandAsync(
             [Description("The channel that the message was sent in")][DiscordTypeHint(TypeHint.Channel)] IChannel channel,
             [Description("The numeric ID of the message")] string messageID,
             [Description("The reaction emoji")][DiscordTypeHint(TypeHint.String)] string emoji,
             [Description("The role that should be assigned to each user")][DiscordTypeHint(TypeHint.Role)] IRole role)
         {
-            //Try to parse the message ID
-            if (!ulong.TryParse(messageID, out ulong messageIDParsed))
-                return await _responder.RespondWithErrorAsync(_context, "Please submit a valid message ID. You can obtain this by right-clicking a message", ct: CancellationToken).ConfigureAwait(false);
-
-            // Attempt to get the method
-            Snowflake messageSnowflake = new(messageIDParsed);
-            Result<IMessage> messageResult = await _channelAPI.GetChannelMessageAsync(channel.ID, messageSnowflake, CancellationToken).ConfigureAwait(false);
-            if (!messageResult.IsSuccess || messageResult.Entity is null || !messageResult.Entity.Reactions.HasValue) // Not using conditional access here prevents the need to disable nullability warnings further down. Roslyn do be like that
-            {
-                await _responder.RespondWithErrorAsync(
-                    _context,
-                    "Could not find the message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was sent in",
-                    ct: CancellationToken).ConfigureAwait(false);
-
+            // TODO: Verify that we can assign the role
+            Result<IMessage> messageResult = await GetMessage(channel.ID, messageID).ConfigureAwait(false);
+            if (!messageResult.IsSuccess)
                 return Result.FromError(messageResult);
-            }
 
             // Check that the provided reaction exists
+#pragma warning disable CS8604 // Possible null reference argument.
             if (!messageResult.Entity.Reactions.Value.Any(r => r.Emoji.Name.Equals(emoji)))
+#pragma warning restore CS8604 // Possible null reference argument.
                 return await _responder.RespondWithErrorAsync(_context, $"The emoji {emoji} doesn't exist as a reaction on that message", ct: CancellationToken).ConfigureAwait(false);
 
             StringBuilder userListBuilder = new();
             int userCount = 0;
 
             // Attempt to get all the users who reacted to the message
-            await foreach (Result<IReadOnlyList<IUser>> usersWhoReacted in _channelAPI.GetAllReactionsAsync(channel.ID, messageSnowflake, emoji).WithCancellation(CancellationToken).ConfigureAwait(false))
+            await foreach (Result<IReadOnlyList<IUser>> usersWhoReacted in _channelAPI.GetAllReactorsAsync(channel.ID, messageResult.Entity.ID, emoji).WithCancellation(CancellationToken).ConfigureAwait(false))
             {
                 if (!usersWhoReacted.IsSuccess || usersWhoReacted.Entity is null)
                 {
@@ -81,7 +71,6 @@ namespace UVOCBotRemora.Commands
                     return Result.FromError(usersWhoReacted);
                 }
 
-                // TODO: Verify that we can assign the role
                 foreach (IUser user in usersWhoReacted.Entity)
                 {
                     Result roleAddResult = await _guildAPI.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, CancellationToken).ConfigureAwait(false);
@@ -96,8 +85,6 @@ namespace UVOCBotRemora.Commands
                 }
             }
 
-            // TODO: Verify that we can assign the role
-
             // Include user mentions if less than 50 members had the role applied (to fit within embed limits, and to not look ridiculous).
             // I did the math in April 2021 and we technically could fit 76 usernames within the limits.
             string messageContent = $"The role {Formatter.RoleMention(role.ID)} was granted to  {Formatter.Bold(userCount.ToString())} users. ";
@@ -105,6 +92,71 @@ namespace UVOCBotRemora.Commands
                 messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 
             return await _responder.RespondWithSuccessAsync(_context, messageContent, new AllowedMentions(), CancellationToken).ConfigureAwait(false);
+        }
+
+        [Command("remove-from-all")]
+        [Description("Removes a role from all users who have it")]
+        [RequireContext(ChannelContext.Guild)]
+        [RequireUserGuildPermission(DiscordPermission.ManageRoles)]
+        public async Task<IResult> RemoveFromAllCommandAsync([Description("The role to remove")] IRole role)
+        {
+            StringBuilder userListBuilder = new();
+            int userCount = 0;
+
+            await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildAPI.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
+            {
+                if (!users.IsSuccess || users.Entity is null)
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Could not get members with this role. Please try again later", ct: CancellationToken).ConfigureAwait(false);
+                    return Result.FromError(users);
+                }
+
+                foreach (IGuildMember member in users.Entity)
+                {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                    Result roleRemoveResult = await _guildAPI.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, CancellationToken).ConfigureAwait(false);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                    if (roleRemoveResult.IsSuccess)
+                    {
+                        if (userCount < MAX_USERNAMES_IN_LIST)
+                            userListBuilder.Append(Formatter.UserMention(member.User.Value.ID)).Append(", ");
+
+                        userCount++;
+                    }
+                }
+            }
+
+            string messageContent = $"The role {Formatter.RoleMention(role.ID)} was revoked from  {Formatter.Bold(userCount.ToString())} users. ";
+            if (userCount <= MAX_USERNAMES_IN_LIST)
+                messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
+
+            return await _responder.RespondWithSuccessAsync(_context, messageContent, new AllowedMentions(), CancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Tries to get a message. Sends a failure response if appropriate
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <param name="messageID"></param>
+        /// <returns></returns>
+        private async Task<Result<IMessage>> GetMessage(Snowflake channel, string messageID)
+        {
+            //Try to parse the message ID
+            if (!ulong.TryParse(messageID, out ulong messageIDParsed))
+                return await _responder.RespondWithErrorAsync(_context, "Please submit a valid message ID. You can obtain this by right-clicking a message", ct: CancellationToken).ConfigureAwait(false);
+
+            // Attempt to get the message
+            Snowflake messageSnowflake = new(messageIDParsed);
+            Result<IMessage> messageResult = await _channelAPI.GetChannelMessageAsync(channel, messageSnowflake, CancellationToken).ConfigureAwait(false);
+            if (!messageResult.IsSuccess || messageResult.Entity?.Reactions.HasValue != true)
+            {
+                await _responder.RespondWithErrorAsync(
+                    _context,
+                    "Could not find the message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was sent in",
+                    ct: CancellationToken).ConfigureAwait(false);
+            }
+
+            return messageResult;
         }
     }
 }

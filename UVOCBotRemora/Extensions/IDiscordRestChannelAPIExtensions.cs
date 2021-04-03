@@ -12,7 +12,16 @@ namespace Remora.Discord.API.Abstractions.Rest
     {
         private const int MAX_REACTION_PAGE_SIZE = 100;
 
-        public static async IAsyncEnumerable<Result<IReadOnlyList<IUser>>> GetAllReactionsAsync(
+        /// <summary>
+        /// Gets all the users who reacted to a message
+        /// </summary>
+        /// <param name="channelAPI"></param>
+        /// <param name="channelID">The ID of the channel that the message was sent in</param>
+        /// <param name="messageID">The ID of the message which has the reaction</param>
+        /// <param name="emoji">The emoji to count reactions for</param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public static async IAsyncEnumerable<Result<IReadOnlyList<IUser>>> GetAllReactorsAsync(
             this IDiscordRestChannelAPI channelAPI,
             Snowflake channelID,
             Snowflake messageID,

@@ -76,6 +76,7 @@ namespace UVOCBot.Commands
 
             await ctx.RespondAsync(embed: builder.Build()).ConfigureAwait(false);
         }
+
         [Command("prefix")]
         [Description("Removes your custom prefix")]
         [RequireGuild]

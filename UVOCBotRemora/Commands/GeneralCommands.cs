@@ -1,27 +1,37 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Core;
 using Remora.Results;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace UVOCBotRemora.Commands
 {
     public class GeneralCommands : CommandGroup
     {
+        public const string RELEASE_NOTES = "- **Slash Commands :tada:** - Everyone hates having to use `help` every five seconds to remember how to use each command. So I removed it, then set it on :fire: for good measure. Now, you can use Discord's new slash commands with UVOCBot! Rejoice!" +
+            "\r\n- **Bug Fixes:tm:** - *Cough* (we'll see)";
+
         private readonly ICommandContext _context;
         private readonly CommandContextReponses _responder;
+        private readonly IDiscordRestUserAPI _userAPI;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ICommandContext context, CommandContextReponses responder)
+        public GeneralCommands(ICommandContext context, CommandContextReponses responder, IDiscordRestUserAPI userAPI)
         {
             _context = context;
             _responder = responder;
+            _userAPI = userAPI;
 
             _rndGen = new Random();
         }
@@ -50,16 +60,12 @@ namespace UVOCBotRemora.Commands
                 };
             }
 
-            Result<IMessage> reply = await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
-
-            return !reply.IsSuccess
-                    ? Result.FromError(reply)
-                    : Result.FromSuccess();
+            return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
         }
 
         [Command("http-cat")]
         [Description("Posts a cat image that represents the given HTTP error code.")]
-        public async Task<IResult> PostHttpCatAsync([Description("The HTTP code.")] [DiscordTypeHint(TypeHint.Integer)] int httpCode)
+        public async Task<IResult> PostHttpCatCommandAsync([Description("The HTTP code.")] [DiscordTypeHint(TypeHint.Integer)] int httpCode)
         {
             var embedImage = new EmbedImage($"https://http.cat/{httpCode}");
             var embedFooter = new EmbedFooter("Image from http.cat");
@@ -70,11 +76,48 @@ namespace UVOCBotRemora.Commands
                 Footer = embedFooter
             };
 
-            Result<IMessage> reply = await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+        }
 
-            return !reply.IsSuccess
-                ? Result.FromError(reply)
-                : Result.FromSuccess();
+        [Command("about")]
+        [Description("Gets information about UVOCBot")]
+        public async Task<IResult> AboutCommandAsync()
+        {
+            Optional<string> botAvatar = new();
+            Optional<string> authorAvatar = new();
+
+            Result<IUser> botUser = await _userAPI.GetCurrentUserAsync(CancellationToken).ConfigureAwait(false);
+            if (botUser.IsSuccess)
+            {
+                Result<Uri> botAvatarURI = CDN.GetUserAvatarUrl(botUser.Entity, CDNImageFormat.PNG);
+                if (botAvatarURI.IsSuccess)
+                    botAvatar = botAvatarURI.Entity.AbsoluteUri;
+            }
+
+            Result<IUser> authorUser = await _userAPI.GetUserAsync(new Snowflake(165629177221873664), CancellationToken).ConfigureAwait(false);
+            if (authorUser.IsSuccess)
+            {
+                Result<Uri> authorAvatarURI = CDN.GetUserAvatarUrl(authorUser.Entity, CDNImageFormat.PNG);
+                if (authorAvatarURI.IsSuccess)
+                    authorAvatar = authorAvatarURI.Entity.AbsoluteUri;
+            }
+
+            Embed embed = new()
+            {
+                Title = "UVOCBot",
+                Description = "A general-purpose bot built to assist the UVOC Discord server",
+                Thumbnail = new EmbedThumbnail(botAvatar, Height: 96, Width: 96),
+                Author = new EmbedAuthor("Written by FalconEye#1153", IconUrl: authorAvatar),
+                Footer = new EmbedFooter($"Version {Assembly.GetEntryAssembly()?.GetName().Version}"),
+                Colour = Program.DEFAULT_EMBED_COLOUR,
+                Url = "https://github.com/carlst99/UVOCBot",
+                Fields = new List<IEmbedField>
+                {
+                    new EmbedField("Release Notes", RELEASE_NOTES)
+                }
+            };
+
+            return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
         }
     }
 }

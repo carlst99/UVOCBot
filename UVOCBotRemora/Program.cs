@@ -30,8 +30,9 @@ using UVOCBotRemora.Workers;
 
 namespace UVOCBotRemora
 {
-    // Permissions integer: 285281344
+    // Permissions integer: 2435927120
     // - Manage Roles
+    // - Manage Channels
     // - View Channels
     // - Send Messages
     // - Embed Links
@@ -41,7 +42,7 @@ namespace UVOCBotRemora
     // - Connect
     // - Speak
     // - Move Members
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927104&scope=bot
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot
 
     public static class Program
     {

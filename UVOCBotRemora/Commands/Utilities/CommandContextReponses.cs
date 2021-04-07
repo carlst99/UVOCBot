@@ -17,13 +17,11 @@ namespace UVOCBotRemora.Commands
     {
         private readonly IDiscordRestChannelAPI _channelAPI;
         private readonly IDiscordRestWebhookAPI _webhookAPI;
-        private readonly IOptions<GeneralOptions> _options;
 
-        public CommandContextReponses(IDiscordRestChannelAPI channelAPI, IDiscordRestWebhookAPI webhookAPI, IOptions<GeneralOptions> options)
+        public CommandContextReponses(IDiscordRestChannelAPI channelAPI, IDiscordRestWebhookAPI webhookAPI)
         {
             _channelAPI = channelAPI;
             _webhookAPI = webhookAPI;
-            _options = options;
         }
 
         public async Task<Result> TriggerTypingAsync(ICommandContext context, CancellationToken ct)
@@ -72,7 +70,7 @@ namespace UVOCBotRemora.Commands
         public async Task<Result<IMessage>> RespondToInteractionAsync(InteractionContext context, Optional<string?> content = default, Optional<IReadOnlyList<IEmbed>?> embeds = default, Optional<IAllowedMentions?> allowedMentions = default, CancellationToken ct = default)
         {
             return await _webhookAPI.EditOriginalInteractionResponseAsync(
-                    new Snowflake(_options.Value.DiscordApplicationClientId),
+                    context.ApplicationID,
                     context.Token,
                     content,
                     embeds,

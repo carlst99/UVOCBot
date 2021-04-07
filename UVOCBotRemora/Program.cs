@@ -204,13 +204,13 @@ namespace UVOCBotRemora
                 // Use the following to get rid of troublesome commands
 
                 //IDiscordRestApplicationAPI applicationAPI = serviceProvider.GetRequiredService<IDiscordRestApplicationAPI>();
-                //var applicationCommands = applicationAPI.GetGlobalApplicationCommandsAsync(new Snowflake(options.Value.DiscordApplicationClientId)).Result;
+                //var applicationCommands = applicationAPI.GetGlobalApplicationCommandsAsync(new Snowflake(APPLICATION_CLIENT_ID)).Result;
 
                 //if (applicationCommands.IsSuccess)
                 //{
                 //    foreach (IApplicationCommand command in applicationCommands.Entity)
                 //    {
-                //        applicationAPI.DeleteGlobalApplicationCommandAsync(new Snowflake(options.Value.DiscordApplicationClientId), command.ID).Wait();
+                //        applicationAPI.DeleteGlobalApplicationCommandAsync(new Snowflake(APPLICATION_CLIENT_ID), command.ID).Wait();
                 //    }
                 //}
 

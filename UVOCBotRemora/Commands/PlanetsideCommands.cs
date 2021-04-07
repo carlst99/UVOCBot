@@ -21,11 +21,11 @@ namespace UVOCBotRemora.Commands
     {
         private readonly ICommandContext _context;
         private readonly CommandContextReponses _responder;
-        private readonly IApiService _dbAPI;
+        private readonly IAPIService _dbAPI;
         private readonly ICensusQueryFactory _censusQueryFactory;
         private readonly IFisuApiService _fisuAPI;
 
-        public PlanetsideCommands(ICommandContext context, CommandContextReponses responder, IApiService dbAPI, ICensusQueryFactory censusQueryFactory, IFisuApiService fisuAPI)
+        public PlanetsideCommands(ICommandContext context, CommandContextReponses responder, IAPIService dbAPI, ICensusQueryFactory censusQueryFactory, IFisuApiService fisuAPI)
         {
             _context = context;
             _responder = responder;

@@ -17,7 +17,7 @@ namespace UVOCBotRemora.Workers
     {
         private readonly ICensusStreamClient _censusClient;
         private readonly ICensusQueryFactory _censusQueryFactory;
-        private readonly IApiService _dbApi;
+        private readonly IAPIService _dbApi;
 
         private readonly CensusStreamSubscription _censusSubscription = new()
         {
@@ -25,7 +25,7 @@ namespace UVOCBotRemora.Workers
             EventNames = new[] { "ContinentLock", "ContinentUnlock", "MetagameEvent" }
         };
 
-        public PlanetsideWorker(ICensusStreamClient censusClient, ICensusQueryFactory censusQueryFactory, IApiService dbApi)
+        public PlanetsideWorker(ICensusStreamClient censusClient, ICensusQueryFactory censusQueryFactory, IAPIService dbApi)
         {
             _censusClient = censusClient;
             _censusQueryFactory = censusQueryFactory;

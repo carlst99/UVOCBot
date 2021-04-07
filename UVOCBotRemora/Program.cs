@@ -77,13 +77,14 @@ namespace UVOCBotRemora
                     services.Configure<CommandResponderOptions>(c.Configuration.GetSection(nameof(CommandResponderOptions)));
 
                     //Setup API services
-                    services.AddSingleton((s) => RestService.For<IApiService>(
+                    services.AddSingleton((s) => RestService.For<IAPIService>(
                             s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
                     services.AddSingleton((s) => RestService.For<IFisuApiService>(
                             s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
 
                     services.AddSingleton(fileSystem)
                             .AddSingleton<ISettingsService, SettingsService>()
+                            .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
@@ -172,12 +173,16 @@ namespace UVOCBotRemora
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(true)
-                    .AddResponder<ReadyResponder>()
                     .AddDiscordCaching()
                     .AddHttpClient();
 
+            services.AddResponder<GuildCreateResponder>()
+                    .AddResponder<ReadyResponder>()
+                    .AddResponder<VoiceStateUpdateResponder>();
+
             // Add commands
             services.AddCommandGroup<GeneralCommands>()
+                    .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
                     .AddCommandGroup<PlanetsideCommands>();
 

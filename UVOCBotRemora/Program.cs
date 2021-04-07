@@ -34,10 +34,14 @@ namespace UVOCBotRemora
     // - Manage Roles
     // - View Channels
     // - Send Messages
+    // - Embed Links
     // - Read Message History
     // - Add Reactions
+    // - Use Slash Commands
+    // - Connect
+    // - Speak
     // - Move Members
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=285281344&scope=bot
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927104&scope=bot
 
     public static class Program
     {

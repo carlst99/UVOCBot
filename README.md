@@ -4,13 +4,15 @@
 
 Provides various functions to assist with the experience of the UVOC outfit Discord server. Current features include:
 
-- Tweet relaying - Posts tweets from Twitter users into Discord channel
-- Random team generation
+- Tweet relaying - Posts tweets from Twitter users into a Discord channel
 - Reaction-based role assignment
+- Bulk voice channel movement
+- Temporary group creation (for use with movement commands)
+- Random team generation
 - PlanetSide 2 server population and status querying
 - Various other features, such as coinflips and bonking people :smirk:
 
-To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
+To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence if you'd like to use it in your own server, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
 
 # Setup for Hosting
 
@@ -22,7 +24,7 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 
 # Building and Developing
 
-1. Install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) installed.
+1. Install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0).
 2. Install [MariaDB](https://mariadb.org/) and create a database.
 3. Modify the requisite `appsettings.json` files to include your API keys and database connection string
 4. Update the database to the latest migration. If you are using the .NET Core CLI, run the command:
@@ -35,7 +37,7 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
     Update-Database
     ```
 
-6. If you're building with Visual Studio and will be working on a feature that interacts with the RESTful API, I recommend utilising the *Multiple Startup* feature so that you can easily debug both projects
+6. If you're building with Visual Studio I recommend utilising the *Multiple Startup* feature so that you can easily debug both projects
 
 ### Project Structure
 
@@ -51,10 +53,10 @@ UVOCBot is built on the following amazing libraries and frameworks:
 
 - [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/)
 - [DaybreakGames.Census](https://github.com/Lampjaw/DaybreakGames.Census)
-- [DSharpPlus](https://github.com/DSharpPlus/DSharpPlus)
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
 - [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)
 - [Refit](https://github.com/reactiveui/refit)
+- [Remora.Discord](https://github.com/Nihlus/Remora.Discord)
 - [Serilog](https://github.com/serilog/serilog)
 - [System.IO.Abstractions](https://github.com/System-IO-Abstractions/System.IO.Abstractions)
 - [Tweetinvi](https://github.com/linvi/tweetinvi)

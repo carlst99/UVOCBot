@@ -138,14 +138,16 @@ namespace UVOCBotRemora
                 .MinimumLevel.Debug()
 #else
                 .MinimumLevel.Information()
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
 #endif
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
-                .MinimumLevel.Override("Remora", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), rollingInterval: RollingInterval.Day)
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
+
+            Log.Information("Appdata stored at {path}", GetAppdataFilePath(fileSystem, null));
 
             return Log.Logger;
         }

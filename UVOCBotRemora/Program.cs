@@ -187,6 +187,7 @@ namespace UVOCBotRemora
 
             // Add commands
             services.AddCommandGroup<GeneralCommands>()
+                    .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
                     .AddCommandGroup<PlanetsideCommands>();

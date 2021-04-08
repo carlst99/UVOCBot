@@ -19,8 +19,8 @@ namespace UVOCBotRemora.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "- **Slash Commands :tada:** - Everyone hates having to use `help` every five seconds to remember how to use each command. So I removed it, then set it on :fire: for good measure. Now, you can use Discord's new slash commands with UVOCBot! Rejoice!" +
-            "\r\n- **Bug Fixes:tm:** - *Cough* (we'll see)";
+        public const string RELEASE_NOTES = "• **Slash Commands :tada:** - Everyone hates having to use `help` every five seconds to remember how to use each command. So I removed it, then set it on :fire: for good measure. Now, you can use Discord's new slash commands with UVOCBot! Rejoice!" +
+            "\r\n• **Bug Fixes:tm:** - *Cough* (we'll see)";
 
         private readonly ICommandContext _context;
         private readonly CommandContextReponses _responder;
@@ -40,25 +40,17 @@ namespace UVOCBotRemora.Commands
         [Description("Flips a coin")]
         public async Task<IResult> CoinFlipCommandAsync()
         {
-            int result = _rndGen.Next(0, 2);
-            Embed embed;
-
-            if (result == 0)
-            {
-                embed = new Embed
-                {
-                    Colour = Color.Gold,
-                    Description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("heads")}! {Formatter.Emoji("coin")}"
-                };
-            }
+            string description;
+            if (_rndGen.Next(0, 2) == 0)
+                description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("heads")}! {Formatter.Emoji("coin")}";
             else
+                description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("tails")}! {Formatter.Emoji("coin")}";
+
+            Embed embed = new()
             {
-                embed = new Embed
-                {
-                    Colour = Color.Gold,
-                    Description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("tails")}! {Formatter.Emoji("coin")}"
-                };
-            }
+                Colour = Color.Gold,
+                Description = description
+            };
 
             return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
         }
@@ -67,13 +59,10 @@ namespace UVOCBotRemora.Commands
         [Description("Posts a cat image that represents the given HTTP error code.")]
         public async Task<IResult> PostHttpCatCommandAsync([Description("The HTTP code.")] [DiscordTypeHint(TypeHint.Integer)] int httpCode)
         {
-            var embedImage = new EmbedImage($"https://http.cat/{httpCode}");
-            var embedFooter = new EmbedFooter("Image from http.cat");
-
             var embed = new Embed
             {
-                Image = embedImage,
-                Footer = embedFooter
+                Image = new EmbedImage($"https://http.cat/{httpCode}"),
+                Footer = new EmbedFooter("Image from http.cat")
             };
 
             return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);

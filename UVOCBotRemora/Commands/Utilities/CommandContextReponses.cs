@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using Remora.Discord.API.Abstractions.Objects;
+﻿using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
@@ -9,7 +8,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBotRemora.Config;
 
 namespace UVOCBotRemora.Commands
 {
@@ -51,7 +49,7 @@ namespace UVOCBotRemora.Commands
         {
             Embed embed = new()
             {
-                Colour = Color.Green,
+                Colour = Program.DEFAULT_EMBED_COLOUR,
                 Description = content
             };
             return await RespondAsync(context, embed: embed, allowedMentions: allowedMentions, ct: ct).ConfigureAwait(false);

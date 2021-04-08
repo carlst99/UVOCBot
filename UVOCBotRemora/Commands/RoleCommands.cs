@@ -17,6 +17,9 @@ using System.Threading.Tasks;
 namespace UVOCBotRemora.Commands
 {
     [Group("role")]
+    [Description("Commands that help with role management")]
+    [RequireContext(ChannelContext.Guild)]
+    [RequireUserGuildPermission(DiscordPermission.ManageRoles)]
     public class RoleCommands : CommandGroup
     {
         /// <summary>
@@ -40,8 +43,6 @@ namespace UVOCBotRemora.Commands
 
         [Command("add-by-reaction")]
         [Description("Adds a role to all users who have reacted to a message")]
-        [RequireContext(ChannelContext.Guild)]
-        [RequireUserGuildPermission(DiscordPermission.ManageRoles)]
         public async Task<IResult> AddByReactionCommandAsync(
             [Description("The channel that the message was sent in")][DiscordTypeHint(TypeHint.Channel)] IChannel channel,
             [Description("The numeric ID of the message")] string messageID,
@@ -96,8 +97,6 @@ namespace UVOCBotRemora.Commands
 
         [Command("remove-from-all")]
         [Description("Removes a role from all users who have it")]
-        [RequireContext(ChannelContext.Guild)]
-        [RequireUserGuildPermission(DiscordPermission.ManageRoles)]
         public async Task<IResult> RemoveFromAllCommandAsync([Description("The role to remove")] IRole role)
         {
             StringBuilder userListBuilder = new();

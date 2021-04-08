@@ -42,7 +42,7 @@ namespace UVOCBotRemora
     // - Connect
     // - Speak
     // - Move Members
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot%20applications.commands
 
     public static class Program
     {

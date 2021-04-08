@@ -143,6 +143,10 @@ namespace UVOCBotRemora.Commands
 
         private static string GetEmbedPopulationBar(int population, int totalPopulation)
         {
+            // Can't divide by zero!
+            if (totalPopulation == 0 || population > totalPopulation)
+                return Formatter.Emoji("black_large_square");
+
             double tensPercentage = Math.Ceiling((double)population / totalPopulation * 10);
             double remainder = 10 - tensPercentage;
             string result = string.Empty;
@@ -154,7 +158,7 @@ namespace UVOCBotRemora.Commands
                 result += Formatter.Emoji("black_large_square");
 
             string stringPercentage = ((double)population / totalPopulation * 100).ToString("F1");
-            result += $"{Formatter.Bold("   ")}({stringPercentage}%)";
+            result += $"{Formatter.Bold("   ")}({ stringPercentage }%)";
 
             return result;
         }

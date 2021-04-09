@@ -138,8 +138,8 @@ namespace UVOCBotRemora
                 .MinimumLevel.Debug()
 #else
                 .MinimumLevel.Information()
-                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
 #endif
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
                 .Enrich.FromLogContext()

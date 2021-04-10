@@ -41,9 +41,10 @@ namespace UVOCBotRemora.Responders
             await _prefixService.SetupAsync().ConfigureAwait(false);
 
             _client.SubmitCommandAsync(
-                new UpdateStatus(
+                new UpdatePresence(
                     ClientStatus.Online,
                     false,
+                    null,
                     Activities: new Activity[] { new Activity(_options.CommandPrefix + "help", ActivityType.Listening) }
                     )
                 );

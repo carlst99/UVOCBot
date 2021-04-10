@@ -38,7 +38,8 @@ namespace UVOCBotRemora.Responders
                         voiceState.IsSelfMuted.Value,
                         voiceState.IsStreaming,
                         voiceState.IsVideoEnabled.Value,
-                        voiceState.IsSuppressed.Value);
+                        voiceState.IsSuppressed.Value,
+                        null);
 #pragma warning restore CS8604 // Possible null reference argument.
 
                     _cache.Set(trueState);

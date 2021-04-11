@@ -92,7 +92,7 @@ namespace UVOCBotRemora.Commands
             if (userCount <= MAX_USERNAMES_IN_LIST)
                 messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 
-            return await _responder.RespondWithSuccessAsync(_context, messageContent, new AllowedMentions(), CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(_context, messageContent, CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         [Command("remove-from-all")]
@@ -129,7 +129,7 @@ namespace UVOCBotRemora.Commands
             if (userCount <= MAX_USERNAMES_IN_LIST)
                 messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 
-            return await _responder.RespondWithSuccessAsync(_context, messageContent, new AllowedMentions(), CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(_context, messageContent, CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -27,45 +27,43 @@ namespace UVOCBotRemora.Commands
             return await _channelAPI.TriggerTypingIndicatorAsync(context.ChannelID, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<IMessage>> RespondAsync(ICommandContext context, Optional<string> content = default, Optional<IEmbed> embed = default, Optional<IAllowedMentions> allowedMentions = default, CancellationToken ct = default)
+        public async Task<Result<IMessage>> RespondWithEmbedAsync(ICommandContext context, IEmbed embed, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             if (context is InteractionContext ictx)
-            {
-                if (embed.HasValue)
-                    return await RespondToInteractionAsync(ictx, content, new List<IEmbed> { embed.Value }, allowedMentions, ct).ConfigureAwait(false);
-                else
-                    return await RespondToInteractionAsync(ictx, content, allowedMentions: allowedMentions, ct: ct).ConfigureAwait(false);
-            }
+                return await RespondToInteractionAsync(ictx, ct, default, new List<IEmbed> { embed }, allowedMentions).ConfigureAwait(false);
             else
-            {
-                Optional<string> contentNotNull = new(content.Value);
-                Optional<IAllowedMentions> allowedMentionsNotNull = new(allowedMentions.Value);
-
-                return await RespondWithMessageAsync(context, contentNotNull, embed: embed, allowedMentions: allowedMentionsNotNull, ct: ct).ConfigureAwait(false);
-            }
+                return await RespondToMessageAsync(context, ct, default, embed: new Optional<IEmbed>(embed), allowedMentions: allowedMentions).ConfigureAwait(false);
         }
 
-        public async Task<Result<IMessage>> RespondWithSuccessAsync(ICommandContext context, string content, Optional<IAllowedMentions> allowedMentions = default, CancellationToken ct = default)
+        public async Task<Result<IMessage>> RespondWithContentAsync(ICommandContext context, string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
+        {
+            if (context is InteractionContext ictx)
+                return await RespondToInteractionAsync(ictx, ct, content, allowedMentions: allowedMentions).ConfigureAwait(false);
+            else
+                return await RespondToMessageAsync(context, ct, content, default, allowedMentions: allowedMentions).ConfigureAwait(false);
+        }
+
+        public async Task<Result<IMessage>> RespondWithSuccessAsync(ICommandContext context, string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             Embed embed = new()
             {
                 Colour = Program.DEFAULT_EMBED_COLOUR,
                 Description = content
             };
-            return await RespondAsync(context, embed: embed, allowedMentions: allowedMentions, ct: ct).ConfigureAwait(false);
+            return await RespondWithEmbedAsync(context, embed, ct, allowedMentions).ConfigureAwait(false);
         }
 
-        public async Task<Result<IMessage>> RespondWithErrorAsync(ICommandContext context, string content, Optional<IAllowedMentions> allowedMentions = default, CancellationToken ct = default)
+        public async Task<Result<IMessage>> RespondWithErrorAsync(ICommandContext context, string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             Embed embed = new()
             {
                 Colour = Color.Red,
                 Description = content
             };
-            return await RespondAsync(context, embed: embed, allowedMentions: allowedMentions, ct: ct).ConfigureAwait(false);
+            return await RespondWithEmbedAsync(context, embed, ct, allowedMentions).ConfigureAwait(false);
         }
 
-        public async Task<Result<IMessage>> RespondToInteractionAsync(InteractionContext context, Optional<string> content = default, Optional<IReadOnlyList<IEmbed>> embeds = default, Optional<IAllowedMentions> allowedMentions = default, CancellationToken ct = default)
+        public async Task<Result<IMessage>> RespondToInteractionAsync(InteractionContext context, CancellationToken ct, Optional<string> content = default, Optional<IReadOnlyList<IEmbed>> embeds = default, Optional<IAllowedMentions> allowedMentions = default)
         {
             return await _webhookAPI.CreateFollowupMessageAsync(
                 context.ApplicationID,
@@ -76,7 +74,7 @@ namespace UVOCBotRemora.Commands
                 ct: ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<IMessage>> RespondWithMessageAsync(ICommandContext context, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IEmbed> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default, CancellationToken ct = default)
+        public async Task<Result<IMessage>> RespondToMessageAsync(ICommandContext context, CancellationToken ct, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IEmbed> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default)
         {
             return await _channelAPI.CreateMessageAsync(context.ChannelID, content, nonce, isTTS, file, embed, allowedMentions, messageReference, ct).ConfigureAwait(false);
         }

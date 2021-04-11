@@ -52,7 +52,7 @@ namespace UVOCBotRemora.Commands
                 Description = description
             };
 
-            return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("http-cat")]
@@ -65,7 +65,7 @@ namespace UVOCBotRemora.Commands
                 Footer = new EmbedFooter("Image from http.cat")
             };
 
-            return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("about")]
@@ -106,7 +106,7 @@ namespace UVOCBotRemora.Commands
                 }
             };
 
-            return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
         }
     }
 }

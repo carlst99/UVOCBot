@@ -97,7 +97,7 @@ namespace UVOCBotRemora.Commands
                 }
             };
 
-            return await _responder.RespondAsync(_context, embed: embed, ct: CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("default-server")]

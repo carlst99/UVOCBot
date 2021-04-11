@@ -87,6 +87,7 @@ namespace UVOCBotRemora
                             s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
 
                     services.AddSingleton(fileSystem)
+                            .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
                             .AddTransient(TwitterClientFactory);
@@ -193,7 +194,8 @@ namespace UVOCBotRemora
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
-                    .AddCommandGroup<TeamGenerationCommands>();
+                    .AddCommandGroup<TeamGenerationCommands>()
+                    .AddCommandGroup<TwitterCommands>();
 
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();

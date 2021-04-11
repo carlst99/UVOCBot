@@ -42,7 +42,7 @@ namespace UVOCBotRemora.Commands
             [Description("The number of teams to generate")] int numberOfTeams)
         {
             if (numberOfTeams < 2)
-                return await _responder.RespondWithErrorAsync(_context, "At least two teams are required").ConfigureAwait(false);
+                return await _responder.RespondWithErrorAsync(_context, "At least two teams are required", ct: CancellationToken).ConfigureAwait(false);
 
             List<ulong> roleMembers = new();
 
@@ -69,7 +69,7 @@ namespace UVOCBotRemora.Commands
             [Description("The number of teams to generate")] int numberOfTeams)
         {
             if (numberOfTeams < 2)
-                return await _responder.RespondWithErrorAsync(_context, "At least two teams are required").ConfigureAwait(false);
+                return await _responder.RespondWithErrorAsync(_context, "At least two teams are required", ct: CancellationToken).ConfigureAwait(false);
 
             MemberGroupDTO group = await _dbAPI.GetMemberGroup(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
 
@@ -83,14 +83,14 @@ namespace UVOCBotRemora.Commands
 
             List<List<ulong>> teams = await CreateRandomTeams(memberPool, teamCount).ConfigureAwait(false);
 
-            return await _responder.RespondAsync(
+            return await _responder.RespondWithEmbedAsync(
                 _context,
-                embed: BuildTeamsEmbed(teams, "Random Teams", embedDescription),
-                allowedMentions: new AllowedMentions(),
-                ct: CancellationToken).ConfigureAwait(false);
+                BuildTeamsEmbed(teams, "Random Teams", embedDescription),
+                CancellationToken,
+                allowedMentions: new AllowedMentions()).ConfigureAwait(false);
         }
 
-        private static async Task<List<List<ulong>>> CreateRandomTeams(IList<ulong> memberPool, int teamCount)
+        private async Task<List<List<ulong>>> CreateRandomTeams(IList<ulong> memberPool, int teamCount)
         {
             List<List<ulong>> teams = new(teamCount);
 
@@ -108,7 +108,7 @@ namespace UVOCBotRemora.Commands
                     if (teamPos == teamCount)
                         teamPos = 0;
                 }
-            }).ConfigureAwait(false);
+            }, CancellationToken).ConfigureAwait(false);
 
             return teams;
         }

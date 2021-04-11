@@ -1,6 +1,7 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
@@ -24,12 +25,14 @@ namespace UVOCBotRemora.Commands
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
         private readonly IAPIService _dbAPI;
+        private readonly IDiscordRestGuildAPI _guildAPI;
 
-        public GroupCommands(ICommandContext context, MessageResponseHelpers responder, IAPIService dbAPI)
+        public GroupCommands(ICommandContext context, MessageResponseHelpers responder, IAPIService dbAPI, IDiscordRestGuildAPI guildAPI)
         {
             _context = context;
             _responder = responder;
             _dbAPI = dbAPI;
+            _guildAPI = guildAPI;
         }
 
         [Command("list")]
@@ -50,7 +53,7 @@ namespace UVOCBotRemora.Commands
                     .AppendLine((g.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"));
             }
 
-            return await _responder.RespondWithSuccessAsync(_context, sb.ToString(), new AllowedMentions(), CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(_context, sb.ToString(), CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         [Command("info")]
@@ -76,7 +79,7 @@ namespace UVOCBotRemora.Commands
                 sb.Append(' ');
             }
 
-            return await _responder.RespondWithSuccessAsync(_context, sb.ToString(), new AllowedMentions(), ct: CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(_context, sb.ToString(), CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         [Command("create")]
@@ -121,20 +124,23 @@ namespace UVOCBotRemora.Commands
 
             if (_context.User.ID.Value != group.Entity.CreatorId)
             {
-                if (_context is InteractionContext ictx && ictx.Member.HasValue && ictx.Member.Value.Permissions.HasValue)
+                Result<IGuildMember> sender = await _guildAPI.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken).ConfigureAwait(false);
+                if (!sender.IsSuccess || !sender.Entity.Permissions.HasValue)
+                    return await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again later!", CancellationToken).ConfigureAwait(false);
+
+                IDiscordPermissionSet senderPerms = sender.Entity.Permissions.Value;
+
+                if (!senderPerms.HasPermission(DiscordPermission.Administrator) || !senderPerms.HasPermission(DiscordPermission.ManageGuild) || !senderPerms.HasPermission(DiscordPermission.ManageRoles))
                 {
-                    IDiscordPermissionSet senderPerms = ictx.Member.Value.Permissions.Value;
-                    if (!senderPerms.HasPermission(DiscordPermission.Administrator) || !senderPerms.HasPermission(DiscordPermission.ManageGuild) || !senderPerms.HasPermission(DiscordPermission.ManageRoles))
-                        return await _responder.RespondWithErrorAsync(_context, "You must either be the group owner, or have guild/role management permissions, to remove a group.").ConfigureAwait(false);
-                }
-                else
-                {
-                    return await _responder.RespondWithErrorAsync(_context, "If you don't own this group, you can only remove it by using the slash command.", ct: CancellationToken).ConfigureAwait(false);
+                    return await _responder.RespondWithErrorAsync(
+                        _context,
+                        "You must either be the group owner, or have guild/role management permissions, to remove a group.",
+                        CancellationToken).ConfigureAwait(false);
                 }
             }
 
             await _dbAPI.DeleteMemberGroup(group.Entity.Id).ConfigureAwait(false);
-            return await _responder.RespondWithSuccessAsync(_context, $"The group {group.Entity.GroupName} was successfully deleted.").ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(_context, $"The group {group.Entity.GroupName} was successfully deleted.", CancellationToken).ConfigureAwait(false);
         }
 
         private async Task<Result<MemberGroupDTO>> GetGroup(string groupName)

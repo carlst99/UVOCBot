@@ -2,6 +2,7 @@
 using DaybreakGames.Census.Operators;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
@@ -64,6 +65,22 @@ namespace UVOCBotRemora.Commands
             }
         }
 
+        [Command("default-server")]
+        [Description("Sets the default world for planetside-related commands")]
+        [RequireContext(ChannelContext.Guild)]
+        [RequireUserGuildPermission(DiscordPermission.ManageGuild)]
+        public async Task<IResult> DefaultWorldCommand([DiscordTypeHint(TypeHint.String)] WorldType server)
+        {
+            PlanetsideSettingsDTO settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value).ConfigureAwait(false);
+            settings.DefaultWorld = (int)server;
+            await _dbAPI.UpdatePlanetsideSettings(_context.GuildID.Value.Value, settings).ConfigureAwait(false);
+
+            return await _responder.RespondWithSuccessAsync(
+                _context,
+                $"{Formatter.Emoji("earth_asia")} Your default server has been set to {Formatter.InlineQuote(server.ToString())}",
+                ct: CancellationToken).ConfigureAwait(false);
+        }
+
         private async Task<IResult> SendWorldPopulation(WorldType world)
         {
             FisuPopulation population;
@@ -98,21 +115,6 @@ namespace UVOCBotRemora.Commands
             };
 
             return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
-        }
-
-        [Command("default-server")]
-        [Description("Sets the default world for planetside-related commands")]
-        [RequireContext(ChannelContext.Guild)]
-        public async Task<IResult> DefaultWorldCommand([DiscordTypeHint(TypeHint.String)] WorldType server)
-        {
-            PlanetsideSettingsDTO settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value).ConfigureAwait(false);
-            settings.DefaultWorld = (int)server;
-            await _dbAPI.UpdatePlanetsideSettings(_context.GuildID.Value.Value, settings).ConfigureAwait(false);
-
-            return await _responder.RespondWithSuccessAsync(
-                _context,
-                $"{Formatter.Emoji("earth_asia")} Your default server has been set to {Formatter.InlineQuote(server.ToString())}",
-                ct: CancellationToken).ConfigureAwait(false);
         }
 
         private async Task<string> GetWorldStatusString(WorldType world)

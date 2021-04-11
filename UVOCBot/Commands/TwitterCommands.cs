@@ -15,9 +15,9 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models.V2;
 using UVOCBot.Core.Model;
-using UVOCBotRemora.Services;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     [Group("twitter")]
     [Description("Commands that help with Twitter post relaying")]

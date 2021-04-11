@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace UVOCBotRemora.Utilities
+namespace UVOCBot.Utilities
 {
     public sealed class Optional<T>
     {

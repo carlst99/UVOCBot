@@ -9,10 +9,10 @@ using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBotRemora.Config;
-using UVOCBotRemora.Services;
+using UVOCBot.Config;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Responders
+namespace UVOCBot.Responders
 {
     /// <summary>
     /// Performs setup actions once a connection has been established to the Discord gateway

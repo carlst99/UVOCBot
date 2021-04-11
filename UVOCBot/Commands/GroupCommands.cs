@@ -12,9 +12,9 @@ using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBotRemora.Services;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     [Group("group")]
     [Description("Commands that allow groups of members to be created")]

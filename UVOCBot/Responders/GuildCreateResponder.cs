@@ -6,9 +6,9 @@ using Remora.Results;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBotRemora.Services;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Responders
+namespace UVOCBot.Responders
 {
     public class GuildCreateResponder : IResponder<IGuildCreate>
     {

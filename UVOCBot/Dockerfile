@@ -5,16 +5,16 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY ["UVOCBotRemora/UVOCBotRemora.csproj", "UVOCBotRemora/"]
-RUN dotnet restore "UVOCBotRemora/UVOCBotRemora.csproj"
+COPY ["UVOCBot/UVOCBot.csproj", "UVOCBot/"]
+RUN dotnet restore "UVOCBot/UVOCBot.csproj"
 COPY . .
-WORKDIR "/src/UVOCBotRemora"
-RUN dotnet build "UVOCBotRemora.csproj" -c Release -o /app/build
+WORKDIR "/src/UVOCBot"
+RUN dotnet build "UVOCBot.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "UVOCBotRemora.csproj" -c Release -o /app/publish
+RUN dotnet publish "UVOCBot.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "UVOCBotRemora.dll"]
+ENTRYPOINT ["dotnet", "UVOCBot.dll"]

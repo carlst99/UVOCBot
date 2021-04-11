@@ -3,9 +3,9 @@ using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBotRemora.Services;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Responders
+namespace UVOCBot.Responders
 {
     public class VoiceStateUpdateResponder : IResponder<IVoiceStateUpdate>
     {

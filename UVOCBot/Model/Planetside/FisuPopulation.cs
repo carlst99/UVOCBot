@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace UVOCBotRemora.Model.Planetside
+namespace UVOCBot.Model.Planetside
 {
     public record FisuPopulation
     {

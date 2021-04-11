@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace UVOCBotRemora.Config
+namespace UVOCBot.Config
 {
     public record GeneralOptions
     {

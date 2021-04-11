@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     [Group("role")]
     [Description("Commands that help with role management")]

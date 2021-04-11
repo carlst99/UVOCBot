@@ -1,4 +1,4 @@
-﻿namespace UVOCBotRemora.Model.Planetside
+﻿namespace UVOCBot.Model.Planetside
 {
     public record World
     {

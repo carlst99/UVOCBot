@@ -13,9 +13,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBotRemora.Services;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     [Group("team")]
     [Description("Commands that help with team generation")]

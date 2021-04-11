@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UVOCBotRemora.Services;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Utilities
+namespace UVOCBot.Utilities
 {
     //public class CustomHelpFormatter : BaseHelpFormatter
     //{

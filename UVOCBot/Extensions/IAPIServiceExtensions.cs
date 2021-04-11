@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using UVOCBot.Core.Model;
 
-namespace UVOCBotRemora.Services
+namespace UVOCBot.Services
 {
     public static class IAPIServiceExtensions
     {

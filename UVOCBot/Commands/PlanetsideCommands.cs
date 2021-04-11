@@ -13,10 +13,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBotRemora.Model.Planetside;
-using UVOCBotRemora.Services;
+using UVOCBot.Model.Planetside;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     public class PlanetsideCommands : CommandGroup
     {

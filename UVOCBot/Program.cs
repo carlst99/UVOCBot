@@ -22,13 +22,13 @@ using System.IO.Abstractions;
 using System.Linq;
 using Tweetinvi;
 using Tweetinvi.Models;
-using UVOCBotRemora.Commands;
-using UVOCBotRemora.Config;
-using UVOCBotRemora.Responders;
-using UVOCBotRemora.Services;
-using UVOCBotRemora.Workers;
+using UVOCBot.Commands;
+using UVOCBot.Config;
+using UVOCBot.Responders;
+using UVOCBot.Services;
+using UVOCBot.Workers;
 
-namespace UVOCBotRemora
+namespace UVOCBot
 {
     // Permissions integer: 2435927120
     // - Manage Roles

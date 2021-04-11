@@ -2,10 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using UVOCBotRemora.Config;
+using UVOCBot.Config;
 using UVOCBot.Core.Model;
 
-namespace UVOCBotRemora.Services
+namespace UVOCBot.Services
 {
     public class PrefixService : IPrefixService
     {

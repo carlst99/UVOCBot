@@ -1,8 +1,8 @@
 ﻿using Refit;
 using System.Threading.Tasks;
-using UVOCBotRemora.Model.Planetside;
+using UVOCBot.Model.Planetside;
 
-namespace UVOCBotRemora.Services
+namespace UVOCBot.Services
 {
     public interface IFisuApiService
     {

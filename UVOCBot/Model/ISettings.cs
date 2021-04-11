@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace UVOCBotRemora.Model
+namespace UVOCBot.Model
 {
     public interface ISettings
     {

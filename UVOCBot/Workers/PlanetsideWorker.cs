@@ -7,11 +7,11 @@ using Serilog;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBotRemora.Model.Planetside;
-using UVOCBotRemora.Services;
+using UVOCBot.Model.Planetside;
+using UVOCBot.Services;
 using Websocket.Client;
 
-namespace UVOCBotRemora.Workers
+namespace UVOCBot.Workers
 {
     public sealed class PlanetsideWorker : BackgroundService
     {

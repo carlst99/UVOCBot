@@ -1,4 +1,4 @@
-﻿namespace UVOCBotRemora.Config
+﻿namespace UVOCBot.Config
 {
     public record TwitterOptions
     {

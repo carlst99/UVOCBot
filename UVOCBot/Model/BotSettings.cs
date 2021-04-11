@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace UVOCBotRemora.Model
+namespace UVOCBot.Model
 {
     public class BotSettings : ISettings
     {

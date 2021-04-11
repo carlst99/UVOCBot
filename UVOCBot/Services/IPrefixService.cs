@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace UVOCBotRemora.Services
+namespace UVOCBot.Services
 {
     public interface IPrefixService
     {

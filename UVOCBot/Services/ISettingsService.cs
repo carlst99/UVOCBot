@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
-using UVOCBotRemora.Model;
-using UVOCBotRemora.Utilities;
+using UVOCBot.Model;
+using UVOCBot.Utilities;
 
-namespace UVOCBotRemora.Services
+namespace UVOCBot.Services
 {
     public interface ISettingsService : IDisposable
     {

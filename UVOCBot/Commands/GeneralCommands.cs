@@ -15,7 +15,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {

@@ -5,7 +5,7 @@ using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     public class ExecutionEventService : IExecutionEventService
     {

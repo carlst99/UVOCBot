@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBotRemora.Services
+namespace UVOCBot.Services
 {
     public class PermissionChecksService : IPermissionChecksService
     {

@@ -1,6 +1,6 @@
 ﻿using Remora.Discord.Core;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     public static class Formatter
     {

@@ -1,7 +1,7 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
 using System.Collections.Generic;
 
-namespace UVOCBotRemora.Model
+namespace UVOCBot.Model
 {
     public class AccountDistributionRequest
     {

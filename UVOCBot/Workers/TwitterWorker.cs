@@ -11,11 +11,11 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 using UVOCBot.Core.Model;
-using UVOCBotRemora.Model;
-using UVOCBotRemora.Services;
-using UVOCBotRemora.Utilities;
+using UVOCBot.Model;
+using UVOCBot.Services;
+using UVOCBot.Utilities;
 
-namespace UVOCBotRemora.Workers
+namespace UVOCBot.Workers
 {
     public sealed class TwitterWorker : BackgroundService
     {

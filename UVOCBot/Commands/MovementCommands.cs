@@ -13,9 +13,9 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBotRemora.Services;
+using UVOCBot.Services;
 
-namespace UVOCBotRemora.Commands
+namespace UVOCBot.Commands
 {
     [RequireContext(ChannelContext.Guild)]
     [RequireUserGuildPermission(DiscordPermission.MoveMembers)]

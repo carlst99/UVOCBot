@@ -22,10 +22,10 @@ namespace UVOCBotRemora.Commands
     public class GroupCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly CommandContextReponses _responder;
+        private readonly MessageResponseHelpers _responder;
         private readonly IAPIService _dbAPI;
 
-        public GroupCommands(ICommandContext context, CommandContextReponses responder, IAPIService dbAPI)
+        public GroupCommands(ICommandContext context, MessageResponseHelpers responder, IAPIService dbAPI)
         {
             _context = context;
             _responder = responder;

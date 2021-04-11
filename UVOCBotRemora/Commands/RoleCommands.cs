@@ -29,11 +29,11 @@ namespace UVOCBotRemora.Commands
         private const int MAX_USERNAMES_IN_LIST = 50;
 
         private readonly ICommandContext _context;
-        private readonly CommandContextReponses _responder;
+        private readonly MessageResponseHelpers _responder;
         private readonly IDiscordRestChannelAPI _channelAPI;
         private readonly IDiscordRestGuildAPI _guildAPI;
 
-        public RoleCommands(ICommandContext context, CommandContextReponses responder, IDiscordRestChannelAPI channelAPI, IDiscordRestGuildAPI guildAPI)
+        public RoleCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestChannelAPI channelAPI, IDiscordRestGuildAPI guildAPI)
         {
             _context = context;
             _responder = responder;

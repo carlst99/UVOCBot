@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 
 namespace UVOCBotRemora.Commands
 {
-    public class CommandContextReponses
+    public class MessageResponseHelpers
     {
         private readonly IDiscordRestChannelAPI _channelAPI;
         private readonly IDiscordRestWebhookAPI _webhookAPI;
 
-        public CommandContextReponses(IDiscordRestChannelAPI channelAPI, IDiscordRestWebhookAPI webhookAPI)
+        public MessageResponseHelpers(IDiscordRestChannelAPI channelAPI, IDiscordRestWebhookAPI webhookAPI)
         {
             _channelAPI = channelAPI;
             _webhookAPI = webhookAPI;

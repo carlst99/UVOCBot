@@ -79,7 +79,6 @@ namespace UVOCBotRemora
                     // Setup the configuration bindings
                     services.Configure<TwitterOptions>(c.Configuration.GetSection(TwitterOptions.ConfigSectionName));
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
-                    services.Configure<CommandResponderOptions>(c.Configuration.GetSection(nameof(CommandResponderOptions)));
 
                     //Setup API services
                     services.AddSingleton((s) => RestService.For<IAPIService>(
@@ -95,8 +94,9 @@ namespace UVOCBotRemora
                     // Add Discord-related services
                     services.AddDiscordServices()
                             .AddSingleton<IPrefixService, PrefixService>()
-                            .AddSingleton<CommandContextReponses>()
-                            .AddSingleton<IExecutionEventService, ExecutionEventService>();
+                            .AddSingleton<MessageResponseHelpers>()
+                            .AddSingleton<IExecutionEventService, ExecutionEventService>()
+                            .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
                     // Setup the Daybreak Census services
                     GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;

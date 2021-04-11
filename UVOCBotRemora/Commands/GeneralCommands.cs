@@ -23,11 +23,11 @@ namespace UVOCBotRemora.Commands
             "\r\n• **Bug Fixes:tm:** - *Cough* (we'll see)";
 
         private readonly ICommandContext _context;
-        private readonly CommandContextReponses _responder;
+        private readonly MessageResponseHelpers _responder;
         private readonly IDiscordRestUserAPI _userAPI;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ICommandContext context, CommandContextReponses responder, IDiscordRestUserAPI userAPI)
+        public GeneralCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestUserAPI userAPI)
         {
             _context = context;
             _responder = responder;

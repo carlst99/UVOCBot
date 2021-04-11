@@ -22,12 +22,12 @@ namespace UVOCBotRemora.Commands
     public class MovementCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly CommandContextReponses _responder;
+        private readonly MessageResponseHelpers _responder;
         private readonly IDiscordRestGuildAPI _guildAPI;
         private readonly IAPIService _dbAPI;
         private readonly IVoiceStateCacheService _voiceStateCache;
 
-        public MovementCommands(ICommandContext context, CommandContextReponses responder, IDiscordRestGuildAPI guildAPI, IAPIService dbAPI, IVoiceStateCacheService voiceStateCache)
+        public MovementCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IAPIService dbAPI, IVoiceStateCacheService voiceStateCache)
         {
             _context = context;
             _responder = responder;

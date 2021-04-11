@@ -9,10 +9,10 @@ namespace UVOCBotRemora.Commands
 {
     public class ExecutionEventService : IExecutionEventService
     {
-        private readonly CommandContextReponses _responder;
+        private readonly MessageResponseHelpers _responder;
         private readonly ILogger<ExecutionEventService> _logger;
 
-        public ExecutionEventService(CommandContextReponses responder, ILogger<ExecutionEventService> logger)
+        public ExecutionEventService(MessageResponseHelpers responder, ILogger<ExecutionEventService> logger)
         {
             _responder = responder;
             _logger = logger;

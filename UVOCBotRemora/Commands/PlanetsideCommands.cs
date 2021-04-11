@@ -20,12 +20,12 @@ namespace UVOCBotRemora.Commands
     public class PlanetsideCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly CommandContextReponses _responder;
+        private readonly MessageResponseHelpers _responder;
         private readonly IAPIService _dbAPI;
         private readonly ICensusQueryFactory _censusQueryFactory;
         private readonly IFisuApiService _fisuAPI;
 
-        public PlanetsideCommands(ICommandContext context, CommandContextReponses responder, IAPIService dbAPI, ICensusQueryFactory censusQueryFactory, IFisuApiService fisuAPI)
+        public PlanetsideCommands(ICommandContext context, MessageResponseHelpers responder, IAPIService dbAPI, ICensusQueryFactory censusQueryFactory, IFisuApiService fisuAPI)
         {
             _context = context;
             _responder = responder;

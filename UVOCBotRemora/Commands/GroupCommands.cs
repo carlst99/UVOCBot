@@ -3,7 +3,6 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
-using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
@@ -58,7 +57,7 @@ namespace UVOCBotRemora.Commands
 
         [Command("info")]
         [Description("Gets information about a group")]
-        public async Task<IResult> GetGroupCommandAsync([Description("The name of the group to retrieve")][DiscordTypeHint(TypeHint.String)] string groupName)
+        public async Task<IResult> GetGroupCommandAsync([Description("The name of the group to retrieve")] string groupName)
         {
             Result<MemberGroupDTO> groupResult = await GetGroup(groupName).ConfigureAwait(false);
             if (!groupResult.IsSuccess)
@@ -85,8 +84,8 @@ namespace UVOCBotRemora.Commands
         [Command("create")]
         [Description("Creates a new group from the given members")]
         public async Task<IResult> CreateGroupCommandAsync(
-            [Description("The name of the group")][DiscordTypeHint(TypeHint.String)] string groupName,
-            [Description("The members to include in the group")][DiscordTypeHint(TypeHint.String)] string members)
+            [Description("The name of the group")] string groupName,
+            [Description("The members to include in the group")] string members)
         {
             if (string.IsNullOrEmpty(groupName) || groupName.Length < 3)
                 return await _responder.RespondWithErrorAsync(_context, "The group name must be at least three characters in length.", ct: CancellationToken).ConfigureAwait(false);
@@ -116,7 +115,7 @@ namespace UVOCBotRemora.Commands
 
         [Command("delete")]
         [Description("Deletes a group")]
-        public async Task<IResult> DeleteGroupCommandAsync([Description("The name of the group")][DiscordTypeHint(TypeHint.String)] string groupName)
+        public async Task<IResult> DeleteGroupCommandAsync([Description("The name of the group")] string groupName)
         {
             Result<MemberGroupDTO> group = await GetGroup(groupName).ConfigureAwait(false);
             if (!group.IsSuccess)

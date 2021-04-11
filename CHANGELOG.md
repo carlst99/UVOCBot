@@ -1,5 +1,12 @@
 # Changelog
 
+## Release v0.2.0 - 12/04/2021
+
+- **Slash Commands :tada:** - Everyone hates having to use `help` every five seconds to remember how to use each command. So I removed it, then set it on :fire: for good measure. Now, you can use Discord's new slash commands with UVOCBot! Rejoice!
+- **Bug Fixes** - Teased out a few edge cases and fixed many annoyances
+
+See (#42)[https://github.com/carlst99/UVOCBot/pull/44] for more info.
+
 ## Release v0.1.2 - 27/03/2021
 
 - Fix a NullReferenceException that occurs when using the `bonk` command on a member not currently in a voice channel

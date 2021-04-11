@@ -192,7 +192,8 @@ namespace UVOCBotRemora
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
-                    .AddCommandGroup<PlanetsideCommands>();
+                    .AddCommandGroup<PlanetsideCommands>()
+                    .AddCommandGroup<TeamGenerationCommands>();
 
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();

@@ -7,7 +7,6 @@
         Cobalt = 13,
         Emerald = 17,
         Jaeger = 19,
-        Apex = 24,
-        Soltech = 40,
+        Soltech = 40
     }
 }

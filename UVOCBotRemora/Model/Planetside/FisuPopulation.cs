@@ -2,9 +2,9 @@
 
 namespace UVOCBotRemora.Model.Planetside
 {
-    public class FisuPopulation
+    public record FisuPopulation
     {
-        public class ApiResult
+        public record ApiResult
         {
             public WorldType WorldId { get; init; }
             public int VS { get; init; }

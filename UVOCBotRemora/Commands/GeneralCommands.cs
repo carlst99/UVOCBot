@@ -68,9 +68,9 @@ namespace UVOCBotRemora.Commands
             return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
         }
 
-        [Command("about")]
+        [Command("info")]
         [Description("Gets information about UVOCBot")]
-        public async Task<IResult> AboutCommandAsync()
+        public async Task<IResult> InfoCommandAsync()
         {
             Optional<string> botAvatar = new();
             Optional<string> authorAvatar = new();

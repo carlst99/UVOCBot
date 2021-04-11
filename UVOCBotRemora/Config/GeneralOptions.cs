@@ -2,11 +2,9 @@
 
 namespace UVOCBotRemora.Config
 {
-    public class GeneralOptions
+    public record GeneralOptions
     {
         public const string ConfigSectionName = "GeneralOptions";
-
-#nullable disable
 
         /// <summary>
         /// Gets or sets the Discord bot token
@@ -38,6 +36,13 @@ namespace UVOCBotRemora.Config
         /// </summary>
         public List<ulong> DebugGuildIds { get; init; }
 
-#nullable restore
+        public GeneralOptions()
+        {
+            BotToken = string.Empty;
+            ApiEndpoint = string.Empty;
+            FisuApiEndpoint = string.Empty;
+            CensusApiKey = string.Empty;
+            DebugGuildIds = new List<ulong>();
+        }
     }
 }

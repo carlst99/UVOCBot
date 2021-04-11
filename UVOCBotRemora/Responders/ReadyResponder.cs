@@ -45,7 +45,7 @@ namespace UVOCBotRemora.Responders
                     ClientStatus.Online,
                     false,
                     null,
-                    Activities: new Activity[] { new Activity(_options.CommandPrefix + "help", ActivityType.Listening) }
+                    Activities: new Activity[] { new Activity("Today's a good day", ActivityType.Game) }
                     )
                 );
 

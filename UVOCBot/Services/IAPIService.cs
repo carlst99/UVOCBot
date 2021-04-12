@@ -1,5 +1,6 @@
-﻿using Refit;
+﻿using Remora.Results;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
 
@@ -9,45 +10,33 @@ namespace UVOCBot.Services
     {
         #region TwitterUser
 
-        [Get("/twitteruser")]
-        Task<List<TwitterUserDTO>> GetTwitterUsers();
+        Task<Result<List<TwitterUserDTO>>> ListTwitterUsersAsync(CancellationToken ct = default);
 
-        [Get("/twitteruser/{id}")]
-        Task<TwitterUserDTO> GetTwitterUser(long id);
+        Task<Result<TwitterUserDTO>> GetTwitterUserAsync(long id, CancellationToken ct = default);
 
-        [Get("/twitteruser/exists/{id}")]
-        Task<bool> TwitterUserExists(long id);
+        Task<Result<bool>> TwitterUserExistsAsync(long id, CancellationToken ct = default);
 
-        [Put("/twitteruser/{id}")]
-        Task UpdateTwitterUser(long id, TwitterUserDTO user);
+        Task<Result> UpdateTwitterUserAsync(long id, TwitterUserDTO user, CancellationToken ct = default);
 
-        [Post("/twitteruser")]
-        Task<TwitterUserDTO> CreateTwitterUser(TwitterUserDTO user);
+        Task<Result<TwitterUserDTO>> CreateTwitterUserAsync(TwitterUserDTO user, CancellationToken ct = default);
 
-        [Delete("/twitteruser/{id}")]
-        Task DeleteTwitterUser(long id);
+        Task<Result> DeleteTwitterUserAsync(long id, CancellationToken ct = default);
 
         #endregion
 
         #region GuildTwitterSettings
 
-        [Get("/guildtwittersettings")]
-        Task<List<GuildTwitterSettingsDTO>> GetAllGuildTwitterSettings([Query] bool filterByEnabled);
+        Task<Result<List<GuildTwitterSettingsDTO>>> ListGuildTwitterSettingsAsync(bool filterByEnabled, CancellationToken ct = default);
 
-        [Get("/guildtwittersettings/{id}")]
-        Task<GuildTwitterSettingsDTO> GetGuildTwitterSettings(ulong id);
+        Task<Result<GuildTwitterSettingsDTO>> GetGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default);
 
-        [Get("/guildtwittersettings/exists/{id}")]
-        Task<bool> GuildTwitterSettingsExists(ulong id);
+        Task<Result<bool>> GuildTwitterSettingsExistsAsync(ulong id, CancellationToken ct = default);
 
-        [Put("/guildtwittersettings/{id}")]
-        Task UpdateGuildTwitterSetting(ulong id, GuildTwitterSettingsDTO settings);
+        Task<Result> UpdateGuildTwitterSettingAsync(ulong id, GuildTwitterSettingsDTO settings, CancellationToken ct = default);
 
-        [Post("/guildtwittersettings")]
-        Task<GuildTwitterSettingsDTO> CreateGuildTwitterSettings(GuildTwitterSettingsDTO settings);
+        Task<Result<GuildTwitterSettingsDTO>> CreateGuildTwitterSettingsAsync(GuildTwitterSettingsDTO settings, CancellationToken ct = default);
 
-        [Delete("/guildtwittersettings/{id}")]
-        Task DeleteGuildTwitterSettings(ulong id);
+        Task<Result> DeleteGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default);
 
         #endregion
 

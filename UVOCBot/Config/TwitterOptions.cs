@@ -1,11 +1,18 @@
 ﻿namespace UVOCBot.Config
 {
-    public class TwitterOptions
+    public record TwitterOptions
     {
         public const string ConfigSectionName = "TwitterOptions";
 
-        public string Key { get; set; }
-        public string Secret { get; set; }
-        public string BearerToken { get; set; }
+        public string Key { get; init; }
+        public string Secret { get; init; }
+        public string BearerToken { get; init; }
+
+        public TwitterOptions()
+        {
+            Key = string.Empty;
+            Secret = string.Empty;
+            BearerToken = string.Empty;
+        }
     }
 }

@@ -2,18 +2,26 @@
 
 namespace UVOCBot.Model.Planetside
 {
-    public class FisuPopulation
+    public record FisuPopulation
     {
-        public class ApiResult
+        public record ApiResult
         {
-            public WorldType WorldId { get; set; }
-            public int VS { get; set; }
-            public int NC { get; set; }
-            public int TR { get; set; }
-            public int NS { get; set; }
+            public WorldType WorldId { get; init; }
+            public int VS { get; init; }
+            public int NC { get; init; }
+            public int TR { get; init; }
+            public int NS { get; init; }
         }
 
-        public List<ApiResult> Result { get; set; }
+        public List<ApiResult> Result { get; init; }
+
+        public FisuPopulation()
+        {
+            Result = new List<ApiResult>()
+            {
+                new ApiResult()
+            };
+        }
 
         public WorldType World => Result[0].WorldId;
         public int VS => Result[0].VS;

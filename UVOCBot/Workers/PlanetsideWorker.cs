@@ -17,15 +17,15 @@ namespace UVOCBot.Workers
     {
         private readonly ICensusStreamClient _censusClient;
         private readonly ICensusQueryFactory _censusQueryFactory;
-        private readonly IApiService _dbApi;
+        private readonly IAPIService _dbApi;
 
-        private readonly CensusStreamSubscription _censusSubscription = new CensusStreamSubscription
+        private readonly CensusStreamSubscription _censusSubscription = new()
         {
             Worlds = new[] { "all" },
             EventNames = new[] { "ContinentLock", "ContinentUnlock", "MetagameEvent" }
         };
 
-        public PlanetsideWorker(ICensusStreamClient censusClient, ICensusQueryFactory censusQueryFactory, IApiService dbApi)
+        public PlanetsideWorker(ICensusStreamClient censusClient, ICensusQueryFactory censusQueryFactory, IAPIService dbApi)
         {
             _censusClient = censusClient;
             _censusQueryFactory = censusQueryFactory;

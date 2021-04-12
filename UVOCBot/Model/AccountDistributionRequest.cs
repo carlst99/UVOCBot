@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Entities;
+﻿using Remora.Discord.API.Abstractions.Objects;
 using System.Collections.Generic;
 
 namespace UVOCBot.Model
@@ -10,26 +10,26 @@ namespace UVOCBot.Model
         /// <summary>
         /// The guild member that made the request
         /// </summary>
-        public DiscordMember Requester { get; set; }
+        public IGuildMember Requester { get; set; }
 
         /// <summary>
         /// The channel in which the request was made
         /// </summary>
-        public DiscordChannel RequestChannel { get; set; }
+        public IChannel RequestChannel { get; set; }
 
         /// <summary>
         /// The users to distribute accounts to
         /// </summary>
-        public List<DiscordMember> Receivers { get; set; }
+        public List<IGuildMember> Receivers { get; set; }
 
-        public AccountDistributionRequest(DiscordMember requester, DiscordChannel requestChannel, List<DiscordMember> receivers)
+        public AccountDistributionRequest(IGuildMember requester, IChannel requestChannel, List<IGuildMember> receivers)
         {
             Requester = requester;
             RequestChannel = requestChannel;
             Receivers = receivers;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is AccountDistributionRequest adr
                 && adr.Requester.Equals(Requester);

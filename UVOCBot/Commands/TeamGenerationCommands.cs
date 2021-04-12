@@ -71,7 +71,15 @@ namespace UVOCBot.Commands
             if (numberOfTeams < 2)
                 return await _responder.RespondWithErrorAsync(_context, "At least two teams are required", ct: CancellationToken).ConfigureAwait(false);
 
-            MemberGroupDTO group = await _dbAPI.GetMemberGroup(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
+            MemberGroupDTO group;
+            try
+            {
+                group = await _dbAPI.GetMemberGroup(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
+            }
+            catch (Refit.ValidationApiException vaex) when (vaex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return await _responder.RespondWithErrorAsync(_context, "That group does not exist.", CancellationToken).ConfigureAwait(false);
+            }
 
             return await SendRandomTeams(group.UserIds, numberOfTeams, $"Built from the group {Formatter.InlineQuote(group.GroupName)}").ConfigureAwait(false);
         }

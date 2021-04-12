@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace UVOCBot.Utils
+namespace UVOCBot.Utilities
 {
     /// <summary>
     /// A <see cref="Queue{T}"/> derivative that will only ever grow to a specified maximum size, then start dequeuing items

@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.Logging;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,93 +8,108 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Model;
+using UVOCBot.Utilities;
 
 namespace UVOCBot.Services
 {
     public class SettingsService : ISettingsService
     {
         private readonly IFileSystem _fileSystem;
+        private readonly ILogger<SettingsService> _logger;
 
-        private readonly Dictionary<Type, ISettings> _cache = new Dictionary<Type, ISettings>();
-        private readonly Semaphore _semaphore = new Semaphore(1, 1);
+        private readonly Dictionary<Type, ISettings> _cache = new();
+        private readonly Semaphore _semaphore = new(1, 1);
         private bool _isDisposed;
 
-        public SettingsService(IFileSystem fileSystem)
+        public SettingsService(IFileSystem fileSystem, ILogger<SettingsService> logger)
         {
             _fileSystem = fileSystem;
+            _logger = logger;
         }
 
-        public async Task<T> LoadSettings<T>() where T : ISettings, new()
+        /// <inheritdoc/>
+        public async Task<Optional<T>> LoadSettings<T>() where T : ISettings, new()
         {
-            try
-            {
-                if (_isDisposed)
-                    throw new ObjectDisposedException(nameof(SettingsService));
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(SettingsService));
 
-                T settings;
+            T? settings = default;
+
+            if (_cache.ContainsKey(typeof(T)))
+            {
+                settings = (T)_cache[typeof(T)];
+            }
+            else if (!File.Exists(GetSettingsFilePath<T>()))
+            {
+                settings = (T)new T().Default;
+                _cache.Add(typeof(T), settings);
+            }
+            else
+            {
+                string filePath = GetSettingsFilePath<T>();
+                Stream readStream = Stream.Null;
 
                 if (!_semaphore.WaitOne(1000))
-                    throw new TimeoutException("Failed to acquire read mutex");
+                    return Optional<T>.FromNoValue();
 
-                if (_cache.ContainsKey(typeof(T)))
+                try
                 {
-                    settings = (T)_cache[typeof(T)];
+                    readStream = _fileSystem.FileStream.Create(GetSettingsFilePath<T>(), FileMode.Open, FileAccess.Read);
+                    settings = await JsonSerializer.DeserializeAsync<T>(readStream).ConfigureAwait(true);
                 }
-                else
+                catch (Exception ex)
                 {
-                    string filePath = GetFilePath<T>();
-
-                    Stream readStream = null;
-                    try
-                    {
-                        readStream = _fileSystem.FileStream.Create(GetFilePath<T>(), FileMode.Open, FileAccess.Read);
-                        settings = await JsonSerializer.DeserializeAsync<T>(readStream).ConfigureAwait(true);
-                    }
-                    catch
-                    {
-                        settings = (T)new T().Default;
-                    }
-                    finally
-                    {
-                        readStream?.Dispose();
-                    }
-
-                    _cache.Add(typeof(T), settings);
+                    _logger.LogError(ex, "Failed to load settings");
+                }
+                finally
+                {
+                    readStream.Dispose();
                 }
 
                 _semaphore.Release();
-                return settings;
+
+                if (settings is not null)
+                    _cache.Add(typeof(T), settings);
+            }
+
+            if (settings is null)
+                return Optional<T>.FromNoValue();
+            else
+                return Optional<T>.FromValue(settings);
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> SaveSettings<T>(T settings) where T : ISettings
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(SettingsService));
+
+            if (!_semaphore.WaitOne(1000))
+                return false;
+
+            Stream writeStream = Stream.Null;
+            try
+            {
+                writeStream = _fileSystem.FileStream.Create(GetSettingsFilePath<T>(), FileMode.Create, FileAccess.Write);
+                await JsonSerializer.SerializeAsync(writeStream, settings).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Could not load settings");
-                throw;
+                _logger.LogError(ex, "Could not save settings");
+                return false;
             }
+            finally
+            {
+                writeStream.Dispose();
+            }
+
+            _cache[typeof(T)] = settings;
+            _semaphore.Release();
+            return true;
         }
 
-        public async Task SaveSettings<T>(T settings) where T : ISettings
-        {
-            try
-            {
-                if (_isDisposed)
-                    throw new ObjectDisposedException(nameof(SettingsService));
-
-                if (!_semaphore.WaitOne(1000))
-                    throw new TimeoutException("Failed to acquire read mutex");
-
-                using Stream writeStream = _fileSystem.FileStream.Create(GetFilePath<T>(), FileMode.Create, FileAccess.Write);
-                await JsonSerializer.SerializeAsync(writeStream, settings).ConfigureAwait(false);
-
-                _cache[typeof(T)] = settings;
-                _semaphore.Release();
-            } catch (Exception ex)
-            {
-                Log.Error(ex, "Could not save settings");
-                throw;
-            }
-        }
-
-        private string GetFilePath<T>()
+        /// <inheritdoc/>
+        public string GetSettingsFilePath<T>() where T : ISettings
         {
             string filePath = typeof(T).Name;
             return Program.GetAppdataFilePath(_fileSystem, filePath);

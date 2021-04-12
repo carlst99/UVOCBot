@@ -2,9 +2,14 @@
 
 namespace UVOCBot.Model.Planetside
 {
-    public class TranslationProperty
+    public record TranslationProperty
     {
         [JsonProperty("en")]
-        public string English { get; set; }
+        public string English { get; init; }
+
+        public TranslationProperty()
+        {
+            English = string.Empty;
+        }
     }
 }

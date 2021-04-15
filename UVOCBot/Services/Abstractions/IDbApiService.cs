@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
 
-namespace UVOCBot.Services
+namespace UVOCBot.Services.Abstractions
 {
     public interface IDbApiService
     {

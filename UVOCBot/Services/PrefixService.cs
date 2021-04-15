@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UVOCBot.Config;
 using UVOCBot.Core.Model;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {

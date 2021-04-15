@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Refit;
 using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
@@ -26,6 +25,7 @@ using UVOCBot.Commands;
 using UVOCBot.Config;
 using UVOCBot.Responders;
 using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 using UVOCBot.Workers;
 
 namespace UVOCBot
@@ -81,11 +81,10 @@ namespace UVOCBot
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
 
                     //Setup API services
-                    services.AddSingleton((s) => RestService.For<IDbApiService>(
-                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
-                    services.AddSingleton((s) => RestService.For<IFisuApiService>(
-                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
+                    services.AddSingleton<IDbApiService, DbApiService>();
+                    services.AddSingleton<IFisuApiService, FisuApiService>();
 
+                    // Setup other services
                     services.AddSingleton(fileSystem)
                             .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()

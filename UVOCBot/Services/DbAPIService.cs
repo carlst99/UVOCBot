@@ -3,57 +3,19 @@ using Microsoft.Extensions.Options;
 using Remora.Results;
 using RestSharp;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
 using UVOCBot.Core.Model;
-using UVOCBot.Model;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
-    public class DbApiService : IDbApiService
+    public sealed class DbApiService : ApiService<DbApiService>, IDbApiService
     {
-        private readonly ILogger<DbApiService> _logger;
-        private readonly IRestClient _client;
-
         public DbApiService(ILogger<DbApiService> logger, IOptions<GeneralOptions> options)
-        {
-            _logger = logger;
-            _client = new RestClient(options.Value.ApiEndpoint);
-        }
-
-        public async Task<Result<T>> ExecuteAsync<T>(IRestRequest request, CancellationToken ct = default) where T : new()
-        {
-            IRestResponse<T> response = await _client.ExecuteAsync<T>(request, ct).ConfigureAwait(false);
-
-            if (response.ResponseStatus != ResponseStatus.Completed)
-            {
-                _logger.LogError(response.ErrorException, "Failed to execute API operation: {exception}", response.ErrorMessage);
-                return Result<T>.FromError(response.ErrorException);
-            }
-
-            if (response.StatusCode != HttpStatusCode.OK)
-                return Result<T>.FromError(new HTTPStatusCodeError(response.StatusCode));
-
-            return response.Data;
-        }
-
-        public async Task<Result> ExecuteAsync(IRestRequest request, CancellationToken ct = default)
-        {
-            IRestResponse response = await _client.ExecuteAsync(request, ct).ConfigureAwait(false);
-
-            if (response.ResponseStatus != ResponseStatus.Completed)
-            {
-                _logger.LogError(response.ErrorException, "Failed to execute API operation: {exception}", response.ErrorMessage);
-                return Result.FromError(new ExceptionError(response.ErrorException));
-            }
-
-            if (response.StatusCode != HttpStatusCode.NoContent)
-                return Result.FromError(new HTTPStatusCodeError(response.StatusCode));
-
-            return Result.FromSuccess();
-        }
+            : base(logger, () => new RestClient(options.Value.ApiEndpoint))
+        { }
 
         #region TwitterUser
 

@@ -30,8 +30,8 @@ namespace UVOCBot.Services
                 return Result<T>.FromError(response.ErrorException);
             }
 
-            if (response.StatusCode != HttpStatusCode.OK)
-                return Result<T>.FromError(new HTTPStatusCodeError(response.StatusCode));
+            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                return Result<T>.FromError(new Model.HttpStatusCode((System.Net.HttpStatusCode)response.StatusCode));
 
             return response.Data;
         }
@@ -46,8 +46,8 @@ namespace UVOCBot.Services
                 return Result.FromError(new ExceptionError(response.ErrorException));
             }
 
-            if (response.StatusCode != HttpStatusCode.NoContent)
-                return Result.FromError(new HTTPStatusCodeError(response.StatusCode));
+            if (response.StatusCode != System.Net.HttpStatusCode.NoContent)
+                return Result.FromError(new Model.HttpStatusCode((System.Net.HttpStatusCode)response.StatusCode));
 
             return Result.FromSuccess();
         }

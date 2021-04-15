@@ -95,7 +95,7 @@ namespace UVOCBot.Services
             return await ExecuteAsync<bool>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result> UpdateGuildTwitterSettingAsync(ulong id, GuildTwitterSettingsDTO settings, CancellationToken ct = default)
+        public async Task<Result> UpdateGuildTwitterSettingsAsync(ulong id, GuildTwitterSettingsDTO settings, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildtwittersettings/{id}", Method.PUT);
             request.AddParameter("id", id, ParameterType.UrlSegment);

@@ -32,7 +32,7 @@ namespace UVOCBot.Services.Abstractions
 
         Task<Result<bool>> GuildTwitterSettingsExistsAsync(ulong id, CancellationToken ct = default);
 
-        Task<Result> UpdateGuildTwitterSettingAsync(ulong id, GuildTwitterSettingsDTO settings, CancellationToken ct = default);
+        Task<Result> UpdateGuildTwitterSettingsAsync(ulong id, GuildTwitterSettingsDTO settings, CancellationToken ct = default);
 
         Task<Result<GuildTwitterSettingsDTO>> CreateGuildTwitterSettingsAsync(GuildTwitterSettingsDTO settings, CancellationToken ct = default);
 

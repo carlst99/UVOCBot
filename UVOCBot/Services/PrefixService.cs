@@ -9,13 +9,13 @@ namespace UVOCBot.Services
 {
     public class PrefixService : IPrefixService
     {
-        private readonly IAPIService _dbApi;
+        private readonly IDbApiService _dbApi;
         private readonly GeneralOptions _generalOptions;
         private readonly Dictionary<ulong, string> _guildPrefixPairs;
 
         public bool IsSetup { get; protected set; }
 
-        public PrefixService(IAPIService dbApi, IOptions<GeneralOptions> generalOptions)
+        public PrefixService(IDbApiService dbApi, IOptions<GeneralOptions> generalOptions)
         {
             _dbApi = dbApi;
             _generalOptions = generalOptions.Value;

@@ -23,10 +23,10 @@ namespace UVOCBot.Commands
     {
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
-        private readonly IAPIService _dbAPI;
+        private readonly IDbApiService _dbAPI;
         private readonly IDiscordRestGuildAPI _guildAPI;
 
-        public GroupCommands(ICommandContext context, MessageResponseHelpers responder, IAPIService dbAPI, IDiscordRestGuildAPI guildAPI)
+        public GroupCommands(ICommandContext context, MessageResponseHelpers responder, IDbApiService dbAPI, IDiscordRestGuildAPI guildAPI)
         {
             _context = context;
             _responder = responder;

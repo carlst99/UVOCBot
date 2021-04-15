@@ -22,7 +22,7 @@ namespace UVOCBot.Workers
         private readonly IDiscordRestChannelAPI _discordChannelClient;
         private readonly IDiscordRestGuildAPI _discordGuildClient;
         private readonly ITwitterClient _twitterClient;
-        private readonly IAPIService _dbApi;
+        private readonly IDbApiService _dbApi;
         private readonly ISettingsService _settingsService;
         private readonly ILogger<TwitterWorker> _logger;
 
@@ -32,7 +32,7 @@ namespace UVOCBot.Workers
             IDiscordRestChannelAPI discordChannelClient,
             IDiscordRestGuildAPI discordGuildClient,
             ITwitterClient twitterClient,
-            IAPIService dbApi,
+            IDbApiService dbApi,
             ISettingsService settingsService,
             ILogger<TwitterWorker> logger)
         {

@@ -25,9 +25,9 @@ namespace UVOCBot.Commands
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
         private readonly IDiscordRestGuildAPI _guildAPI;
-        private readonly IAPIService _dbAPI;
+        private readonly IDbApiService _dbAPI;
 
-        public TeamGenerationCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IAPIService dbAPI)
+        public TeamGenerationCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI)
         {
             _context = context;
             _responder = responder;

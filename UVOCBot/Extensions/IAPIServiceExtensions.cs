@@ -5,7 +5,7 @@ namespace UVOCBot.Services
 {
     public static class IAPIServiceExtensions
     {
-        public static async Task<GuildTwitterSettingsDTO> GetGuildTwitterSettingsAsync(this IAPIService service, ulong id)
+        public static async Task<GuildTwitterSettingsDTO> GetGuildTwitterSettingsAsync(this IDbApiService service, ulong id)
         {
             GuildTwitterSettingsDTO settings;
             try
@@ -21,7 +21,7 @@ namespace UVOCBot.Services
             return settings;
         }
 
-        public static async Task<TwitterUserDTO> GetDbTwitterUserAsync(this IAPIService service, long id)
+        public static async Task<TwitterUserDTO> GetDbTwitterUserAsync(this IDbApiService service, long id)
         {
             TwitterUserDTO user;
             try
@@ -37,7 +37,7 @@ namespace UVOCBot.Services
             return user;
         }
 
-        public static async Task<GuildSettingsDTO> GetGuildSettingsAsync(this IAPIService service, ulong id)
+        public static async Task<GuildSettingsDTO> GetGuildSettingsAsync(this IDbApiService service, ulong id)
         {
             GuildSettingsDTO settings;
             try
@@ -53,7 +53,7 @@ namespace UVOCBot.Services
             return settings;
         }
 
-        public static async Task<PlanetsideSettingsDTO> GetPlanetsideSettingsAsync(this IAPIService service, ulong id)
+        public static async Task<PlanetsideSettingsDTO> GetPlanetsideSettingsAsync(this IDbApiService service, ulong id)
         {
             PlanetsideSettingsDTO settings;
             try

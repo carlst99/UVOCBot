@@ -24,10 +24,10 @@ namespace UVOCBot.Commands
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
         private readonly IDiscordRestGuildAPI _guildAPI;
-        private readonly IAPIService _dbAPI;
+        private readonly IDbApiService _dbAPI;
         private readonly IVoiceStateCacheService _voiceStateCache;
 
-        public MovementCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IAPIService dbAPI, IVoiceStateCacheService voiceStateCache)
+        public MovementCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI, IVoiceStateCacheService voiceStateCache)
         {
             _context = context;
             _responder = responder;

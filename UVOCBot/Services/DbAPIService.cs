@@ -12,12 +12,12 @@ using UVOCBot.Model;
 
 namespace UVOCBot.Services
 {
-    public class APIService : IAPIService
+    public class DbApiService : IDbApiService
     {
-        private readonly ILogger<APIService> _logger;
+        private readonly ILogger<DbApiService> _logger;
         private readonly IRestClient _client;
 
-        public APIService(ILogger<APIService> logger, IOptions<GeneralOptions> options)
+        public DbApiService(ILogger<DbApiService> logger, IOptions<GeneralOptions> options)
         {
             _logger = logger;
             _client = new RestClient(options.Value.ApiEndpoint);

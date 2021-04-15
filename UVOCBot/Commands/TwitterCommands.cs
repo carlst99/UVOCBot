@@ -30,7 +30,7 @@ namespace UVOCBot.Commands
         private readonly ILogger<TwitterCommands> _logger;
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
-        private readonly IAPIService _dbAPI;
+        private readonly IDbApiService _dbAPI;
         private readonly IDiscordRestUserAPI _userAPI;
         private readonly IPermissionChecksService _permissionChecksService;
         private readonly ITwitterClient _twitterClient;
@@ -40,7 +40,7 @@ namespace UVOCBot.Commands
             ICommandContext context,
             MessageResponseHelpers responder,
             IDiscordRestUserAPI userAPI,
-            IAPIService dbAPI,
+            IDbApiService dbAPI,
             IPermissionChecksService permissionChecksService,
             ITwitterClient twitterClient)
         {

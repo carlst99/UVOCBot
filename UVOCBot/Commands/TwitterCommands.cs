@@ -63,8 +63,11 @@ namespace UVOCBot.Commands
                 return user;
 
             // Find or create the guild twitter settings record
-            GuildTwitterSettingsDTO settings = await _dbAPI.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value).ConfigureAwait(false);
+            Result<GuildTwitterSettingsDTO> settings = await _dbAPI.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            if (!settings.IsSuccess)
+                return await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
 
+            // TODO: Ensure that the twitter user exists
             // Find or create the twitter user record
             TwitterUserDTO twitterUser = await _dbAPI.GetDbTwitterUserAsync(long.Parse(user.Entity.User.Id)).ConfigureAwait(false);
 

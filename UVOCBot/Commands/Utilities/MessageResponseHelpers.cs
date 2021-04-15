@@ -47,7 +47,7 @@ namespace UVOCBot.Commands
         {
             Embed embed = new()
             {
-                Colour = Program.DEFAULT_EMBED_COLOUR,
+                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
                 Description = content
             };
             return await RespondWithEmbedAsync(context, embed, ct, allowedMentions).ConfigureAwait(false);
@@ -58,7 +58,8 @@ namespace UVOCBot.Commands
             Embed embed = new()
             {
                 Colour = Color.Red,
-                Description = content
+                Description = content,
+                Footer = new EmbedFooter("Recurring problem? Report it at https://github.com/carlst99/UVOCBot")
             };
             return await RespondWithEmbedAsync(context, embed, ct, allowedMentions).ConfigureAwait(false);
         }

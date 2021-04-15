@@ -42,74 +42,55 @@ namespace UVOCBot.Services
 
         #region GuildTwitterLinks
 
-        [Post("/guildtwitterlinks")]
-        Task CreateGuildTwitterLink(ulong guildTwitterSettingsId, long twitterUserId);
+        Task<Result> CreateGuildTwitterLinkAsync(ulong guildTwitterSettingsId, long twitterUserId, CancellationToken ct = default);
 
-        [Delete("/guildtwitterlinks")]
-        Task DeleteGuildTwitterLink(ulong guildTwitterSettingsId, long twitterUserId);
+        Task<Result> DeleteGuildTwitterLinkAsync(ulong guildTwitterSettingsId, long twitterUserId, CancellationToken ct = default);
 
         #endregion
 
         #region GuildSettings
 
-        [Get("/guildsettings")]
-        Task<List<GuildSettingsDTO>> GetAllGuildSettings([Query] bool hasPrefix = false);
+        Task<Result<List<GuildSettingsDTO>>> ListGuildSettingsAsync(bool hasPrefix = false, CancellationToken ct = default);
 
-        [Get("/guildsettings/{id}")]
-        Task<GuildSettingsDTO> GetGuildSettings(ulong id);
+        Task<Result<GuildSettingsDTO>> GetGuildSettingsAsync(ulong id, CancellationToken ct = default);
 
-        [Put("/guildsettings/{id}")]
-        Task UpdateGuildSettings(ulong id, GuildSettingsDTO settings);
+        Task<Result> UpdateGuildSettingsAsync(ulong id, GuildSettingsDTO settings, CancellationToken ct = default);
 
-        [Post("/guildsettings")]
-        Task<GuildSettingsDTO> CreateGuildSettings(GuildSettingsDTO settings);
+        Task<Result<GuildSettingsDTO>> CreateGuildSettingsAsync(GuildSettingsDTO settings, CancellationToken ct = default);
 
-        [Delete("/guildsettings/{id}")]
-        Task DeleteGuildSettings(ulong id);
+        Task<Result> DeleteGuildSettingsAsync(ulong id, CancellationToken ct = default);
 
         #endregion
 
         #region PlanetsideSettings
 
-        [Get("/planetsidesettings")]
-        Task<List<PlanetsideSettingsDTO>> GetAllPlanetsideSettings();
+        Task<Result<List<PlanetsideSettingsDTO>>> ListPlanetsideSettingsAsync(CancellationToken ct = default);
 
-        [Get("/planetsidesettings/{id}")]
-        Task<PlanetsideSettingsDTO> GetPlanetsideSettings(ulong id);
+        Task<Result<PlanetsideSettingsDTO>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
 
-        [Put("/planetsidesettings/{id}")]
-        Task UpdatePlanetsideSettings(ulong id, PlanetsideSettingsDTO settings);
+        Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDTO settings, CancellationToken ct = default);
 
-        [Post("/planetsidesettings")]
-        Task<PlanetsideSettingsDTO> CreatePlanetsideSettings(PlanetsideSettingsDTO settings);
+        Task<Result<PlanetsideSettingsDTO>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDTO settings, CancellationToken ct = default);
 
-        [Delete("/planetsidesettings/{id}")]
-        Task DeletePlanetsideSettings(ulong id);
+        Task<Result> DeletePlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
 
         #endregion
 
         #region MemberGroups
 
-        [Get("/membergroup/{id}")]
-        Task<MemberGroupDTO> GetMemberGroup(ulong id);
+        Task<Result<MemberGroupDTO>> GetMemberGroupAsync(ulong id, CancellationToken ct = default);
 
-        [Get("/membergroup")]
-        Task<MemberGroupDTO> GetMemberGroup(ulong guildId, string groupName);
+        Task<Result<MemberGroupDTO>> GetMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
 
-        [Get("/membergroup/guildgroups/{guildId}")]
-        Task<List<MemberGroupDTO>> GetAllGuildMemberGroups(ulong guildId);
+        Task<Result<List<MemberGroupDTO>>> ListGuildMemberGroupsAsync(ulong guildId, CancellationToken ct = default);
 
-        [Put("/membergroup/{id}")]
-        Task UpdateMemberGroup(ulong id, MemberGroupDTO group);
+        Task<Result> UpdateMemberGroupAsync(ulong id, MemberGroupDTO group, CancellationToken ct = default);
 
-        [Post("/membergroup")]
-        Task<MemberGroupDTO> CreateMemberGroup(MemberGroupDTO group);
+        Task<Result<MemberGroupDTO>> CreateMemberGroupAsync(MemberGroupDTO group, CancellationToken ct = default);
 
-        [Delete("/membergroup/{id}")]
-        Task DeleteMemberGroup(ulong id);
+        Task<Result> DeleteMemberGroupAsync(ulong id, CancellationToken ct = default);
 
-        [Delete("/membergroup")]
-        Task DeleteMemberGroup(ulong guildId, string groupName);
+        Task<Result> DeleteMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
 
         #endregion
     }

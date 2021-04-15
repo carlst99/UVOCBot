@@ -10,7 +10,7 @@ using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders
 {
@@ -38,6 +38,11 @@ namespace UVOCBot.Responders
 
         public async Task<Result> RespondAsync(IReady gatewayEvent, CancellationToken ct = default)
         {
+            BotConstants.UserId = gatewayEvent.User.ID;
+
+            if (gatewayEvent.Application.ID.HasValue)
+            BotConstants.ApplicationId = gatewayEvent.Application.ID.Value;
+
             await _prefixService.SetupAsync().ConfigureAwait(false);
 
             _client.SubmitCommandAsync(

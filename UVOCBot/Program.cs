@@ -16,7 +16,6 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO.Abstractions;
 using System.Linq;
 using Tweetinvi;
@@ -46,8 +45,6 @@ namespace UVOCBot
 
     public static class Program
     {
-        public static readonly Color DEFAULT_EMBED_COLOUR = Color.Purple;
-
         public static int Main(string[] args)
         {
             try

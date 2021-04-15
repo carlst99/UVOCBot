@@ -2,7 +2,6 @@
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
@@ -16,6 +15,7 @@ using Tweetinvi;
 using Tweetinvi.Models.V2;
 using UVOCBot.Core.Model;
 using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -31,7 +31,6 @@ namespace UVOCBot.Commands
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
         private readonly IDbApiService _dbAPI;
-        private readonly IDiscordRestUserAPI _userAPI;
         private readonly IPermissionChecksService _permissionChecksService;
         private readonly ITwitterClient _twitterClient;
 
@@ -39,7 +38,6 @@ namespace UVOCBot.Commands
             ILogger<TwitterCommands> logger,
             ICommandContext context,
             MessageResponseHelpers responder,
-            IDiscordRestUserAPI userAPI,
             IDbApiService dbAPI,
             IPermissionChecksService permissionChecksService,
             ITwitterClient twitterClient)
@@ -48,7 +46,6 @@ namespace UVOCBot.Commands
             _context = context;
             _responder = responder;
             _dbAPI = dbAPI;
-            _userAPI = userAPI;
             _permissionChecksService = permissionChecksService;
             _twitterClient = twitterClient;
         }
@@ -154,11 +151,7 @@ namespace UVOCBot.Commands
         [Description("Selects the channel to which tweets will be relayed")]
         public async Task<IResult> RelayChannelCommand([Description("The channel to relay tweets to")] IChannel channel)
         {
-            Result<IUser> currentUser = await _userAPI.GetCurrentUserAsync(CancellationToken).ConfigureAwait(false);
-            if (!currentUser.IsSuccess)
-                return await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again later", CancellationToken).ConfigureAwait(false);
-
-            Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.PermissionsInChannel(channel.ID, currentUser.Entity.ID, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.PermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!botPermissions.IsSuccess)
                 return await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again later", CancellationToken).ConfigureAwait(false);
 
@@ -166,7 +159,7 @@ namespace UVOCBot.Commands
             {
                 return await _responder.RespondWithErrorAsync(
                     _context,
-                    $"{currentUser.Entity.Username} needs permissions to view { Formatter.ChannelMention(channel.ID) }, and send messages to it. Your relay channel has { Formatter.Bold("not") } been updated",
+                    $"I need permissions to view { Formatter.ChannelMention(channel.ID) }, and send messages to it. Your relay channel has { Formatter.Bold("not") } been updated",
                     CancellationToken).ConfigureAwait(false);
             }
 

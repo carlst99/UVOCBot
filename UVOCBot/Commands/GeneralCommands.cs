@@ -98,7 +98,7 @@ namespace UVOCBot.Commands
                 Thumbnail = new EmbedThumbnail(botAvatar, Height: 96, Width: 96),
                 Author = new EmbedAuthor("Written by FalconEye#1153", IconUrl: authorAvatar),
                 Footer = new EmbedFooter($"Version {Assembly.GetEntryAssembly()?.GetName().Version}"),
-                Colour = Program.DEFAULT_EMBED_COLOUR,
+                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
                 Url = "https://github.com/carlst99/UVOCBot",
                 Fields = new List<IEmbedField>
                 {

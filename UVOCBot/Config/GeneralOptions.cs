@@ -42,6 +42,7 @@ namespace UVOCBot.Config
             ApiEndpoint = string.Empty;
             FisuApiEndpoint = string.Empty;
             CensusApiKey = string.Empty;
+            CommandPrefix = "<>"; // No prefix, most commands use the slash infrastructure
             DebugGuildIds = new List<ulong>();
         }
     }

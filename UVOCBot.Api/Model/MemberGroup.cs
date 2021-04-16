@@ -36,5 +36,11 @@ namespace UVOCBot.Api.Model
         /// An LF delimited list of the users in this group
         /// </summary>
         public string UserIds { get; set; }
+
+        public MemberGroup()
+        {
+            GroupName = Guid.NewGuid().ToString();
+            UserIds = string.Empty;
+        }
     }
 }

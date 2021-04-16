@@ -2,6 +2,7 @@
 using Remora.Results;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
@@ -55,8 +56,12 @@ namespace UVOCBot.Services
             if (!guildSettings.IsSuccess)
                 return Result.FromError(guildSettings);
 
-            foreach (GuildSettingsDTO dto in guildSettings.Entity)
+            foreach (GuildSettingsDTO dto in guildSettings.Entity.Where(s => s.Prefix is not null))
+            {
+#pragma warning disable CS8604 // Possible null reference argument.
                 _guildPrefixPairs.Add(dto.GuildId, dto.Prefix);
+#pragma warning restore CS8604 // Possible null reference argument.
+            }
 
             IsSetup = true;
             return Result.FromSuccess();

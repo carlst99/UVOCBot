@@ -30,10 +30,13 @@ namespace UVOCBot.Services
                 return Result<T>.FromError(response.ErrorException);
             }
 
-            if (response.StatusCode != HttpStatusCode.OK)
-                return Result<T>.FromError(new HttpStatusCodeError(response.StatusCode));
+            if (request.Method == Method.GET && response.StatusCode == HttpStatusCode.OK)
+                return response.Data;
 
-            return response.Data;
+            if (request.Method == Method.POST && response.StatusCode == HttpStatusCode.Created)
+                return response.Data;
+
+            return Result<T>.FromError(new HttpStatusCodeError(response.StatusCode));
         }
 
         protected async Task<Result> ExecuteAsync(IRestRequest request, CancellationToken ct = default)

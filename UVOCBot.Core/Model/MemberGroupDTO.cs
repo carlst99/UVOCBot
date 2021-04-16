@@ -27,9 +27,9 @@ namespace UVOCBot.Core.Model
         /// <summary>
         /// Gets or sets the name of the group
         /// </summary>
-        public string GroupName { get; set; }
+        public string GroupName { get; set; } = string.Empty;
 
-        public List<ulong> UserIds { get; set; }
+        public List<ulong> UserIds { get; set; } = new List<ulong>();
 
         public MemberGroupDTO() { }
 

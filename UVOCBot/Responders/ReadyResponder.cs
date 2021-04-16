@@ -49,14 +49,14 @@ namespace UVOCBot.Responders
             if (gatewayEvent.Application.ID.HasValue)
             BotConstants.ApplicationId = gatewayEvent.Application.ID.Value;
 
-            await _prefixService.SetupAsync().ConfigureAwait(false);
+            await _prefixService.SetupAsync(ct).ConfigureAwait(false);
 
             _client.SubmitCommandAsync(
                 new UpdatePresence(
                     ClientStatus.Online,
                     false,
                     null,
-                    Activities: new Activity[] { new Activity("Today's a good day", ActivityType.Game) }
+                    Activities: new Activity[] { new Activity("Probably broke", ActivityType.Game) }
                     )
                 );
 

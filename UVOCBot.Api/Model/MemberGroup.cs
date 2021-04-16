@@ -30,17 +30,11 @@ namespace UVOCBot.Api.Model
         /// <summary>
         /// Gets or sets the name of the group
         /// </summary>
-        public string GroupName { get; set; }
+        public string GroupName { get; set; } = Guid.NewGuid().ToString();
 
         /// <summary>
         /// An LF delimited list of the users in this group
         /// </summary>
-        public string UserIds { get; set; }
-
-        public MemberGroup()
-        {
-            GroupName = Guid.NewGuid().ToString();
-            UserIds = string.Empty;
-        }
+        public string UserIds { get; set; } = string.Empty;
     }
 }

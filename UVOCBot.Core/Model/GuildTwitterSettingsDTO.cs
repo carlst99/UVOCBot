@@ -14,23 +14,20 @@ namespace UVOCBot.Core.Model
         /// </summary>
         public ulong? RelayChannelId { get; set; }
 
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
 
         /// <summary>
         /// Gets or sets a list of twitter user ids from whom to relay posts
         /// </summary>
-        public IReadOnlyCollection<long> TwitterUsers { get; set; } = new List<long>();
+        public List<long> TwitterUsers { get; set; } = new List<long>();
 
         public GuildTwitterSettingsDTO()
         {
-            IsEnabled = true;
         }
 
         public GuildTwitterSettingsDTO(ulong guildId)
         {
             GuildId = guildId;
-            RelayChannelId = null;
-            IsEnabled = true;
         }
 
         public override bool Equals(object obj) => obj is GuildTwitterSettingsDTO s

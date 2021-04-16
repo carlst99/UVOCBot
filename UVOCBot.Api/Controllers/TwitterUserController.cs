@@ -101,7 +101,7 @@ namespace UVOCBot.Api.Controllers
 
         private async Task<TwitterUser> FromDTO(TwitterUserDTO dto)
         {
-            TwitterUser user = new TwitterUser
+            TwitterUser user = new()
             {
                 UserId = dto.UserId,
                 LastRelayedTweetId = dto.LastRelayedTweetId

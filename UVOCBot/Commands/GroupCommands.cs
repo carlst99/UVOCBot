@@ -12,7 +12,8 @@ using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBot.Services;
+using UVOCBot.Model;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -38,12 +39,17 @@ namespace UVOCBot.Commands
         [Description("Gets all of the groups in this guild")]
         public async Task<IResult> ListGroupsCommandAsync()
         {
-            List<MemberGroupDTO> groups = await _dbAPI.GetAllGuildMemberGroups(_context.GuildID.Value.Value).ConfigureAwait(false);
+            Result<List<MemberGroupDTO>> groups = await _dbAPI.ListGuildMemberGroupsAsync(_context.GuildID.Value.Value).ConfigureAwait(false);
+            if (!groups.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
+                return groups;
+            }
 
             StringBuilder sb = new();
-            sb.Append("Showing ").Append(Formatter.InlineQuote(groups.Count.ToString())).AppendLine(" groups.").AppendLine();
+            sb.Append("Showing ").Append(Formatter.InlineQuote(groups.Entity.Count.ToString())).AppendLine(" groups.").AppendLine();
 
-            foreach (MemberGroupDTO g in groups)
+            foreach (MemberGroupDTO g in groups.Entity)
             {
                 sb.Append("• ").Append(Formatter.InlineQuote(g.GroupName))
                     .Append(" (").Append(g.UserIds.Count).Append(" members) - created by ")
@@ -59,9 +65,10 @@ namespace UVOCBot.Commands
         [Description("Gets information about a group")]
         public async Task<IResult> GetGroupCommandAsync([Description("The name of the group to retrieve")] string groupName)
         {
-            Result<MemberGroupDTO> groupResult = await GetGroup(groupName).ConfigureAwait(false);
+            Result<MemberGroupDTO> groupResult = await GetGroupAsync(groupName).ConfigureAwait(false);
             if (!groupResult.IsSuccess)
                 return groupResult;
+
             MemberGroupDTO group = groupResult.Entity;
 
             StringBuilder sb = new();
@@ -97,27 +104,34 @@ namespace UVOCBot.Commands
 
             MemberGroupDTO group = new(groupName, _context.GuildID.Value.Value, _context.User.ID.Value, users);
 
-            try
+            Result<MemberGroupDTO> groupCreationResult = await _dbAPI.CreateMemberGroupAsync(group).ConfigureAwait(false);
+            if (!groupCreationResult.IsSuccess)
             {
-                await _dbAPI.CreateMemberGroup(group).ConfigureAwait(false);
-                return await _responder.RespondWithSuccessAsync(_context, $"The group {Formatter.Bold(groupName)} has been created with {Formatter.Bold(users.Count.ToString())} members.", ct: CancellationToken).ConfigureAwait(false);
+                if (groupCreationResult.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    return await _responder.RespondWithErrorAsync(
+                        _context,
+                        "A group with this name already exists. Please try again with a different name.",
+                        ct: CancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
+                    return Result<IMessage>.FromError(groupCreationResult);
+                }
             }
-            catch (Refit.ApiException apiEx) when (apiEx.StatusCode == System.Net.HttpStatusCode.Conflict)
-            {
-                return await _responder.RespondWithErrorAsync(_context, "A group with this name already exists. Please try again with a different name.", ct: CancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                await _responder.RespondWithErrorAsync(_context, "An error occured. Please try again!", ct: CancellationToken).ConfigureAwait(false);
-                return Result<IMessage>.FromError(ex);
-            }
+
+            return await _responder.RespondWithSuccessAsync(
+                _context,
+                $"The group {Formatter.Bold(groupName)} has been created with {Formatter.Bold(users.Count.ToString())} members.",
+                ct: CancellationToken).ConfigureAwait(false);
         }
 
         [Command("delete")]
         [Description("Deletes a group")]
         public async Task<IResult> DeleteGroupCommandAsync([Description("The name of the group")] string groupName)
         {
-            Result<MemberGroupDTO> group = await GetGroup(groupName).ConfigureAwait(false);
+            Result<MemberGroupDTO> group = await GetGroupAsync(groupName).ConfigureAwait(false);
             if (!group.IsSuccess)
                 return group;
 
@@ -138,26 +152,35 @@ namespace UVOCBot.Commands
                 }
             }
 
-            await _dbAPI.DeleteMemberGroup(group.Entity.Id).ConfigureAwait(false);
+            Result groupDeletionResult = await _dbAPI.DeleteMemberGroupAsync(group.Entity.Id).ConfigureAwait(false);
+            if (!groupDeletionResult.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
+                return groupDeletionResult;
+            }
+
             return await _responder.RespondWithSuccessAsync(_context, $"The group {group.Entity.GroupName} was successfully deleted.", CancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Result<MemberGroupDTO>> GetGroup(string groupName)
+        private async Task<Result<MemberGroupDTO>> GetGroupAsync(string groupName)
         {
-            try
+            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
+
+            if (!group.IsSuccess)
             {
-                return await _dbAPI.GetMemberGroup(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
+                if (group.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    await _responder.RespondWithErrorAsync(_context, "That group does not exist.", CancellationToken).ConfigureAwait(false);
+                    return group;
+                }
+                else
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
+                    return group;
+                }
             }
-            catch (Refit.ValidationApiException va) when (va.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                await _responder.RespondWithErrorAsync(_context, "That group does not exist.", ct: CancellationToken).ConfigureAwait(false);
-                return Result<MemberGroupDTO>.FromError<Refit.ValidationApiException>(va);
-            }
-            catch (Exception ex)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", ct: CancellationToken).ConfigureAwait(false);
-                return Result<MemberGroupDTO>.FromError(ex);
-            }
+
+            return group;
         }
 
         private static List<ulong> ParseUsers(string users)

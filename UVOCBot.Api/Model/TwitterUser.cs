@@ -23,7 +23,11 @@ namespace UVOCBot.Api.Model
 
         public TwitterUser() { }
 
-        public TwitterUser(long id) => UserId = id;
+        public TwitterUser(long id)
+        {
+            UserId = id;
+            LastRelayedTweetId = null;
+        }
 
         public override bool Equals(object obj) => obj is TwitterUser user
                 && user.UserId.Equals(UserId);

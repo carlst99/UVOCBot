@@ -29,15 +29,17 @@ namespace UVOCBot.Api.Model
         public GuildTwitterSettings()
         {
             IsEnabled = true;
+            RelayChannelId = null;
         }
 
         public GuildTwitterSettings(ulong guildId)
         {
             GuildId = guildId;
+            RelayChannelId = null;
             IsEnabled = true;
         }
 
-        public override bool Equals(object obj) => obj is GuildTwitterSettings s
+        public override bool Equals(object? obj) => obj is GuildTwitterSettings s
             && s.GuildId.Equals(GuildId);
 
         public override int GetHashCode() => GuildId.GetHashCode();

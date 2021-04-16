@@ -19,6 +19,7 @@
         public PlanetsideSettingsDTO(ulong guildId)
         {
             GuildId = guildId;
+            DefaultWorld = null;
         }
 
         public override bool Equals(object obj) => obj is PlanetsideSettingsDTO s

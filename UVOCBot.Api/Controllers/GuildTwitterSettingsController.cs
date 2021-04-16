@@ -69,6 +69,9 @@ namespace UVOCBot.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<GuildTwitterSettingsDTO>> PostGuildTwitterSettings(GuildTwitterSettingsDTO guildTwitterSettings)
         {
+            if (await _context.GuildTwitterSettings.AnyAsync(s => s.GuildId == guildTwitterSettings.GuildId).ConfigureAwait(false))
+                return Conflict();
+
             _context.GuildTwitterSettings.Add(FromDTO(guildTwitterSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 

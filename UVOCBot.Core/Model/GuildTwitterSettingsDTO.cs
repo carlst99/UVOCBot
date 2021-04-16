@@ -29,6 +29,7 @@ namespace UVOCBot.Core.Model
         public GuildTwitterSettingsDTO(ulong guildId)
         {
             GuildId = guildId;
+            RelayChannelId = null;
             IsEnabled = true;
         }
 

@@ -66,6 +66,9 @@ namespace UVOCBot.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<TwitterUserDTO>> PostTwitterUser(TwitterUserDTO twitterUser)
         {
+            if (await _context.TwitterUsers.AnyAsync(t => t.UserId == twitterUser.UserId).ConfigureAwait(false))
+                return Conflict();
+
             _context.TwitterUsers.Add(await FromDTO(twitterUser).ConfigureAwait(false));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 

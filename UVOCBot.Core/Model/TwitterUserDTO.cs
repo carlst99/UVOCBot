@@ -21,7 +21,11 @@ namespace UVOCBot.Core.Model
 
         public TwitterUserDTO() { }
 
-        public TwitterUserDTO(long id) => UserId = id;
+        public TwitterUserDTO(long id)
+        {
+            UserId = id;
+            LastRelayedTweetId = null;
+        }
 
         public override bool Equals(object obj) => obj is TwitterUserDTO user
                 && user.UserId.Equals(UserId);

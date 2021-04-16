@@ -13,7 +13,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -125,16 +125,23 @@ namespace UVOCBot.Commands
 
         private async Task<Result<IReadOnlyList<Snowflake>>> GetGroupMembersAsync(string groupName)
         {
-            try
+            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
+
+            if (!group.IsSuccess)
             {
-                MemberGroupDTO group = await _dbAPI.GetMemberGroup(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
-                return group.UserIds.ConvertAll(i => new Snowflake(i)).AsReadOnly();
+                if (group.Error is Model.HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    await _responder.RespondWithErrorAsync(_context, "That group doesn't exist.", CancellationToken).ConfigureAwait(false);
+                    return Result<IReadOnlyList<Snowflake>>.FromError(group);
+                }
+                else
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
+                    return Result<IReadOnlyList<Snowflake>>.FromError(group);
+                }
             }
-            catch (Refit.ValidationApiException vaex) when (vaex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                await _responder.RespondWithErrorAsync(_context, "That group doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
-                return Result<IReadOnlyList<Snowflake>>.FromError<ArgumentException>(new ArgumentException("Invalid group name"));
-            }
+
+            return group.Entity.UserIds.ConvertAll(i => new Snowflake(i)).AsReadOnly();
         }
     }
 }

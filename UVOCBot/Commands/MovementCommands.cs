@@ -125,7 +125,7 @@ namespace UVOCBot.Commands
 
         private async Task<Result<IReadOnlyList<Snowflake>>> GetGroupMembersAsync(string groupName)
         {
-            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
+            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
 
             if (!group.IsSuccess)
             {

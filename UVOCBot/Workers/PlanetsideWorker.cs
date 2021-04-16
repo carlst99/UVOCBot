@@ -8,7 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Model.Planetside;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 using Websocket.Client;
 
 namespace UVOCBot.Workers

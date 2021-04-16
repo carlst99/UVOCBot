@@ -39,7 +39,7 @@ namespace UVOCBot.Commands
         [Description("Gets all of the groups in this guild")]
         public async Task<IResult> ListGroupsCommandAsync()
         {
-            Result<List<MemberGroupDTO>> groups = await _dbAPI.ListGuildMemberGroupsAsync(_context.GuildID.Value.Value).ConfigureAwait(false);
+            Result<List<MemberGroupDTO>> groups = await _dbAPI.ListGuildMemberGroupsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!groups.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
@@ -104,7 +104,7 @@ namespace UVOCBot.Commands
 
             MemberGroupDTO group = new(groupName, _context.GuildID.Value.Value, _context.User.ID.Value, users);
 
-            Result<MemberGroupDTO> groupCreationResult = await _dbAPI.CreateMemberGroupAsync(group).ConfigureAwait(false);
+            Result<MemberGroupDTO> groupCreationResult = await _dbAPI.CreateMemberGroupAsync(group, CancellationToken).ConfigureAwait(false);
             if (!groupCreationResult.IsSuccess)
             {
                 if (groupCreationResult.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -164,7 +164,7 @@ namespace UVOCBot.Commands
 
         private async Task<Result<MemberGroupDTO>> GetGroupAsync(string groupName)
         {
-            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
+            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
 
             if (!group.IsSuccess)
             {

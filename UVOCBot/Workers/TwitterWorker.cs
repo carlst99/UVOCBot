@@ -12,7 +12,7 @@ using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 using UVOCBot.Utilities;
 
 namespace UVOCBot.Workers
@@ -63,19 +63,26 @@ namespace UVOCBot.Workers
                 int tweetCount = 0;
                 int failureCount = 0;
 
+                Result<List<GuildTwitterSettingsDTO>> settingsResult = await _dbApi.ListGuildTwitterSettingsAsync(true, stoppingToken).ConfigureAwait(false);
+                if (!settingsResult.IsSuccess)
+                    return;
+
                 // Load all of the twitter users we should relay tweets from
-                foreach (GuildTwitterSettingsDTO settings in await _dbApi.GetAllGuildTwitterSettings(true).ConfigureAwait(false))
+                foreach (GuildTwitterSettingsDTO settings in settingsResult.Entity)
                 {
                     foreach (long twitterUserId in settings.TwitterUsers)
                     {
-                        TwitterUserDTO twitterUser = await _dbApi.GetTwitterUser(twitterUserId).ConfigureAwait(false);
-                        if (userTweetPairs.ContainsKey(twitterUser))
+                        Result<TwitterUserDTO> twitterUser = await _dbApi.GetTwitterUserAsync(twitterUserId, stoppingToken).ConfigureAwait(false);
+                        if (!twitterUser.IsSuccess)
+                            continue;
+
+                        if (userTweetPairs.ContainsKey(twitterUser.Entity))
                         {
-                            await PostTweetsToChannelAsync(settings, userTweetPairs[twitterUser], stoppingToken).ConfigureAwait(false);
+                            await PostTweetsToChannelAsync(settings, userTweetPairs[twitterUser.Entity], stoppingToken).ConfigureAwait(false);
                         }
                         else
                         {
-                            Optional<List<ITweet>> userTweets = await GetUserTweetsAsync(twitterUser, lastFetch).ConfigureAwait(false);
+                            Optional<List<ITweet>> userTweets = await GetUserTweetsAsync(twitterUser.Entity, lastFetch).ConfigureAwait(false);
                             if (!userTweets.HasValue)
                             {
                                 failureCount++;
@@ -86,11 +93,13 @@ namespace UVOCBot.Workers
                             } else
                             {
                                 // We've changed the last fetched tweet ID, so update the database
-                                await _dbApi.UpdateTwitterUser(twitterUserId, twitterUser).ConfigureAwait(false);
+                                await _dbApi.UpdateTwitterUserAsync(twitterUserId, twitterUser.Entity, stoppingToken).ConfigureAwait(false);
                             }
 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                             tweetCount += userTweets.Value.Count;
-                            userTweetPairs.Add(twitterUser, userTweets.Value);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                            userTweetPairs.Add(twitterUser.Entity, userTweets.Value);
 
                             await PostTweetsToChannelAsync(settings, userTweets.Value, stoppingToken).ConfigureAwait(false);
                         }

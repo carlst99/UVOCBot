@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using Remora.Results;
 using RestSharp;
+using RestSharp.Serializers.SystemTextJson;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ namespace UVOCBot.Services
     public sealed class DbApiService : ApiService<DbApiService>, IDbApiService
     {
         public DbApiService(ILogger<DbApiService> logger, IOptions<GeneralOptions> options)
-            : base(logger, () => new RestClient(options.Value.ApiEndpoint))
+            : base(logger, () => new RestClient(options.Value.ApiEndpoint).UseSystemTextJson())
         { }
 
         #region TwitterUser

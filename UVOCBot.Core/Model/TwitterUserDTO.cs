@@ -17,7 +17,7 @@ namespace UVOCBot.Core.Model
         /// <summary>
         /// Guilds that are relaying tweets from this user
         /// </summary>
-        public IReadOnlyCollection<ulong> Guilds { get; set; } = new List<ulong>();
+        public IReadOnlyList<ulong> Guilds { get; set; } = new List<ulong>().AsReadOnly();
 
         public TwitterUserDTO() { }
 

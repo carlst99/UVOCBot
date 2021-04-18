@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remora.Results;
 using RestSharp;
+using RestSharp.Serializers.SystemTextJson;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,12 @@ namespace UVOCBot.Services
         private readonly IMemoryCache _cache;
 
         public FisuApiService(ILogger<FisuApiService> logger, IOptions<GeneralOptions> options, IMemoryCache cache)
-            : base(logger, () => new RestClient(options.Value.FisuApiEndpoint))
+            : base(logger, () => new RestClient(options.Value.FisuApiEndpoint)
+                                    .UseSystemTextJson(new System.Text.Json.JsonSerializerOptions
+                                    {
+                                        PropertyNameCaseInsensitive = true,
+                                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                                    }))
         {
             _cache = cache;
         }
@@ -27,7 +33,10 @@ namespace UVOCBot.Services
         {
             // Try and get the population for this world from the cache
             if (_cache.TryGetValue(GetCacheKey(worldId), out FisuPopulation pop))
+            {
+                _logger.LogTrace("Retrieved population data from cache");
                 return pop;
+            }
 
             // If there was no population value cached, make a request to fisu
             IRestRequest request = new RestRequest("population");
@@ -47,6 +56,7 @@ namespace UVOCBot.Services
                     Priority = CacheItemPriority.Low
                 });
 
+            _logger.LogTrace("Retrieved population data from fisu API");
             return population.Entity;
         }
 

@@ -139,6 +139,7 @@ namespace UVOCBot
                 .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
+                .MinimumLevel.Override("UVOCBot.Services.FisuApiService", LogEventLevel.Verbose)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day)

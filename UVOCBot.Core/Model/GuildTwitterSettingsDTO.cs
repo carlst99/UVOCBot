@@ -19,7 +19,7 @@ namespace UVOCBot.Core.Model
         /// <summary>
         /// Gets or sets a list of twitter user ids from whom to relay posts
         /// </summary>
-        public List<long> TwitterUsers { get; set; } = new List<long>();
+        public IReadOnlyList<long> TwitterUsers { get; set; } = new List<long>().AsReadOnly();
 
         public GuildTwitterSettingsDTO()
         {

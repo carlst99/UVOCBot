@@ -78,7 +78,8 @@ namespace UVOCBot
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
 
                     //Setup API services
-                    services.AddSingleton<IDbApiService, DbApiService>()
+                    services.AddSingleton<ICensusApiService, CensusApiService>()
+                            .AddSingleton<IDbApiService, DbApiService>()
                             .AddSingleton<IFisuApiService, FisuApiService>();
 
                     // Setup other services

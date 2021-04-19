@@ -13,7 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -25,9 +25,9 @@ namespace UVOCBot.Commands
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
         private readonly IDiscordRestGuildAPI _guildAPI;
-        private readonly IAPIService _dbAPI;
+        private readonly IDbApiService _dbAPI;
 
-        public TeamGenerationCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IAPIService dbAPI)
+        public TeamGenerationCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI)
         {
             _context = context;
             _responder = responder;
@@ -71,17 +71,16 @@ namespace UVOCBot.Commands
             if (numberOfTeams < 2)
                 return await _responder.RespondWithErrorAsync(_context, "At least two teams are required", ct: CancellationToken).ConfigureAwait(false);
 
-            MemberGroupDTO group;
-            try
+            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
+            if (!group.IsSuccess)
             {
-                group = await _dbAPI.GetMemberGroup(_context.GuildID.Value.Value, groupName).ConfigureAwait(false);
-            }
-            catch (Refit.ValidationApiException vaex) when (vaex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return await _responder.RespondWithErrorAsync(_context, "That group does not exist.", CancellationToken).ConfigureAwait(false);
+                if (group.Error is Model.HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    return await _responder.RespondWithErrorAsync(_context, "That group doesn't exist.", CancellationToken).ConfigureAwait(false);
+                else
+                    return await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
             }
 
-            return await SendRandomTeams(group.UserIds, numberOfTeams, $"Built from the group {Formatter.InlineQuote(group.GroupName)}").ConfigureAwait(false);
+            return await SendRandomTeams(group.Entity.UserIds, numberOfTeams, $"Built from the group {Formatter.InlineQuote(group.Entity.GroupName)}").ConfigureAwait(false);
         }
 
         private async Task<IResult> SendRandomTeams(IList<ulong> memberPool, int teamCount, string embedDescription)
@@ -138,7 +137,7 @@ namespace UVOCBot.Commands
 
             return new Embed
             {
-                Colour = Program.DEFAULT_EMBED_COLOUR,
+                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
                 Title = embedTitle,
                 Description = embedDescription,
                 Fields = embedFields

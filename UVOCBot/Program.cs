@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Refit;
 using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
@@ -17,7 +16,6 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO.Abstractions;
 using System.Linq;
 using Tweetinvi;
@@ -26,6 +24,7 @@ using UVOCBot.Commands;
 using UVOCBot.Config;
 using UVOCBot.Responders;
 using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 using UVOCBot.Workers;
 
 namespace UVOCBot
@@ -46,8 +45,6 @@ namespace UVOCBot
 
     public static class Program
     {
-        public static readonly Color DEFAULT_EMBED_COLOUR = Color.Purple;
-
         public static int Main(string[] args)
         {
             try
@@ -81,11 +78,10 @@ namespace UVOCBot
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
 
                     //Setup API services
-                    services.AddSingleton((s) => RestService.For<IAPIService>(
-                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
-                    services.AddSingleton((s) => RestService.For<IFisuApiService>(
-                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
+                    services.AddSingleton<IDbApiService, DbApiService>()
+                            .AddSingleton<IFisuApiService, FisuApiService>();
 
+                    // Setup other services
                     services.AddSingleton(fileSystem)
                             .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()
@@ -143,6 +139,7 @@ namespace UVOCBot
                 .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
+                .MinimumLevel.Override("UVOCBot.Services.FisuApiService", LogEventLevel.Verbose)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day)

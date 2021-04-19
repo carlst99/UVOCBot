@@ -13,14 +13,14 @@ namespace UVOCBot.Model.Planetside
             public int NS { get; init; }
         }
 
-        public List<ApiResult> Result { get; init; }
+        public IReadOnlyList<ApiResult> Result { get; init; }
 
         public FisuPopulation()
         {
             Result = new List<ApiResult>()
             {
                 new ApiResult()
-            };
+            }.AsReadOnly();
         }
 
         public WorldType World => Result[0].WorldId;

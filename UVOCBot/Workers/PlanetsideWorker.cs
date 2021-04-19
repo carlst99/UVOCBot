@@ -8,7 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Model.Planetside;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 using Websocket.Client;
 
 namespace UVOCBot.Workers
@@ -17,7 +17,7 @@ namespace UVOCBot.Workers
     {
         private readonly ICensusStreamClient _censusClient;
         private readonly ICensusQueryFactory _censusQueryFactory;
-        private readonly IAPIService _dbApi;
+        private readonly IDbApiService _dbApi;
 
         private readonly CensusStreamSubscription _censusSubscription = new()
         {
@@ -25,7 +25,7 @@ namespace UVOCBot.Workers
             EventNames = new[] { "ContinentLock", "ContinentUnlock", "MetagameEvent" }
         };
 
-        public PlanetsideWorker(ICensusStreamClient censusClient, ICensusQueryFactory censusQueryFactory, IAPIService dbApi)
+        public PlanetsideWorker(ICensusStreamClient censusClient, ICensusQueryFactory censusQueryFactory, IDbApiService dbApi)
         {
             _censusClient = censusClient;
             _censusQueryFactory = censusQueryFactory;

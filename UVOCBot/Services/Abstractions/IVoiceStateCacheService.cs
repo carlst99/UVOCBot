@@ -2,7 +2,7 @@
 using Remora.Discord.Core;
 using System.Collections.Generic;
 
-namespace UVOCBot.Services
+namespace UVOCBot.Services.Abstractions
 {
     /// <summary>
     /// A cache for <see cref="IVoiceState"/> objects, keyed by the value of <see cref="IVoiceState.UserID"/>

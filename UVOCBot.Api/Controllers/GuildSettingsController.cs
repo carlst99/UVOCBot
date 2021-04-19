@@ -65,6 +65,9 @@ namespace UVOCBot.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<GuildSettingsDTO>> PostGuildSettings(GuildSettingsDTO guildSettings)
         {
+            if (await _context.GuildSettings.AnyAsync(s => s.GuildId == guildSettings.GuildId).ConfigureAwait(false))
+                return Conflict();
+
             _context.GuildSettings.Add(FromDTO(guildSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 

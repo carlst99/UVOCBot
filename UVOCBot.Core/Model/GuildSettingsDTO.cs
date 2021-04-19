@@ -15,7 +15,7 @@
         /// <summary>
         /// The prefix used to access bot commands
         /// </summary>
-        public string Prefix { get; set; }
+        public string? Prefix { get; set; }
 
         public GuildSettingsDTO()
         {
@@ -24,6 +24,8 @@
         public GuildSettingsDTO(ulong guildId)
         {
             GuildId = guildId;
+            BonkChannelId = null;
+            Prefix = null;
         }
 
         public override bool Equals(object obj) => obj is GuildSettingsDTO s

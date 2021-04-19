@@ -62,6 +62,9 @@ namespace UVOCBot.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<PlanetsideSettingsDTO>> PostPlanetsideSettings(PlanetsideSettingsDTO planetsideSettings)
         {
+            if (await _context.PlanetsideSettings.AnyAsync((s) => s.GuildId == planetsideSettings.GuildId).ConfigureAwait(false))
+                return Conflict();
+
             _context.PlanetsideSettings.Add(FromDTO(planetsideSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 

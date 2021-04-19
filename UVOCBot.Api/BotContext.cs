@@ -15,7 +15,9 @@ namespace UVOCBot.Api
         public DbSet<PlanetsideSettings> PlanetsideSettings { get; set; }
         public DbSet<MemberGroup> MemberGroups { get; set; }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public BotContext(IOptions<DatabaseOptions> config)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             _config = config.Value;
         }

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using UVOCBot.Model;
 using UVOCBot.Utilities;
 
-namespace UVOCBot.Services
+namespace UVOCBot.Services.Abstractions
 {
     public interface ISettingsService : IDisposable
     {

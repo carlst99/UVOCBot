@@ -17,11 +17,15 @@ namespace UVOCBot.Core.Model
         /// <summary>
         /// Guilds that are relaying tweets from this user
         /// </summary>
-        public IReadOnlyCollection<ulong> Guilds { get; set; } = new List<ulong>();
+        public IReadOnlyList<ulong> Guilds { get; set; } = new List<ulong>().AsReadOnly();
 
         public TwitterUserDTO() { }
 
-        public TwitterUserDTO(long id) => UserId = id;
+        public TwitterUserDTO(long id)
+        {
+            UserId = id;
+            LastRelayedTweetId = null;
+        }
 
         public override bool Equals(object obj) => obj is TwitterUserDTO user
                 && user.UserId.Equals(UserId);

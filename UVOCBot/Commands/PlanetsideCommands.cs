@@ -14,7 +14,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
 using UVOCBot.Model.Planetside;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -22,11 +22,11 @@ namespace UVOCBot.Commands
     {
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
-        private readonly IAPIService _dbAPI;
+        private readonly IDbApiService _dbAPI;
         private readonly ICensusQueryFactory _censusQueryFactory;
         private readonly IFisuApiService _fisuAPI;
 
-        public PlanetsideCommands(ICommandContext context, MessageResponseHelpers responder, IAPIService dbAPI, ICensusQueryFactory censusQueryFactory, IFisuApiService fisuAPI)
+        public PlanetsideCommands(ICommandContext context, MessageResponseHelpers responder, IDbApiService dbAPI, ICensusQueryFactory censusQueryFactory, IFisuApiService fisuAPI)
         {
             _context = context;
             _responder = responder;
@@ -45,8 +45,14 @@ namespace UVOCBot.Commands
                 if (!_context.GuildID.HasValue)
                     return await _responder.RespondWithErrorAsync(_context, "To use this command in a DM you must provide a server.", ct: CancellationToken).ConfigureAwait(false);
 
-                PlanetsideSettingsDTO settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value).ConfigureAwait(false);
-                if (settings.DefaultWorld == null)
+                Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+                if (!settings.IsSuccess)
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                    return settings;
+                }
+
+                if (settings.Entity.DefaultWorld == null)
                 {
                     return await _responder.RespondWithErrorAsync(
                         _context,
@@ -55,7 +61,7 @@ namespace UVOCBot.Commands
                 }
                 else
                 {
-                    WorldType world = (WorldType)(int)settings.DefaultWorld;
+                    WorldType world = (WorldType)(int)settings.Entity.DefaultWorld;
                     return await SendWorldPopulation(world).ConfigureAwait(false);
                 }
             }
@@ -71,9 +77,21 @@ namespace UVOCBot.Commands
         [RequireUserGuildPermission(DiscordPermission.ManageGuild)]
         public async Task<IResult> DefaultWorldCommand([DiscordTypeHint(TypeHint.String)] WorldType server)
         {
-            PlanetsideSettingsDTO settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value).ConfigureAwait(false);
-            settings.DefaultWorld = (int)server;
-            await _dbAPI.UpdatePlanetsideSettings(_context.GuildID.Value.Value, settings).ConfigureAwait(false);
+            Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            if (!settings.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                return settings;
+            }
+
+            settings.Entity.DefaultWorld = (int)server;
+
+            Result updateResult = await _dbAPI.UpdatePlanetsideSettingsAsync(_context.GuildID.Value.Value, settings.Entity, CancellationToken).ConfigureAwait(false);
+            if (!updateResult.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                return updateResult;
+            }
 
             return await _responder.RespondWithSuccessAsync(
                 _context,
@@ -83,25 +101,21 @@ namespace UVOCBot.Commands
 
         private async Task<IResult> SendWorldPopulation(WorldType world)
         {
-            FisuPopulation population;
-            try
+            Result<FisuPopulation> populationResult = await _fisuAPI.GetContinentPopulationAsync(world, CancellationToken).ConfigureAwait(false);
+            if (!populationResult.IsSuccess)
             {
-                population = await _fisuAPI.GetContinentPopulation((int)world).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(
+                    _context,
+                    $"Could not get population statistics - the query to { Formatter.InlineQuote("fisu") } failed. Please try again.",
+                    CancellationToken).ConfigureAwait(false);
+                return populationResult;
             }
-            catch
-            {
-                population = new FisuPopulation
-                {
-                    Result = new List<FisuPopulation.ApiResult>
-                    {
-                        new FisuPopulation.ApiResult()
-                    }
-                };
-            }
+
+            FisuPopulation population = populationResult.Entity;
 
             Embed embed = new()
             {
-                Colour = Program.DEFAULT_EMBED_COLOUR,
+                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
                 Description = await GetWorldStatusString(world).ConfigureAwait(false),
                 Title = world.ToString() + " - " + population.Total.ToString(),
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),

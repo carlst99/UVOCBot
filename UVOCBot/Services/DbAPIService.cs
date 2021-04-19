@@ -4,6 +4,7 @@ using Remora.Results;
 using RestSharp;
 using RestSharp.Serializers.SystemTextJson;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
@@ -15,7 +16,7 @@ namespace UVOCBot.Services
     public sealed class DbApiService : ApiService<DbApiService>, IDbApiService
     {
         public DbApiService(ILogger<DbApiService> logger, IOptions<GeneralOptions> options)
-            : base(logger, () => new RestClient(options.Value.ApiEndpoint).UseSystemTextJson())
+            : base(logger, () => new RestClient(options.Value.ApiEndpoint).UseSystemTextJson(new JsonSerializerOptions(JsonSerializerDefaults.Web)))
         { }
 
         #region TwitterUser

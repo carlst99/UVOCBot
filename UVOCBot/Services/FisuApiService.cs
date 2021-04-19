@@ -5,6 +5,7 @@ using Remora.Results;
 using RestSharp;
 using RestSharp.Serializers.SystemTextJson;
 using System;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
@@ -18,12 +19,7 @@ namespace UVOCBot.Services
         private readonly IMemoryCache _cache;
 
         public FisuApiService(ILogger<FisuApiService> logger, IOptions<GeneralOptions> options, IMemoryCache cache)
-            : base(logger, () => new RestClient(options.Value.FisuApiEndpoint)
-                                    .UseSystemTextJson(new System.Text.Json.JsonSerializerOptions
-                                    {
-                                        PropertyNameCaseInsensitive = true,
-                                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                                    }))
+            : base(logger, () => new RestClient(options.Value.FisuApiEndpoint).UseSystemTextJson(new JsonSerializerOptions(JsonSerializerDefaults.Web)))
         {
             _cache = cache;
         }
@@ -40,7 +36,7 @@ namespace UVOCBot.Services
 
             // If there was no population value cached, make a request to fisu
             IRestRequest request = new RestRequest("population");
-            request.AddParameter("world", worldId, ParameterType.QueryString);
+            request.AddParameter("world", (int)worldId, ParameterType.QueryString);
 
             Result<FisuPopulation> population = await ExecuteAsync<FisuPopulation>(request, ct).ConfigureAwait(false);
             if (!population.IsSuccess)

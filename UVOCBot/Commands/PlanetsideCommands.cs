@@ -77,7 +77,7 @@ namespace UVOCBot.Commands
         {
             string[] tags = outfitTags.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            if (tags.Length == 1) // Get online members
+            if (tags.Length == 1)
             {
                 Result<OutfitOnlineMembers> onlineMembers = await _censusApi.GetOnlineMembersAsync(tags[0], CancellationToken).ConfigureAwait(false);
                 if (!onlineMembers.IsSuccess)
@@ -86,21 +86,24 @@ namespace UVOCBot.Commands
                     return onlineMembers;
                 }
 
+                if (onlineMembers.Entity is null)
+                    return await _responder.RespondWithSuccessAsync(_context, "0 online", CancellationToken).ConfigureAwait(false);
+
                 StringBuilder sb = new();
-                foreach (OutfitOnlineMembers.MemberModel member in onlineMembers.Entity.Members.OrderBy(m => m.Character.Name.First))
+                foreach (OutfitOnlineMembers.MemberModel member in onlineMembers.Entity.OnlineMembers.OrderBy(m => m.Character.Name.First))
                     sb.AppendLine(member.Character.Name.First);
 
                 Embed embed = new()
                 {
-                    Author = new EmbedAuthor(onlineMembers.Entity.Name),
-                    Title = onlineMembers.Entity.Members.Count + " online",
+                    Author = new EmbedAuthor($"{ onlineMembers.Entity.OutfitAlias } | { onlineMembers.Entity.OutfitName }"),
+                    Title = onlineMembers.Entity.OnlineMembers.Count + " online",
                     Description = sb.ToString(),
                     Colour = BotConstants.DEFAULT_EMBED_COLOUR
                 };
 
                 return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
             }
-            else if (tags.Length > 1) // Get online count for all
+            else if (tags.Length > 1)
             {
                 Result<IEnumerable<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
                 if (!outfits.IsSuccess)
@@ -110,14 +113,19 @@ namespace UVOCBot.Commands
                 }
 
                 List<IEmbedField> embedFields = new();
+                int addedCount = 0;
                 foreach (OutfitOnlineMembers onlineMembers in outfits.Entity)
                 {
                     embedFields.Add(new EmbedField
-                    (
-                        onlineMembers.Name + " | " + onlineMembers.Alias,
-                        onlineMembers.Members.Count.ToString() + " online"
-                    ));
+                        (
+                            onlineMembers.OutfitAlias + " | " + onlineMembers.OutfitName,
+                            onlineMembers.OnlineMembers.Count.ToString() + " online"
+                        ));
+                    addedCount++;
                 }
+
+                if (addedCount < tags.Length)
+                    embedFields.Add(new EmbedField("Others", "0 online"));
 
                 Embed embed = new()
                 {

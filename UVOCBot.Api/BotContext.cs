@@ -26,9 +26,7 @@ namespace UVOCBot.Api
         {
             options.UseMySql(
                 _config.ConnectionString,
-                new MariaDbServerVersion(new Version(_config.DatabaseVersion)),
-                mySqlOptions => mySqlOptions
-                    .CharSetBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.CharSetBehavior.NeverAppend))
+                new MariaDbServerVersion(new Version(_config.DatabaseVersion)))
 #if DEBUG
                     .EnableSensitiveDataLogging()
                     .EnableDetailedErrors();

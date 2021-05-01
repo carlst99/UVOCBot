@@ -115,17 +115,14 @@ namespace UVOCBot
         }
 
         /// <summary>
-        /// Gets the path to the specified file, assuming that it is in our appdata store
+        /// Gets the path to the specified file, assuming that it is in our appdata store.
         /// </summary>
-        /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory</param>
-        /// <remarks>Data is stored in the local appdata</remarks>
-        /// <returns></returns>
+        /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
+        /// <remarks>Data is stored in the local appdata.</remarks>
         public static string GetAppdataFilePath(IFileSystem fileSystem, string? fileName)
         {
             string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            if (fileName is not null)
-                directory = fileSystem.Path.Combine(directory, "UVOCBot");
+            directory = fileSystem.Path.Combine(directory, "UVOCBot");
 
             if (!fileSystem.Directory.Exists(directory))
                 fileSystem.Directory.CreateDirectory(directory);

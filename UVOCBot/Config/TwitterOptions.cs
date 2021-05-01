@@ -2,8 +2,6 @@
 {
     public record TwitterOptions
     {
-        public const string ConfigSectionName = "TwitterOptions";
-
         public string Key { get; init; }
         public string Secret { get; init; }
         public string BearerToken { get; init; }

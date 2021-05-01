@@ -13,6 +13,7 @@ using Remora.Discord.Gateway.Extensions;
 using Remora.Discord.Hosting.Services;
 using Remora.Results;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
@@ -66,16 +67,22 @@ namespace UVOCBot
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
             IFileSystem fileSystem = new FileSystem();
-            ILogger logger = SetupLogging(fileSystem);
+            ILogger? logger = null;
 
             return Host.CreateDefaultBuilder(args)
-                .UseSystemd()
+                .ConfigureServices((c, _) =>
+                {
+                    string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
+                    string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
+                    logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
+                })
                 .UseSerilog(logger)
+                .UseSystemd()
                 .ConfigureServices((c, services) =>
                 {
                     // Setup the configuration bindings
-                    services.Configure<TwitterOptions>(c.Configuration.GetSection(TwitterOptions.ConfigSectionName));
-                    services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
+                    services.Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
+                    services.Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
 
                     //Setup API services
                     services.AddSingleton<ICensusApiService, CensusApiService>()
@@ -129,23 +136,32 @@ namespace UVOCBot
                 return directory;
         }
 
-        private static ILogger SetupLogging(IFileSystem fileSystem)
+        private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
         {
-            Log.Logger = new LoggerConfiguration()
-#if DEBUG
-                .MinimumLevel.Debug()
-#else
-                .MinimumLevel.Information()
-#endif
+            LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
-                .MinimumLevel.Override("UVOCBot.Services.FisuApiService", LogEventLevel.Verbose)
                 .Enrich.FromLogContext()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
+#if DEBUG
+            logConfig.MinimumLevel.Debug();
+#else
+            if (seqIngestionEndpoint is not null)
+            {
+                LoggingLevelSwitch levelSwitch = new();
 
+                logConfig.MinimumLevel.ControlledBy(levelSwitch)
+                     .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
+            }
+            else
+            {
+                logConfig.MinimumLevel.Information()
+                    .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day);
+            }
+#endif
+
+            Log.Logger = logConfig.CreateLogger();
             Log.Information("Appdata stored at {path}", GetAppdataFilePath(fileSystem, null));
 
             return Log.Logger;

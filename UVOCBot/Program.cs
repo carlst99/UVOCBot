@@ -98,7 +98,6 @@ namespace UVOCBot
 
                     // Add Discord-related services
                     services.AddDiscordServices()
-                            .AddSingleton<IPrefixService, PrefixService>()
                             .AddSingleton<MessageResponseHelpers>()
                             .AddSingleton<IExecutionEventService, ExecutionEventService>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix

@@ -24,20 +24,17 @@ namespace UVOCBot.Responders
     {
         private readonly ILogger<ReadyResponder> _logger;
         private readonly DiscordGatewayClient _client;
-        private readonly IPrefixService _prefixService;
         private readonly IDbApiService _dbApi;
         private readonly IHostApplicationLifetime _appLifetime;
 
         public ReadyResponder(
             ILogger<ReadyResponder> logger,
             DiscordGatewayClient client,
-            IPrefixService prefixService,
             IDbApiService dbApi,
             IHostApplicationLifetime appLifetime)
         {
             _logger = logger;
             _client = client;
-            _prefixService = prefixService;
             _dbApi = dbApi;
             _appLifetime = appLifetime;
         }
@@ -47,9 +44,7 @@ namespace UVOCBot.Responders
             BotConstants.UserId = gatewayEvent.User.ID;
 
             if (gatewayEvent.Application.ID.HasValue)
-            BotConstants.ApplicationId = gatewayEvent.Application.ID.Value;
-
-            await _prefixService.SetupAsync(ct).ConfigureAwait(false);
+                BotConstants.ApplicationId = gatewayEvent.Application.ID.Value;
 
             _client.SubmitCommandAsync(
                 new UpdatePresence(

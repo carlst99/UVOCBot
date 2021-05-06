@@ -44,7 +44,7 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 
 UVOCBot has two main components:
 - The bot itself, `UVOCBot`. This is a .NET 5 Worker project, based on the `Microsoft.Extensions.Hosting` framework.
-- A RESTful API that abstracts the MariaDB database, `UVOCBot.Api`. This is built using `ASP.NET Core` and `Entity Framework Core`. This is by and large a data abstraction layer; very little data manipulation occurs here, except for where it would be inefficient for the client to perform non-user dependent actions.
+- A RESTful API that abstracts the MariaDB database, `UVOCBot.Api`. An `ASP.NET Core 5` project utilising `Entity Framework Core`. This is by and large a data abstraction layer; very little data manipulation occurs here, except for where it would be inefficient for the client to perform non-user-dependent actions.
 
 There is also a shared project, `UVOCBot.Core`, which contains models common to both projects.
 
@@ -56,7 +56,7 @@ UVOCBot is built on the following amazing libraries and frameworks:
 - [DaybreakGames.Census](https://github.com/Lampjaw/DaybreakGames.Census)
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
 - [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)
-- [Refit](https://github.com/reactiveui/refit)
+- [RestSharp](https://restsharp.dev)
 - [Remora.Discord](https://github.com/Nihlus/Remora.Discord)
 - [Serilog](https://github.com/serilog/serilog)
 - [System.IO.Abstractions](https://github.com/System-IO-Abstractions/System.IO.Abstractions)

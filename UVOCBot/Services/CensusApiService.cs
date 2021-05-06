@@ -1,5 +1,6 @@
 ﻿using DaybreakGames.Census;
 using DaybreakGames.Census.Operators;
+using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -12,10 +13,12 @@ namespace UVOCBot.Services
 {
     public class CensusApiService : ICensusApiService
     {
+        private readonly ILogger<CensusApiService> _logger;
         private readonly ICensusQueryFactory _queryFactory;
 
-        public CensusApiService(ICensusQueryFactory censusQueryFactory)
+        public CensusApiService(ILogger<CensusApiService> logger, ICensusQueryFactory censusQueryFactory)
         {
+            _logger = logger;
             _queryFactory = censusQueryFactory;
         }
 
@@ -31,6 +34,7 @@ namespace UVOCBot.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to get Census world.");
                 return Result<World>.FromError(ex);
             }
         }
@@ -49,6 +53,7 @@ namespace UVOCBot.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to get online member status for one tag.");
                 return Result<OutfitOnlineMembers>.FromError(ex);
             }
         }
@@ -73,17 +78,8 @@ namespace UVOCBot.Services
         /// <inheritdoc/>
         public async Task<Result<IEnumerable<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default)
         {
-            // https://census.daybreakgames.com/get/ps2/outfit?outfit_id=37562651025751157,37570391403474619&c:show=name,outfit_id,alias&c:join=outfit_member%5Einject_at:members%5Eshow:character_id%5Eouter:0%5Elist:1(character%5Eshow:name.first%5Einject_at:character%5Eouter:0%5Eon:character_id(characters_online_status%5Einject_at:online_status%5Eshow:online_status%5Eouter:0(world%5Eon:online_status%5Eto:world_id%5Eouter:0%5Eshow:world_id%5Einject_at:ignore_this))
-
             CensusQuery query = _queryFactory.Create("outfit");
-
-            string idsToQuery = string.Empty;
-            foreach (ulong id in outfitIds)
-                idsToQuery += id.ToString() + ",";
-            idsToQuery = idsToQuery.TrimEnd(',');
-
-            query.Where("outfit_id").Equals(idsToQuery);
-            query.ShowFields("name", "outfit_id", "alias");
+            query.Where("outfit_id").Equals(string.Join(',', outfitIds));
 
             ConstructOnlineMembersQuery(query);
 
@@ -95,6 +91,7 @@ namespace UVOCBot.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to get online member status for multiple outfit IDs.");
                 return Result<IEnumerable<OutfitOnlineMembers>>.FromError(ex);
             }
         }
@@ -105,10 +102,13 @@ namespace UVOCBot.Services
         /// <param name="preconditions">A query that has pre-prepared the filter parameters on the outfit model.</param>
         private static void ConstructOnlineMembersQuery(CensusQuery preconditions)
         {
+            // https://census.daybreakgames.com/get/ps2/outfit?outfit_id=37562651025751157,37570391403474619&c:show=name,outfit_id,alias&c:join=outfit_member%5Einject_at:members%5Eshow:character_id%5Eouter:1%5Elist:1(character%5Eshow:name.first%5Einject_at:character%5Eouter:0%5Eon:character_id(characters_online_status%5Einject_at:online_status%5Eshow:online_status%5Eouter:0(world%5Eon:online_status%5Eto:world_id%5Eouter:0%5Eshow:world_id%5Einject_at:ignore_this))
+
+            preconditions.ShowFields("name", "outfit_id", "alias");
+
             CensusJoin outfitMemberJoin = preconditions.JoinService("outfit_member");
             outfitMemberJoin.WithInjectAt("members");
             outfitMemberJoin.ShowFields("character_id");
-            outfitMemberJoin.IsOuterJoin(false);
             outfitMemberJoin.IsList(true);
 
             CensusJoin characterJoin = outfitMemberJoin.JoinService("character");

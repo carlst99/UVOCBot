@@ -86,9 +86,6 @@ namespace UVOCBot.Commands
                     return onlineMembers;
                 }
 
-                if (onlineMembers.Entity is null)
-                    return await _responder.RespondWithSuccessAsync(_context, "0 online", CancellationToken).ConfigureAwait(false);
-
                 StringBuilder sb = new();
                 foreach (OutfitOnlineMembers.MemberModel member in onlineMembers.Entity.OnlineMembers.OrderBy(m => m.Character.Name.First))
                     sb.AppendLine(member.Character.Name.First);
@@ -96,7 +93,7 @@ namespace UVOCBot.Commands
                 Embed embed = new()
                 {
                     Author = new EmbedAuthor($"{ onlineMembers.Entity.OutfitAlias } | { onlineMembers.Entity.OutfitName }"),
-                    Title = onlineMembers.Entity.OnlineMembers.Count + " online",
+                    Title = onlineMembers.Entity.OnlineMembers.Count.ToString() + " online",
                     Description = sb.ToString(),
                     Colour = BotConstants.DEFAULT_EMBED_COLOUR
                 };
@@ -113,7 +110,6 @@ namespace UVOCBot.Commands
                 }
 
                 List<IEmbedField> embedFields = new();
-                int addedCount = 0;
                 foreach (OutfitOnlineMembers onlineMembers in outfits.Entity)
                 {
                     embedFields.Add(new EmbedField
@@ -121,11 +117,7 @@ namespace UVOCBot.Commands
                             onlineMembers.OutfitAlias + " | " + onlineMembers.OutfitName,
                             onlineMembers.OnlineMembers.Count.ToString() + " online"
                         ));
-                    addedCount++;
                 }
-
-                if (addedCount < tags.Length)
-                    embedFields.Add(new EmbedField("Others", "0 online"));
 
                 Embed embed = new()
                 {

@@ -24,7 +24,7 @@ namespace UVOCBot.Api.Controllers
         public async Task<ActionResult<IEnumerable<GuildTwitterSettingsDTO>>> GetGuildTwitterSettings([FromQuery] bool filterByEnabled = false)
         {
             if (filterByEnabled)
-                return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).Where(s => s.IsEnabled).ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+                return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).Where(s => s.IsEnabled && s.TwitterUsers.Count > 0).ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
             else
                 return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
         }

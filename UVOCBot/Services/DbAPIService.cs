@@ -31,7 +31,7 @@ namespace UVOCBot.Services
         public async Task<Result<TwitterUserDTO>> GetTwitterUserAsync(long id, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser/{id}", Method.GET);
-            request.AddParameter("id", id);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
 
             return await ExecuteAsync<TwitterUserDTO>(request, ct).ConfigureAwait(false);
         }
@@ -39,7 +39,7 @@ namespace UVOCBot.Services
         public async Task<Result<bool>> TwitterUserExistsAsync(long id, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser/exists/{id}", Method.GET);
-            request.AddParameter("id", id);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
 
             return await ExecuteAsync<bool>(request, ct).ConfigureAwait(false);
         }
@@ -47,7 +47,7 @@ namespace UVOCBot.Services
         public async Task<Result> UpdateTwitterUserAsync(long id, TwitterUserDTO user, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser/{id}", Method.PUT);
-            request.AddParameter("id", id);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
 
             request.AddJsonBody(user);
 
@@ -73,6 +73,7 @@ namespace UVOCBot.Services
 
         #region GuildTwitterSettings
 
+        /// <inheritdoc/>
         public async Task<Result<List<GuildTwitterSettingsDTO>>> ListGuildTwitterSettingsAsync(bool filterByEnabled, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildtwittersettings", Method.GET);

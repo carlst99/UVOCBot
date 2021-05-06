@@ -26,6 +26,12 @@ namespace UVOCBot.Services.Abstractions
 
         #region GuildTwitterSettings
 
+        /// <summary>
+        /// Lists guild twitter settings.
+        /// </summary>
+        /// <param name="filterByEnabled">If true, only returns guilds that have tweet relaying enabled, and are relaying from at least one user.</param>
+        /// <param name="ct">A token with which to cancel any asynchronous operations.</param>
+        /// <returns>A list of <see cref="GuildTwitterSettingsDTO"/> objects.</returns>
         Task<Result<List<GuildTwitterSettingsDTO>>> ListGuildTwitterSettingsAsync(bool filterByEnabled, CancellationToken ct = default);
 
         Task<Result<GuildTwitterSettingsDTO>> GetGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default);

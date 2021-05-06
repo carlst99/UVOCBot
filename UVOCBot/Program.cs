@@ -13,7 +13,6 @@ using Remora.Discord.Gateway.Extensions;
 using Remora.Discord.Hosting.Services;
 using Remora.Results;
 using Serilog;
-using Serilog.Core;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
@@ -27,6 +26,9 @@ using UVOCBot.Responders;
 using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 using UVOCBot.Workers;
+#if RELEASE
+using Serilog.Core;
+#endif
 
 namespace UVOCBot
 {

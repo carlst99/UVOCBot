@@ -1,7 +1,8 @@
 [Unit]
 Description=UVOC Discord bot
 
-Wants=network.target
+Requires=network.target uvocbotapi.service
+After=network.target uvocbotapi.service
 
 [Service]
 Type=notify

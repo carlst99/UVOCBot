@@ -1,5 +1,25 @@
 # Changelog
 
+## Release v0.2.1 - 07/05/2021
+
+This is primarily a servicing release that fixes some bugs, improves internal logic and furthers the UX.
+
+:warning: The license has been changed to the **AGPL-3.0**, in order to comply with the license of *Remora.Discord*.
+
+- The `online` command was added, letting users get the number of online members for a PlanetSide 2 outfit/s.
+
+Technical Notes:
+- Migrated the API services from *Refit* to *RestSharp*.
+- `FisuApiService` now caches population data for five minutes.
+- Add `BotConstants` class, containing values for the bot's Discord App/User IDs and default embed colour.
+- Added support for sending logs to a Seq endpoint.
+- The API route for getting guild twitter settings now only returns settings for guilds that both have relaying enabled and users added to relay from, when filtering by enabled status.
+
+Migration Notes:
+- The database model has changed.
+- `AppSettings.json` has changed.
+- The systemd service file for `UVOCBot` has been changed to require `UVOCBot.Api`, and start after it.
+
 ## Release v0.2.0 - 12/04/2021
 
 - **Slash Commands :tada:** - Everyone hates having to use `help` every five seconds to remember how to use each command. So I removed it, then set it on :fire: for good measure. Now, you can use Discord's new slash commands with UVOCBot! Rejoice!

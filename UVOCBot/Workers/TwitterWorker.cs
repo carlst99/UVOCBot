@@ -11,8 +11,7 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 using UVOCBot.Core.Model;
-using UVOCBot.Model;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 using UVOCBot.Utilities;
 
 namespace UVOCBot.Workers
@@ -22,8 +21,7 @@ namespace UVOCBot.Workers
         private readonly IDiscordRestChannelAPI _discordChannelClient;
         private readonly IDiscordRestGuildAPI _discordGuildClient;
         private readonly ITwitterClient _twitterClient;
-        private readonly IAPIService _dbApi;
-        private readonly ISettingsService _settingsService;
+        private readonly IDbApiService _dbApi;
         private readonly ILogger<TwitterWorker> _logger;
 
         private readonly MaxSizeQueue<long> _previousTweetIds = new(500);
@@ -32,15 +30,13 @@ namespace UVOCBot.Workers
             IDiscordRestChannelAPI discordChannelClient,
             IDiscordRestGuildAPI discordGuildClient,
             ITwitterClient twitterClient,
-            IAPIService dbApi,
-            ISettingsService settingsService,
+            IDbApiService dbApi,
             ILogger<TwitterWorker> logger)
         {
             _discordChannelClient = discordChannelClient;
             _discordGuildClient = discordGuildClient;
             _twitterClient = twitterClient;
             _dbApi = dbApi;
-            _settingsService = settingsService;
             _logger = logger;
         }
 
@@ -48,61 +44,49 @@ namespace UVOCBot.Workers
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Getting tweets");
+                _logger.LogInformation("Getting tweets.");
 
-                Optional<BotSettings> botSettings = await _settingsService.LoadSettings<BotSettings>().ConfigureAwait(false);
-                if (!botSettings.HasValue)
+                Dictionary<long, List<ITweet>> userTweetPairs = new();
+
+                int tweetCount = 0;
+
+                // Get all the guilds that have tweet relaying enabled
+                Result<List<GuildTwitterSettingsDTO>> settingsResult = await _dbApi.ListGuildTwitterSettingsAsync(true, stoppingToken).ConfigureAwait(false);
+                if (!settingsResult.IsSuccess)
                 {
-                    _logger.LogError("Could not load bot settings");
+                    _logger.LogError("Failed to load guild twitter settings: {ex}", settingsResult.Error);
                     return;
                 }
 
-                Dictionary<TwitterUserDTO, List<ITweet>> userTweetPairs = new();
-                DateTimeOffset lastFetch = botSettings.Value.TimeOfLastTweetFetch;
-
-                int tweetCount = 0;
-                int failureCount = 0;
-
-                // Load all of the twitter users we should relay tweets from
-                foreach (GuildTwitterSettingsDTO settings in await _dbApi.GetAllGuildTwitterSettings(true).ConfigureAwait(false))
+                foreach (GuildTwitterSettingsDTO settings in settingsResult.Entity)
                 {
                     foreach (long twitterUserId in settings.TwitterUsers)
                     {
-                        TwitterUserDTO twitterUser = await _dbApi.GetTwitterUser(twitterUserId).ConfigureAwait(false);
-                        if (userTweetPairs.ContainsKey(twitterUser))
+                        // Get tweets from this user if we haven't already
+                        if (!userTweetPairs.ContainsKey(twitterUserId))
                         {
-                            await PostTweetsToChannelAsync(settings, userTweetPairs[twitterUser], stoppingToken).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            Optional<List<ITweet>> userTweets = await GetUserTweetsAsync(twitterUser, lastFetch).ConfigureAwait(false);
-                            if (!userTweets.HasValue)
+                            Result<TwitterUserDTO> dbTwitterUserResult = await _dbApi.GetTwitterUserAsync(twitterUserId, stoppingToken).ConfigureAwait(false);
+                            if (!dbTwitterUserResult.IsSuccess)
                             {
-                                failureCount++;
-                                if (failureCount == 3)
-                                    break;
-
+                                _logger.LogError("Failed to get twitter user from database: {ex}", dbTwitterUserResult.Error);
                                 continue;
-                            } else
-                            {
-                                // We've changed the last fetched tweet ID, so update the database
-                                await _dbApi.UpdateTwitterUser(twitterUserId, twitterUser).ConfigureAwait(false);
                             }
 
-                            tweetCount += userTweets.Value.Count;
-                            userTweetPairs.Add(twitterUser, userTweets.Value);
+                            Result<List<ITweet>> userTweets = await GetUserTweetsAsync(dbTwitterUserResult.Entity, stoppingToken).ConfigureAwait(false);
+                            if (!userTweets.IsSuccess)
+                            {
+                                _logger.LogError("Failed to get tweets: {ex}", userTweets.Error);
+                                continue;
+                            }
 
-                            await PostTweetsToChannelAsync(settings, userTweets.Value, stoppingToken).ConfigureAwait(false);
+                            tweetCount += userTweets.Entity.Count;
+                            userTweetPairs.Add(twitterUserId, userTweets.Entity);
                         }
-                    }
 
-                    if (failureCount == 3)
-                        break;
+                        await PostTweetsToChannelAsync(settings, userTweetPairs[twitterUserId], stoppingToken).ConfigureAwait(false);
+                    }
                 }
 
-                botSettings.Value.TimeOfLastTweetFetch = DateTimeOffset.Now;
-                await _settingsService.SaveSettings(botSettings.Value).ConfigureAwait(false);
-                failureCount = 0;
                 _logger.LogInformation($"Finished getting {tweetCount} tweets");
 
 #if DEBUG
@@ -114,12 +98,12 @@ namespace UVOCBot.Workers
         }
 
         /// <summary>
-        /// Gets tweets from a twitter user made after the specified fetch time
+        /// Gets tweets from a twitter user made after the last tweets we fetched from them.
         /// </summary>
-        /// <param name="user">The twitter user to get tweets from</param>
-        /// <param name="lastFetch">The earliest time to fetch tweets from</param>
+        /// <param name="user">The twitter user to get tweets from.</param>
+        /// <param name="ct">A token with which to cancel any asynchronous operations.</param>
         /// <returns></returns>
-        private async Task<Optional<List<ITweet>>> GetUserTweetsAsync(TwitterUserDTO user, DateTimeOffset lastFetch)
+        private async Task<Result<List<ITweet>>> GetUserTweetsAsync(TwitterUserDTO user, CancellationToken ct)
         {
             GetUserTimelineParameters timelineParameters = new(user.UserId)
             {
@@ -133,15 +117,18 @@ namespace UVOCBot.Workers
             try
             {
                 // TODO: Determine if a twitter user has been deleted
-                tweets = await _twitterClient.Timelines.GetUserTimelineAsync(timelineParameters).ConfigureAwait(false);
+                tweets = await _twitterClient.Timelines.GetUserTimelineAsync(timelineParameters).WithCancellation(ct).ConfigureAwait(false);
             } catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not get user timeline");
-                return Optional<List<ITweet>>.FromNoValue();
+                return Result<List<ITweet>>.FromError(ex);
             }
 
             if (tweets.Length == 0)
-                return Optional<List<ITweet>>.FromNoValue();
+                return Result<List<ITweet>>.FromSuccess(new List<ITweet>());
+
+            // We've changed the last fetched tweet ID, so update the database
+            await _dbApi.UpdateTwitterUserAsync(user.UserId, user, ct).ConfigureAwait(false);
 
             user.LastRelayedTweetId = tweets[0].Id;
             Array.Reverse(tweets);
@@ -149,13 +136,6 @@ namespace UVOCBot.Workers
             List<ITweet> validTweets = new();
             foreach (ITweet tweet in tweets)
             {
-                // TODO: Investigate if we can instead determine posting time by the tweet id. I.e. do the most recent tweets have the highest IDs
-                if (tweet.CreatedAt < lastFetch)
-                    continue;
-                // Following for testing purposes only
-                //if (tweet.CreatedAt < DateTimeOffset.UtcNow.Subtract(new TimeSpan(1, 0, 0, 0)))
-                    //continue;
-
                 // Filter out retweets of tweets that we have already posted
                 long tweetId;
                 if (tweet.IsRetweet)
@@ -169,12 +149,16 @@ namespace UVOCBot.Workers
                     _previousTweetIds.Enqueue(tweetId);
                 }
             }
-            return Optional<List<ITweet>>.FromValue(validTweets);
+
+            return Result<List<ITweet>>.FromSuccess(validTweets);
         }
 
-        private async Task PostTweetsToChannelAsync(GuildTwitterSettingsDTO settings, List<ITweet> tweets, CancellationToken stoppingToken)
+        private async Task PostTweetsToChannelAsync(GuildTwitterSettingsDTO settings, List<ITweet> tweets, CancellationToken ct)
         {
-            Result<IGuild> guild = await _discordGuildClient.GetGuildAsync(new Remora.Discord.Core.Snowflake(settings.GuildId), ct: stoppingToken).ConfigureAwait(false);
+            if (tweets.Count == 0)
+                return;
+
+            Result<IGuild> guild = await _discordGuildClient.GetGuildAsync(new Remora.Discord.Core.Snowflake(settings.GuildId), ct: ct).ConfigureAwait(false);
             if (!guild.IsSuccess)
             {
                 // TODO: Do something if the guild was not found
@@ -187,10 +171,10 @@ namespace UVOCBot.Workers
                 return;
             Remora.Discord.Core.Snowflake channelSnowflake = new((ulong)settings.RelayChannelId);
 
-            Result<IChannel> channel = await _discordChannelClient.GetChannelAsync(channelSnowflake, stoppingToken).ConfigureAwait(false);
+            Result<IChannel> channel = await _discordChannelClient.GetChannelAsync(channelSnowflake, ct).ConfigureAwait(false);
             if (!channel.IsSuccess)
             {
-                Result<IReadOnlyList<IChannel>> channels = await _discordGuildClient.GetGuildChannelsAsync(new Remora.Discord.Core.Snowflake(settings.GuildId), stoppingToken).ConfigureAwait(false);
+                Result<IReadOnlyList<IChannel>> channels = await _discordGuildClient.GetGuildChannelsAsync(new Remora.Discord.Core.Snowflake(settings.GuildId), ct).ConfigureAwait(false);
                 if (!channels.IsSuccess)
                     return;
 
@@ -201,7 +185,7 @@ namespace UVOCBot.Workers
             try
             {
                 foreach (ITweet tweet in tweets)
-                    await _discordChannelClient.CreateMessageAsync(channelSnowflake, content: tweet.Url, ct: stoppingToken).ConfigureAwait(false);
+                    await _discordChannelClient.CreateMessageAsync(channelSnowflake, content: tweet.Url, ct: ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

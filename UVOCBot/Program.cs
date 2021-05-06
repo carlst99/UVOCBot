@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Refit;
 using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
@@ -17,7 +16,6 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO.Abstractions;
 using System.Linq;
 using Tweetinvi;
@@ -26,7 +24,11 @@ using UVOCBot.Commands;
 using UVOCBot.Config;
 using UVOCBot.Responders;
 using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 using UVOCBot.Workers;
+#if RELEASE
+using Serilog.Core;
+#endif
 
 namespace UVOCBot
 {
@@ -46,8 +48,6 @@ namespace UVOCBot
 
     public static class Program
     {
-        public static readonly Color DEFAULT_EMBED_COLOUR = Color.Purple;
-
         public static int Main(string[] args)
         {
             try
@@ -69,23 +69,29 @@ namespace UVOCBot
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
             IFileSystem fileSystem = new FileSystem();
-            ILogger logger = SetupLogging(fileSystem);
+            ILogger? logger = null;
 
             return Host.CreateDefaultBuilder(args)
-                .UseSystemd()
+                .ConfigureServices((c, _) =>
+                {
+                    string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
+                    string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
+                    logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
+                })
                 .UseSerilog(logger)
+                .UseSystemd()
                 .ConfigureServices((c, services) =>
                 {
                     // Setup the configuration bindings
-                    services.Configure<TwitterOptions>(c.Configuration.GetSection(TwitterOptions.ConfigSectionName));
-                    services.Configure<GeneralOptions>(c.Configuration.GetSection(GeneralOptions.ConfigSectionName));
+                    services.Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
+                    services.Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
 
                     //Setup API services
-                    services.AddSingleton((s) => RestService.For<IAPIService>(
-                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.ApiEndpoint));
-                    services.AddSingleton((s) => RestService.For<IFisuApiService>(
-                            s.GetRequiredService<IOptions<GeneralOptions>>().Value.FisuApiEndpoint));
+                    services.AddSingleton<ICensusApiService, CensusApiService>()
+                            .AddSingleton<IDbApiService, DbApiService>()
+                            .AddSingleton<IFisuApiService, FisuApiService>();
 
+                    // Setup other services
                     services.AddSingleton(fileSystem)
                             .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()
@@ -94,9 +100,8 @@ namespace UVOCBot
 
                     // Add Discord-related services
                     services.AddDiscordServices()
-                            .AddSingleton<IPrefixService, PrefixService>()
-                            .AddSingleton<MessageResponseHelpers>()
                             .AddSingleton<IExecutionEventService, ExecutionEventService>()
+                            .AddSingleton<MessageResponseHelpers>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
                     // Setup the Daybreak Census services
@@ -105,23 +110,21 @@ namespace UVOCBot
                         options.CensusServiceId = generalOptions.CensusApiKey);
 
                     services.AddHostedService<DiscordService>()
+                            .AddHostedService<GenericWorker>()
                             .AddHostedService<TwitterWorker>();
-                    //services.AddHostedService<PlanetsideWorker>();
+                            // .AddHostedService<PlanetsideWorker>();
                 });
         }
 
         /// <summary>
-        /// Gets the path to the specified file, assuming that it is in our appdata store
+        /// Gets the path to the specified file, assuming that it is in our appdata store.
         /// </summary>
-        /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory</param>
-        /// <remarks>Data is stored in the local appdata</remarks>
-        /// <returns></returns>
+        /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
+        /// <remarks>Data is stored in the local appdata.</remarks>
         public static string GetAppdataFilePath(IFileSystem fileSystem, string? fileName)
         {
             string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            if (fileName is not null)
-                directory = fileSystem.Path.Combine(directory, "UVOCBot");
+            directory = fileSystem.Path.Combine(directory, "UVOCBot");
 
             if (!fileSystem.Directory.Exists(directory))
                 fileSystem.Directory.CreateDirectory(directory);
@@ -132,22 +135,32 @@ namespace UVOCBot
                 return directory;
         }
 
-        private static ILogger SetupLogging(IFileSystem fileSystem)
+        private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
         {
-            Log.Logger = new LoggerConfiguration()
-#if DEBUG
-                .MinimumLevel.Debug()
-#else
-                .MinimumLevel.Information()
-#endif
+            LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
+#if DEBUG
+            logConfig.MinimumLevel.Debug();
+#else
+            if (seqIngestionEndpoint is not null)
+            {
+                LoggingLevelSwitch levelSwitch = new();
 
+                logConfig.MinimumLevel.ControlledBy(levelSwitch)
+                     .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
+            }
+            else
+            {
+                logConfig.MinimumLevel.Information()
+                    .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day);
+            }
+#endif
+
+            Log.Logger = logConfig.CreateLogger();
             Log.Information("Appdata stored at {path}", GetAppdataFilePath(fileSystem, null));
 
             return Log.Logger;

@@ -19,8 +19,8 @@ namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• **Slash Commands :tada:** - Everyone hates having to use `help` every five seconds to remember how to use each command. So I removed it, then set it on :fire: for good measure. Now, you can use Discord's new slash commands with UVOCBot! Rejoice!" +
-            "\r\n• **Bug Fixes:tm:** - *Cough* (we'll see)";
+        public const string RELEASE_NOTES = "• **Online command** - Check how many members are online from any particular outfit/s. Provide only one outfit tag to additionally see individual online members!" +
+            "\r\n• Bug fixes, UX improvements and plenty of elbow grease applied to internal logic.";
 
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
@@ -98,7 +98,7 @@ namespace UVOCBot.Commands
                 Thumbnail = new EmbedThumbnail(botAvatar, Height: 96, Width: 96),
                 Author = new EmbedAuthor("Written by FalconEye#1153", IconUrl: authorAvatar),
                 Footer = new EmbedFooter($"Version {Assembly.GetEntryAssembly()?.GetName().Version}"),
-                Colour = Program.DEFAULT_EMBED_COLOUR,
+                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
                 Url = "https://github.com/carlst99/UVOCBot",
                 Fields = new List<IEmbedField>
                 {

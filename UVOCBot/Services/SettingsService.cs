@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Model;
+using UVOCBot.Services.Abstractions;
 using UVOCBot.Utilities;
 
 namespace UVOCBot.Services

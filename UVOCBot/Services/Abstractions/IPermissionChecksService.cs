@@ -4,7 +4,7 @@ using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Services
+namespace UVOCBot.Services.Abstractions
 {
     public interface IPermissionChecksService
     {

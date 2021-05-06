@@ -21,6 +21,6 @@ namespace UVOCBot.Api.Model
         /// <summary>
         /// Gets or sets the prefix used to access bot commands
         /// </summary>
-        public string Prefix { get; set; }
+        public string? Prefix { get; set; }
     }
 }

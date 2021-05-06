@@ -98,8 +98,8 @@ namespace UVOCBot
 
                     // Add Discord-related services
                     services.AddDiscordServices()
-                            .AddSingleton<MessageResponseHelpers>()
                             .AddSingleton<IExecutionEventService, ExecutionEventService>()
+                            .AddSingleton<MessageResponseHelpers>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
                     // Setup the Daybreak Census services
@@ -108,8 +108,9 @@ namespace UVOCBot
                         options.CensusServiceId = generalOptions.CensusApiKey);
 
                     services.AddHostedService<DiscordService>()
+                            .AddHostedService<GenericWorker>()
                             .AddHostedService<TwitterWorker>();
-                    //services.AddHostedService<PlanetsideWorker>();
+                            // .AddHostedService<PlanetsideWorker>();
                 });
         }
 

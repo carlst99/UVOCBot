@@ -30,6 +30,11 @@ namespace UVOCBot.Config
         public string CommandPrefix { get; init; }
 
         /// <summary>
+        /// The text to show in the custom status area of the bot profile. Will always be prefixed by the 'Playing' operator.
+        /// </summary>
+        public string DiscordPresence { get; init; }
+
+        /// <summary>
         /// Gets or sets the ID of the guilds used for debugging slash commands.
         /// </summary>
         public List<ulong> DebugGuildIds { get; init; }

@@ -8,7 +8,7 @@ namespace UVOCBot.Services.Abstractions
     {
         string? GetPrefix(ulong guildId);
         Task<Result> RemovePrefixAsync(ulong guildId, CancellationToken ct = default);
-        Task<Result> SetupAsync(CancellationToken ct = default);
+        Task<Result> InitialiseAsync(CancellationToken ct = default);
         Task<Result> UpdatePrefixAsync(ulong guildId, string newPrefix, CancellationToken ct = default);
     }
 }

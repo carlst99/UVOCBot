@@ -38,7 +38,7 @@ namespace UVOCBot.Workers
         {
             await _censusClient.ConnectAsync().ConfigureAwait(false);
 
-            while (true)
+            while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(300000, stoppingToken).ConfigureAwait(false); // Work every 5min
             }

@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using Remora.Results;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
@@ -17,8 +15,6 @@ namespace UVOCBot.Services
         private readonly GeneralOptions _generalOptions;
         private readonly Dictionary<ulong, string> _guildPrefixPairs;
 
-        public bool IsSetup { get; protected set; }
-
         public PrefixService(IDbApiService dbApi, IOptions<GeneralOptions> generalOptions)
         {
             _dbApi = dbApi;
@@ -28,9 +24,6 @@ namespace UVOCBot.Services
 
         public string? GetPrefix(ulong guildId)
         {
-            if (!IsSetup)
-                throw new InvalidOperationException("Please call SetupAsync() before using the " + nameof(PrefixService));
-
             if (_guildPrefixPairs.ContainsKey(guildId))
                 return _guildPrefixPairs[guildId];
             else
@@ -39,39 +32,31 @@ namespace UVOCBot.Services
 
         public async Task<Result> RemovePrefixAsync(ulong guildId, CancellationToken ct = default)
         {
-            if (!IsSetup)
-                throw new InvalidOperationException("Please call SetupAsync() before using the " + nameof(PrefixService));
-
             _guildPrefixPairs.Remove(guildId);
             return await UpdateDbPrefix(guildId, null, ct).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Preloads custom prefixes set by any guilds
+        /// Preloads custom prefixes set by any guilds.
         /// </summary>
-        /// <returns></returns>
-        public async Task<Result> SetupAsync(CancellationToken ct = default)
+        /// <returns>A result indicating if the operation was successful.</returns>
+        public async Task<Result> InitialiseAsync(CancellationToken ct = default)
         {
             Result<List<GuildSettingsDTO>> guildSettings = await _dbApi.ListGuildSettingsAsync(true, ct).ConfigureAwait(false);
             if (!guildSettings.IsSuccess)
                 return Result.FromError(guildSettings);
 
-            foreach (GuildSettingsDTO dto in guildSettings.Entity.Where(s => s.Prefix is not null))
+            foreach (GuildSettingsDTO dto in guildSettings.Entity)
             {
-#pragma warning disable CS8604 // Possible null reference argument.
-                _guildPrefixPairs.Add(dto.GuildId, dto.Prefix);
-#pragma warning restore CS8604 // Possible null reference argument.
+                if (dto.Prefix is not null && !_guildPrefixPairs.ContainsKey(dto.GuildId))
+                    _guildPrefixPairs.Add(dto.GuildId, dto.Prefix);
             }
 
-            IsSetup = true;
             return Result.FromSuccess();
         }
 
         public async Task<Result> UpdatePrefixAsync(ulong guildId, string newPrefix, CancellationToken ct = default)
         {
-            if (!IsSetup)
-                throw new InvalidOperationException("Please call SetupAsync() before using the " + nameof(PrefixService));
-
             _guildPrefixPairs[guildId] = newPrefix;
             return await UpdateDbPrefix(guildId, newPrefix, ct).ConfigureAwait(false);
         }

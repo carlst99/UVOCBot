@@ -5,9 +5,6 @@ using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Services.Abstractions;
 

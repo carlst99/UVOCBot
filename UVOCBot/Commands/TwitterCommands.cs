@@ -60,13 +60,18 @@ namespace UVOCBot.Commands
 
             Result<UserV2Response> user = await GetTwitterUserByUsernameAsync(username).ConfigureAwait(false);
             if (!user.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Could not find that user.", CancellationToken).ConfigureAwait(false);
+                _logger.LogError("Could not get twitter user to add: " + user.Error.Message);
                 return user;
+            }
 
             // Find or create the guild twitter settings record
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                _logger.LogError("Could not get guild twitter settings while adding twitter user: " + settings.Error.Message);
                 return settings;
             }
 
@@ -75,11 +80,20 @@ namespace UVOCBot.Commands
             if (!twitterUser.IsSuccess)
             {
                 if (twitterUser.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
                     twitterUser = await _dbApi.CreateTwitterUserAsync(new TwitterUserDTO(long.Parse(user.Entity.User.Id)), CancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                    _logger.LogError("Could not get twitter user from database while adding: " + twitterUser.Error.Message);
+                    return twitterUser;
+                }
 
                 if (!twitterUser.IsSuccess)
                 {
                     await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                    _logger.LogError("Could not add twitter user to database: " + twitterUser.Error.Message);
                     return twitterUser;
                 }
             }
@@ -90,6 +104,7 @@ namespace UVOCBot.Commands
                 if (!linkCreationResult.IsSuccess)
                 {
                     await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                    _logger.LogError("Could not create twitter user/guild link: " + linkCreationResult.Error.Message);
                     return linkCreationResult;
                 }
             }
@@ -111,11 +126,14 @@ namespace UVOCBot.Commands
         {
             // Check that the username conforms to Twitter's standards
             if (!Regex.IsMatch(username, TWITTER_USERNAME_REGEX))
-                return await _responder.RespondWithErrorAsync(_context, "That user doesn't exist!", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync(_context, "That's an invalid username!", CancellationToken).ConfigureAwait(false);
 
             Result<UserV2Response> user = await GetTwitterUserByUsernameAsync(username).ConfigureAwait(false);
             if (!user.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Could not find that user.", CancellationToken).ConfigureAwait(false);
                 return user;
+            }
 
             long twitterUserId = long.Parse(user.Entity.User.Id);
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);

@@ -53,6 +53,16 @@ namespace UVOCBot.Commands
             return await RespondWithEmbedAsync(context, embed, ct, allowedMentions).ConfigureAwait(false);
         }
 
+        public async Task<Result<IMessage>> RespondWithUserErrorAsync(ICommandContext context, string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
+        {
+            Embed embed = new()
+            {
+                Colour = Color.Red,
+                Description = content,
+            };
+            return await RespondWithEmbedAsync(context, embed, ct, allowedMentions).ConfigureAwait(false);
+        }
+
         public async Task<Result<IMessage>> RespondWithErrorAsync(ICommandContext context, string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             Embed embed = new()

@@ -57,6 +57,7 @@ namespace UVOCBot.Services
         public async Task<Result<TwitterUserDTO>> CreateTwitterUserAsync(TwitterUserDTO user, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser", Method.POST);
+            request.AddJsonBody(user);
 
             return await ExecuteAsync<TwitterUserDTO>(request, ct).ConfigureAwait(false);
         }

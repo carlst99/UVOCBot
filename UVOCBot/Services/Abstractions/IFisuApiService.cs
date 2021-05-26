@@ -1,7 +1,7 @@
 ﻿using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Model.Planetside;
+using UVOCBot.Model.Census;
 
 namespace UVOCBot.Services.Abstractions
 {

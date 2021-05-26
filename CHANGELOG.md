@@ -1,5 +1,15 @@
 # Changelog
 
+## Release v0.2.2 - 27/05/2021
+
+- Added the `map` command! Quickly grab an image of any of PlanetSide 2's continent maps.
+- Fixed a bug where a twitter user could not be added to the relaying system.
+
+Technical Notes:
+- Namespace `UVOCBot.Models.Planetside` -> `UVOCBot.Models.Census`.
+- Updated dependencies.
+- Fixed last tweet ID not being saved.
+
 ## Release v0.2.1 - 07/05/2021
 
 This is primarily a servicing release that fixes some bugs, improves internal logic and furthers the UX.

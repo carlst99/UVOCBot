@@ -19,8 +19,8 @@ namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• **Online command** - Check how many members are online from any particular outfit/s. Provide only one outfit tag to additionally see individual online members!" +
-            "\r\n• Bug fixes, UX improvements and plenty of elbow grease applied to internal logic.";
+        public const string RELEASE_NOTES = "• **Map command** - Quickly get maps for each continent." +
+            "\r\n• Fix issues with tweet relaying.";
 
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;

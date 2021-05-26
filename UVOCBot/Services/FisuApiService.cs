@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
-using UVOCBot.Model.Planetside;
+using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services

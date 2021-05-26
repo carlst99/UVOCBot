@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Model.Planetside;
+using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services

@@ -72,15 +72,19 @@ namespace UVOCBot.Workers
                                 continue;
                             }
 
-                            Result<List<ITweet>> userTweets = await GetUserTweetsAsync(dbTwitterUserResult.Entity, stoppingToken).ConfigureAwait(false);
-                            if (!userTweets.IsSuccess)
+                            List<ITweet> userTweets;
+                            try
                             {
-                                _logger.LogError("Failed to get tweets: {ex}", userTweets.Error);
+                                userTweets = await GetUserTweetsAsync(dbTwitterUserResult.Entity, stoppingToken).ConfigureAwait(false);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to get tweets: {ex}");
                                 continue;
                             }
 
-                            tweetCount += userTweets.Entity.Count;
-                            userTweetPairs.Add(twitterUserId, userTweets.Entity);
+                            tweetCount += userTweets.Count;
+                            userTweetPairs.Add(twitterUserId, userTweets);
                         }
 
                         await PostTweetsToChannelAsync(settings, userTweetPairs[twitterUserId], stoppingToken).ConfigureAwait(false);
@@ -103,7 +107,7 @@ namespace UVOCBot.Workers
         /// <param name="user">The twitter user to get tweets from.</param>
         /// <param name="ct">A token with which to cancel any asynchronous operations.</param>
         /// <returns></returns>
-        private async Task<Result<List<ITweet>>> GetUserTweetsAsync(TwitterUserDTO user, CancellationToken ct)
+        private async Task<List<ITweet>> GetUserTweetsAsync(TwitterUserDTO user, CancellationToken ct)
         {
             GetUserTimelineParameters timelineParameters = new(user.UserId)
             {
@@ -113,7 +117,7 @@ namespace UVOCBot.Workers
                 SinceId = user.LastRelayedTweetId
             };
 
-            ITweet[] tweets;
+            ITweet[]? tweets = null;
             try
             {
                 // TODO: Determine if a twitter user has been deleted
@@ -121,17 +125,14 @@ namespace UVOCBot.Workers
             } catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not get user timeline");
-                return Result<List<ITweet>>.FromError(ex);
             }
 
-            if (tweets.Length == 0)
-                return Result<List<ITweet>>.FromSuccess(new List<ITweet>());
+            if (tweets is null || tweets.Length == 0)
+                return new List<ITweet>();
 
             // We've changed the last fetched tweet ID, so update the database
-            await _dbApi.UpdateTwitterUserAsync(user.UserId, user, ct).ConfigureAwait(false);
-
             user.LastRelayedTweetId = tweets[0].Id;
-            Array.Reverse(tweets);
+            await _dbApi.UpdateTwitterUserAsync(user.UserId, user, ct).ConfigureAwait(false);
 
             List<ITweet> validTweets = new();
             foreach (ITweet tweet in tweets)
@@ -150,7 +151,8 @@ namespace UVOCBot.Workers
                 }
             }
 
-            return Result<List<ITweet>>.FromSuccess(validTweets);
+            validTweets.Sort((x, y) => x.CreatedAt.CompareTo(y.CreatedAt));
+            return validTweets;
         }
 
         private async Task PostTweetsToChannelAsync(GuildTwitterSettingsDTO settings, List<ITweet> tweets, CancellationToken ct)

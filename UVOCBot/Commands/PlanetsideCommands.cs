@@ -5,15 +5,18 @@ using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core.Model;
-using UVOCBot.Model.Planetside;
+using UVOCBot.Model;
+using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -129,6 +132,26 @@ namespace UVOCBot.Commands
             }
 
             return Result.FromSuccess();
+        }
+
+        [Command("map")]
+        [Description("Gets a PlanetSide 2 continent map.")]
+        public async Task<IResult> MapCommand(TileMap map)
+        {
+            string mapFileName = map.ToString() + ".png";
+            string mapFilePath = Path.Combine("Assets", "PS2Maps", mapFileName);
+
+            Embed embed = new()
+            {
+                Title = map.ToString(),
+                Author = new EmbedAuthor("Full-res maps here", "https://github.com/cooltrain7/Planetside-2-API-Tracker/tree/master/Maps"),
+                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
+                Footer = new EmbedFooter("Last updated 27/05/2021"),
+                Image = new EmbedImage("attachment://" + mapFileName),
+                Type = EmbedType.Image,
+            };
+
+            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken, new FileData(mapFileName, File.OpenRead(mapFilePath))).ConfigureAwait(false);
         }
 
         [Command("default-server")]

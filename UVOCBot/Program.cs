@@ -1,3 +1,5 @@
+using DbgCensus.Rest;
+using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -85,9 +87,11 @@ namespace UVOCBot
                     // Setup the configuration bindings
                     services.Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
                     services.Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
+                    services.Configure<CensusQueryOptions>(c.Configuration.GetSection(nameof(CensusQueryOptions)));
 
                     //Setup API services
-                    services.AddSingleton<ICensusApiService, CensusApiService>()
+                    services.AddCensusRestServices()
+                            .AddSingleton<ICensusApiService, CensusApiService>()
                             .AddSingleton<IDbApiService, DbApiService>()
                             .AddSingleton<IFisuApiService, FisuApiService>();
 
@@ -104,15 +108,9 @@ namespace UVOCBot
                             .AddSingleton<MessageResponseHelpers>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
-                    // Setup the Daybreak Census services
-                    GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
-                    services.AddCensusServices(options =>
-                        options.CensusServiceId = generalOptions.CensusApiKey);
-
                     services.AddHostedService<DiscordService>()
                             .AddHostedService<GenericWorker>()
                             .AddHostedService<TwitterWorker>();
-                            // .AddHostedService<PlanetsideWorker>();
                 });
         }
 

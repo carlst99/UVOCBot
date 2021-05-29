@@ -105,7 +105,7 @@ namespace UVOCBot.Commands
             }
             else if (tags.Length > 1)
             {
-                Result<IEnumerable<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
+                Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
                 if (!outfits.IsSuccess)
                 {
                     await _responder.RespondWithErrorAsync(_context, "The census query failed. Please try again later.", CancellationToken).ConfigureAwait(false);

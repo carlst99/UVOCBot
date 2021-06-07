@@ -141,12 +141,14 @@ namespace UVOCBot.Commands
             string mapFileName = map.ToString() + ".jpg";
             string mapFilePath = Path.Combine("Assets", "PS2Maps", mapFileName);
 
+            DateTime mapLastUpdated = File.GetCreationTimeUtc(mapFilePath);
+
             Embed embed = new()
             {
                 Title = map.ToString(),
                 Author = new EmbedAuthor("Full-res maps here", "https://github.com/cooltrain7/Planetside-2-API-Tracker/tree/master/Maps"),
                 Colour = BotConstants.DEFAULT_EMBED_COLOUR,
-                Footer = new EmbedFooter("Last updated 27/05/2021"),
+                Footer = new EmbedFooter("Map last updated " + mapLastUpdated.ToShortDateString()),
                 Image = new EmbedImage("attachment://" + mapFileName),
                 Type = EmbedType.Image,
             };

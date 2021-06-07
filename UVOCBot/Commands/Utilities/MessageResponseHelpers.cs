@@ -86,7 +86,7 @@ namespace UVOCBot.Commands
                 ct: ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<IMessage>> RespondToMessageAsync(ICommandContext context, CancellationToken ct, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IEmbed> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default)
+        public async Task<Result<IMessage>> RespondToMessageAsync(ICommandContext context, CancellationToken ct, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IEmbed> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default, Optional<IReadOnlyList<IMessageComponent>> components = default)
         {
             return await _channelAPI.CreateMessageAsync(
                 context.ChannelID,
@@ -97,6 +97,7 @@ namespace UVOCBot.Commands
                 embed,
                 allowedMentions,
                 messageReference,
+                components,
                 ct).ConfigureAwait(false);
         }
     }

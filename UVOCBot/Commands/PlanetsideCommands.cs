@@ -138,7 +138,7 @@ namespace UVOCBot.Commands
         [Description("Gets a PlanetSide 2 continent map.")]
         public async Task<IResult> MapCommand(TileMap map)
         {
-            string mapFileName = map.ToString() + ".png";
+            string mapFileName = map.ToString() + ".jpg";
             string mapFilePath = Path.Combine("Assets", "PS2Maps", mapFileName);
 
             Embed embed = new()

@@ -53,7 +53,7 @@ There is also a shared project, `UVOCBot.Core`, which contains models common to 
 UVOCBot is built on the following amazing libraries and frameworks:
 
 - [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/)
-- [DaybreakGames.Census](https://github.com/Lampjaw/DaybreakGames.Census)
+- [DbgCensus](https://github.com/carlst99/DbgCensus)
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
 - [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)
 - [RestSharp](https://restsharp.dev)

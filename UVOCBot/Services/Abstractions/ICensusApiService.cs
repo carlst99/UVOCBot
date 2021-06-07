@@ -30,7 +30,7 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="outfitTags">The case-insensitive tags of the outfit.</param>
         /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
         /// <returns></returns>
-        Task<Result<IEnumerable<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default);
+        Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default);
 
         /// <summary>
         /// Gets the online members of a number of outfit.
@@ -38,6 +38,6 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="outfitIds">The IDs of the outfits.</param>
         /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
         /// <returns></returns>
-        Task<Result<IEnumerable<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default);
+        Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default);
     }
 }

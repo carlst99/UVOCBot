@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace UVOCBot.Model.Census
@@ -15,7 +14,6 @@ namespace UVOCBot.Model.Census
                 public record OnlineStatusModel
                 {
                     [JsonPropertyName("online_status")]
-                    [JsonProperty("online_status")]
                     public bool IsOnline { get; init; }
                 }
 
@@ -41,15 +39,12 @@ namespace UVOCBot.Model.Census
         public long OutfitId { get; init; }
 
         [JsonPropertyName("name")]
-        [JsonProperty("name")]
         public string OutfitName { get; init; }
 
         [JsonPropertyName("alias")]
-        [JsonProperty("alias")]
         public string OutfitAlias { get; init; }
 
         [JsonPropertyName("members")]
-        [JsonProperty("members")]
         public IReadOnlyList<MemberModel> OnlineMembers { get; init; }
 
         public OutfitOnlineMembers()

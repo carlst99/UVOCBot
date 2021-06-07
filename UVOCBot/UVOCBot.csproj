@@ -18,13 +18,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DaybreakGames.Census" Version="3.1.0" />
+    <PackageReference Include="DbgCensus.Rest" Version="1.0.0-beta.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
-    <PackageReference Include="Remora.Discord" Version="3.0.31" />
+    <PackageReference Include="Remora.Discord" Version="3.0.32" />
     <PackageReference Include="Remora.Discord.Caching" Version="4.0.0" />
-    <PackageReference Include="Remora.Discord.Commands" Version="3.10.7" />
+    <PackageReference Include="Remora.Discord.Commands" Version="3.10.8" />
     <PackageReference Include="RestSharp" Version="106.11.7" />
     <PackageReference Include="RestSharp.Serializers.SystemTextJson" Version="106.11.7" />
     <PackageReference Include="Serilog" Version="2.10.0" />

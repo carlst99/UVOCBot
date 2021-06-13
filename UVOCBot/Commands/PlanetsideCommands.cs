@@ -41,7 +41,7 @@ namespace UVOCBot.Commands
         [Command("population")]
         [Description("Gets the population of a PlanetSide server.")]
         public async Task<IResult> GetServerPopulationCommandAsync(
-            [Description("Set your default server with `default-server`.")] WorldType server = 0)
+            [Description("Set your default server with `/default-server`.")] WorldType server = 0)
         {
             if (server == 0)
             {
@@ -59,7 +59,7 @@ namespace UVOCBot.Commands
                 {
                     return await _responder.RespondWithErrorAsync(
                         _context,
-                        $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("default-server")} command.",
+                        $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         ct: CancellationToken).ConfigureAwait(false);
                 }
                 else
@@ -204,7 +204,7 @@ namespace UVOCBot.Commands
                 Description = await GetWorldStatusString(world).ConfigureAwait(false),
                 Title = world.ToString() + " - " + population.Total.ToString(),
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
-                Fields=  new List<EmbedField>
+                Fields =  new List<EmbedField>
                 {
                     new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", GetEmbedPopulationBar(population.VS, population.Total)),
                     new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", GetEmbedPopulationBar(population.NC, population.Total)),

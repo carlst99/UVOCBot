@@ -43,8 +43,14 @@ namespace UVOCBot.Api.Model
         /// </summary>
         public string SerialisedDefaultRoles { get; set; }
 
-        public GuildWelcomeMessage()
+        /// <summary>
+        /// Gets or sets the tag to use for making nickname guesses.
+        /// </summary>
+        public ulong OutfitId { get; init; }
+
+        public GuildWelcomeMessage(ulong guildId)
         {
+            GuildId = guildId;
             Message = "Welcome <name>!";
             SerialisedAlternateRoles = string.Empty;
             SerialisedDefaultRoles = string.Empty;
@@ -57,18 +63,19 @@ namespace UVOCBot.Api.Model
                 DefaultRoles = SerialisedRolesToList(SerialisedDefaultRoles),
                 DoIngameNameGuess = DoIngameNameGuess,
                 IsEnabled = IsEnabled,
-                Message = Message
+                Message = Message,
+                OutfitId = OutfitId
             };
 
         public static GuildWelcomeMessage FromDto(GuildWelcomeMessageDto dto)
-            => new()
+            => new(dto.GuildId)
             {
-                GuildId = dto.GuildId,
                 DoIngameNameGuess = dto.DoIngameNameGuess,
                 IsEnabled = dto.IsEnabled,
                 Message = dto.Message,
-                SerialisedAlternateRoles = string.Join(ROLE_SPLIT_CHAR, dto.AlternateRoles),
-                SerialisedDefaultRoles = string.Join(ROLE_SPLIT_CHAR, dto.DefaultRoles)
+                SerialisedAlternateRoles = SerialiseRolesList(dto.AlternateRoles),
+                SerialisedDefaultRoles = SerialiseRolesList(dto.DefaultRoles),
+                OutfitId = dto.OutfitId
             };
 
         private static IReadOnlyList<ulong> SerialisedRolesToList(string serialisedRoles)
@@ -80,5 +87,7 @@ namespace UVOCBot.Api.Model
 
             return roles.AsReadOnly();
         }
+
+        private static string SerialiseRolesList(IEnumerable<ulong> roles) => string.Join(ROLE_SPLIT_CHAR, roles);
     }
 }

@@ -111,12 +111,19 @@ namespace UVOCBot.Services
             try
             {
                 List<NewOutfitMember> newMembers = await _censusApi.GetNewOutfitMembersAsync(outfitId, 10, ct).ConfigureAwait(false);
+                newMembers.Sort((NewOutfitMember x, NewOutfitMember y) => y.MemberSince.CompareTo(x.MemberSince));
 
-                foreach (NewOutfitMember m in newMembers)
+                for (int i = 0; i < newMembers.Count; i++)
                 {
+                    NewOutfitMember m = newMembers[i];
+
                     int matchRatio = Fuzz.PartialRatio(m.CharacterName.Name.First, username);
                     if (matchRatio > minMatchRatio)
+                    {
                         nicknameGuesses.Add(new Tuple<string, int>(m.CharacterName.Name.First, matchRatio));
+                        newMembers.RemoveAt(i);
+                        i--;
+                    }
                 }
 
                 nicknameGuesses.Sort((Tuple<string, int> x, Tuple<string, int> y) => y.Item2.CompareTo(x.Item2));

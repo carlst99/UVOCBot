@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UVOCBot.Api;
 
-namespace UVOCBot.Migrations
+namespace UVOCBot.Api.Migrations
 {
     [DbContext(typeof(DiscordContext))]
-    partial class BotContextModelSnapshot : ModelSnapshot
+    [Migration("20210614204003_WelcomeMessages")]
+    partial class WelcomeMessages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

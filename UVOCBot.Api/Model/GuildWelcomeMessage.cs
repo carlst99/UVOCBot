@@ -71,6 +71,8 @@ namespace UVOCBot.Api.Model
             => new(GuildId)
             {
                 AlternateRoles = SerialisedRolesToList(SerialisedAlternateRoles),
+                AlternateRoleLabel = AlternateRoleLabel,
+                ChannelId = ChannelId,
                 DefaultRoles = SerialisedRolesToList(SerialisedDefaultRoles),
                 DoIngameNameGuess = DoIngameNameGuess,
                 IsEnabled = IsEnabled,
@@ -81,6 +83,8 @@ namespace UVOCBot.Api.Model
         public static GuildWelcomeMessage FromDto(GuildWelcomeMessageDto dto)
             => new(dto.GuildId)
             {
+                AlternateRoleLabel = dto.AlternateRoleLabel,
+                ChannelId = dto.ChannelId,
                 DoIngameNameGuess = dto.DoIngameNameGuess,
                 IsEnabled = dto.IsEnabled,
                 Message = dto.Message,

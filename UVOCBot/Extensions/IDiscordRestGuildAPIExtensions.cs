@@ -15,10 +15,10 @@ namespace Remora.Discord.API.Abstractions.Rest
         private const int MAX_MEMBER_PAGE_SIZE = 1000;
 
         /// <summary>
-        /// Gets all the member of a guild
+        /// Gets all the members of a guild.
         /// </summary>
         /// <param name="guildApi"></param>
-        /// <param name="guildID">The guild to list the members of</param>
+        /// <param name="guildID">The guild to list the members of.</param>
         /// <param name="ct"></param>
         /// <returns></returns>
         public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(
@@ -31,11 +31,11 @@ namespace Remora.Discord.API.Abstractions.Rest
         }
 
         /// <summary>
-        /// Gets all the member of a guild
+        /// Gets all the members of a guild.
         /// </summary>
         /// <param name="guildApi"></param>
-        /// /// <param name="guildID">The guild to list the members of</param>
-        /// <param name="predicate">A function to test each element for a condition</param>
+        /// <param name="guildID">The guild to list the members of.</param>
+        /// <param name="predicate">A function to test each element for a condition.</param>
         /// <param name="ct"></param>
         /// <returns></returns>
         public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(

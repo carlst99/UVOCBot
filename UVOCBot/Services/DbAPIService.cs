@@ -315,20 +315,20 @@ namespace UVOCBot.Services
             return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto settings, CancellationToken ct = default)
+        public async Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.PUT);
             request.AddParameter("id", id, ParameterType.UrlSegment);
 
-            request.AddJsonBody(settings);
+            request.AddJsonBody(welcomeMessage);
 
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<GuildWelcomeMessageDto>> CreateGuildSettingsAsync(GuildWelcomeMessageDto settings, CancellationToken ct = default)
+        public async Task<Result<GuildWelcomeMessageDto>> CreateGuildWelcomeMessageAsync(GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildwelcomemessage", Method.POST);
-            request.AddJsonBody(settings);
+            request.AddJsonBody(welcomeMessage);
 
             return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
         }

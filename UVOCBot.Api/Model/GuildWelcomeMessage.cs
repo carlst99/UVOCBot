@@ -18,6 +18,16 @@ namespace UVOCBot.Api.Model
         public ulong GuildId { get; set; }
 
         /// <summary>
+        /// Gets or sets the label that is shown on the button to assign the alternate roles.
+        /// </summary>
+        public string AlternateRoleLabel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the channel in which to send the welcome message.
+        /// </summary>
+        public ulong ChannelId { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating if an attempt will be made to provide nickname options, based off the last few in-game joins.
         /// </summary>
         public bool DoIngameNameGuess { get; set; }
@@ -46,10 +56,11 @@ namespace UVOCBot.Api.Model
         /// <summary>
         /// Gets or sets the tag to use for making nickname guesses.
         /// </summary>
-        public ulong OutfitId { get; init; }
+        public ulong OutfitId { get; set; }
 
         public GuildWelcomeMessage(ulong guildId)
         {
+            AlternateRoleLabel = string.Empty;
             GuildId = guildId;
             Message = "Welcome <name>!";
             SerialisedAlternateRoles = string.Empty;

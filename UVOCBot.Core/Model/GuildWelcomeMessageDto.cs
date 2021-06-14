@@ -11,6 +11,16 @@ namespace UVOCBot.Core.Model
         public IReadOnlyList<ulong> AlternateRoles { get; init; }
 
         /// <summary>
+        /// Gets the label that is shown on the button to assign the alternate roles.
+        /// </summary>
+        public string AlternateRoleLabel { get; init; }
+
+        /// <summary>
+        /// Gets the channel in which to send the welcome message.
+        /// </summary>
+        public ulong ChannelId { get; init; }
+
+        /// <summary>
         /// Gets the roles to assign the user by default.
         /// </summary>
         public IReadOnlyList<ulong> DefaultRoles { get; init; }
@@ -40,9 +50,15 @@ namespace UVOCBot.Core.Model
         /// </summary>
         public ulong OutfitId { get; init; }
 
+        public GuildWelcomeMessageDto()
+            : this(ulong.MinValue)
+        {
+        }
+
         public GuildWelcomeMessageDto(ulong guildId)
         {
             AlternateRoles = new List<ulong>();
+            AlternateRoleLabel = string.Empty;
             DefaultRoles = new List<ulong>();
             GuildId = guildId;
             Message = "Welcome <name>!";

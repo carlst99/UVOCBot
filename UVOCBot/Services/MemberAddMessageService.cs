@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.API.Objects;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
@@ -22,6 +23,7 @@ namespace UVOCBot.Services
         private readonly ILogger<MemberAddMessageService> _logger;
         private readonly ICensusApiService _censusApi;
         private readonly IDbApiService _dbApi;
+        private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
 
         private IReadOnlyList<IRole>? _guildRoles;
@@ -30,11 +32,13 @@ namespace UVOCBot.Services
             ILogger<MemberAddMessageService> logger,
             ICensusApiService censusApi,
             IDbApiService dbApi,
+            IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi)
         {
             _logger = logger;
             _censusApi = censusApi;
             _dbApi = dbApi;
+            _channelApi = channelApi;
             _guildApi = guildApi;
         }
 
@@ -54,14 +58,48 @@ namespace UVOCBot.Services
             if (!welcomeMessage.IsEnabled)
                 return Result.FromSuccess();
 
+            // Add the alternate roles button
+            List<ButtonComponent> messageButtons = new();
+            if (welcomeMessage.AlternateRoles.Count > 0 && !string.IsNullOrEmpty(welcomeMessage.AlternateRoleLabel))
+            {
+                messageButtons.Add(new ButtonComponent(
+                    ButtonComponentStyle.Danger,
+                    welcomeMessage.AlternateRoleLabel,
+                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageSetAlternate, gatewayEvent.User.Value.ID.Value.ToString())));
+            }
+
             // Assign default roles
             await AssignRoles(gatewayEvent.GuildID, gatewayEvent.User.Value.ID, welcomeMessage.DefaultRoles, ct).ConfigureAwait(false);
 
+            // Make some nickname guesses
             IEnumerable<string> nicknameGuesses = new List<string>();
             if (welcomeMessage.DoIngameNameGuess)
                 nicknameGuesses = await DoFuzzyNicknameGuess(gatewayEvent.User.Value.Username, welcomeMessage.OutfitId, ct).ConfigureAwait(false);
 
+            foreach (string nickname in nicknameGuesses)
+            {
+                messageButtons.Add(new ButtonComponent(
+                    ButtonComponentStyle.Primary,
+                    "My PlanetSide 2 character is: " + nickname,
+                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, gatewayEvent.User.Value.ID.Value.ToString())));
+            }
+
             string messageContent = SubstituteMessageVariables(gatewayEvent, welcomeMessage.Message);
+
+            Result<IMessage> sendWelcomeMessageResult = await _channelApi.CreateMessageAsync(
+                new Snowflake(welcomeMessage.ChannelId),
+                messageContent,
+                isTTS: false,
+                allowedMentions: new AllowedMentions(new List<MentionType>() { MentionType.Users }),
+                components: new List<IMessageComponent>()
+                {
+                    new ActionRowComponent(messageButtons)
+                },
+                ct: ct).ConfigureAwait(false);
+
+            return sendWelcomeMessageResult.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(sendWelcomeMessageResult);
         }
 
         private async Task<IEnumerable<string>> DoFuzzyNicknameGuess(string username, ulong outfitId, CancellationToken ct = default)

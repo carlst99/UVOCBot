@@ -32,7 +32,15 @@ namespace UVOCBot.Commands
             if (context is InteractionContext ictx)
                 return await RespondToInteractionAsync(ictx, ct, default, file, new List<IEmbed> { embed }, allowedMentions).ConfigureAwait(false);
             else
-                return await RespondToMessageAsync(context, ct, default, embed: new Optional<IEmbed>(embed), allowedMentions: allowedMentions).ConfigureAwait(false);
+                return await RespondToMessageAsync(context, ct, default, embed: new List<IEmbed>() { embed }, allowedMentions: allowedMentions).ConfigureAwait(false);
+        }
+
+        public async Task<Result<IMessage>> RespondWithEmbedAsync(ICommandContext context, IReadOnlyList<IEmbed> embed, CancellationToken ct, Optional<FileData> file = default, Optional<IAllowedMentions> allowedMentions = default)
+        {
+            if (context is InteractionContext ictx)
+                return await RespondToInteractionAsync(ictx, ct, default, file, new Optional<IReadOnlyList<IEmbed>>(embed), allowedMentions).ConfigureAwait(false);
+            else
+                return await RespondToMessageAsync(context, ct, default, embed: new Optional<IReadOnlyList<IEmbed>>(embed), allowedMentions: allowedMentions).ConfigureAwait(false);
         }
 
         public async Task<Result<IMessage>> RespondWithContentAsync(ICommandContext context, string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
@@ -86,7 +94,7 @@ namespace UVOCBot.Commands
                 ct: ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<IMessage>> RespondToMessageAsync(ICommandContext context, CancellationToken ct, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IEmbed> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default, Optional<IReadOnlyList<IMessageComponent>> components = default)
+        public async Task<Result<IMessage>> RespondToMessageAsync(ICommandContext context, CancellationToken ct, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IReadOnlyList<IEmbed>> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default, Optional<IReadOnlyList<IMessageComponent>> components = default)
         {
             return await _channelAPI.CreateMessageAsync(
                 context.ChannelID,

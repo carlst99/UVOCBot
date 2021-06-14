@@ -104,9 +104,9 @@ namespace UVOCBot.Services.Abstractions
 
         Task<Result<GuildWelcomeMessageDto>> GetGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default);
 
-        Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto settings, CancellationToken ct = default);
+        Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default);
 
-        Task<Result<GuildWelcomeMessageDto>> CreateGuildWelcomeMessageAsync(GuildWelcomeMessageDto settings, CancellationToken ct = default);
+        Task<Result<GuildWelcomeMessageDto>> CreateGuildWelcomeMessageAsync(GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default);
 
         Task<Result> DeleteGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default);
 

@@ -7,7 +7,7 @@ using UVOCBot.Api;
 
 namespace UVOCBot.Migrations
 {
-    [DbContext(typeof(BotContext))]
+    [DbContext(typeof(DiscordContext))]
     partial class BotContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

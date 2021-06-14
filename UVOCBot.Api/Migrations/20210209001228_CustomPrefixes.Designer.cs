@@ -8,7 +8,7 @@ using UVOCBot.Api;
 
 namespace UVOCBot.Api.Migrations
 {
-    [DbContext(typeof(BotContext))]
+    [DbContext(typeof(DiscordContext))]
     [Migration("20210209001228_CustomPrefixes")]
     partial class CustomPrefixes
     {

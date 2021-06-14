@@ -196,6 +196,7 @@ namespace UVOCBot
                     .AddHttpClient();
 
             services.AddResponder<GuildCreateResponder>()
+                    .AddResponder<GuildMemberAddResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 

@@ -6,7 +6,7 @@ using System;
 
 namespace UVOCBot.Api.Migrations
 {
-    [DbContext(typeof(BotContext))]
+    [DbContext(typeof(DiscordContext))]
     [Migration("20201205224317_InitialCreate")]
     partial class InitialCreate
     {

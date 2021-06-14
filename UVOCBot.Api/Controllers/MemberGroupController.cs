@@ -14,9 +14,9 @@ namespace UVOCBot.Api.Controllers
     [ApiController]
     public class MemberGroupController : ControllerBase
     {
-        private readonly BotContext _context;
+        private readonly DiscordContext _context;
 
-        public MemberGroupController(BotContext context)
+        public MemberGroupController(DiscordContext context)
         {
             _context = context;
         }

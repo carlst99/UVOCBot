@@ -51,9 +51,8 @@ namespace UVOCBot.Api.Model
         }
 
         public GuildWelcomeMessageDto ToDto()
-            => new()
+            => new(GuildId)
             {
-                GuildId = GuildId,
                 AlternateRoles = SerialisedRolesToList(SerialisedAlternateRoles),
                 DefaultRoles = SerialisedRolesToList(SerialisedDefaultRoles),
                 DoIngameNameGuess = DoIngameNameGuess,

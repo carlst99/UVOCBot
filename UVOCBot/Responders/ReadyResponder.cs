@@ -90,6 +90,19 @@ namespace UVOCBot.Responders
                     _logger.LogCritical("Could not scaffold PlanetSide settings database objects: {error}", guildSettingsResult.Error);
                     _appLifetime.StopApplication();
                 }
+
+                Result<GuildWelcomeMessageDto> guildWelcomeMessageResult = await _dbApi.CreateGuildWelcomeMessageAsync(
+                    new GuildWelcomeMessageDto(guild.GuildID.Value)
+                    {
+                        IsEnabled = false
+                    },
+                    ct).ConfigureAwait(false);
+
+                if (!guildWelcomeMessageResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er4 && er4.StatusCode == HttpStatusCode.Conflict))
+                {
+                    _logger.LogCritical("Could not initialise guild welcome message database objects: {error}", guildWelcomeMessageResult.Error);
+                    _appLifetime.StopApplication();
+                }
             }
         }
     }

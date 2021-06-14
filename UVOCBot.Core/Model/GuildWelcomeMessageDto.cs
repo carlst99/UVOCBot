@@ -35,8 +35,9 @@ namespace UVOCBot.Core.Model
         /// </summary>
         public IReadOnlyList<ulong> DefaultRoles { get; init; }
 
-        public GuildWelcomeMessageDto()
+        public GuildWelcomeMessageDto(ulong guildId)
         {
+            GuildId = guildId;
             Message = "Welcome <name>!";
             AlternateRoles = new List<ulong>();
             DefaultRoles = new List<ulong>();

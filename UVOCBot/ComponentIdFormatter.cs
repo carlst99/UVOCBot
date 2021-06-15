@@ -10,7 +10,12 @@
         /// <summary>
         /// This button sets a users nickname, based on a guess made on recent in-game outfit joins.
         /// </summary>
-        WelcomeMessageNicknameGuess = 1
+        WelcomeMessageNicknameGuess = 1,
+
+        /// <summary>
+        /// This button tells the user to set their own nickname, as none of the provided guesses matched.
+        /// </summary>
+        WelcomeMessageNicknameNoMatch = 2
     }
 
     public static class ComponentIdFormatter

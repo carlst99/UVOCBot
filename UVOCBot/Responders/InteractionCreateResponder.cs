@@ -70,6 +70,8 @@ namespace UVOCBot.Responders
                         return await _welcomeMessageService.SetAlternateRoles(gatewayEvent, ct).ConfigureAwait(false);
                     case ComponentAction.WelcomeMessageNicknameGuess:
                         return await _welcomeMessageService.SetNicknameFromGuess(gatewayEvent, ct).ConfigureAwait(false);
+                    case ComponentAction.WelcomeMessageNicknameNoMatch:
+                        return await _welcomeMessageService.InformNicknameNoMatch(gatewayEvent, ct).ConfigureAwait(false);
                 }
             }
 

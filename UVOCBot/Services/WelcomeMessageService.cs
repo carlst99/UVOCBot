@@ -4,6 +4,7 @@ using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
@@ -13,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Commands;
 using UVOCBot.Core.Model;
+using UVOCBot.Extensions;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 
@@ -25,21 +27,22 @@ namespace UVOCBot.Services
         private readonly IDbApiService _dbApi;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-
-        private IReadOnlyList<IRole>? _guildRoles;
+        private readonly MessageResponseHelpers _responder;
 
         public WelcomeMessageService(
             ILogger<WelcomeMessageService> logger,
             ICensusApiService censusApi,
             IDbApiService dbApi,
             IDiscordRestChannelAPI channelApi,
-            IDiscordRestGuildAPI guildApi)
+            IDiscordRestGuildAPI guildApi,
+            MessageResponseHelpers responder)
         {
             _logger = logger;
             _censusApi = censusApi;
             _dbApi = dbApi;
             _channelApi = channelApi;
             _guildApi = guildApi;
+            _responder = responder;
         }
 
         public async Task<Result> SendWelcomeMessage(IGuildMemberAdd gatewayEvent, CancellationToken ct = default)
@@ -47,59 +50,124 @@ namespace UVOCBot.Services
             if (gatewayEvent.User.Value is null)
                 return Result.FromSuccess();
 
-            Result<GuildWelcomeMessageDto> welcomeMessageResult = await _dbApi.GetGuildWelcomeMessageAsync(gatewayEvent.GuildID.Value, ct).ConfigureAwait(false);
+            // Get the welcome message settings
+            Result<GuildWelcomeMessageDto> welcomeMessageResult = await GetGuildWelcomeMessage(gatewayEvent.GuildID.Value, ct).ConfigureAwait(false);
             if (!welcomeMessageResult.IsSuccess)
-            {
-                _logger.LogError("Failed to retrieve GuildWelcomeMessage object: {error}", welcomeMessageResult.Error);
                 return Result.FromError(welcomeMessageResult);
-            }
 
             GuildWelcomeMessageDto welcomeMessage = welcomeMessageResult.Entity;
             if (!welcomeMessage.IsEnabled)
                 return Result.FromSuccess();
-
-            // Add the alternate roles button
-            List<ButtonComponent> messageButtons = new();
-            if (welcomeMessage.AlternateRoles.Count > 0 && !string.IsNullOrEmpty(welcomeMessage.AlternateRoleLabel))
-            {
-                messageButtons.Add(new ButtonComponent(
-                    ButtonComponentStyle.Danger,
-                    welcomeMessage.AlternateRoleLabel,
-                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageSetAlternate, gatewayEvent.User.Value.ID.Value.ToString())));
-            }
-
-            // Assign default roles
-            await AssignRoles(gatewayEvent.GuildID, gatewayEvent.User.Value.ID, welcomeMessage.DefaultRoles, ct).ConfigureAwait(false);
 
             // Make some nickname guesses
             IEnumerable<string> nicknameGuesses = new List<string>();
             if (welcomeMessage.DoIngameNameGuess)
                 nicknameGuesses = await DoFuzzyNicknameGuess(gatewayEvent.User.Value.Username, welcomeMessage.OutfitId, ct).ConfigureAwait(false);
 
-            foreach (string nickname in nicknameGuesses)
-            {
-                messageButtons.Add(new ButtonComponent(
-                    ButtonComponentStyle.Primary,
-                    "My PlanetSide 2 name is: " + nickname,
-                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, gatewayEvent.User.Value.ID.Value.ToString())));
-            }
-
+            // Prepare components of the welcome message
+            List<ButtonComponent> messageButtons = CreateWelcomeMessageButtons(welcomeMessage, nicknameGuesses, gatewayEvent.User.Value.ID.Value);
             string messageContent = SubstituteMessageVariables(gatewayEvent, welcomeMessage.Message);
 
+            // Send the welcome message
             Result<IMessage> sendWelcomeMessageResult = await _channelApi.CreateMessageAsync(
                 new Snowflake(welcomeMessage.ChannelId),
                 messageContent,
-                isTTS: false,
                 allowedMentions: new AllowedMentions(new List<MentionType>() { MentionType.Users }),
-                components: new List<IMessageComponent>()
-                {
-                    new ActionRowComponent(messageButtons)
-                },
+                components: new List<IMessageComponent>() { new ActionRowComponent(messageButtons) },
+                ct: ct).ConfigureAwait(false);
+
+            // Assign default roles
+            await ModifyRoles(
+                gatewayEvent.GuildID,
+                gatewayEvent.User.Value.ID,
+                gatewayEvent.Roles.ToList(),
+                rolesToAdd: welcomeMessage.DefaultRoles,
                 ct: ct).ConfigureAwait(false);
 
             return sendWelcomeMessageResult.IsSuccess
                 ? Result.FromSuccess()
                 : Result.FromError(sendWelcomeMessageResult);
+        }
+
+        private async Task<Result<GuildWelcomeMessageDto>> GetGuildWelcomeMessage(ulong guildId, CancellationToken ct = default)
+        {
+            Result<GuildWelcomeMessageDto> welcomeMessageResult = await _dbApi.GetGuildWelcomeMessageAsync(guildId, ct).ConfigureAwait(false);
+            if (!welcomeMessageResult.IsSuccess)
+                _logger.LogError("Failed to retrieve GuildWelcomeMessage object: {error}", welcomeMessageResult.Error);
+
+            return welcomeMessageResult;
+        }
+
+        #region Message composition
+
+        private static List<ButtonComponent> CreateWelcomeMessageButtons(GuildWelcomeMessageDto welcomeMessage, IEnumerable<string> nicknameGuesses, ulong userId)
+        {
+            List<ButtonComponent> messageButtons = new();
+
+            if (welcomeMessage.AlternateRoles.Count > 0 && !string.IsNullOrEmpty(welcomeMessage.AlternateRoleLabel))
+            {
+                messageButtons.Add(new ButtonComponent(
+                    ButtonComponentStyle.Danger,
+                    welcomeMessage.AlternateRoleLabel,
+                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageSetAlternate, userId.ToString())));
+            }
+
+            foreach (string nickname in nicknameGuesses)
+            {
+                messageButtons.Add(new ButtonComponent(
+                    ButtonComponentStyle.Primary,
+                    "My PlanetSide 2 name is: " + nickname,
+                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, userId.ToString() + '@' + nickname)));
+            }
+
+            return messageButtons;
+        }
+
+        private static string SubstituteMessageVariables(IGuildMemberAdd gatewayEvent, string welcomeMessage)
+        {
+            if (gatewayEvent.User.Value is null)
+                return welcomeMessage;
+
+            return welcomeMessage.Replace("<name>", Formatter.UserMention(gatewayEvent.User.Value.ID));
+        }
+
+        #endregion
+
+        #region Nicknames
+
+        public async Task<Result> SetNicknameFromGuess(IInteractionCreate gatewayEvent, CancellationToken ct = default)
+        {
+            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
+            if (!context.IsSuccess)
+                return Result.FromError(context);
+
+            if (!gatewayEvent.GuildID.HasValue)
+                return Result.FromSuccess();
+
+            if (gatewayEvent.Data.Value is null || gatewayEvent.Data.Value.CustomID.Value is null)
+                return Result.FromSuccess();
+
+            ComponentIdFormatter.Parse(gatewayEvent.Data.Value.CustomID.Value, out ComponentAction _, out string payload);
+            string[] payloadComponents = payload.Split('@');
+            ulong userId = ulong.Parse(payloadComponents[0]);
+
+            // Check that the user who clicked the button is the focus of the welcome message
+            if (context.Entity.User.ID.Value != userId)
+            {
+                await _responder.RespondWithSuccessAsync(context.Entity, "Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
+                return Result.FromSuccess();
+            }
+
+            await _guildApi.ModifyGuildMemberAsync(gatewayEvent.GuildID.Value, context.Entity.User.ID, payloadComponents[1], ct: ct).ConfigureAwait(false);
+
+            Result<IMessage> alertResponse = await _responder.RespondWithSuccessAsync(
+                context.Entity,
+                $"Your nickname has been updated to { Formatter.Bold(payloadComponents[1]) }!",
+                ct).ConfigureAwait(false);
+
+            return alertResponse.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(alertResponse);
         }
 
         private async Task<IEnumerable<string>> DoFuzzyNicknameGuess(string username, ulong outfitId, CancellationToken ct = default)
@@ -139,36 +207,115 @@ namespace UVOCBot.Services
             return nicknameGuesses.Take(2).Select(g => g.Item1);
         }
 
-        private static string SubstituteMessageVariables(IGuildMemberAdd gatewayEvent, string welcomeMessage)
-        {
-            if (gatewayEvent.User.Value is null)
-                return welcomeMessage;
+        #endregion
 
-            return welcomeMessage.Replace("<name>", Formatter.UserMention(gatewayEvent.User.Value.ID));
+        #region Roles
+
+        /// <summary>
+        /// Assigns the alternate roles of the <see cref="GuildWelcomeMessageDto"/> to the member, and removes the default roles.
+        /// </summary>
+        /// <param name="gatewayEvent">The interaction event to perform this operation on.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>A <see cref="Result"/> indicating if the operation was successful.</returns>
+        public async Task<Result> SetAlternateRoles(IInteractionCreate gatewayEvent, CancellationToken ct = default)
+        {
+            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
+            if (!context.IsSuccess)
+                return Result.FromError(context);
+
+            if (!gatewayEvent.GuildID.HasValue)
+                return Result.FromSuccess();
+
+            if (gatewayEvent.Data.Value is null || gatewayEvent.Data.Value.CustomID.Value is null)
+                return Result.FromSuccess();
+
+            // Get the welcome message settings
+            Result<GuildWelcomeMessageDto> welcomeMessage = await GetGuildWelcomeMessage(gatewayEvent.GuildID.Value.Value, ct).ConfigureAwait(false);
+            if (!welcomeMessage.IsSuccess)
+                return Result.FromError(welcomeMessage);
+
+            ComponentIdFormatter.Parse(gatewayEvent.Data.Value.CustomID.Value, out ComponentAction _, out string payload);
+            ulong userId = ulong.Parse(payload);
+
+            // Check that the user who clicked the button is the focus of the welcome message
+            if (context.Entity.User.ID.Value != userId)
+            {
+                await _responder.RespondWithSuccessAsync(context.Entity, "Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
+                return Result.FromSuccess();
+            }
+
+            // Remove the default roles and add the alternate roles
+            Result roleChangeResult = await ModifyRoles(
+                gatewayEvent.GuildID.Value,
+                context.Entity.User.ID,
+                gatewayEvent.Member.Value?.Roles.ToList(),
+                welcomeMessage.Entity.AlternateRoles,
+                welcomeMessage.Entity.DefaultRoles,
+                ct).ConfigureAwait(false);
+
+            if (!roleChangeResult.IsSuccess)
+            {
+                _logger.LogError("Failed to modify member roles: {error}", roleChangeResult.Error);
+                return roleChangeResult;
+            }
+
+            // Inform the user of their role change
+            string rolesStringList = string.Join(' ', welcomeMessage.Entity.AlternateRoles.Select(r => Formatter.RoleMention(r)));
+            Result<IMessage> alertResponse = await _responder.RespondWithSuccessAsync(
+                context.Entity,
+                $"You've been given the following roles: { rolesStringList }",
+                ct,
+                new AllowedMentions()).ConfigureAwait(false);
+
+            return alertResponse.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(alertResponse);
         }
 
-        private async Task<Result> AssignRoles(Snowflake guildId, Snowflake userId, IEnumerable<ulong> roles, CancellationToken ct = default)
+        /// <summary>
+        /// Modifies the roles of a guild member.
+        /// </summary>
+        /// <param name="guildId">The guild that the member is part of.</param>
+        /// <param name="userId">The user to assign the roles to.</param>
+        /// <param name="currentRoles">The user's existing roles. Optional.</param>
+        /// <param name="rolesToAdd">The roles to add.</param>
+        /// <param name="rolesToAdd">The roles to remove.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>A <see cref="Result"/> indicating if the operation was successful.</returns>
+        private async Task<Result> ModifyRoles(Snowflake guildId, Snowflake userId, List<Snowflake>? currentRoles, IEnumerable<ulong>? rolesToAdd = null, IEnumerable<ulong>? rolesToRemove = null, CancellationToken ct = default)
         {
-            if (_guildRoles is null)
+            if (currentRoles is null)
             {
-                Result<IReadOnlyList<IRole>> guildRolesResult = await _guildApi.GetGuildRolesAsync(guildId, ct).ConfigureAwait(false);
-                if (!guildRolesResult.IsSuccess)
+                Result<IGuildMember> memberResult = await _guildApi.GetGuildMemberAsync(guildId, userId, ct).ConfigureAwait(false);
+                if (!memberResult.IsSuccess)
+                    return Result.FromError(memberResult);
+                else
+                    currentRoles = memberResult.Entity.Roles.ToList();
+            }
+
+            if (rolesToAdd is not null)
+            {
+                foreach (ulong roleId in rolesToAdd)
                 {
-                    _logger.LogError("Could not get guild role list: {error}" + guildRolesResult.Error);
-                    return Result.FromError(guildRolesResult);
+                    Snowflake snowflake = new(roleId);
+                    if (!currentRoles.Contains(snowflake))
+                        currentRoles.Add(snowflake);
                 }
-
-                _guildRoles = guildRolesResult.Entity;
             }
 
-            foreach (ulong roleId in roles)
+            if (rolesToRemove is not null)
             {
-                IRole? role = _guildRoles.FirstOrDefault(r => r.ID.Value == roleId);
-                if (role is not null)
-                    await _guildApi.AddGuildMemberRoleAsync(guildId, userId, role.ID, ct).ConfigureAwait(false); // Not too worried about a failure here, as it's easily fixed by a guild admin
+                foreach (ulong roleId in rolesToRemove)
+                {
+                    Snowflake snowflake = new(roleId);
+                    if (currentRoles.Contains(snowflake))
+                        currentRoles.Remove(snowflake);
+                }
             }
 
-            return Result.FromSuccess();
+            return await _guildApi.ModifyGuildMemberAsync(guildId, userId, roles: currentRoles, ct: ct).ConfigureAwait(false);
         }
+
+        #endregion
     }
 }

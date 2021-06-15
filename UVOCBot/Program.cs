@@ -34,9 +34,10 @@ using Serilog.Core;
 
 namespace UVOCBot
 {
-    // Permissions integer: 2435927120
+    // Permissions integer: 2570144848
     // - Manage Roles
     // - Manage Channels
+    // - Manage Nicknames
     // - View Channels
     // - Send Messages
     // - Embed Links
@@ -46,7 +47,7 @@ namespace UVOCBot
     // - Connect
     // - Speak
     // - Move Members
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot%20applications.commands
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands
 
     public static class Program
     {
@@ -100,7 +101,7 @@ namespace UVOCBot
                             .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
-                            .AddTransient<IWelcomeMessageService, WelcomeMessageService>()
+                            .AddSingleton<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services

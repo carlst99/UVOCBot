@@ -15,7 +15,7 @@
 
     public static class ComponentIdFormatter
     {
-        private const char SEPARATOR = ';';
+        public const char SEPARATOR = ':';
 
         public static string GetId(ComponentAction action, string payload) => $"{(int)action}{SEPARATOR}{payload}";
 

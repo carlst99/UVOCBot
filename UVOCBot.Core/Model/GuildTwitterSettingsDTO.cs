@@ -30,7 +30,8 @@ namespace UVOCBot.Core.Model
             GuildId = guildId;
         }
 
-        public override bool Equals(object obj) => obj is GuildTwitterSettingsDTO s
+        public override bool Equals(object? obj)
+            => obj is GuildTwitterSettingsDTO s
             && s.GuildId.Equals(GuildId);
 
         public override int GetHashCode() => GuildId.GetHashCode();

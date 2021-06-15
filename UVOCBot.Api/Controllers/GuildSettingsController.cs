@@ -93,7 +93,6 @@ namespace UVOCBot.Api.Controllers
             return new GuildSettingsDTO
             {
                 GuildId = settings.GuildId,
-                BonkChannelId = settings.BonkChannelId,
                 Prefix = settings.Prefix
             };
         }
@@ -103,7 +102,6 @@ namespace UVOCBot.Api.Controllers
             return new GuildSettings
             {
                 GuildId = dto.GuildId,
-                BonkChannelId = dto.BonkChannelId,
                 Prefix = dto.Prefix
             };
         }

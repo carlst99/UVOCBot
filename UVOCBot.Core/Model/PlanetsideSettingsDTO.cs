@@ -22,7 +22,8 @@
             DefaultWorld = null;
         }
 
-        public override bool Equals(object obj) => obj is PlanetsideSettingsDTO s
+        public override bool Equals(object? obj)
+            => obj is PlanetsideSettingsDTO s
             && s.GuildId.Equals(GuildId);
 
         public override int GetHashCode() => GuildId.GetHashCode();

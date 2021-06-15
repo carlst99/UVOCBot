@@ -27,7 +27,8 @@ namespace UVOCBot.Core.Model
             LastRelayedTweetId = null;
         }
 
-        public override bool Equals(object obj) => obj is TwitterUserDTO user
+        public override bool Equals(object? obj)
+            => obj is TwitterUserDTO user
                 && user.UserId.Equals(UserId);
 
         public override int GetHashCode() => UserId.GetHashCode();

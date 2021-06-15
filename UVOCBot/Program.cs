@@ -222,7 +222,8 @@ namespace UVOCBot
                     .AddCommandGroup<RoleCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
-                    .AddCommandGroup<TwitterCommands>();
+                    .AddCommandGroup<TwitterCommands>()
+                    .AddCommandGroup<WelcomeMessageCommands>();
 
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();

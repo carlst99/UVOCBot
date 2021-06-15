@@ -18,14 +18,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DbgCensus.Rest" Version="1.0.0-beta.2" />
+    <PackageReference Include="DbgCensus.Rest" Version="1.0.0-beta.3" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
-    <PackageReference Include="Remora.Discord" Version="3.0.32" />
-    <PackageReference Include="Remora.Discord.Caching" Version="5.0.0" />
-    <PackageReference Include="Remora.Discord.Commands" Version="3.10.9" />
+    <PackageReference Include="Remora.Discord" Version="3.0.33" />
+    <PackageReference Include="Remora.Discord.Caching" Version="6.0.0" />
+    <PackageReference Include="Remora.Discord.Commands" Version="3.10.10" />
     <PackageReference Include="RestSharp" Version="106.11.7" />
     <PackageReference Include="RestSharp.Serializers.SystemTextJson" Version="106.11.7" />
     <PackageReference Include="Serilog" Version="2.10.0" />
@@ -33,7 +33,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
     <PackageReference Include="Serilog.Sinks.Seq" Version="5.0.1" />
-    <PackageReference Include="System.IO.Abstractions" Version="13.2.37" />
+    <PackageReference Include="System.IO.Abstractions" Version="13.2.38" />
     <PackageReference Include="TweetinviAPI" Version="5.0.4" />
   </ItemGroup>
 

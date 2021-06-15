@@ -304,5 +304,43 @@ namespace UVOCBot.Services
         }
 
         #endregion
+
+        #region GuildWelcomeMessage
+
+        public async Task<Result<GuildWelcomeMessageDto>> GetGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.GET);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
+
+            return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
+        }
+
+        public async Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.PUT);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
+
+            request.AddJsonBody(welcomeMessage);
+
+            return await ExecuteAsync(request, ct).ConfigureAwait(false);
+        }
+
+        public async Task<Result<GuildWelcomeMessageDto>> CreateGuildWelcomeMessageAsync(GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage", Method.POST);
+            request.AddJsonBody(welcomeMessage);
+
+            return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
+        }
+
+        public async Task<Result> DeleteGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.DELETE);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
+
+            return await ExecuteAsync(request, ct).ConfigureAwait(false);
+        }
+
+        #endregion
     }
 }

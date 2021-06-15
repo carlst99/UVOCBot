@@ -39,5 +39,14 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
         /// <returns></returns>
         Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets new members of an outfit.
+        /// </summary>
+        /// <param name="outfitId">The ID of the outfit.</param>
+        /// <param name="limit">The number of new members to get.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> to stop the operation with.</param>
+        /// <returns></returns>
+        Task<List<NewOutfitMember>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default);
     }
 }

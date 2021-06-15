@@ -12,9 +12,9 @@ namespace UVOCBot.Api.Controllers
     [ApiController]
     public class GuildSettingsController : ControllerBase
     {
-        private readonly BotContext _context;
+        private readonly DiscordContext _context;
 
-        public GuildSettingsController(BotContext context)
+        public GuildSettingsController(DiscordContext context)
         {
             _context = context;
         }

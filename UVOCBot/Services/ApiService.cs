@@ -26,7 +26,7 @@ namespace UVOCBot.Services
 
             if (response.ResponseStatus != ResponseStatus.Completed)
             {
-                _logger.LogError(response.ErrorException, "Failed to execute API operation: {exception}", response.ErrorMessage);
+                _logger.LogError(response.ErrorException, "Failed to execute database API operation: {exception}", response.ErrorMessage);
                 return Result<T>.FromError(response.ErrorException);
             }
 
@@ -45,7 +45,7 @@ namespace UVOCBot.Services
 
             if (response.ResponseStatus != ResponseStatus.Completed)
             {
-                _logger.LogError(response.ErrorException, "Failed to execute API operation: {exception}", response.ErrorMessage);
+                _logger.LogError(response.ErrorException, "Failed to execute database API operation: {exception}", response.ErrorMessage);
                 return Result.FromError(new ExceptionError(response.ErrorException));
             }
 

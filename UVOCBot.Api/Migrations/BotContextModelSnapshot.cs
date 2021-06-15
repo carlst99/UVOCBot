@@ -7,7 +7,7 @@ using UVOCBot.Api;
 
 namespace UVOCBot.Migrations
 {
-    [DbContext(typeof(BotContext))]
+    [DbContext(typeof(DiscordContext))]
     partial class BotContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
@@ -15,7 +15,7 @@ namespace UVOCBot.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.5");
+                .HasAnnotation("ProductVersion", "5.0.7");
 
             modelBuilder.Entity("GuildTwitterSettingsTwitterUser", b =>
                 {
@@ -64,6 +64,45 @@ namespace UVOCBot.Migrations
                     b.HasKey("GuildId");
 
                     b.ToTable("GuildTwitterSettings");
+                });
+
+            modelBuilder.Entity("UVOCBot.Api.Model.GuildWelcomeMessage", b =>
+                {
+                    b.Property<ulong>("GuildId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<string>("AlternateRoleLabel")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<ulong>("ChannelId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<bool>("DoIngameNameGuess")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<ulong>("OutfitId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<string>("SerialisedAlternateRoles")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerialisedDefaultRoles")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("GuildId");
+
+                    b.ToTable("GuildWelcomeMessages");
                 });
 
             modelBuilder.Entity("UVOCBot.Api.Model.MemberGroup", b =>

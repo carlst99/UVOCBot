@@ -5,18 +5,19 @@ using UVOCBot.Api.Model;
 
 namespace UVOCBot.Api
 {
-    public sealed class BotContext : DbContext
+    public sealed class DiscordContext : DbContext
     {
         private readonly DatabaseOptions _config;
 
         public DbSet<GuildSettings> GuildSettings { get; set; }
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
+        public DbSet<GuildWelcomeMessage> GuildWelcomeMessages { get; set; }
         public DbSet<TwitterUser> TwitterUsers { get; set; }
         public DbSet<PlanetsideSettings> PlanetsideSettings { get; set; }
         public DbSet<MemberGroup> MemberGroups { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public BotContext(IOptions<DatabaseOptions> config)
+        public DiscordContext(IOptions<DatabaseOptions> config)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             _config = config.Value;

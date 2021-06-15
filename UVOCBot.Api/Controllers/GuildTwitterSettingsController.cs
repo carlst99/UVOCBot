@@ -12,9 +12,9 @@ namespace UVOCBot.Api.Controllers
     [ApiController]
     public class GuildTwitterSettingsController : ControllerBase
     {
-        private readonly BotContext _context;
+        private readonly DiscordContext _context;
 
-        public GuildTwitterSettingsController(BotContext context)
+        public GuildTwitterSettingsController(DiscordContext context)
         {
             _context = context;
         }

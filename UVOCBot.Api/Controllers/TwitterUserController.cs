@@ -12,9 +12,9 @@ namespace UVOCBot.Api.Controllers
     [ApiController]
     public class TwitterUserController : ControllerBase
     {
-        private readonly BotContext _context;
+        private readonly DiscordContext _context;
 
-        public TwitterUserController(BotContext context)
+        public TwitterUserController(DiscordContext context)
         {
             _context = context;
         }

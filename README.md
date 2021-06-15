@@ -55,6 +55,7 @@ UVOCBot is built on the following amazing libraries and frameworks:
 - [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/)
 - [DbgCensus](https://github.com/carlst99/DbgCensus)
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
+- [FuzzySharp](https://github.com/JakeBayer/FuzzySharp)
 - [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)
 - [RestSharp](https://restsharp.dev)
 - [Remora.Discord](https://github.com/Nihlus/Remora.Discord)

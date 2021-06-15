@@ -118,6 +118,39 @@ namespace UVOCBot.Services
             }
         }
 
+        /// <inheritdoc />
+        public async Task<List<NewOutfitMember>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default)
+        {
+            // https://census.daybreakgames.com/get/ps2/outfit_member?outfit_id=37562651025751157&c:sort=member_since:-1&c:show=character_id,member_since&c:join=character%5Eshow:name.first%5Einject_at:character_name&c:limit=10
+
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("outfit_member")
+                .Where("outfit_id", SearchModifier.Equals, outfitId)
+                .WithSortOrder("member_since", SortOrder.Descending)
+                .ShowFields("character_id", "member_since")
+                .WithLimit(limit)
+                .AddJoin("character", (j) =>
+                {
+                    j.ShowFields("name.first")
+                        .InjectAt("character_name");
+                });
+
+            try
+            {
+                List<NewOutfitMember>? newMembers = await _censusClient.GetAsync<List<NewOutfitMember>>(query, ct).ConfigureAwait(false);
+
+                if (newMembers is null)
+                    throw new Exception("Failed to get new outfit members");
+                else
+                    return newMembers;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get new outfit members");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Constructs the query required to get online outfit members.
         /// </summary>

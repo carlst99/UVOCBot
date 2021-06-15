@@ -9,15 +9,15 @@ using UVOCBot.Api;
 namespace UVOCBot.Api.Migrations
 {
     [DbContext(typeof(DiscordContext))]
-    [Migration("20210228005425_MemberGroups")]
-    partial class MemberGroups
+    [Migration("20210614204003_WelcomeMessages")]
+    partial class WelcomeMessages
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.3");
+                .HasAnnotation("ProductVersion", "5.0.7");
 
             modelBuilder.Entity("GuildTwitterSettingsTwitterUser", b =>
                 {
@@ -68,6 +68,45 @@ namespace UVOCBot.Api.Migrations
                     b.ToTable("GuildTwitterSettings");
                 });
 
+            modelBuilder.Entity("UVOCBot.Api.Model.GuildWelcomeMessage", b =>
+                {
+                    b.Property<ulong>("GuildId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<string>("AlternateRoleLabel")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<ulong>("ChannelId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<bool>("DoIngameNameGuess")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<ulong>("OutfitId")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<string>("SerialisedAlternateRoles")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerialisedDefaultRoles")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("GuildId");
+
+                    b.ToTable("GuildWelcomeMessages");
+                });
+
             modelBuilder.Entity("UVOCBot.Api.Model.MemberGroup", b =>
                 {
                     b.Property<ulong>("Id")
@@ -77,13 +116,18 @@ namespace UVOCBot.Api.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<ulong>("CreatorId")
+                        .HasColumnType("bigint unsigned");
+
                     b.Property<string>("GroupName")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<string>("UserIds")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");

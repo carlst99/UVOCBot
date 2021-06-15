@@ -8,7 +8,7 @@ using UVOCBot.Api;
 
 namespace UVOCBot.Api.Migrations
 {
-    [DbContext(typeof(BotContext))]
+    [DbContext(typeof(DiscordContext))]
     [Migration("20210416032415_NullablePrefix")]
     partial class NullablePrefix
     {

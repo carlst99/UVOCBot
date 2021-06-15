@@ -12,9 +12,9 @@ namespace UVOCBot.Api.Controllers
     [ApiController]
     public class PlanetsideSettingsController : ControllerBase
     {
-        private readonly BotContext _context;
+        private readonly DiscordContext _context;
 
-        public PlanetsideSettingsController(BotContext context)
+        public PlanetsideSettingsController(DiscordContext context)
         {
             _context = context;
         }

@@ -79,16 +79,20 @@ namespace UVOCBot
                 {
                     string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
                     string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
+#if DEBUG
+                    logger = SetupLogging(fileSystem);
+#else
                     logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
+#endif
                 })
                 .UseSerilog(logger)
                 .UseSystemd()
                 .ConfigureServices((c, services) =>
                 {
                     // Setup the configuration bindings
-                    services.Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
-                    services.Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
-                    services.Configure<CensusQueryOptions>(c.Configuration.GetSection(nameof(CensusQueryOptions)));
+                    services.Configure<CensusQueryOptions>(c.Configuration.GetSection(nameof(CensusQueryOptions)))
+                            .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
+                            .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
                     //Setup API services
                     services.AddCensusRestServices()
@@ -135,7 +139,11 @@ namespace UVOCBot
                 return directory;
         }
 
+#if DEBUG
+        private static ILogger SetupLogging(IFileSystem fileSystem)
+#else
         private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
+#endif
         {
             LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
@@ -156,7 +164,11 @@ namespace UVOCBot
             else
             {
                 logConfig.MinimumLevel.Information()
-                    .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day);
+                    .WriteTo.File(
+                        GetAppdataFilePath(fileSystem, "log.log"),
+                        LogEventLevel.Warning,
+                        "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+                        rollingInterval: RollingInterval.Day);
             }
 #endif
 

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Model
 {
@@ -38,6 +40,23 @@ namespace UVOCBot.Api.Model
             RelayChannelId = null;
             IsEnabled = true;
         }
+
+        public GuildTwitterSettingsDTO ToDto()
+            => new()
+            {
+                GuildId = GuildId,
+                IsEnabled = IsEnabled,
+                RelayChannelId = RelayChannelId,
+                TwitterUsers = TwitterUsers.Select(u => u.UserId).ToList()
+            };
+
+        public static GuildTwitterSettings FromDto(GuildTwitterSettingsDTO dto)
+            => new()
+            {
+                GuildId = dto.GuildId,
+                IsEnabled = dto.IsEnabled,
+                RelayChannelId = dto.RelayChannelId
+            };
 
         public override bool Equals(object? obj) => obj is GuildTwitterSettings s
             && s.GuildId.Equals(GuildId);

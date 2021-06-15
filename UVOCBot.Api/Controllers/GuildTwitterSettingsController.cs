@@ -24,9 +24,9 @@ namespace UVOCBot.Api.Controllers
         public async Task<ActionResult<IEnumerable<GuildTwitterSettingsDTO>>> GetGuildTwitterSettings([FromQuery] bool filterByEnabled = false)
         {
             if (filterByEnabled)
-                return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).Where(s => s.IsEnabled && s.TwitterUsers.Count > 0).ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+                return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).Where(s => s.IsEnabled && s.TwitterUsers.Count > 0).ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
             else
-                return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+                return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
         }
 
         // GET: api/GuildTwitterSettings/5
@@ -35,7 +35,7 @@ namespace UVOCBot.Api.Controllers
         {
             var guildTwitterSettings = await _context.GuildTwitterSettings.Include(e => e.TwitterUsers).FirstOrDefaultAsync(e => e.GuildId == id).ConfigureAwait(false);
 
-            return guildTwitterSettings == default ? NotFound() : ToDTO(guildTwitterSettings);
+            return guildTwitterSettings == default ? NotFound() : guildTwitterSettings.ToDto();
         }
 
         [HttpGet("exists/{id}")]
@@ -51,7 +51,7 @@ namespace UVOCBot.Api.Controllers
             if (id != guildTwitterSettings.GuildId)
                 return BadRequest();
 
-            _context.Entry(FromDTO(guildTwitterSettings)).State = EntityState.Modified;
+            _context.Entry(GuildTwitterSettings.FromDto(guildTwitterSettings)).State = EntityState.Modified;
 
             try
             {
@@ -72,7 +72,7 @@ namespace UVOCBot.Api.Controllers
             if (await _context.GuildTwitterSettings.AnyAsync(s => s.GuildId == guildTwitterSettings.GuildId).ConfigureAwait(false))
                 return Conflict();
 
-            _context.GuildTwitterSettings.Add(FromDTO(guildTwitterSettings));
+            _context.GuildTwitterSettings.Add(GuildTwitterSettings.FromDto(guildTwitterSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction(nameof(GetGuildTwitterSettings), new { id = guildTwitterSettings.GuildId }, guildTwitterSettings);
@@ -90,27 +90,6 @@ namespace UVOCBot.Api.Controllers
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
-        }
-
-        private static GuildTwitterSettingsDTO ToDTO(GuildTwitterSettings settings)
-        {
-            return new GuildTwitterSettingsDTO
-            {
-                GuildId = settings.GuildId,
-                IsEnabled = settings.IsEnabled,
-                RelayChannelId = settings.RelayChannelId,
-                TwitterUsers = settings.TwitterUsers.Select(u => u.UserId).ToList()
-            };
-        }
-
-        private static GuildTwitterSettings FromDTO(GuildTwitterSettingsDTO dto)
-        {
-            return new GuildTwitterSettings
-            {
-                GuildId = dto.GuildId,
-                IsEnabled = dto.IsEnabled,
-                RelayChannelId = dto.RelayChannelId
-            };
         }
 
         private bool GuildTwitterSettingsExists(ulong id)

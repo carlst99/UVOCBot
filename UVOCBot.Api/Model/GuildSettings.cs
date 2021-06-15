@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Model
 {
@@ -17,5 +18,19 @@ namespace UVOCBot.Api.Model
         /// Gets or sets the prefix used to access bot commands
         /// </summary>
         public string? Prefix { get; set; }
+
+        public GuildSettingsDTO ToDto()
+            => new()
+            {
+                GuildId = GuildId,
+                Prefix = Prefix
+            };
+
+        public static GuildSettings FromDto(GuildSettingsDTO dto)
+            => new()
+            {
+                GuildId = dto.GuildId,
+                Prefix = dto.Prefix
+            };
     }
 }

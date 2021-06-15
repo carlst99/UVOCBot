@@ -27,7 +27,7 @@ namespace UVOCBot.Api.Controllers
         {
             MemberGroup group = await _context.MemberGroups.FindAsync(id).ConfigureAwait(false);
 
-            return group == null ? NotFound() : ToDTO(group);
+            return group == null ? NotFound() : group.ToDto();
         }
 
         // GET api/MemberGroup/guildGroups/5
@@ -36,7 +36,7 @@ namespace UVOCBot.Api.Controllers
         {
             List<MemberGroup> groups = await _context.MemberGroups.Where(g => g.GuildId == id).ToListAsync().ConfigureAwait(false);
 
-            return groups.ConvertAll(g => ToDTO(g));
+            return groups.ConvertAll(g => g.ToDto());
         }
 
         // GET api/MemberGroup/?guildId=1&groupName=""
@@ -45,7 +45,7 @@ namespace UVOCBot.Api.Controllers
         {
             MemberGroup group = await _context.MemberGroups.FirstOrDefaultAsync(g => g.GuildId == guildId && g.GroupName == groupName).ConfigureAwait(false);
 
-            return group == default ? NotFound() : ToDTO(group);
+            return group == default ? NotFound() : group.ToDto();
         }
 
         // POST api/MemberGroup
@@ -56,7 +56,7 @@ namespace UVOCBot.Api.Controllers
             if (guildGroups.Any(g => g.GroupName.Equals(group.GroupName)))
                 return Conflict();
 
-            _context.MemberGroups.Add(FromDTO(group));
+            _context.MemberGroups.Add(MemberGroup.FromDto(group));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction(nameof(GetMemberGroup), new { id = group.Id }, group);
@@ -69,7 +69,7 @@ namespace UVOCBot.Api.Controllers
             if (id != memberGroup.Id)
                 return BadRequest();
 
-            _context.Entry(FromDTO(memberGroup)).State = EntityState.Modified;
+            _context.Entry(MemberGroup.FromDto(memberGroup)).State = EntityState.Modified;
 
             try
             {
@@ -109,32 +109,6 @@ namespace UVOCBot.Api.Controllers
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
-        }
-
-        private static MemberGroupDTO ToDTO(MemberGroup group)
-        {
-            return new MemberGroupDTO
-            {
-                Id = group.Id,
-                GuildId = group.GuildId,
-                CreatorId = group.CreatorId,
-                CreatedAt = group.CreatedAt,
-                GroupName = group.GroupName,
-                UserIds = new List<ulong>(group.UserIds.Split('\n').Select(s => ulong.Parse(s)))
-            };
-        }
-
-        private static MemberGroup FromDTO(MemberGroupDTO dto)
-        {
-            return new MemberGroup
-            {
-                Id = dto.Id,
-                GuildId = dto.GuildId,
-                CreatorId = dto.CreatorId,
-                CreatedAt = dto.CreatedAt,
-                GroupName = dto.GroupName,
-                UserIds = string.Join('\n', dto.UserIds.Select(i => i.ToString()))
-            };
         }
 
         private bool MemberGroupExists(ulong id)

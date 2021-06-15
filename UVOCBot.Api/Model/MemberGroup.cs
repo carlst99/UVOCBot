@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Model
 {
@@ -36,5 +39,27 @@ namespace UVOCBot.Api.Model
         /// An LF delimited list of the users in this group
         /// </summary>
         public string UserIds { get; set; } = string.Empty;
+
+        public MemberGroupDTO ToDto()
+            => new()
+            {
+                Id = Id,
+                GuildId = GuildId,
+                CreatorId = CreatorId,
+                CreatedAt = CreatedAt,
+                GroupName = GroupName,
+                UserIds = new List<ulong>(UserIds.Split('\n').Select(s => ulong.Parse(s)))
+            };
+
+        public static MemberGroup FromDto(MemberGroupDTO dto)
+            => new()
+            {
+                Id = dto.Id,
+                GuildId = dto.GuildId,
+                CreatorId = dto.CreatorId,
+                CreatedAt = dto.CreatedAt,
+                GroupName = dto.GroupName,
+                UserIds = string.Join('\n', dto.UserIds.Select(i => i.ToString()))
+            };
     }
 }

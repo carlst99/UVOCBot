@@ -23,7 +23,7 @@ namespace UVOCBot.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PlanetsideSettingsDTO>>> GetPlanetsideSettings()
         {
-            return (await _context.PlanetsideSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+            return (await _context.PlanetsideSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
         }
 
         // GET: api/PlanetsideSettings/5
@@ -32,7 +32,7 @@ namespace UVOCBot.Api.Controllers
         {
             var planetsideSettings = await _context.PlanetsideSettings.FindAsync(id).ConfigureAwait(false);
 
-            return planetsideSettings == null ? NotFound() : ToDTO(planetsideSettings);
+            return planetsideSettings == null ? NotFound() : planetsideSettings.ToDto();
         }
 
         // PUT: api/PlanetsideSettings/5
@@ -43,7 +43,7 @@ namespace UVOCBot.Api.Controllers
             if (id != planetsideSettings.GuildId)
                 return BadRequest();
 
-            _context.Entry(FromDTO(planetsideSettings)).State = EntityState.Modified;
+            _context.Entry(PlanetsideSettings.FromDto(planetsideSettings)).State = EntityState.Modified;
 
             try
             {
@@ -65,7 +65,7 @@ namespace UVOCBot.Api.Controllers
             if (await _context.PlanetsideSettings.AnyAsync((s) => s.GuildId == planetsideSettings.GuildId).ConfigureAwait(false))
                 return Conflict();
 
-            _context.PlanetsideSettings.Add(FromDTO(planetsideSettings));
+            _context.PlanetsideSettings.Add(PlanetsideSettings.FromDto(planetsideSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction(nameof(GetPlanetsideSettings), new { id = planetsideSettings.GuildId }, planetsideSettings);
@@ -83,24 +83,6 @@ namespace UVOCBot.Api.Controllers
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
-        }
-
-        private static PlanetsideSettingsDTO ToDTO(PlanetsideSettings settings)
-        {
-            return new PlanetsideSettingsDTO
-            {
-                GuildId = settings.GuildId,
-                DefaultWorld = settings.DefaultWorld
-            };
-        }
-
-        private static PlanetsideSettings FromDTO(PlanetsideSettingsDTO dto)
-        {
-            return new PlanetsideSettings
-            {
-                GuildId = dto.GuildId,
-                DefaultWorld = dto.DefaultWorld
-            };
         }
 
         private bool PlanetsideSettingsExists(ulong id)

@@ -100,7 +100,7 @@ namespace UVOCBot
                             .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
-                            .AddTransient<IMemberAddMessageService, MemberAddMessageService>()
+                            .AddTransient<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
@@ -198,6 +198,7 @@ namespace UVOCBot
 
             services.AddResponder<GuildCreateResponder>()
                     .AddResponder<GuildMemberAddResponder>()
+                    .AddResponder<InteractionCreateResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 

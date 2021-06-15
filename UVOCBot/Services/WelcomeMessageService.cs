@@ -18,9 +18,9 @@ using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
-    public class MemberAddMessageService : IMemberAddMessageService
+    public class WelcomeMessageService : IWelcomeMessageService
     {
-        private readonly ILogger<MemberAddMessageService> _logger;
+        private readonly ILogger<WelcomeMessageService> _logger;
         private readonly ICensusApiService _censusApi;
         private readonly IDbApiService _dbApi;
         private readonly IDiscordRestChannelAPI _channelApi;
@@ -28,8 +28,8 @@ namespace UVOCBot.Services
 
         private IReadOnlyList<IRole>? _guildRoles;
 
-        public MemberAddMessageService(
-            ILogger<MemberAddMessageService> logger,
+        public WelcomeMessageService(
+            ILogger<WelcomeMessageService> logger,
             ICensusApiService censusApi,
             IDbApiService dbApi,
             IDiscordRestChannelAPI channelApi,
@@ -80,7 +80,7 @@ namespace UVOCBot.Services
             {
                 messageButtons.Add(new ButtonComponent(
                     ButtonComponentStyle.Primary,
-                    "My PlanetSide 2 character is: " + nickname,
+                    "My PlanetSide 2 name is: " + nickname,
                     CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, gatewayEvent.User.Value.ID.Value.ToString())));
             }
 

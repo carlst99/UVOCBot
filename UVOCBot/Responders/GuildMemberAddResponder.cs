@@ -9,10 +9,10 @@ namespace UVOCBot.Responders
 {
     public class GuildMemberAddResponder : IResponder<IGuildMemberAdd>
     {
-        private readonly IMemberAddMessageService _welcomeMessageService;
+        private readonly IWelcomeMessageService _welcomeMessageService;
 
         public GuildMemberAddResponder(
-            IMemberAddMessageService welcomeMessageService)
+            IWelcomeMessageService welcomeMessageService)
         {
             _welcomeMessageService = welcomeMessageService;
         }

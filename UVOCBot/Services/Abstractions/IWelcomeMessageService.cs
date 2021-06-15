@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace UVOCBot.Services.Abstractions
 {
-    public interface IMemberAddMessageService
+    public interface IWelcomeMessageService
     {
         Task<Result> SendWelcomeMessage(IGuildMemberAdd gatewayEvent, CancellationToken ct = default);
     }

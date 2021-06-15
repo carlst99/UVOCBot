@@ -25,23 +25,8 @@ namespace UVOCBot.Responders
 
         public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
         {
-            // Signal to Discord that we'll be handling this one asynchronously, with an ephemeral response
-            var response = new InteractionResponse
-            (
-                InteractionCallbackType.DeferredChannelMessageWithSource,
-                new InteractionApplicationCommandCallbackData(Flags: MessageFlags.Ephemeral
-            ));
-
-            Result interactionResponse = await _interactionApi.CreateInteractionResponseAsync
-            (
-                gatewayEvent.ID,
-                gatewayEvent.Token,
-                response,
-                ct
-            ).ConfigureAwait(false);
-
-            if (!interactionResponse.IsSuccess)
-                return interactionResponse;
+            if (gatewayEvent.Data.Value is null)
+                return Result.FromSuccess();
 
             // Get the user who initiated the interaction
             IUser? user = gatewayEvent.User.HasValue
@@ -55,9 +40,26 @@ namespace UVOCBot.Responders
             if (user is null)
                 return Result.FromSuccess();
 
+            var response = new InteractionResponse(InteractionCallbackType.DeferredChannelMessageWithSource);
+
+            // If it's a message component, force emphemerality.
+            if (gatewayEvent.Type == InteractionType.MessageComponent)
+                response = response with { Data = new InteractionApplicationCommandCallbackData(Flags: MessageFlags.Ephemeral) };
+
+            // Signal to Discord that we'll be handling this one asynchronously
+            // We're not awaiting this, so that the command processing begins ASAP
+            // This can cause some wacky user-side behaviour if Discord doesn't process the interaction response in time
+            Task<Result> createInteractionResponse = _interactionApi.CreateInteractionResponseAsync
+            (
+                gatewayEvent.ID,
+                gatewayEvent.Token,
+                response,
+                ct
+            );
+
             if (gatewayEvent.Type == InteractionType.MessageComponent)
             {
-                if (gatewayEvent.Data.Value is null || gatewayEvent.Data.Value.CustomID.Value is null)
+                if (gatewayEvent.Data.Value.CustomID.Value is null)
                     return Result.FromSuccess();
 
                 ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out ComponentAction action, out string _);
@@ -71,7 +73,7 @@ namespace UVOCBot.Responders
                 }
             }
 
-            return Result.FromSuccess();
+            return await createInteractionResponse.ConfigureAwait(false);
         }
     }
 }

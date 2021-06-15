@@ -9,12 +9,12 @@ using UVOCBot.Model;
 
 namespace UVOCBot.Services
 {
-    public abstract class ApiService<TLoggerType>
+    public abstract class ApiServiceBase<TLoggerType>
     {
         protected readonly ILogger<TLoggerType> _logger;
         protected readonly IRestClient _client;
 
-        protected ApiService(ILogger<TLoggerType> logger, Func<IRestClient> configureClient)
+        protected ApiServiceBase(ILogger<TLoggerType> logger, Func<IRestClient> configureClient)
         {
             _logger = logger;
             _client = configureClient();

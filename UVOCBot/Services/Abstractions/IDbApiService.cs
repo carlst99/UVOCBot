@@ -8,6 +8,8 @@ namespace UVOCBot.Services.Abstractions
 {
     public interface IDbApiService
     {
+        Task<Result> ScaffoldDbEntries(IEnumerable<ulong> guildIds, CancellationToken ct = default);
+
         #region TwitterUser
 
         Task<Result<List<TwitterUserDTO>>> ListTwitterUsersAsync(CancellationToken ct = default);

@@ -9,6 +9,7 @@ using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,42 +69,9 @@ namespace UVOCBot.Responders
 
         private async Task PrepareDatabase(IReadOnlyList<IUnavailableGuild> guilds, CancellationToken ct = default)
         {
-            foreach (IUnavailableGuild guild in guilds)
-            {
-                Result<GuildSettingsDTO> guildSettingsResult = await _dbApi.CreateGuildSettingsAsync(new GuildSettingsDTO(guild.GuildID.Value), ct).ConfigureAwait(false);
-                if (!guildSettingsResult.IsSuccess && !(guildSettingsResult.Error is HttpStatusCodeError er && er.StatusCode == HttpStatusCode.Conflict))
-                {
-                    _logger.LogCritical("Could not scaffold guild settings database objects: {error}", guildSettingsResult.Error);
-                    _appLifetime.StopApplication();
-                }
-
-                Result<GuildTwitterSettingsDTO> guildTwitterSettingsResult = await _dbApi.CreateGuildTwitterSettingsAsync(new GuildTwitterSettingsDTO(guild.GuildID.Value), ct).ConfigureAwait(false);
-                if (!guildTwitterSettingsResult.IsSuccess && !(guildTwitterSettingsResult.Error is HttpStatusCodeError er2 && er2.StatusCode == HttpStatusCode.Conflict))
-                {
-                    _logger.LogCritical("Could not scaffold guild twitter settings database objects: {error}", guildSettingsResult.Error);
-                    _appLifetime.StopApplication();
-                }
-
-                Result<PlanetsideSettingsDTO> planetsideSettingsResult = await _dbApi.CreatePlanetsideSettingsAsync(new PlanetsideSettingsDTO(guild.GuildID.Value), ct).ConfigureAwait(false);
-                if (!planetsideSettingsResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er3 && er3.StatusCode == HttpStatusCode.Conflict))
-                {
-                    _logger.LogCritical("Could not scaffold PlanetSide settings database objects: {error}", guildSettingsResult.Error);
-                    _appLifetime.StopApplication();
-                }
-
-                Result<GuildWelcomeMessageDto> guildWelcomeMessageResult = await _dbApi.CreateGuildWelcomeMessageAsync(
-                    new GuildWelcomeMessageDto(guild.GuildID.Value)
-                    {
-                        IsEnabled = false
-                    },
-                    ct).ConfigureAwait(false);
-
-                if (!guildWelcomeMessageResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er4 && er4.StatusCode == HttpStatusCode.Conflict))
-                {
-                    _logger.LogCritical("Could not initialise guild welcome message database objects: {error}", guildWelcomeMessageResult.Error);
-                    _appLifetime.StopApplication();
-                }
-            }
+            Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(guilds.Select(g => g.GuildID.Value), ct).ConfigureAwait(false);
+            if (!dbScaffoldResult.IsSuccess)
+                _appLifetime.StopApplication();
         }
     }
 }

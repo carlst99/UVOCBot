@@ -195,9 +195,7 @@ namespace UVOCBot
         {
             IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
             {
-                Intents = GatewayIntents.DirectMessageReactions
-                    | GatewayIntents.DirectMessages
-                    | GatewayIntents.GuildMessageReactions
+                Intents = GatewayIntents.DirectMessages
                     | GatewayIntents.GuildMessages
                     | GatewayIntents.Guilds
                     | GatewayIntents.GuildVoiceStates
@@ -218,7 +216,6 @@ namespace UVOCBot
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 
-            // Add commands
             services.AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()

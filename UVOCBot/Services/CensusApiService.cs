@@ -29,7 +29,8 @@ namespace UVOCBot.Services
         {
             IQueryBuilder query = _queryFactory.Get()
                 .OnCollection("world")
-                .Where("world_id", SearchModifier.Equals, (int)world);
+                .Where("world_id", SearchModifier.Equals, (int)world)
+                .WithLimitPerDatabase(15); // Adding a limit that isn't 10 or 100 here significantly improves the chances of the correct state being returned
 
             try
             {

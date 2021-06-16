@@ -61,9 +61,15 @@ namespace UVOCBot.Commands
             }
         }
 
-        public async Task<IResult> AlternateRolesCommand(string alternateRoleButtonLabel, string roles)
+        [Command("alternate-roles")]
+        [Description("Provides the new member with the option to give themself an alternative set of roles.")]
+        public async Task<IResult> AlternateRolesCommand(
+            [Description("The label to put on the button that lets the new member acquire the alternate roles.")] string alternateRoleButtonLabel,
+            string roles)
         {
             throw new NotImplementedException();
         }
+
+        // TODO: When setting channel, ensure that we have the correct permission overwrites to adjust roles
     }
 }

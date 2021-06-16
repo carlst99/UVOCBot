@@ -1,6 +1,7 @@
 using DbgCensus.Rest;
 using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
@@ -205,13 +206,15 @@ namespace UVOCBot
             services.AddSingleton(gatewayClientOptions);
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                    .AddDiscordCommands(true)
+                    .AddDiscordCommands(false)
+                    .AddSingleton<SlashService>()
                     .AddDiscordCaching()
                     .AddHttpClient();
 
-            services.AddResponder<GuildCreateResponder>()
+            services.AddResponder<CommandInteractionResponder>()
+                    .AddResponder<ComponentInteractionResponder>()
+                    .AddResponder<GuildCreateResponder>()
                     .AddResponder<GuildMemberAddResponder>()
-                    .AddResponder<InteractionCreateResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 

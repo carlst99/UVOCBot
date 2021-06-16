@@ -2,8 +2,6 @@
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
-using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Threading;
@@ -12,12 +10,14 @@ using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders
 {
-    public class InteractionCreateResponder : IResponder<IInteractionCreate>
+    public class ComponentInteractionResponder : IResponder<IInteractionCreate>
     {
         private readonly IDiscordRestInteractionAPI _interactionApi;
         private readonly IWelcomeMessageService _welcomeMessageService;
 
-        public InteractionCreateResponder(IDiscordRestInteractionAPI interactionApi, IWelcomeMessageService welcomeMessageService)
+        public ComponentInteractionResponder(
+            IDiscordRestInteractionAPI interactionApi,
+            IWelcomeMessageService welcomeMessageService)
         {
             _interactionApi = interactionApi;
             _welcomeMessageService = welcomeMessageService;
@@ -25,6 +25,9 @@ namespace UVOCBot.Responders
 
         public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
         {
+            if (gatewayEvent.Type != InteractionType.MessageComponent)
+                return Result.FromSuccess();
+
             if (gatewayEvent.Data.Value is null)
                 return Result.FromSuccess();
 
@@ -40,11 +43,11 @@ namespace UVOCBot.Responders
             if (user is null)
                 return Result.FromSuccess();
 
-            var response = new InteractionResponse(InteractionCallbackType.DeferredChannelMessageWithSource);
-
-            // If it's a message component, force emphemerality.
-            if (gatewayEvent.Type == InteractionType.MessageComponent)
-                response = response with { Data = new InteractionApplicationCommandCallbackData(Flags: MessageFlags.Ephemeral) };
+            var response = new InteractionResponse
+            (
+                InteractionCallbackType.DeferredChannelMessageWithSource,
+                new InteractionApplicationCommandCallbackData(Flags: MessageFlags.Ephemeral)
+            );
 
             // Signal to Discord that we'll be handling this one asynchronously
             // We're not awaiting this, so that the command processing begins ASAP
@@ -57,25 +60,18 @@ namespace UVOCBot.Responders
                 ct
             );
 
-            if (gatewayEvent.Type == InteractionType.MessageComponent)
+            if (gatewayEvent.Data.Value.CustomID.Value is null)
+                return Result.FromSuccess();
+
+            ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out ComponentAction action, out string _);
+
+            return action switch
             {
-                if (gatewayEvent.Data.Value.CustomID.Value is null)
-                    return Result.FromSuccess();
-
-                ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out ComponentAction action, out string _);
-
-                switch (action)
-                {
-                    case ComponentAction.WelcomeMessageSetAlternate:
-                        return await _welcomeMessageService.SetAlternateRoles(gatewayEvent, ct).ConfigureAwait(false);
-                    case ComponentAction.WelcomeMessageNicknameGuess:
-                        return await _welcomeMessageService.SetNicknameFromGuess(gatewayEvent, ct).ConfigureAwait(false);
-                    case ComponentAction.WelcomeMessageNicknameNoMatch:
-                        return await _welcomeMessageService.InformNicknameNoMatch(gatewayEvent, ct).ConfigureAwait(false);
-                }
-            }
-
-            return await createInteractionResponse.ConfigureAwait(false);
+                ComponentAction.WelcomeMessageSetAlternate => await _welcomeMessageService.SetAlternateRoles(gatewayEvent, ct).ConfigureAwait(false),
+                ComponentAction.WelcomeMessageNicknameGuess => await _welcomeMessageService.SetNicknameFromGuess(gatewayEvent, ct).ConfigureAwait(false),
+                ComponentAction.WelcomeMessageNicknameNoMatch => await _welcomeMessageService.InformNicknameNoMatch(gatewayEvent, ct).ConfigureAwait(false),
+                _ => await createInteractionResponse.ConfigureAwait(false),
+            };
         }
     }
 }

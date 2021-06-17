@@ -24,6 +24,7 @@ using System.Linq;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
+using UVOCBot.Commands.Conditions;
 using UVOCBot.Config;
 using UVOCBot.Responders;
 using UVOCBot.Services;
@@ -215,6 +216,8 @@ namespace UVOCBot
                     .AddResponder<GuildMemberAddResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
+
+            services.AddCondition<RequireGuildPermissionCondition>();
 
             services.AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()

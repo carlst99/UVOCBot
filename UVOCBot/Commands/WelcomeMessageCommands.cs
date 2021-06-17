@@ -1,15 +1,14 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
 
@@ -18,6 +17,7 @@ namespace UVOCBot.Commands
     [Group("welcome-message")]
     [Description("Commands that allow the welcome message feature to be setup")]
     [RequireContext(ChannelContext.Guild)]
+    [RequireUserGuildPermission(DiscordPermission.ManageGuild)]
     public class WelcomeMessageCommands : CommandGroup
     {
         private readonly ICommandContext _context;
@@ -63,9 +63,10 @@ namespace UVOCBot.Commands
 
         [Command("alternate-roles")]
         [Description("Provides the new member with the option to give themself an alternative set of roles.")]
+        [RequireGuildPermission(DiscordPermission.ManageRoles)]
         public async Task<IResult> AlternateRolesCommand(
             [Description("The label to put on the button that lets the new member acquire the alternate roles.")] string alternateRoleButtonLabel,
-            string roles)
+            [Description("The roles to apply.")] string roles)
         {
             throw new NotImplementedException();
         }

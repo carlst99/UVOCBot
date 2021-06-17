@@ -16,12 +16,19 @@ namespace UVOCBot.Commands.Conditions.Attributes
         public DiscordPermission Permission { get; }
 
         /// <summary>
+        /// Gets a value indicating if the current user (i.e. the bot) will also be included in the permission checks.
+        /// </summary>
+        public bool IncludeCurrent { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="RequireGuildPermissionAttribute"/> class.
         /// </summary>
         /// <param name="permission">The permission.</param>
-        public RequireGuildPermissionAttribute(DiscordPermission permission)
+        /// <param name="includeCurrent">Indicates that the current user (i.e. the bot) will also be included in the checks.</param>
+        public RequireGuildPermissionAttribute(DiscordPermission permission, bool includeCurrent = true)
         {
             Permission = permission;
+            IncludeCurrent = includeCurrent;
         }
     }
 }

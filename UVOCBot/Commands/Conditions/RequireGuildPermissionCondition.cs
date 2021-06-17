@@ -45,6 +45,7 @@ namespace UVOCBot.Commands.Conditions
             _responder = responder;
         }
 
+        /// <inheritdoc />
         public async ValueTask<Result> CheckAsync(RequireGuildPermissionAttribute attribute, CancellationToken ct = default)
         {
             // Get and check the channel
@@ -94,16 +95,19 @@ namespace UVOCBot.Commands.Conditions
             if (!getGuildResult.IsSuccess)
                 return Result.FromError(getGuildResult);
 
-            // Check that the bot has the required permission
-            Result hasPermissionsResult = CheckMemberPermissions(guildRoles, currentMember, BotConstants.UserId, channel, everyoneRole, attribute.Permission);
-            if (!hasPermissionsResult.IsSuccess)
+            // If required, check that the bot has the required permission
+            if (attribute.IncludeCurrent)
             {
-                await _responder.RespondWithUserErrorAsync(
-                    _context,
-                    $"<@{ BotConstants.UserId }> (that's me!) needs the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission to perform this action.",
-                    ct).ConfigureAwait(false);
+                Result hasPermissionsResult = CheckMemberPermissions(guildRoles, currentMember, BotConstants.UserId, channel, everyoneRole, attribute.Permission);
+                if (!hasPermissionsResult.IsSuccess)
+                {
+                    await _responder.RespondWithUserErrorAsync(
+                        _context,
+                        $"<@{ BotConstants.UserId }> (that's me!) needs the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission in this channel to perform this action.",
+                        ct).ConfigureAwait(false);
 
-                return hasPermissionsResult;
+                    return hasPermissionsResult;
+                }
             }
 
             // Succeed if the user is the Owner of the guild, else check the permission of the executing member
@@ -114,12 +118,12 @@ namespace UVOCBot.Commands.Conditions
             }
             else
             {
-                hasPermissionsResult = CheckMemberPermissions(guildRoles, member, _context.User.ID, channel, everyoneRole, attribute.Permission);
+                Result hasPermissionsResult = CheckMemberPermissions(guildRoles, member, _context.User.ID, channel, everyoneRole, attribute.Permission);
                 if (!hasPermissionsResult.IsSuccess)
                 {
                     await _responder.RespondWithUserErrorAsync(
                         _context,
-                        $"You need the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission to use this command.",
+                        $"You need the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission in this channel to use this command.",
                         ct).ConfigureAwait(false);
 
                     return hasPermissionsResult;
@@ -129,7 +133,7 @@ namespace UVOCBot.Commands.Conditions
             }
         }
 
-        private Result CheckMemberPermissions(IReadOnlyList<IRole> guildRoles, IGuildMember member, Snowflake userId, IChannel channel, IRole everyoneRole, DiscordPermission permission)
+        private static Result CheckMemberPermissions(IReadOnlyList<IRole> guildRoles, IGuildMember member, Snowflake userId, IChannel channel, IRole everyoneRole, DiscordPermission permission)
         {
             List<IRole> memberRoles = guildRoles.Where(r => member.Roles.Contains(r.ID)).ToList();
             IDiscordPermissionSet computedPermissions;

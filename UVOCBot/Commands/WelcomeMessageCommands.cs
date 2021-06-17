@@ -2,7 +2,6 @@
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
-using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 using System;
@@ -17,7 +16,7 @@ namespace UVOCBot.Commands
     [Group("welcome-message")]
     [Description("Commands that allow the welcome message feature to be setup")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireUserGuildPermission(DiscordPermission.ManageGuild)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
     public class WelcomeMessageCommands : CommandGroup
     {
         private readonly ICommandContext _context;

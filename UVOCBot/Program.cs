@@ -217,7 +217,8 @@ namespace UVOCBot
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 
-            services.AddCondition<RequireGuildPermissionCondition>();
+            services.AddCondition<RequireContextCondition>()
+                    .AddCondition<RequireGuildPermissionCondition>();
 
             services.AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()

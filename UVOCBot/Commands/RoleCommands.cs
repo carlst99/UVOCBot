@@ -4,7 +4,6 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
@@ -13,13 +12,14 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Conditions.Attributes;
 
 namespace UVOCBot.Commands
 {
     [Group("role")]
     [Description("Commands that help with role management")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireUserGuildPermission(DiscordPermission.ManageRoles)]
+    [RequireGuildPermission(DiscordPermission.ManageRoles)]
     public class RoleCommands : CommandGroup
     {
         /// <summary>

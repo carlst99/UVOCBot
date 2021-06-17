@@ -3,7 +3,6 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
@@ -14,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
@@ -159,7 +159,7 @@ namespace UVOCBot.Commands
         [Command("default-server")]
         [Description("Sets the default world for planetside-related commands")]
         [RequireContext(ChannelContext.Guild)]
-        [RequireUserGuildPermission(DiscordPermission.ManageGuild)]
+        [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
         public async Task<IResult> DefaultWorldCommand([DiscordTypeHint(TypeHint.String)] WorldType server)
         {
             Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);

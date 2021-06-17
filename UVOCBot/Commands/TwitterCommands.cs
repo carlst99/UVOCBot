@@ -2,7 +2,6 @@
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 using System;
@@ -13,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models.V2;
+using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
@@ -22,7 +22,7 @@ namespace UVOCBot.Commands
     [Group("twitter")]
     [Description("Commands that help with Twitter post relaying")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireUserGuildPermission(DiscordPermission.ManageGuild)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
     public class TwitterCommands : CommandGroup
     {
         private const string TWITTER_USERNAME_REGEX = "^[A-Za-z0-9_]{1,15}$";

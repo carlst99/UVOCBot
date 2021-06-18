@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -30,15 +31,22 @@ namespace UVOCBot.Commands
 
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
-        private readonly IDiscordRestChannelAPI _channelAPI;
-        private readonly IDiscordRestGuildAPI _guildAPI;
+        private readonly IDiscordRestChannelAPI _channelApi;
+        private readonly IDiscordRestGuildAPI _guildApi;
+        private readonly IPermissionChecksService _permissionChecksService;
 
-        public RoleCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestChannelAPI channelAPI, IDiscordRestGuildAPI guildAPI)
+        public RoleCommands(
+            ICommandContext context,
+            MessageResponseHelpers responder,
+            IDiscordRestChannelAPI channelApi,
+            IDiscordRestGuildAPI guildApi,
+            IPermissionChecksService permissionsChecksService)
         {
             _context = context;
             _responder = responder;
-            _channelAPI = channelAPI;
-            _guildAPI = guildAPI;
+            _channelApi = channelApi;
+            _guildApi = guildApi;
+            _permissionChecksService = permissionsChecksService;
         }
 
         [Command("add-by-reaction")]
@@ -49,7 +57,6 @@ namespace UVOCBot.Commands
             [Description("The reaction emoji")][DiscordTypeHint(TypeHint.String)] string emoji,
             [Description("The role that should be assigned to each user")][DiscordTypeHint(TypeHint.Role)] IRole role)
         {
-            // TODO: Verify that we can assign the role
             Result<IMessage> messageResult = await GetMessage(channel.ID, messageID).ConfigureAwait(false);
             if (!messageResult.IsSuccess)
                 return Result.FromError(messageResult);
@@ -60,11 +67,16 @@ namespace UVOCBot.Commands
 #pragma warning restore CS8604 // Possible null reference argument.
                 return await _responder.RespondWithErrorAsync(_context, $"The emoji {emoji} doesn't exist as a reaction on that message", ct: CancellationToken).ConfigureAwait(false);
 
+            // Ensure that we can manipulate this role
+            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID }, CancellationToken).ConfigureAwait(false);
+            if (!canManipulateRoles.IsSuccess)
+                return canManipulateRoles;
+
             StringBuilder userListBuilder = new();
             int userCount = 0;
 
             // Attempt to get all the users who reacted to the message
-            await foreach (Result<IReadOnlyList<IUser>> usersWhoReacted in _channelAPI.GetAllReactorsAsync(channel.ID, messageResult.Entity.ID, emoji).WithCancellation(CancellationToken).ConfigureAwait(false))
+            await foreach (Result<IReadOnlyList<IUser>> usersWhoReacted in _channelApi.GetAllReactorsAsync(channel.ID, messageResult.Entity.ID, emoji).WithCancellation(CancellationToken).ConfigureAwait(false))
             {
                 if (!usersWhoReacted.IsSuccess || usersWhoReacted.Entity is null)
                 {
@@ -74,7 +86,7 @@ namespace UVOCBot.Commands
 
                 foreach (IUser user in usersWhoReacted.Entity)
                 {
-                    Result roleAddResult = await _guildAPI.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, CancellationToken).ConfigureAwait(false);
+                    Result roleAddResult = await _guildApi.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, CancellationToken).ConfigureAwait(false);
                     if (roleAddResult.IsSuccess)
                     {
                         // Don't flood the stringbuilder with more names than we'll actually ever use when sending the success message
@@ -102,7 +114,12 @@ namespace UVOCBot.Commands
             StringBuilder userListBuilder = new();
             int userCount = 0;
 
-            await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildAPI.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
+            // Ensure that we can manipulate this role
+            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID }, CancellationToken).ConfigureAwait(false);
+            if (!canManipulateRoles.IsSuccess)
+                return canManipulateRoles;
+
+            await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildApi.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
             {
                 if (!users.IsSuccess || users.Entity is null)
                 {
@@ -113,7 +130,7 @@ namespace UVOCBot.Commands
                 foreach (IGuildMember member in users.Entity)
                 {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                    Result roleRemoveResult = await _guildAPI.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, CancellationToken).ConfigureAwait(false);
+                    Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, CancellationToken).ConfigureAwait(false);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     if (roleRemoveResult.IsSuccess)
                     {
@@ -146,7 +163,7 @@ namespace UVOCBot.Commands
 
             // Attempt to get the message
             Snowflake messageSnowflake = new(messageIDParsed);
-            Result<IMessage> messageResult = await _channelAPI.GetChannelMessageAsync(channel, messageSnowflake, CancellationToken).ConfigureAwait(false);
+            Result<IMessage> messageResult = await _channelApi.GetChannelMessageAsync(channel, messageSnowflake, CancellationToken).ConfigureAwait(false);
             if (!messageResult.IsSuccess || messageResult.Entity?.Reactions.HasValue != true)
             {
                 await _responder.RespondWithErrorAsync(

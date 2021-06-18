@@ -63,8 +63,6 @@ namespace UVOCBot.Commands
 
         public async Task<Result<IMessage>> RespondWithUserErrorAsync(ICommandContext context, string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
-            //return await RespondWithContentAsync(context, $"{ Formatter.Emoji("warning") } { content }", ct, allowedMentions).ConfigureAwait(false);
-
             Embed embed = new()
             {
                 Colour = Color.Red,

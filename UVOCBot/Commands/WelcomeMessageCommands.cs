@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Conditions;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
@@ -24,14 +25,21 @@ namespace UVOCBot.Commands
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;
         private readonly IDbApiService _dbApi;
-        private readonly IDiscordRestGuildAPI _guildAPI;
+        private readonly IDiscordRestGuildAPI _guildApi;
+        private readonly IPermissionChecksService _permissionChecksService;
 
-        public WelcomeMessageCommands(ICommandContext context, MessageResponseHelpers responder, IDbApiService dbAPI, IDiscordRestGuildAPI guildAPI)
+        public WelcomeMessageCommands(
+            ICommandContext context,
+            MessageResponseHelpers responder,
+            IDbApiService dbAPI,
+            IDiscordRestGuildAPI guildApi,
+            IPermissionChecksService permissionChecksService)
         {
             _context = context;
             _responder = responder;
             _dbApi = dbAPI;
-            _guildAPI = guildAPI;
+            _guildApi = guildApi;
+            _permissionChecksService = permissionChecksService;
         }
 
         [Command("enabled")]
@@ -66,9 +74,12 @@ namespace UVOCBot.Commands
         [Description("Provides the new member with the option to give themself an alternative set of roles.")]
         [RequireGuildPermission(DiscordPermission.ManageRoles)]
         public async Task<IResult> AlternateRolesCommand(
-            [Description("The label to put on the button that lets the new member acquire the alternate roles.")] string alternateRoleButtonLabel,
+            [Description("The label of the alternate role button. Leave empty to disable the alternate role feature.")] string? alternateRoleButtonLabel,
             [Description("The roles to apply.")] string roles)
         {
+            if (alternateRoleButtonLabel is null)
+                alternateRoleButtonLabel = string.Empty;
+
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
@@ -77,7 +88,7 @@ namespace UVOCBot.Commands
             }
 
             IEnumerable<ulong> roleIds = ParseRoles(roles);
-            IResult canManipulateRoles = await CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
+            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
             if (!canManipulateRoles.IsSuccess)
                 return canManipulateRoles;
 
@@ -86,7 +97,7 @@ namespace UVOCBot.Commands
                 AlternateRoleLabel = alternateRoleButtonLabel,
                 AlternateRoles = roleIds.ToList()
             };
-            
+
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
@@ -103,7 +114,46 @@ namespace UVOCBot.Commands
             }
         }
 
-        // TODO: When setting channel, ensure that we have the correct permission overwrites to adjust roles
+        [Command("channel")]
+        [Description("Sets the channel to post the welcome message in.")]
+        public async Task<IResult> ChannelCommand(IChannel channel)
+        {
+            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel.ID, _context.User.ID, CancellationToken).ConfigureAwait(false);
+            if (!getPermissionSet.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                return getPermissionSet;
+            }
+
+            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.SendMessages))
+                return await _responder.RespondWithErrorAsync(_context, "I do not have permission to send messages in this channel.", CancellationToken).ConfigureAwait(false);
+
+            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.ManageRoles))
+                return await _responder.RespondWithErrorAsync(_context, "I do not have permission to manage roles in this channel.", CancellationToken).ConfigureAwait(false);
+
+            Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            if (!getWelcomeMessage.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                return getWelcomeMessage;
+            }
+
+            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with { ChannelId = channel.ID.Value };
+            Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
+            if (!getWelcomeMessage.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                return updateWelcomeMessage;
+            }
+            else
+            {
+                await _responder.RespondWithSuccessAsync(
+                    _context,
+                    $"The welcome message will now be posted in { Formatter.ChannelMention(channel.ID.Value) }.",
+                    CancellationToken).ConfigureAwait(false);
+                return Result.FromSuccess();
+            }
+        }
 
         private static IEnumerable<ulong> ParseRoles(string roles)
         {
@@ -114,55 +164,6 @@ namespace UVOCBot.Commands
                 if (index > 0 && ulong.TryParse(role[0..index], out ulong roleId))
                     yield return roleId;
             }
-        }
-
-        private async Task<IResult> CanManipulateRoles(Snowflake guildId, IEnumerable<ulong> roleIds)
-        {
-            Result<IReadOnlyList<IRole>> getGuildRoles = await _guildAPI.GetGuildRolesAsync(guildId, CancellationToken).ConfigureAwait(false);
-            if (!getGuildRoles.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getGuildRoles;
-            }
-
-            Result<IGuildMember> getCurrentMember = await _guildAPI.GetGuildMemberAsync(_context.GuildID.Value, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
-            if (!getCurrentMember.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getCurrentMember;
-            }
-
-            // Enumerate roles in order from highest to lowest ranked, so that logically the first role in the current member's role list is its highest
-            IRole? highestRole = null;
-            foreach (IRole role in getGuildRoles.Entity.OrderByDescending(r => r.Position))
-            {
-                if (getCurrentMember.Entity.Roles.Contains(role.ID))
-                {
-                    highestRole = role;
-                    break;
-                }
-            }
-
-            if (highestRole is null)
-                return await _responder.RespondWithUserErrorAsync(_context, "I cannot assign these roles, as I do not have a role myself.", CancellationToken).ConfigureAwait(false);
-
-            // Check that each role is assignable by us
-            foreach (ulong roleId in roleIds)
-            {
-                if (!getGuildRoles.Entity.Any(r => r.ID.Value == roleId))
-                    return await _responder.RespondWithUserErrorAsync(_context, "A supplied role does not exist.", CancellationToken).ConfigureAwait(false);
-
-                IRole role = getGuildRoles.Entity.First(r => r.ID.Value == roleId);
-                if (role.Position > highestRole.Position)
-                {
-                    return await _responder.RespondWithUserErrorAsync(
-                        _context,
-                        $"I cannot assign the { Formatter.RoleMention(role.ID) } role, as it is positioned above my own highest role.",
-                        CancellationToken).ConfigureAwait(false);
-                }
-            }
-
-            return Result.FromSuccess();
         }
     }
 }

@@ -210,7 +210,7 @@ namespace UVOCBot.Commands
         [Description("Selects the channel to which tweets will be relayed")]
         public async Task<IResult> RelayChannelCommand([Description("The channel to relay tweets to")] IChannel channel)
         {
-            Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.PermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.GetPermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!botPermissions.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again later", CancellationToken).ConfigureAwait(false);

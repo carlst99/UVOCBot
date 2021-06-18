@@ -60,7 +60,7 @@ namespace UVOCBot.Commands.Conditions
                 return new ConditionNotSatisfiedError("Command requires a guild permission but was executed outside of a guild.");
             }
 
-            var guildId = channel.GuildID.Value;
+            Snowflake guildId = channel.GuildID.Value;
 
             // Get and check the guild roles
             Result<IReadOnlyList<IRole>> getGuildRolesResult = await _guildApi.GetGuildRolesAsync(guildId, ct).ConfigureAwait(false);
@@ -68,7 +68,7 @@ namespace UVOCBot.Commands.Conditions
                 return Result.FromError(getGuildRolesResult);
 
             IReadOnlyList<IRole> guildRoles = getGuildRolesResult.Entity;
-            var everyoneRole = guildRoles.FirstOrDefault(r => r.ID == guildId);
+            IRole? everyoneRole = guildRoles.FirstOrDefault(r => r.ID == guildId);
             if (everyoneRole is null)
                 return new Exception("No @everyone role found.");
 

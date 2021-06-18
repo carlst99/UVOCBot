@@ -3,13 +3,11 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Conditions;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
@@ -150,6 +148,48 @@ namespace UVOCBot.Commands
                 await _responder.RespondWithSuccessAsync(
                     _context,
                     $"The welcome message will now be posted in { Formatter.ChannelMention(channel.ID.Value) }.",
+                    CancellationToken).ConfigureAwait(false);
+                return Result.FromSuccess();
+            }
+        }
+
+        [Command("default-roles")]
+        [Description("Provides the new member default roles.")]
+        [RequireGuildPermission(DiscordPermission.ManageRoles)]
+        public async Task<IResult> DefaultRolesCommand(
+            [Description("The roles to apply. Leave empty to apply no roles.")] string? roles)
+        {
+            if (roles is null)
+                roles = string.Empty;
+
+            Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            if (!getWelcomeMessage.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                return getWelcomeMessage;
+            }
+
+            IEnumerable<ulong> roleIds = ParseRoles(roles);
+            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
+            if (!canManipulateRoles.IsSuccess)
+                return canManipulateRoles;
+
+            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with
+            {
+                DefaultRoles = roleIds.ToList()
+            };
+
+            Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
+            if (!updateWelcomeMessage.IsSuccess)
+            {
+                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                return getWelcomeMessage;
+            }
+            else
+            {
+                await _responder.RespondWithSuccessAsync(
+                    _context,
+                    "Success! The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
                     CancellationToken).ConfigureAwait(false);
                 return Result.FromSuccess();
             }

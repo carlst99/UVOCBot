@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using UVOCBot.Core.Model;
 
@@ -97,7 +98,7 @@ namespace UVOCBot.Api.Model
         {
             List<ulong> roles = new();
 
-            foreach (string value in serialisedRoles.Split(ROLE_SPLIT_CHAR))
+            foreach (string value in serialisedRoles.Split(ROLE_SPLIT_CHAR, StringSplitOptions.RemoveEmptyEntries))
                 roles.Add(ulong.Parse(value));
 
             return roles.AsReadOnly();

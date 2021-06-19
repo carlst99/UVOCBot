@@ -11,6 +11,7 @@ using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
+    /// <inheritdoc cref="ICensusApiService"/>
     public class CensusApiService : ICensusApiService
     {
         private readonly ILogger<CensusApiService> _logger;
@@ -22,6 +23,24 @@ namespace UVOCBot.Services
             _logger = logger;
             _queryFactory = censusQueryFactory;
             _censusClient = censusClient;
+        }
+
+        /// <inheritdoc />
+        public async Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default)
+        {
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("outfit")
+                .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
+
+            try
+            {
+                return await _censusClient.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get census outfit");
+                return ex;
+            }
         }
 
         /// <inheritdoc/>
@@ -44,7 +63,7 @@ namespace UVOCBot.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get Census world.");
-                return Result<World>.FromError(ex);
+                return ex;
             }
         }
 

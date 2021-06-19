@@ -68,7 +68,7 @@ namespace UVOCBot.Commands
                 return await _responder.RespondWithErrorAsync(_context, $"The emoji {emoji} doesn't exist as a reaction on that message", ct: CancellationToken).ConfigureAwait(false);
 
             // Ensure that we can manipulate this role
-            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID }, CancellationToken).ConfigureAwait(false);
+            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID.Value }, CancellationToken).ConfigureAwait(false);
             if (!canManipulateRoles.IsSuccess)
                 return canManipulateRoles;
 
@@ -115,7 +115,7 @@ namespace UVOCBot.Commands
             int userCount = 0;
 
             // Ensure that we can manipulate this role
-            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID }, CancellationToken).ConfigureAwait(false);
+            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID.Value }, CancellationToken).ConfigureAwait(false);
             if (!canManipulateRoles.IsSuccess)
                 return canManipulateRoles;
 

@@ -9,6 +9,14 @@ namespace UVOCBot.Services.Abstractions
     public interface ICensusApiService
     {
         /// <summary>
+        /// Gets an outfit.
+        /// </summary>
+        /// <param name="tag">The outfit tag.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns></returns>
+        Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default);
+
+        /// <summary>
         /// Gets information about a world.
         /// </summary>
         /// <param name="world"></param>

@@ -9,6 +9,14 @@ namespace UVOCBot.Services.Abstractions
     public interface ICensusApiService
     {
         /// <summary>
+        /// Gets an outfit.
+        /// </summary>
+        /// <param name="tag">The outfit tag.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns></returns>
+        Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default);
+
+        /// <summary>
         /// Gets information about a world.
         /// </summary>
         /// <param name="world"></param>
@@ -30,7 +38,7 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="outfitTags">The case-insensitive tags of the outfit.</param>
         /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
         /// <returns></returns>
-        Task<Result<IEnumerable<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default);
+        Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default);
 
         /// <summary>
         /// Gets the online members of a number of outfit.
@@ -38,6 +46,15 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="outfitIds">The IDs of the outfits.</param>
         /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
         /// <returns></returns>
-        Task<Result<IEnumerable<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default);
+        Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets new members of an outfit.
+        /// </summary>
+        /// <param name="outfitId">The ID of the outfit.</param>
+        /// <param name="limit">The number of new members to get.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> to stop the operation with.</param>
+        /// <returns></returns>
+        Task<List<NewOutfitMember>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default);
     }
 }

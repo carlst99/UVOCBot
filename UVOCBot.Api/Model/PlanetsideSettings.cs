@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Model
 {
@@ -14,5 +15,19 @@ namespace UVOCBot.Api.Model
         /// Gets or sets the default world to use
         /// </summary>
         public int? DefaultWorld { get; set; }
+
+        public PlanetsideSettingsDTO ToDto()
+            => new()
+            {
+                GuildId = GuildId,
+                DefaultWorld = DefaultWorld
+            };
+
+        public static PlanetsideSettings FromDto(PlanetsideSettingsDTO dto)
+            => new()
+            {
+                GuildId = dto.GuildId,
+                DefaultWorld = dto.DefaultWorld
+            };
     }
 }

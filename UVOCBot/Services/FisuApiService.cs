@@ -14,7 +14,7 @@ using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
-    public sealed class FisuApiService : ApiService<FisuApiService>, IFisuApiService
+    public sealed class FisuApiService : ApiServiceBase<FisuApiService>, IFisuApiService
     {
         private readonly IMemoryCache _cache;
 

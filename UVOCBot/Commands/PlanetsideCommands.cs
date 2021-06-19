@@ -3,7 +3,6 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
@@ -14,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
@@ -41,7 +41,7 @@ namespace UVOCBot.Commands
         [Command("population")]
         [Description("Gets the population of a PlanetSide server.")]
         public async Task<IResult> GetServerPopulationCommandAsync(
-            [Description("Set your default server with `default-server`.")] WorldType server = 0)
+            [Description("Set your default server with `/default-server`.")] WorldType server = 0)
         {
             if (server == 0)
             {
@@ -59,7 +59,7 @@ namespace UVOCBot.Commands
                 {
                     return await _responder.RespondWithErrorAsync(
                         _context,
-                        $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("default-server")} command.",
+                        $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         ct: CancellationToken).ConfigureAwait(false);
                 }
                 else
@@ -105,7 +105,7 @@ namespace UVOCBot.Commands
             }
             else if (tags.Length > 1)
             {
-                Result<IEnumerable<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
+                Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
                 if (!outfits.IsSuccess)
                 {
                     await _responder.RespondWithErrorAsync(_context, "The census query failed. Please try again later.", CancellationToken).ConfigureAwait(false);
@@ -138,15 +138,17 @@ namespace UVOCBot.Commands
         [Description("Gets a PlanetSide 2 continent map.")]
         public async Task<IResult> MapCommand(TileMap map)
         {
-            string mapFileName = map.ToString() + ".png";
+            string mapFileName = map.ToString() + ".jpg";
             string mapFilePath = Path.Combine("Assets", "PS2Maps", mapFileName);
+
+            DateTime mapLastUpdated = File.GetCreationTimeUtc(mapFilePath);
 
             Embed embed = new()
             {
                 Title = map.ToString(),
                 Author = new EmbedAuthor("Full-res maps here", "https://github.com/cooltrain7/Planetside-2-API-Tracker/tree/master/Maps"),
                 Colour = BotConstants.DEFAULT_EMBED_COLOUR,
-                Footer = new EmbedFooter("Last updated 27/05/2021"),
+                Footer = new EmbedFooter("Map last updated " + mapLastUpdated.ToShortDateString()),
                 Image = new EmbedImage("attachment://" + mapFileName),
                 Type = EmbedType.Image,
             };
@@ -157,7 +159,7 @@ namespace UVOCBot.Commands
         [Command("default-server")]
         [Description("Sets the default world for planetside-related commands")]
         [RequireContext(ChannelContext.Guild)]
-        [RequireUserGuildPermission(DiscordPermission.ManageGuild)]
+        [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
         public async Task<IResult> DefaultWorldCommand([DiscordTypeHint(TypeHint.String)] WorldType server)
         {
             Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
@@ -202,7 +204,7 @@ namespace UVOCBot.Commands
                 Description = await GetWorldStatusString(world).ConfigureAwait(false),
                 Title = world.ToString() + " - " + population.Total.ToString(),
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
-                Fields=  new List<EmbedField>
+                Fields =  new List<EmbedField>
                 {
                     new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", GetEmbedPopulationBar(population.VS, population.Total)),
                     new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", GetEmbedPopulationBar(population.NC, population.Total)),

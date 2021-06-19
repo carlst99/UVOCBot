@@ -41,12 +41,13 @@ namespace UVOCBot.Config
 
         public GeneralOptions()
         {
-            BotToken = string.Empty;
             ApiEndpoint = string.Empty;
-            FisuApiEndpoint = string.Empty;
+            BotToken = string.Empty;
             CensusApiKey = string.Empty;
             CommandPrefix = "<>"; // No prefix, most commands use the slash infrastructure
             DebugGuildIds = new List<ulong>();
+            DiscordPresence = string.Empty;
+            FisuApiEndpoint = string.Empty;
         }
     }
 }

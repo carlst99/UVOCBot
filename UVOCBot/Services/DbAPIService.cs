@@ -4,20 +4,64 @@ using Remora.Results;
 using RestSharp;
 using RestSharp.Serializers.SystemTextJson;
 using System.Collections.Generic;
+using System.Net;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
 using UVOCBot.Core.Model;
+using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
-    public sealed class DbApiService : ApiService<DbApiService>, IDbApiService
+    public sealed class DbApiService : ApiServiceBase<DbApiService>, IDbApiService
     {
         public DbApiService(ILogger<DbApiService> logger, IOptions<GeneralOptions> options)
             : base(logger, () => new RestClient(options.Value.ApiEndpoint).UseSystemTextJson(new JsonSerializerOptions(JsonSerializerDefaults.Web)))
         { }
+
+        public async Task<Result> ScaffoldDbEntries(IEnumerable<ulong> guildIds, CancellationToken ct = default)
+        {
+            foreach (ulong guild in guildIds)
+            {
+                Result<GuildSettingsDTO> guildSettingsResult = await CreateGuildSettingsAsync(new GuildSettingsDTO(guild), ct).ConfigureAwait(false);
+                if (!guildSettingsResult.IsSuccess && !(guildSettingsResult.Error is HttpStatusCodeError er && er.StatusCode == HttpStatusCode.Conflict))
+                {
+                    _logger.LogCritical("Could not scaffold guild settings database objects: {error}", guildSettingsResult.Error);
+                    return Result.FromError(guildSettingsResult);
+                }
+
+                Result<GuildTwitterSettingsDTO> guildTwitterSettingsResult = await CreateGuildTwitterSettingsAsync(new GuildTwitterSettingsDTO(guild), ct).ConfigureAwait(false);
+                if (!guildTwitterSettingsResult.IsSuccess && !(guildTwitterSettingsResult.Error is HttpStatusCodeError er2 && er2.StatusCode == HttpStatusCode.Conflict))
+                {
+                    _logger.LogCritical("Could not scaffold guild twitter settings database objects: {error}", guildSettingsResult.Error);
+                    return Result.FromError(guildTwitterSettingsResult);
+                }
+
+                Result<PlanetsideSettingsDTO> planetsideSettingsResult = await CreatePlanetsideSettingsAsync(new PlanetsideSettingsDTO(guild), ct).ConfigureAwait(false);
+                if (!planetsideSettingsResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er3 && er3.StatusCode == HttpStatusCode.Conflict))
+                {
+                    _logger.LogCritical("Could not scaffold PlanetSide settings database objects: {error}", guildSettingsResult.Error);
+                    return Result.FromError(planetsideSettingsResult);
+                }
+
+                Result<GuildWelcomeMessageDto> guildWelcomeMessageResult = await CreateGuildWelcomeMessageAsync(
+                    new GuildWelcomeMessageDto(guild)
+                    {
+                        IsEnabled = false
+                    },
+                    ct).ConfigureAwait(false);
+
+                if (!guildWelcomeMessageResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er4 && er4.StatusCode == HttpStatusCode.Conflict))
+                {
+                    _logger.LogCritical("Could not initialise guild welcome message database objects: {error}", guildWelcomeMessageResult.Error);
+                    return Result.FromError(guildWelcomeMessageResult);
+                }
+            }
+
+            return Result.FromSuccess();
+        }
 
         #region TwitterUser
 
@@ -299,6 +343,44 @@ namespace UVOCBot.Services
             IRestRequest request = new RestRequest("membergroup", Method.DELETE);
             request.AddParameter("guildId", guildId, ParameterType.QueryString);
             request.AddParameter("groupName", groupName, ParameterType.QueryString);
+
+            return await ExecuteAsync(request, ct).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region GuildWelcomeMessage
+
+        public async Task<Result<GuildWelcomeMessageDto>> GetGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.GET);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
+
+            return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
+        }
+
+        public async Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.PUT);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
+
+            request.AddJsonBody(welcomeMessage);
+
+            return await ExecuteAsync(request, ct).ConfigureAwait(false);
+        }
+
+        public async Task<Result<GuildWelcomeMessageDto>> CreateGuildWelcomeMessageAsync(GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage", Method.POST);
+            request.AddJsonBody(welcomeMessage);
+
+            return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
+        }
+
+        public async Task<Result> DeleteGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default)
+        {
+            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.DELETE);
+            request.AddParameter("id", id, ParameterType.UrlSegment);
 
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }

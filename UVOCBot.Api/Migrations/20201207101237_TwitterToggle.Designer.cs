@@ -6,7 +6,7 @@ using System;
 
 namespace UVOCBot.Api.Migrations
 {
-    [DbContext(typeof(BotContext))]
+    [DbContext(typeof(DiscordContext))]
     [Migration("20201207101237_TwitterToggle")]
     partial class TwitterToggle
     {

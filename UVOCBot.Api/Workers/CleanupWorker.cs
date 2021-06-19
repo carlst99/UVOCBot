@@ -22,7 +22,7 @@ namespace UVOCBot.Api.Workers
             {
                 using (IServiceScope scope = _serviceScopeFactory.CreateScope())
                 {
-                    BotContext db = scope.ServiceProvider.GetRequiredService<BotContext>();
+                    DiscordContext db = scope.ServiceProvider.GetRequiredService<DiscordContext>();
 
                     foreach (MemberGroup group in db.MemberGroups)
                     {

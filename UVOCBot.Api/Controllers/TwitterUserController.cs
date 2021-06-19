@@ -12,9 +12,9 @@ namespace UVOCBot.Api.Controllers
     [ApiController]
     public class TwitterUserController : ControllerBase
     {
-        private readonly BotContext _context;
+        private readonly DiscordContext _context;
 
-        public TwitterUserController(BotContext context)
+        public TwitterUserController(DiscordContext context)
         {
             _context = context;
         }
@@ -23,7 +23,7 @@ namespace UVOCBot.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TwitterUserDTO>>> GetTwitterUsers()
         {
-            return (await _context.TwitterUsers.ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+            return (await _context.TwitterUsers.ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
         }
 
         // GET: api/TwitterUser/5
@@ -32,7 +32,7 @@ namespace UVOCBot.Api.Controllers
         {
             var twitterUser = await _context.TwitterUsers.FindAsync(id).ConfigureAwait(false);
 
-            return twitterUser == null ? NotFound() : ToDTO(twitterUser);
+            return twitterUser == null ? NotFound() : twitterUser.ToDto();
         }
 
         [HttpGet("exists/{id}")]
@@ -48,7 +48,7 @@ namespace UVOCBot.Api.Controllers
             if (id != twitterUser.UserId)
                 return BadRequest();
 
-            _context.Entry(await FromDTO(twitterUser).ConfigureAwait(false)).State = EntityState.Modified;
+            _context.Entry(await TwitterUser.FromDto(twitterUser, _context).ConfigureAwait(false)).State = EntityState.Modified;
 
             try
             {
@@ -69,7 +69,7 @@ namespace UVOCBot.Api.Controllers
             if (await _context.TwitterUsers.AnyAsync(t => t.UserId == twitterUser.UserId).ConfigureAwait(false))
                 return Conflict();
 
-            _context.TwitterUsers.Add(await FromDTO(twitterUser).ConfigureAwait(false));
+            _context.TwitterUsers.Add(await TwitterUser.FromDto(twitterUser, _context).ConfigureAwait(false));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction(nameof(GetTwitterUser), new { id = twitterUser.UserId }, twitterUser);
@@ -87,30 +87,6 @@ namespace UVOCBot.Api.Controllers
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
-        }
-
-        private static TwitterUserDTO ToDTO(TwitterUser user)
-        {
-            return new TwitterUserDTO
-            {
-                UserId = user.UserId,
-                LastRelayedTweetId = user.LastRelayedTweetId,
-                Guilds = user.Guilds.Select(g => g.GuildId).ToList()
-            };
-        }
-
-        private async Task<TwitterUser> FromDTO(TwitterUserDTO dto)
-        {
-            TwitterUser user = new()
-            {
-                UserId = dto.UserId,
-                LastRelayedTweetId = dto.LastRelayedTweetId
-            };
-
-            foreach (ulong id in dto.Guilds)
-                user.Guilds.Add(await _context.FindAsync<GuildTwitterSettings>(id).ConfigureAwait(false));
-
-            return user;
         }
 
         private bool TwitterUserExists(long id)

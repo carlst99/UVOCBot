@@ -21,7 +21,7 @@ namespace UVOCBot.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<DatabaseOptions>(Configuration.GetSection(DatabaseOptions.ConfigSectionName));
-            services.AddDbContext<BotContext>();
+            services.AddDbContext<DiscordContext>();
             services.AddControllers();
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo { Title = "UVOCBot.Api", Version = "v1" }));
             services.AddHostedService<CleanupWorker>();

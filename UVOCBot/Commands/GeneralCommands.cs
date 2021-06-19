@@ -19,8 +19,8 @@ namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• **Map command** - Quickly get maps for each continent." +
-            "\r\n• Fix issues with tweet relaying.";
+        public const string RELEASE_NOTES = "• **Welcome messages** - Welcome new members, give them roles and take guesses at their PlanetSide 2 character name." +
+            "\r\n• *I am speed* - most commands should now complete faster.";
 
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;

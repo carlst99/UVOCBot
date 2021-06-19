@@ -8,6 +8,8 @@ namespace UVOCBot.Services.Abstractions
 {
     public interface IDbApiService
     {
+        Task<Result> ScaffoldDbEntries(IEnumerable<ulong> guildIds, CancellationToken ct = default);
+
         #region TwitterUser
 
         Task<Result<List<TwitterUserDTO>>> ListTwitterUsersAsync(CancellationToken ct = default);
@@ -97,6 +99,18 @@ namespace UVOCBot.Services.Abstractions
         Task<Result> DeleteMemberGroupAsync(ulong id, CancellationToken ct = default);
 
         Task<Result> DeleteMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
+
+        #endregion
+
+        #region GuildWelcomeMessage
+
+        Task<Result<GuildWelcomeMessageDto>> GetGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default);
+
+        Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default);
+
+        Task<Result<GuildWelcomeMessageDto>> CreateGuildWelcomeMessageAsync(GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default);
+
+        Task<Result> DeleteGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default);
 
         #endregion
     }

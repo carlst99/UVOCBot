@@ -1,5 +1,5 @@
-﻿using DaybreakGames.Census;
-using DaybreakGames.Census.Operators;
+﻿using DbgCensus.Rest.Abstractions;
+using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
@@ -11,45 +11,79 @@ using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
+    /// <inheritdoc cref="ICensusApiService"/>
     public class CensusApiService : ICensusApiService
     {
         private readonly ILogger<CensusApiService> _logger;
-        private readonly ICensusQueryFactory _queryFactory;
+        private readonly IQueryBuilderFactory _queryFactory;
+        private readonly ICensusRestClient _censusClient;
 
-        public CensusApiService(ILogger<CensusApiService> logger, ICensusQueryFactory censusQueryFactory)
+        public CensusApiService(ILogger<CensusApiService> logger, IQueryBuilderFactory censusQueryFactory, ICensusRestClient censusClient)
         {
             _logger = logger;
             _queryFactory = censusQueryFactory;
+            _censusClient = censusClient;
+        }
+
+        /// <inheritdoc />
+        public async Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default)
+        {
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("outfit")
+                .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
+
+            try
+            {
+                return await _censusClient.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get census outfit");
+                return ex;
+            }
         }
 
         /// <inheritdoc/>
         public async Task<Result<World>> GetWorld(WorldType world, CancellationToken ct = default)
         {
-            var query = _queryFactory.Create("world").SetLanguage(CensusLanguage.English);
-            query.Where("world_id").Equals((int)world);
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("world")
+                .Where("world_id", SearchModifier.Equals, (int)world)
+                .WithLimitPerDatabase(15); // Adding a limit that isn't 10 or 100 here significantly improves the chances of the correct state being returned
 
             try
             {
-                return await query.GetAsync<World>().ConfigureAwait(false);
+                World? worldResult = await _censusClient.GetAsync<World>(query, ct).ConfigureAwait(false);
+
+                if (worldResult is null)
+                    throw new Exception("No result was returned.");
+                else
+                    return worldResult;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get Census world.");
-                return Result<World>.FromError(ex);
+                return ex;
             }
         }
 
         /// <inheritdoc/>
         public async Task<Result<OutfitOnlineMembers>> GetOnlineMembersAsync(string outfitTag, CancellationToken ct = default)
         {
-            CensusQuery query = _queryFactory.Create("outfit");
-            query.Where("alias_lower").Equals(outfitTag.ToLower());
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("outfit")
+                .Where("alias_lower", SearchModifier.Equals, outfitTag.ToLower());
 
             ConstructOnlineMembersQuery(query);
 
             try
             {
-                return await query.GetAsync<OutfitOnlineMembers>().ConfigureAwait(false);
+                OutfitOnlineMembers? onlineMembers = await _censusClient.GetAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
+
+                if (onlineMembers is null)
+                    throw new Exception("No result was returned.");
+                else
+                    return onlineMembers;
             }
             catch (Exception ex)
             {
@@ -59,40 +93,81 @@ namespace UVOCBot.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Result<IEnumerable<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default)
+        public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default)
         {
             List<ulong> outfitIds = new();
 
             foreach (string tag in outfitTags)
             {
-                CensusQuery query = _queryFactory.Create("outfit");
-                query.Where("alias_lower").Equals(tag.ToLower());
+                IQueryBuilder query = _queryFactory.Get();
 
-                Outfit outfit = await query.GetAsync<Outfit>().ConfigureAwait(false);
-                outfitIds.Add(outfit.OutfitId);
+                query.OnCollection("outfit")
+                     .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
+
+                Outfit? outfit = await _censusClient.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
+
+                if (outfit is not null)
+                    outfitIds.Add(outfit.OutfitId);
             }
 
             return await GetOnlineMembersAsync(outfitIds, ct).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<Result<IEnumerable<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default)
+        public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default)
         {
-            CensusQuery query = _queryFactory.Create("outfit");
-            query.Where("outfit_id").Equals(string.Join(',', outfitIds));
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("outfit")
+                .Where("outfit_id", SearchModifier.Equals, outfitIds);
 
             ConstructOnlineMembersQuery(query);
 
-            IEnumerable<OutfitOnlineMembers> onlineMembers;
             try
             {
-                onlineMembers = await query.GetListAsync<OutfitOnlineMembers>().WithCancellation(ct).ConfigureAwait(false);
-                return Result<IEnumerable<OutfitOnlineMembers>>.FromSuccess(onlineMembers);
+                List<OutfitOnlineMembers>? onlineMembers = await _censusClient.GetAsync<List<OutfitOnlineMembers>>(query, ct).ConfigureAwait(false);
+
+                if (onlineMembers is null)
+                    throw new Exception();
+                else
+                    return Result<List<OutfitOnlineMembers>>.FromSuccess(onlineMembers);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get online member status for multiple outfit IDs.");
-                return Result<IEnumerable<OutfitOnlineMembers>>.FromError(ex);
+                return Result<List<OutfitOnlineMembers>>.FromError(ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<List<NewOutfitMember>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default)
+        {
+            // https://census.daybreakgames.com/get/ps2/outfit_member?outfit_id=37562651025751157&c:sort=member_since:-1&c:show=character_id,member_since&c:join=character%5Eshow:name.first%5Einject_at:character_name&c:limit=10
+
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("outfit_member")
+                .Where("outfit_id", SearchModifier.Equals, outfitId)
+                .WithSortOrder("member_since", SortOrder.Descending)
+                .ShowFields("character_id", "member_since")
+                .WithLimit(limit)
+                .AddJoin("character", (j) =>
+                {
+                    j.ShowFields("name.first")
+                        .InjectAt("character_name");
+                });
+
+            try
+            {
+                List<NewOutfitMember>? newMembers = await _censusClient.GetAsync<List<NewOutfitMember>>(query, ct).ConfigureAwait(false);
+
+                if (newMembers is null)
+                    throw new Exception("Failed to get new outfit members");
+                else
+                    return newMembers;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get new outfit members");
+                throw;
             }
         }
 
@@ -100,34 +175,30 @@ namespace UVOCBot.Services
         /// Constructs the query required to get online outfit members.
         /// </summary>
         /// <param name="preconditions">A query that has pre-prepared the filter parameters on the outfit model.</param>
-        private static void ConstructOnlineMembersQuery(CensusQuery preconditions)
+        private static void ConstructOnlineMembersQuery(IQueryBuilder preconditions)
         {
             // https://census.daybreakgames.com/get/ps2/outfit?outfit_id=37562651025751157,37570391403474619&c:show=name,outfit_id,alias&c:join=outfit_member%5Einject_at:members%5Eshow:character_id%5Eouter:1%5Elist:1(character%5Eshow:name.first%5Einject_at:character%5Eouter:0%5Eon:character_id(characters_online_status%5Einject_at:online_status%5Eshow:online_status%5Eouter:0(world%5Eon:online_status%5Eto:world_id%5Eouter:0%5Eshow:world_id%5Einject_at:ignore_this))
 
-            preconditions.ShowFields("name", "outfit_id", "alias");
-
-            CensusJoin outfitMemberJoin = preconditions.JoinService("outfit_member");
-            outfitMemberJoin.WithInjectAt("members");
-            outfitMemberJoin.ShowFields("character_id");
-            outfitMemberJoin.IsList(true);
-
-            CensusJoin characterJoin = outfitMemberJoin.JoinService("character");
-            characterJoin.OnField("character_id");
-            characterJoin.WithInjectAt("character");
-            characterJoin.ShowFields("name.first");
-            characterJoin.IsOuterJoin(false);
-
-            CensusJoin onlineStatusJoin = characterJoin.JoinService("characters_online_status");
-            onlineStatusJoin.WithInjectAt("online_status");
-            onlineStatusJoin.ShowFields("online_status");
-            onlineStatusJoin.IsOuterJoin(false);
-
-            CensusJoin worldJoin = onlineStatusJoin.JoinService("world");
-            worldJoin.OnField("online_status");
-            worldJoin.ToField("world_id");
-            worldJoin.WithInjectAt("ignore_this");
-            worldJoin.IsOuterJoin(false);
-            worldJoin.ShowFields("world_id");
+            preconditions.ShowFields("name", "outfit_id", "alias")
+                .AddJoin("outfit_member")
+                    .InjectAt("members")
+                    .ShowFields("character_id")
+                    .IsList()
+                    .AddNestedJoin("character")
+                        .OnField("character_id")
+                        .InjectAt("character")
+                        .ShowFields("name.first")
+                        .IsInnerJoin()
+                        .AddNestedJoin("characters_online_status")
+                            .InjectAt("online_status")
+                            .ShowFields("online_status")
+                            .IsInnerJoin()
+                            .AddNestedJoin("world")
+                                .OnField("online_status")
+                                .ToField("world_id")
+                                .InjectAt("ignore_this")
+                                .ShowFields("world_id")
+                                .IsInnerJoin();
         }
     }
 }

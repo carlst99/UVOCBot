@@ -12,9 +12,9 @@ namespace UVOCBot.Api.Controllers
     [ApiController]
     public class GuildSettingsController : ControllerBase
     {
-        private readonly BotContext _context;
+        private readonly DiscordContext _context;
 
-        public GuildSettingsController(BotContext context)
+        public GuildSettingsController(DiscordContext context)
         {
             _context = context;
         }
@@ -24,9 +24,9 @@ namespace UVOCBot.Api.Controllers
         public async Task<ActionResult<IEnumerable<GuildSettingsDTO>>> GetGuildSettings([FromQuery] bool hasPrefix)
         {
             if (hasPrefix)
-                return (await _context.GuildSettings.Where(s => !string.IsNullOrEmpty(s.Prefix)).ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+                return (await _context.GuildSettings.Where(s => !string.IsNullOrEmpty(s.Prefix)).ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
             else
-                return (await _context.GuildSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => ToDTO(e));
+                return (await _context.GuildSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
         }
 
         // GET: api/GuildSettings/5
@@ -35,7 +35,7 @@ namespace UVOCBot.Api.Controllers
         {
             var guildSettings = await _context.GuildSettings.FindAsync(id).ConfigureAwait(false);
 
-            return guildSettings == default ? NotFound() : ToDTO(guildSettings);
+            return guildSettings == default ? NotFound() : guildSettings.ToDto();
         }
 
         // PUT: api/GuildSettings/5
@@ -46,7 +46,7 @@ namespace UVOCBot.Api.Controllers
             if (id != guildSettings.GuildId)
                 return BadRequest();
 
-            _context.Entry(FromDTO(guildSettings)).State = EntityState.Modified;
+            _context.Entry(GuildSettings.FromDto(guildSettings)).State = EntityState.Modified;
 
             try
             {
@@ -68,7 +68,7 @@ namespace UVOCBot.Api.Controllers
             if (await _context.GuildSettings.AnyAsync(s => s.GuildId == guildSettings.GuildId).ConfigureAwait(false))
                 return Conflict();
 
-            _context.GuildSettings.Add(FromDTO(guildSettings));
+            _context.GuildSettings.Add(GuildSettings.FromDto(guildSettings));
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return CreatedAtAction(nameof(GetGuildSettings), new { id = guildSettings.GuildId }, guildSettings);
@@ -86,26 +86,6 @@ namespace UVOCBot.Api.Controllers
             await _context.SaveChangesAsync().ConfigureAwait(false);
 
             return NoContent();
-        }
-
-        private static GuildSettingsDTO ToDTO(GuildSettings settings)
-        {
-            return new GuildSettingsDTO
-            {
-                GuildId = settings.GuildId,
-                BonkChannelId = settings.BonkChannelId,
-                Prefix = settings.Prefix
-            };
-        }
-
-        private static GuildSettings FromDTO(GuildSettingsDTO dto)
-        {
-            return new GuildSettings
-            {
-                GuildId = dto.GuildId,
-                BonkChannelId = dto.BonkChannelId,
-                Prefix = dto.Prefix
-            };
         }
 
         private bool GuildSettingsExists(ulong id)

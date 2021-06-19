@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Model
 {
@@ -14,13 +15,22 @@ namespace UVOCBot.Api.Model
         public ulong GuildId { get; set; }
 
         /// <summary>
-        /// Gets or sets the channel to send users to when the bonk command is used
-        /// </summary>
-        public ulong? BonkChannelId { get; set; }
-
-        /// <summary>
         /// Gets or sets the prefix used to access bot commands
         /// </summary>
         public string? Prefix { get; set; }
+
+        public GuildSettingsDTO ToDto()
+            => new()
+            {
+                GuildId = GuildId,
+                Prefix = Prefix
+            };
+
+        public static GuildSettings FromDto(GuildSettingsDTO dto)
+            => new()
+            {
+                GuildId = dto.GuildId,
+                Prefix = dto.Prefix
+            };
     }
 }

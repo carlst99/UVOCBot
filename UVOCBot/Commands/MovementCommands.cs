@@ -3,7 +3,6 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
@@ -12,13 +11,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
     [RequireContext(ChannelContext.Guild)]
-    [RequireUserGuildPermission(DiscordPermission.MoveMembers)]
+    [RequireGuildPermission(DiscordPermission.MoveMembers)]
     public class MovementCommands : CommandGroup
     {
         private readonly ICommandContext _context;

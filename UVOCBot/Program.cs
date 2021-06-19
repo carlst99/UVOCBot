@@ -1,4 +1,7 @@
+using DbgCensus.Rest;
+using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
@@ -21,6 +24,7 @@ using System.Linq;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
+using UVOCBot.Commands.Conditions;
 using UVOCBot.Config;
 using UVOCBot.Responders;
 using UVOCBot.Services;
@@ -32,9 +36,10 @@ using Serilog.Core;
 
 namespace UVOCBot
 {
-    // Permissions integer: 2435927120
+    // Permissions integer: 2570144848
     // - Manage Roles
     // - Manage Channels
+    // - Manage Nicknames
     // - View Channels
     // - Send Messages
     // - Embed Links
@@ -44,7 +49,7 @@ namespace UVOCBot
     // - Connect
     // - Speak
     // - Move Members
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot%20applications.commands
+    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands
 
     public static class Program
     {
@@ -76,18 +81,24 @@ namespace UVOCBot
                 {
                     string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
                     string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
+#if DEBUG
+                    logger = SetupLogging(fileSystem);
+#else
                     logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
+#endif
                 })
                 .UseSerilog(logger)
                 .UseSystemd()
                 .ConfigureServices((c, services) =>
                 {
                     // Setup the configuration bindings
-                    services.Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
-                    services.Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
+                    services.Configure<CensusQueryOptions>(c.Configuration.GetSection(nameof(CensusQueryOptions)))
+                            .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
+                            .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
                     //Setup API services
-                    services.AddSingleton<ICensusApiService, CensusApiService>()
+                    services.AddCensusRestServices()
+                            .AddSingleton<ICensusApiService, CensusApiService>()
                             .AddSingleton<IDbApiService, DbApiService>()
                             .AddSingleton<IFisuApiService, FisuApiService>();
 
@@ -96,23 +107,19 @@ namespace UVOCBot
                             .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
+                            .AddSingleton<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
                     services.AddDiscordServices()
                             .AddSingleton<IExecutionEventService, ExecutionEventService>()
+                            .AddScoped<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<MessageResponseHelpers>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
-
-                    // Setup the Daybreak Census services
-                    GeneralOptions generalOptions = services.BuildServiceProvider().GetRequiredService<IOptions<GeneralOptions>>().Value;
-                    services.AddCensusServices(options =>
-                        options.CensusServiceId = generalOptions.CensusApiKey);
 
                     services.AddHostedService<DiscordService>()
                             .AddHostedService<GenericWorker>()
                             .AddHostedService<TwitterWorker>();
-                            // .AddHostedService<PlanetsideWorker>();
                 });
         }
 
@@ -135,7 +142,11 @@ namespace UVOCBot
                 return directory;
         }
 
+#if DEBUG
+        private static ILogger SetupLogging(IFileSystem fileSystem)
+#else
         private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
+#endif
         {
             LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
@@ -156,7 +167,11 @@ namespace UVOCBot
             else
             {
                 logConfig.MinimumLevel.Information()
-                    .WriteTo.File(GetAppdataFilePath(fileSystem, "log.log"), LogEventLevel.Warning, "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", rollingInterval: RollingInterval.Day);
+                    .WriteTo.File(
+                        GetAppdataFilePath(fileSystem, "log.log"),
+                        LogEventLevel.Warning,
+                        "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+                        rollingInterval: RollingInterval.Day);
             }
 #endif
 
@@ -182,9 +197,7 @@ namespace UVOCBot
         {
             IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
             {
-                Intents = GatewayIntents.DirectMessageReactions
-                    | GatewayIntents.DirectMessages
-                    | GatewayIntents.GuildMessageReactions
+                Intents = GatewayIntents.DirectMessages
                     | GatewayIntents.GuildMessages
                     | GatewayIntents.Guilds
                     | GatewayIntents.GuildVoiceStates
@@ -193,22 +206,29 @@ namespace UVOCBot
             services.AddSingleton(gatewayClientOptions);
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                    .AddDiscordCommands(true)
+                    .AddDiscordCommands(false)
+                    .AddSingleton<SlashService>()
                     .AddDiscordCaching()
                     .AddHttpClient();
 
-            services.AddResponder<GuildCreateResponder>()
+            services.AddResponder<CommandInteractionResponder>()
+                    .AddResponder<ComponentInteractionResponder>()
+                    .AddResponder<GuildCreateResponder>()
+                    .AddResponder<GuildMemberAddResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 
-            // Add commands
+            services.AddCondition<RequireContextCondition>()
+                    .AddCondition<RequireGuildPermissionCondition>();
+
             services.AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
-                    .AddCommandGroup<TwitterCommands>();
+                    .AddCommandGroup<TwitterCommands>()
+                    .AddCommandGroup<WelcomeMessageCommands>();
 
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();

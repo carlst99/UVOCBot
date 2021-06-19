@@ -50,34 +50,31 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Assets\PS2Maps\Amerish.png">
+    <None Update="Assets\PS2Maps\Amerish.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\PS2Maps\Desolation.png">
+    <None Update="Assets\PS2Maps\Desolation.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\PS2Maps\Esamir.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\PS2Maps\Esamir.png">
+    <None Update="Assets\PS2Maps\Hossin.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\PS2Maps\Hossin.png">
+    <None Update="Assets\PS2Maps\Indar.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\PS2Maps\Indar.png">
+    <None Update="Assets\PS2Maps\Koltyr.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\PS2Maps\Koltyr.png">
+    <None Update="Assets\PS2Maps\Sanctuary.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\PS2Maps\Sanctuary.png">
+    <None Update="Assets\PS2Maps\Tutorial.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\PS2Maps\Tutorial.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\PS2Maps\VR.png">
+    <None Update="Assets\PS2Maps\VR.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\assets\Icon.png">

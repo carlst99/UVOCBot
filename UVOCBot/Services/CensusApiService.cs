@@ -11,6 +11,7 @@ using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
+    /// <inheritdoc cref="ICensusApiService"/>
     public class CensusApiService : ICensusApiService
     {
         private readonly ILogger<CensusApiService> _logger;
@@ -24,12 +25,31 @@ namespace UVOCBot.Services
             _censusClient = censusClient;
         }
 
+        /// <inheritdoc />
+        public async Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default)
+        {
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("outfit")
+                .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
+
+            try
+            {
+                return await _censusClient.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get census outfit");
+                return ex;
+            }
+        }
+
         /// <inheritdoc/>
         public async Task<Result<World>> GetWorld(WorldType world, CancellationToken ct = default)
         {
             IQueryBuilder query = _queryFactory.Get()
                 .OnCollection("world")
-                .Where("world_id", SearchModifier.Equals, (int)world);
+                .Where("world_id", SearchModifier.Equals, (int)world)
+                .WithLimitPerDatabase(15); // Adding a limit that isn't 10 or 100 here significantly improves the chances of the correct state being returned
 
             try
             {
@@ -43,7 +63,7 @@ namespace UVOCBot.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get Census world.");
-                return Result<World>.FromError(ex);
+                return ex;
             }
         }
 

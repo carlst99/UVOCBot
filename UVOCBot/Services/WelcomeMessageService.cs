@@ -60,7 +60,7 @@ namespace UVOCBot.Services
                 return Result.FromSuccess();
 
             // Make some nickname guesses
-            IEnumerable<string> nicknameGuesses = new List<string>();
+            IEnumerable<string>? nicknameGuesses = null;
             if (welcomeMessage.DoIngameNameGuess)
                 nicknameGuesses = await DoFuzzyNicknameGuess(gatewayEvent.User.Value.Username, welcomeMessage.OutfitId, ct).ConfigureAwait(false);
 
@@ -100,7 +100,7 @@ namespace UVOCBot.Services
 
         #region Message composition
 
-        private static List<ButtonComponent> CreateWelcomeMessageButtons(GuildWelcomeMessageDto welcomeMessage, IEnumerable<string> nicknameGuesses, ulong userId)
+        private static List<ButtonComponent> CreateWelcomeMessageButtons(GuildWelcomeMessageDto welcomeMessage, IEnumerable<string>? nicknameGuesses, ulong userId)
         {
             List<ButtonComponent> messageButtons = new();
 
@@ -112,12 +112,20 @@ namespace UVOCBot.Services
                     CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageSetAlternate, userId.ToString())));
             }
 
-            foreach (string nickname in nicknameGuesses)
+            if (nicknameGuesses is not null)
             {
+                foreach (string nickname in nicknameGuesses)
+                {
+                    messageButtons.Add(new ButtonComponent(
+                        ButtonComponentStyle.Primary,
+                        "My PS2 name is: " + nickname,
+                        CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, userId.ToString() + '@' + nickname)));
+                }
+
                 messageButtons.Add(new ButtonComponent(
-                    ButtonComponentStyle.Primary,
-                    "My PlanetSide 2 name is: " + nickname,
-                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, userId.ToString() + '@' + nickname)));
+                    ButtonComponentStyle.Secondary,
+                    "My PS2 name is none of these!",
+                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameNoMatch, userId.ToString())));
             }
 
             return messageButtons;
@@ -163,6 +171,22 @@ namespace UVOCBot.Services
             Result<IMessage> alertResponse = await _responder.RespondWithSuccessAsync(
                 context.Entity,
                 $"Your nickname has been updated to { Formatter.Bold(payloadComponents[1]) }!",
+                ct).ConfigureAwait(false);
+
+            return alertResponse.IsSuccess
+                ? Result.FromSuccess()
+                : Result.FromError(alertResponse);
+        }
+
+        public async Task<Result> InformNicknameNoMatch(IInteractionCreate gatewayEvent, CancellationToken ct = default)
+        {
+            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
+            if (!context.IsSuccess)
+                return Result.FromError(context);
+
+            Result<IMessage> alertResponse = await _responder.RespondWithSuccessAsync(
+                context.Entity,
+                "Please set your nickname to the name of your PlanetSide 2 character!",
                 ct).ConfigureAwait(false);
 
             return alertResponse.IsSuccess

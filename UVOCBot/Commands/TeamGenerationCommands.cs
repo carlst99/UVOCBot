@@ -3,7 +3,6 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
-using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 using System;
@@ -12,6 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
 

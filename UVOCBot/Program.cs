@@ -1,6 +1,7 @@
 using DbgCensus.Rest;
 using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
@@ -23,6 +24,7 @@ using System.Linq;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
+using UVOCBot.Commands.Conditions;
 using UVOCBot.Config;
 using UVOCBot.Responders;
 using UVOCBot.Services;
@@ -111,6 +113,7 @@ namespace UVOCBot
                     // Add Discord-related services
                     services.AddDiscordServices()
                             .AddSingleton<IExecutionEventService, ExecutionEventService>()
+                            .AddScoped<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<MessageResponseHelpers>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
@@ -194,9 +197,7 @@ namespace UVOCBot
         {
             IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
             {
-                Intents = GatewayIntents.DirectMessageReactions
-                    | GatewayIntents.DirectMessages
-                    | GatewayIntents.GuildMessageReactions
+                Intents = GatewayIntents.DirectMessages
                     | GatewayIntents.GuildMessages
                     | GatewayIntents.Guilds
                     | GatewayIntents.GuildVoiceStates
@@ -205,24 +206,29 @@ namespace UVOCBot
             services.AddSingleton(gatewayClientOptions);
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                    .AddDiscordCommands(true)
+                    .AddDiscordCommands(false)
+                    .AddSingleton<SlashService>()
                     .AddDiscordCaching()
                     .AddHttpClient();
 
-            services.AddResponder<GuildCreateResponder>()
+            services.AddResponder<CommandInteractionResponder>()
+                    .AddResponder<ComponentInteractionResponder>()
+                    .AddResponder<GuildCreateResponder>()
                     .AddResponder<GuildMemberAddResponder>()
-                    .AddResponder<InteractionCreateResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 
-            // Add commands
+            services.AddCondition<RequireContextCondition>()
+                    .AddCondition<RequireGuildPermissionCondition>();
+
             services.AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
-                    .AddCommandGroup<TwitterCommands>();
+                    .AddCommandGroup<TwitterCommands>()
+                    .AddCommandGroup<WelcomeMessageCommands>();
 
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();

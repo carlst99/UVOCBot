@@ -186,22 +186,26 @@ namespace UVOCBot.Commands
 
         private async Task<IResult> SendWorldPopulation(WorldType world)
         {
-            Result<FisuPopulation> populationResult = await _fisuAPI.GetContinentPopulationAsync(world, CancellationToken).ConfigureAwait(false);
-            if (!populationResult.IsSuccess)
+            Task<Result<FisuPopulation>> populationTask = _fisuAPI.GetContinentPopulationAsync(world, CancellationToken);
+            Task<string> worldStatusTask = GetWorldStatusString(world);
+
+            await Task.WhenAll(populationTask, worldStatusTask).ConfigureAwait(false);
+
+            if (!populationTask.Result.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(
                     _context,
                     $"Could not get population statistics - the query to { Formatter.InlineQuote("fisu") } failed. Please try again.",
                     CancellationToken).ConfigureAwait(false);
-                return populationResult;
+                return populationTask.Result;
             }
 
-            FisuPopulation population = populationResult.Entity;
+            FisuPopulation population = populationTask.Result.Entity;
 
             Embed embed = new()
             {
                 Colour = BotConstants.DEFAULT_EMBED_COLOUR,
-                Description = await GetWorldStatusString(world).ConfigureAwait(false),
+                Description = worldStatusTask.Result,
                 Title = world.ToString() + " - " + population.Total.ToString(),
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
                 Fields =  new List<EmbedField>

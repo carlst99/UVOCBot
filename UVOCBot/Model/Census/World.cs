@@ -2,7 +2,7 @@
 {
     public record World
     {
-        public int WorldId { get; init; }
+        public WorldType WorldId { get; init; }
         public string State { get; init; }
         public TranslationProperty Name { get; init; }
 

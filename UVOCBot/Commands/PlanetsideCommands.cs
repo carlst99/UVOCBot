@@ -74,6 +74,43 @@ namespace UVOCBot.Commands
             }
         }
 
+        [Command("status")]
+        [Description("Gets the status of a PlanetSide server.")]
+        public async Task<IResult> GetServerStatusCommandAsync(
+            [Description("Set your default server with '/default-server'.")] WorldType server = 0)
+        {
+
+            if (server == 0)
+            {
+                if (!_context.GuildID.HasValue)
+                    return await _responder.RespondWithErrorAsync(_context, "To use this command in a DM you must provide a server.", ct: CancellationToken).ConfigureAwait(false);
+
+                Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+                if (!settings.IsSuccess)
+                {
+                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                    return settings;
+                }
+
+                if (settings.Entity.DefaultWorld == null)
+                {
+                    return await _responder.RespondWithErrorAsync(
+                        _context,
+                        $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
+                        ct: CancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    WorldType world = (WorldType)(int)settings.Entity.DefaultWorld;
+                    return await SendWorldPopulation(world).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                return await SendWorldStatus(server).ConfigureAwait(false);
+            }
+        }
+
         [Command("online")]
         [Description("Gets the number of online members for an outfit.")]
         public async Task<IResult> GetOnlineOutfitMembersCommandAsync([Description("A space-separated, case-insensitive list of outfit tags.")] string outfitTags)
@@ -218,6 +255,11 @@ namespace UVOCBot.Commands
             };
 
             return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<IResult> SendWorldStatus(WorldType world)
+        {
+
         }
 
         private async Task<string> GetWorldStatusString(WorldType world)

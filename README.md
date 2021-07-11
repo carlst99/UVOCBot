@@ -1,3 +1,5 @@
+<img title="UVOCBot Icon" alt="UVOCBot Icon" src="https://github.com/carlst99/UVOCBot/blob/main/assets/Icon.png?raw=true" height="120" align="left" />
+
 # UVOCBot
 
 ![Stable Release](https://github.com/carlst99/UVOCBot/workflows/Stable%20Release/badge.svg)

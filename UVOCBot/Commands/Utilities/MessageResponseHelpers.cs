@@ -13,18 +13,18 @@ namespace UVOCBot.Commands
 {
     public class MessageResponseHelpers
     {
-        private readonly IDiscordRestChannelAPI _channelAPI;
-        private readonly IDiscordRestWebhookAPI _webhookAPI;
+        private readonly IDiscordRestChannelAPI _channelApi;
+        private readonly IDiscordRestWebhookAPI _webhookApi;
 
-        public MessageResponseHelpers(IDiscordRestChannelAPI channelAPI, IDiscordRestWebhookAPI webhookAPI)
+        public MessageResponseHelpers(IDiscordRestChannelAPI channelApi, IDiscordRestWebhookAPI webhookApi)
         {
-            _channelAPI = channelAPI;
-            _webhookAPI = webhookAPI;
+            _channelApi = channelApi;
+            _webhookApi = webhookApi;
         }
 
         public async Task<Result> TriggerTypingAsync(ICommandContext context, CancellationToken ct)
         {
-            return await _channelAPI.TriggerTypingIndicatorAsync(context.ChannelID, ct).ConfigureAwait(false);
+            return await _channelApi.TriggerTypingIndicatorAsync(context.ChannelID, ct).ConfigureAwait(false);
         }
 
         public async Task<Result<IMessage>> RespondWithEmbedAsync(ICommandContext context, IEmbed embed, CancellationToken ct, Optional<FileData> file = default, Optional<IAllowedMentions> allowedMentions = default)
@@ -84,7 +84,7 @@ namespace UVOCBot.Commands
 
         public async Task<Result<IMessage>> RespondToInteractionAsync(InteractionContext context, CancellationToken ct, Optional<string> content = default, Optional<FileData> file = default, Optional<IReadOnlyList<IEmbed>> embeds = default, Optional<IAllowedMentions> allowedMentions = default)
         {
-            return await _webhookAPI.CreateFollowupMessageAsync(
+            return await _webhookApi.CreateFollowupMessageAsync(
                 context.ApplicationID,
                 context.Token,
                 content,
@@ -96,7 +96,7 @@ namespace UVOCBot.Commands
 
         public async Task<Result<IMessage>> RespondToMessageAsync(ICommandContext context, CancellationToken ct, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IReadOnlyList<IEmbed>> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default, Optional<IReadOnlyList<IMessageComponent>> components = default)
         {
-            return await _channelAPI.CreateMessageAsync(
+            return await _channelApi.CreateMessageAsync(
                 context.ChannelID,
                 content,
                 nonce,

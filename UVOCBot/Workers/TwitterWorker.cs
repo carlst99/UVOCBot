@@ -44,7 +44,7 @@ namespace UVOCBot.Workers
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Getting tweets.");
+                _logger.LogTrace("Getting tweets.");
 
                 Dictionary<long, List<ITweet>> userTweetPairs = new();
 
@@ -91,7 +91,7 @@ namespace UVOCBot.Workers
                     }
                 }
 
-                _logger.LogInformation($"Finished getting {tweetCount} tweets");
+                _logger.LogTrace($"Finished getting {tweetCount} tweets");
 
 #if DEBUG
                 await Task.Delay(30000, stoppingToken).ConfigureAwait(false);

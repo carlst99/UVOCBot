@@ -18,5 +18,6 @@ namespace UVOCBot.Commands
         public static string InlineQuote(string content) => $"`{content}`";
         public static string Quote(string content) => $">{content}\n";
         public static string CodeBlock(string content, string? language = null) => $"```{language}{content}```";
+        public static string Timestamp(long timestamp) => $"<t:{ timestamp }>";
     }
 }

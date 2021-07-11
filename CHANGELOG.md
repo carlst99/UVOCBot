@@ -1,8 +1,30 @@
 # Changelog
 
+## Release v0.3.1 - 11/07/2021
+
+**New Feature**
+Use the `timestamp` command to get a snippet you can use to insert localised datetimes into messages.
+
+**Other changes**
+- Minor bug fixes and code improvements
+
+## Release v0.3.0 - 19/06/2021
+
+**New Feature**
+This update adds the welcome message feature! This is a primarily a message sent to new guild members, but also includes the ability to assign default roles, let the new member pick alternate roles (e.g. as a friend of the outfit) and makes guesses as to their in-game nickname, based on the most recent in-game joins.
+
+**Other changes**
+
+- Updates map assets.
+- Migrate from `Daybreakgames.Census` to `DbgCensus`.
+- Update `appsettings.json` **Please update your copy**.
+- Updates to the database model. **Please perform a migration**. There should be no loss of required data.
+
+Significant updates to how interactions are handled have also been made (see `CommandInteractionResponder` and `ComponentInteractionResponder`), along with new command conditions (see `RequireGuildPermissionAttribute` and `RequireContextAttribute`). Finally, the `PermissionChecksService` has been updated with a new method (`CanManipulateRoles`).
+
 ## Release v0.2.2 - 27/05/2021
 
-- Added the `map` command! Quickly grab an image of any of PlanetSide 2's continent maps.
+- Added the `map` command! Quickly grab an image of any of PlanetSide 2's continent maps. 
 - Fixed a bug where a twitter user could not be added to the relaying system.
 
 Technical Notes:

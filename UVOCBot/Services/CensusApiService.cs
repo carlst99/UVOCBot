@@ -1,4 +1,5 @@
-﻿using DbgCensus.Rest.Abstractions;
+﻿using DbgCensus.Core.Exceptions;
+using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
@@ -56,7 +57,7 @@ namespace UVOCBot.Services
                 World? worldResult = await _censusClient.GetAsync<World>(query, ct).ConfigureAwait(false);
 
                 if (worldResult is null)
-                    throw new Exception("No result was returned.");
+                    throw new CensusException("Failed to get world.");
                 else
                     return worldResult;
             }
@@ -81,7 +82,7 @@ namespace UVOCBot.Services
                 OutfitOnlineMembers? onlineMembers = await _censusClient.GetAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
 
                 if (onlineMembers is null)
-                    throw new Exception("No result was returned.");
+                    throw new CensusException("Failed to get online outfit members.");
                 else
                     return onlineMembers;
             }
@@ -127,7 +128,7 @@ namespace UVOCBot.Services
                 List<OutfitOnlineMembers>? onlineMembers = await _censusClient.GetAsync<List<OutfitOnlineMembers>>(query, ct).ConfigureAwait(false);
 
                 if (onlineMembers is null)
-                    throw new Exception();
+                    throw new CensusException("Failed to get online outfit members");
                 else
                     return Result<List<OutfitOnlineMembers>>.FromSuccess(onlineMembers);
             }
@@ -160,13 +161,42 @@ namespace UVOCBot.Services
                 List<NewOutfitMember>? newMembers = await _censusClient.GetAsync<List<NewOutfitMember>>(query, ct).ConfigureAwait(false);
 
                 if (newMembers is null)
-                    throw new Exception("Failed to get new outfit members");
+                    throw new CensusException("Failed to get new outfit members");
                 else
                     return newMembers;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get new outfit members");
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<List<MetagameEvent>> GetMetagameEventsAsync(WorldType world, CancellationToken ct = default)
+        {
+            // https://census.daybreakgames.com/get/ps2/world_event?type=METAGAME&world_id=1&c:limit=20&c:sort=timestamp&c:join=world%5Einject_at:world
+
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("world_event")
+                .Where("type", SearchModifier.Equals, "METAGAME")
+                .Where("world_id", SearchModifier.Equals, (int)world)
+                .WithLimit(20)
+                .WithSortOrder("timestamp")
+                .AddJoin("world", j => j.InjectAt("world"));
+
+            try
+            {
+                List<MetagameEvent>? events = await _censusClient.GetAsync<List<MetagameEvent>>(query, ct).ConfigureAwait(false);
+
+                if (events is null)
+                    throw new CensusException("Failed to get metagame events");
+                else
+                    return events;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get metagame event");
                 throw;
             }
         }

@@ -64,5 +64,14 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns>A list of metagame events.</returns>
         Task<List<MetagameEvent>> GetMetagameEventsAsync(WorldType world, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets the maps for a world.
+        /// </summary>
+        /// <param name="world">The world to retrieve the maps for.</param>
+        /// <param name="zones">The zones to retrieve maps for.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>A list of maps.</returns>
+        Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneType> zones, CancellationToken ct = default);
     }
 }

@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Model.Census;
@@ -25,6 +27,8 @@ namespace UVOCBot.Services
             _queryFactory = censusQueryFactory;
             _censusClient = censusClient;
         }
+
+        // TODO: Convert to standard model
 
         /// <inheritdoc />
         public async Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default)
@@ -52,20 +56,7 @@ namespace UVOCBot.Services
                 .Where("world_id", SearchModifier.Equals, (int)world)
                 .WithLimitPerDatabase(15); // Adding a limit that isn't 10 or 100 here significantly improves the chances of the correct state being returned
 
-            try
-            {
-                World? worldResult = await _censusClient.GetAsync<World>(query, ct).ConfigureAwait(false);
-
-                if (worldResult is null)
-                    throw new CensusException("Failed to get world.");
-                else
-                    return worldResult;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get Census world.");
-                return ex;
-            }
+            return await GetAsync<World>(query, ct).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -77,20 +68,7 @@ namespace UVOCBot.Services
 
             ConstructOnlineMembersQuery(query);
 
-            try
-            {
-                OutfitOnlineMembers? onlineMembers = await _censusClient.GetAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
-
-                if (onlineMembers is null)
-                    throw new CensusException("Failed to get online outfit members.");
-                else
-                    return onlineMembers;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get online member status for one tag.");
-                return Result<OutfitOnlineMembers>.FromError(ex);
-            }
+            return await GetAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -123,20 +101,7 @@ namespace UVOCBot.Services
 
             ConstructOnlineMembersQuery(query);
 
-            try
-            {
-                List<OutfitOnlineMembers>? onlineMembers = await _censusClient.GetAsync<List<OutfitOnlineMembers>>(query, ct).ConfigureAwait(false);
-
-                if (onlineMembers is null)
-                    throw new CensusException("Failed to get online outfit members");
-                else
-                    return Result<List<OutfitOnlineMembers>>.FromSuccess(onlineMembers);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get online member status for multiple outfit IDs.");
-                return Result<List<OutfitOnlineMembers>>.FromError(ex);
-            }
+            return await GetListAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -156,20 +121,7 @@ namespace UVOCBot.Services
                         .InjectAt("character_name");
                 });
 
-            try
-            {
-                List<NewOutfitMember>? newMembers = await _censusClient.GetAsync<List<NewOutfitMember>>(query, ct).ConfigureAwait(false);
-
-                if (newMembers is null)
-                    throw new CensusException("Failed to get new outfit members");
-                else
-                    return newMembers;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get new outfit members");
-                throw;
-            }
+            return await GetListAsync<NewOutfitMember>(query, ct).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -185,18 +137,56 @@ namespace UVOCBot.Services
                 .WithSortOrder("timestamp")
                 .AddJoin("world", j => j.InjectAt("world"));
 
+            return await GetListAsync<MetagameEvent>(query, ct).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneType> zones, CancellationToken ct = default)
+        {
+            // https://census.daybreakgames.com/get/ps2/map?world_id=1&zone_ids=2,4,6,8
+
+            IQueryBuilder query = _queryFactory.Get()
+                .OnCollection("map")
+                .Where("world_id", SearchModifier.Equals, (int)world)
+                .Where("zone_ids", SearchModifier.Equals, zones.Cast<int>());
+
+            return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "<Pending>")]
+        private async Task<T> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
+        {
             try
             {
-                List<MetagameEvent>? events = await _censusClient.GetAsync<List<MetagameEvent>>(query, ct).ConfigureAwait(false);
+                T? result = await _censusClient.GetAsync<T>(query, ct).ConfigureAwait(false);
 
-                if (events is null)
-                    throw new CensusException("Failed to get metagame events");
+                if (result is null)
+                    throw new CensusException($"Census returned no data for query { callerName }.");
                 else
-                    return events;
+                    return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get metagame event");
+                _logger.LogError(ex, "Census query failed for query {query}.", callerName);
+                throw;
+            }
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "<Pending>")]
+        private async Task<List<T>> GetListAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
+        {
+            try
+            {
+                List<T>? result = await _censusClient.GetAsync<List<T>>(query, ct).ConfigureAwait(false);
+
+                if (result is null)
+                    throw new CensusException($"Census returned no data for query { callerName }.");
+                else
+                    return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Census query failed for query {query}.", callerName);
                 throw;
             }
         }

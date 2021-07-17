@@ -24,7 +24,7 @@ namespace UVOCBot.Commands
             {
                 Result res = await _responder.TriggerTypingAsync(context, ct).ConfigureAwait(false);
                 if (!res.IsSuccess)
-                    _logger.LogWarning("Failed to show typing indicator: {message}", res.Unwrap());
+                    _logger.LogWarning("Failed to show typing indicator: {message}", res.Error);
             }
 
             // Always return a successful value. We're not too worried about a failure to show the typing indicator, although we do log it

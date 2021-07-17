@@ -257,7 +257,7 @@ namespace UVOCBot.Commands
                 {
                     Colour = BotConstants.DEFAULT_EMBED_COLOUR,
                     Description = GetWorldStatusString(events[0].World),
-                    Title = events[0].World.Name.English,
+                    Title = world.ToString(),
                     Fields = embedFields
                 };
 

@@ -240,7 +240,7 @@ namespace UVOCBot
 
             if (!slashCommandsSupported.IsSuccess)
             {
-                Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Unwrap().Message);
+                Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
             }
             else
             {

@@ -55,23 +55,18 @@ namespace UVOCBot.Commands
                     return settings;
                 }
 
-                if (settings.Entity.DefaultWorld == null)
+                if (settings.Entity.DefaultWorld is null)
                 {
                     return await _responder.RespondWithErrorAsync(
                         _context,
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         ct: CancellationToken).ConfigureAwait(false);
                 }
-                else
-                {
-                    WorldType world = (WorldType)(int)settings.Entity.DefaultWorld;
-                    return await SendWorldPopulation(world).ConfigureAwait(false);
-                }
+
+                server = (WorldType)settings.Entity.DefaultWorld;
             }
-            else
-            {
-                return await SendWorldPopulation(server).ConfigureAwait(false);
-            }
+
+            return await SendWorldPopulation(server).ConfigureAwait(false);
         }
 
         [Command("status")]
@@ -79,7 +74,6 @@ namespace UVOCBot.Commands
         public async Task<IResult> GetServerStatusCommandAsync(
             [Description("Set your default server with '/default-server'.")] WorldType server = 0)
         {
-
             if (server == 0)
             {
                 if (!_context.GuildID.HasValue)
@@ -92,23 +86,18 @@ namespace UVOCBot.Commands
                     return settings;
                 }
 
-                if (settings.Entity.DefaultWorld == null)
+                if (settings.Entity.DefaultWorld is null)
                 {
                     return await _responder.RespondWithErrorAsync(
                         _context,
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         ct: CancellationToken).ConfigureAwait(false);
                 }
-                else
-                {
-                    WorldType world = (WorldType)(int)settings.Entity.DefaultWorld;
-                    return await SendWorldPopulation(world).ConfigureAwait(false);
-                }
+
+                server = (WorldType)settings.Entity.DefaultWorld;
             }
-            else
-            {
-                return await SendWorldStatus(server).ConfigureAwait(false);
-            }
+
+            return await SendWorldStatus(server).ConfigureAwait(false);
         }
 
         [Command("online")]
@@ -245,7 +234,7 @@ namespace UVOCBot.Commands
                 Description = worldStatusTask.Result,
                 Title = world.ToString() + " - " + population.Total.ToString(),
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
-                Fields =  new List<EmbedField>
+                Fields = new List<EmbedField>
                 {
                     new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", GetEmbedPopulationBar(population.VS, population.Total)),
                     new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", GetEmbedPopulationBar(population.NC, population.Total)),
@@ -259,7 +248,67 @@ namespace UVOCBot.Commands
 
         private async Task<IResult> SendWorldStatus(WorldType world)
         {
+            try
+            {
+                List<Map> maps = await _censusApi.GetMaps(world, Enum.GetValues<ZoneType>(), CancellationToken).ConfigureAwait(false);
+                List<MetagameEvent> events = await _censusApi.GetMetagameEventsAsync(world, CancellationToken).ConfigureAwait(false);
 
+                List<EmbedField> embedFields = new();
+                foreach (Map m in maps)
+                    embedFields.Add(GetMapStatusEmbedField(m, events));
+
+                Embed embed = new()
+                {
+                    Colour = BotConstants.DEFAULT_EMBED_COLOUR,
+                    Description = GetWorldStatusString(events[0].World),
+                    Title = events[0].World.Name.English,
+                    Fields = embedFields
+                };
+
+                return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                return await _responder.RespondWithErrorAsync(_context, "Failed to get data from the PlanetSide API", CancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private static EmbedField GetMapStatusEmbedField(Map map, List<MetagameEvent> metagameEvents)
+        {
+            static string ConstructPopBar(double percent, string emojiName)
+            {
+                string result = string.Empty;
+                for (int i = 0; i < Math.Round(percent / 10); i++)
+                    result += Formatter.Emoji(emojiName);
+
+                return result;
+            }
+
+            double regionCount = map.Regions.Row.Count(r => r.RowData.FactionId != Faction.None);
+            double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.NC) / regionCount) * 100;
+            double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.TR) / regionCount) * 100;
+            double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.VS) / regionCount) * 100;
+
+            string title = map.ZoneId switch
+            {
+                ZoneType.Amerish => Formatter.Emoji("mountain") + " Amerish",
+                ZoneType.Esamir => Formatter.Emoji("snowflake") + " Esamir",
+                ZoneType.Hossin => Formatter.Emoji("deciduous_tree") + " Hossin",
+                ZoneType.Indar => Formatter.Emoji("desert") + " Indar",
+                _ => Formatter.Emoji("no_entry_sign") + " Unknown Continent"
+            };
+
+            if (Math.Round(ncPercent, 0) == 100 || Math.Round(trPercent, 0) == 100 || Math.Round(vsPercent, 0) == 100)
+                title += " " + Formatter.Emoji("lock");
+
+            if (metagameEvents.Find(m => m.ZoneId == map.ZoneId)?.MetagameEventStateName == "started")
+                title += " " + Formatter.Emoji("rotating_light");
+
+            string popBar = ConstructPopBar(ncPercent, "blue_square");
+            popBar += ConstructPopBar(trPercent, "red_square");
+            popBar += ConstructPopBar(vsPercent, "purple_square");
+
+            return new EmbedField(title, popBar);
         }
 
         private async Task<string> GetWorldStatusString(WorldType world)
@@ -269,15 +318,17 @@ namespace UVOCBot.Commands
             if (!worldResult.IsSuccess)
                 return $"Status: Unknown {Formatter.Emoji("black_circle")}";
 
-            if (worldResult.Entity.State == "online")
-                return $"Status: Online {Formatter.Emoji("green_circle")}";
-            else if (worldResult.Entity.State == "offline")
-                return $"Status: Offline {Formatter.Emoji("red_circle")}";
-            else if (worldResult.Entity.State == "locked")
-                return $"Status: Locked {Formatter.Emoji("red_circle")}";
-            else
-                return $"Status: Unknown {Formatter.Emoji("black_circle")}";
+            return GetWorldStatusString(worldResult.Entity);
         }
+
+        private static string GetWorldStatusString(World world)
+            => world.State switch
+            {
+                "online" => $"Status: Online {Formatter.Emoji("green_circle")}",
+                "offline" => $"Status: Offline {Formatter.Emoji("red_circle")}",
+                "locked" => $"Status: Locked {Formatter.Emoji("red_circle")}",
+                _ => $"Status: Unknown {Formatter.Emoji("black_circle")}"
+            };
 
         private static string GetEmbedPopulationBar(int population, int totalPopulation)
         {

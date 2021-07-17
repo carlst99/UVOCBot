@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Exceptions;
+using DbgCensus.Core.Utils;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,9 @@ namespace UVOCBot.Services
             _queryFactory = censusQueryFactory;
             _censusClient = censusClient;
         }
+
+        // TODO: No result exception
+        // TODO: Caching
 
         // TODO: Convert to standard model
 
@@ -97,7 +101,7 @@ namespace UVOCBot.Services
         {
             IQueryBuilder query = _queryFactory.Get()
                 .OnCollection("outfit")
-                .Where("outfit_id", SearchModifier.Equals, outfitIds);
+                .WhereAll("outfit_id", SearchModifier.Equals, outfitIds);
 
             ConstructOnlineMembersQuery(query);
 
@@ -148,7 +152,7 @@ namespace UVOCBot.Services
             IQueryBuilder query = _queryFactory.Get()
                 .OnCollection("map")
                 .Where("world_id", SearchModifier.Equals, (int)world)
-                .Where("zone_ids", SearchModifier.Equals, zones.Cast<int>());
+                .WhereAll("zone_ids", SearchModifier.Equals, zones.Select(z => (int)z));
 
             return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
         }

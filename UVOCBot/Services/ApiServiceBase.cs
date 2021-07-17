@@ -26,8 +26,12 @@ namespace UVOCBot.Services
 
             if (response.ResponseStatus != ResponseStatus.Completed)
             {
-                _logger.LogError(response.ErrorException, "Failed to execute database API operation: {exception}", response.ErrorMessage);
-                return Result<T>.FromError(response.ErrorException);
+                Exception ex = new($"API query failed with message { response.ErrorMessage }. Response status: { response.ResponseStatus }");
+                if (response.ErrorException is not null)
+                    ex = response.ErrorException;
+
+                _logger.LogError(ex, "Failed to execute API operation with status {status} and reason {message}", response.ResponseStatus, response.ErrorMessage);
+                return ex;
             }
 
             if (request.Method == Method.GET && response.StatusCode == HttpStatusCode.OK)
@@ -45,8 +49,12 @@ namespace UVOCBot.Services
 
             if (response.ResponseStatus != ResponseStatus.Completed)
             {
-                _logger.LogError(response.ErrorException, "Failed to execute database API operation: {exception}", response.ErrorMessage);
-                return Result.FromError(new ExceptionError(response.ErrorException));
+                Exception ex = new($"API query failed with message { response.ErrorMessage }. Response status: { response.ResponseStatus }");
+                if (response.ErrorException is not null)
+                    ex = response.ErrorException;
+
+                _logger.LogError(ex, "Failed to execute API operation with {status} and reason {message}", response.ResponseStatus, response.ErrorMessage);
+                return ex;
             }
 
             if (response.StatusCode != HttpStatusCode.NoContent)

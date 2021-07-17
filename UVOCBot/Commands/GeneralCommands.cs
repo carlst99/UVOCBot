@@ -19,8 +19,9 @@ namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
-            "\n• **Welcome messages** - Welcome new members, give them roles and take guesses at their PlanetSide 2 character name.";
+        public const string RELEASE_NOTES = "• **World `status` Command** - Check the territory control and status of a world and it's continents." +
+            "\r\n• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
+            "\r\n• Made the `population` command faster.";
 
         private readonly ICommandContext _context;
         private readonly MessageResponseHelpers _responder;

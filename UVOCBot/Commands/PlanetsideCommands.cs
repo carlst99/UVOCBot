@@ -212,26 +212,22 @@ namespace UVOCBot.Commands
 
         private async Task<IResult> SendWorldPopulation(WorldType world)
         {
-            Task<Result<FisuPopulation>> populationTask = _fisuAPI.GetContinentPopulationAsync(world, CancellationToken);
-            Task<string> worldStatusTask = GetWorldStatusString(world);
+            Result<FisuPopulation> populationResult = await _fisuAPI.GetContinentPopulationAsync(world, CancellationToken).ConfigureAwait(false);
 
-            await Task.WhenAll(populationTask, worldStatusTask).ConfigureAwait(false);
-
-            if (!populationTask.Result.IsSuccess)
+            if (!populationResult.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(
                     _context,
                     $"Could not get population statistics - the query to { Formatter.InlineQuote("fisu") } failed. Please try again.",
                     CancellationToken).ConfigureAwait(false);
-                return populationTask.Result;
+                return populationResult;
             }
 
-            FisuPopulation population = populationTask.Result.Entity;
+            FisuPopulation population = populationResult.Entity;
 
             Embed embed = new()
             {
                 Colour = BotConstants.DEFAULT_EMBED_COLOUR,
-                Description = worldStatusTask.Result,
                 Title = world.ToString() + " - " + population.Total.ToString(),
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
                 Fields = new List<EmbedField>
@@ -309,16 +305,6 @@ namespace UVOCBot.Commands
             popBar += ConstructPopBar(vsPercent, "purple_square");
 
             return new EmbedField(title, popBar);
-        }
-
-        private async Task<string> GetWorldStatusString(WorldType world)
-        {
-            Result<World> worldResult = await _censusApi.GetWorld(world, CancellationToken).ConfigureAwait(false);
-
-            if (!worldResult.IsSuccess)
-                return $"Status: Unknown {Formatter.Emoji("black_circle")}";
-
-            return GetWorldStatusString(worldResult.Entity);
         }
 
         private static string GetWorldStatusString(World world)

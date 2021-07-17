@@ -1,5 +1,13 @@
 # Changelog
 
+## Release v0.3.2 - 17/07/2021
+
+**New Feature**
+Use the `status` command to check the territory control and status of a world and it's continents.
+
+**Other Changes**
+Made the `population` command faster (by removing the world status check).
+
 ## Release v0.3.1 - 11/07/2021
 
 **New Feature**

@@ -20,6 +20,7 @@ namespace UVOCBot.Commands
     public class GeneralCommands : CommandGroup
     {
         public const string RELEASE_NOTES = "• **World `status` Command** - Check the territory control and status of a world and it's continents." +
+            "\r\n• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
             "\r\n• Made the `population` command faster.";
 
         private readonly ICommandContext _context;
@@ -34,6 +35,40 @@ namespace UVOCBot.Commands
             _userAPI = userAPI;
 
             _rndGen = new Random();
+        }
+
+        [Command("timestamp")]
+        [Description("Generates a Discord timestamp.")]
+        public async Task<IResult> TimestampCommand(
+            [Description("The offset (in hours) from GMT that your given timestamp is.")] double gmtOffset,
+            int? year = null, int? month = null, int? day = null, int? hour = null, int? minute = null)
+        {
+            if (gmtOffset < -12 || gmtOffset > 14)
+                return await _responder.RespondWithSuccessAsync(_context, "GMT offset must be between -12 and 14.", CancellationToken).ConfigureAwait(false);
+
+            DateTimeOffset time = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(gmtOffset));
+
+            year ??= time.Year;
+            month ??= time.Month;
+            day ??= time.Day;
+            hour ??= time.Hour;
+            minute ??= time.Minute;
+
+            try
+            {
+                time = new((int)year, (int)month, (int)day, (int)hour, (int)minute, 0, TimeSpan.FromHours(gmtOffset));
+            }
+            catch
+            {
+                return await _responder.RespondWithUserErrorAsync(_context, "Invalid arguments!", CancellationToken).ConfigureAwait(false);
+            }
+
+            await _responder.RespondWithSuccessAsync(
+                _context,
+                $"{ Formatter.Timestamp(time.ToUnixTimeSeconds()) }\n\n{ Formatter.InlineQuote($"<t:{ time.ToUnixTimeSeconds() }>") }",
+                CancellationToken).ConfigureAwait(false);
+
+            return Result.FromSuccess();
         }
 
         [Command("coinflip")]

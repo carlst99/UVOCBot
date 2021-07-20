@@ -13,7 +13,6 @@ using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
-using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -24,11 +23,11 @@ namespace UVOCBot.Commands
     public class TeamGenerationCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly ReplyService _responder;
+        private readonly IReplyService _responder;
         private readonly IDiscordRestGuildAPI _guildAPI;
         private readonly IDbApiService _dbAPI;
 
-        public TeamGenerationCommands(ICommandContext context, ReplyService responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI)
+        public TeamGenerationCommands(ICommandContext context, IReplyService responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI)
         {
             _context = context;
             _responder = responder;

@@ -5,7 +5,6 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
@@ -14,7 +13,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
 using System.Threading.Tasks;
-using UVOCBot.Services;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -24,11 +23,11 @@ namespace UVOCBot.Commands
             "\r\n• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
             "\r\n• Made the `population` command faster.";
 
-        private readonly ReplyService _responder;
+        private readonly IReplyService _responder;
         private readonly IDiscordRestUserAPI _userAPI;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ReplyService responder, IDiscordRestUserAPI userAPI)
+        public GeneralCommands(IReplyService responder, IDiscordRestUserAPI userAPI)
         {
             _responder = responder;
             _userAPI = userAPI;

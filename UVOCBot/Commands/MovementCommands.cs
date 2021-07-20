@@ -13,7 +13,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
-using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -23,12 +22,12 @@ namespace UVOCBot.Commands
     public class MovementCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly ReplyService _responder;
+        private readonly IReplyService _responder;
         private readonly IDiscordRestGuildAPI _guildAPI;
         private readonly IDbApiService _dbAPI;
         private readonly IVoiceStateCacheService _voiceStateCache;
 
-        public MovementCommands(ICommandContext context, ReplyService responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI, IVoiceStateCacheService voiceStateCache)
+        public MovementCommands(ICommandContext context, IReplyService responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI, IVoiceStateCacheService voiceStateCache)
         {
             _context = context;
             _responder = responder;

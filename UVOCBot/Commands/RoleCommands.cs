@@ -13,7 +13,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -31,14 +30,14 @@ namespace UVOCBot.Commands
         private const int MAX_USERNAMES_IN_LIST = 50;
 
         private readonly ICommandContext _context;
-        private readonly ReplyService _responder;
+        private readonly IReplyService _responder;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IPermissionChecksService _permissionChecksService;
 
         public RoleCommands(
             ICommandContext context,
-            ReplyService responder,
+            IReplyService responder,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
             IPermissionChecksService permissionsChecksService)

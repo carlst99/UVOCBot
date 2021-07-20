@@ -14,7 +14,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Commands;
 using UVOCBot.Core.Model;
-using UVOCBot.Extensions;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 
@@ -28,7 +27,7 @@ namespace UVOCBot.Services
         private readonly IDbApiService _dbApi;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly ReplyService _responder;
+        private readonly IReplyService _responder;
 
         public WelcomeMessageService(
             ILogger<WelcomeMessageService> logger,
@@ -37,7 +36,7 @@ namespace UVOCBot.Services
             IDbApiService dbApi,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            ReplyService responder)
+            IReplyService responder)
         {
             _logger = logger;
             _context = context;

@@ -14,6 +14,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
 using System.Threading.Tasks;
+using UVOCBot.Services;
 
 namespace UVOCBot.Commands
 {
@@ -24,11 +25,11 @@ namespace UVOCBot.Commands
             "\r\n• Made the `population` command faster.";
 
         private readonly ICommandContext _context;
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
         private readonly IDiscordRestUserAPI _userAPI;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestUserAPI userAPI)
+        public GeneralCommands(ICommandContext context, ReplyService responder, IDiscordRestUserAPI userAPI)
         {
             _context = context;
             _responder = responder;

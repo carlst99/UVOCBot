@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Services;
 
 namespace UVOCBot.Commands.Conditions
 {
@@ -24,7 +25,7 @@ namespace UVOCBot.Commands.Conditions
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RequireGuildPermissionCondition"/> class.
@@ -37,7 +38,7 @@ namespace UVOCBot.Commands.Conditions
             ICommandContext context,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            MessageResponseHelpers responder)
+            ReplyService responder)
         {
             _context = context;
             _channelApi = channelApi;

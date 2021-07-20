@@ -4,15 +4,16 @@ using Remora.Discord.Commands.Services;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Services;
 
 namespace UVOCBot.Commands
 {
     public class ExecutionEventService : IExecutionEventService
     {
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
         private readonly ILogger<ExecutionEventService> _logger;
 
-        public ExecutionEventService(MessageResponseHelpers responder, ILogger<ExecutionEventService> logger)
+        public ExecutionEventService(ReplyService responder, ILogger<ExecutionEventService> logger)
         {
             _responder = responder;
             _logger = logger;

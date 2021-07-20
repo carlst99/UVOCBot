@@ -19,13 +19,13 @@ namespace UVOCBot.Services
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
 
         public PermissionChecksService(
             ICommandContext context,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            MessageResponseHelpers responder)
+            ReplyService responder)
         {
             _context = context;
             _channelApi = channelApi;

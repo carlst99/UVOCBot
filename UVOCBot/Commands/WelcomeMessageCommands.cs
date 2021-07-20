@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Model.Census;
+using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -26,7 +27,7 @@ namespace UVOCBot.Commands
         private readonly IDbApiService _dbApi;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IPermissionChecksService _permissionChecksService;
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
 
         public WelcomeMessageCommands(
             ICommandContext context,
@@ -34,7 +35,7 @@ namespace UVOCBot.Commands
             IDbApiService dbApi,
             IDiscordRestGuildAPI guildApi,
             IPermissionChecksService permissionChecksService,
-            MessageResponseHelpers responder)
+            ReplyService responder)
         {
             _context = context;
             _censusApi = censusApi;

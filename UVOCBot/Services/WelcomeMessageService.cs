@@ -27,7 +27,7 @@ namespace UVOCBot.Services
         private readonly IDbApiService _dbApi;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
 
         public WelcomeMessageService(
             ILogger<WelcomeMessageService> logger,
@@ -35,7 +35,7 @@ namespace UVOCBot.Services
             IDbApiService dbApi,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            MessageResponseHelpers responder)
+            ReplyService responder)
         {
             _logger = logger;
             _censusApi = censusApi;

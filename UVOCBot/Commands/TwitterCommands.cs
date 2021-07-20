@@ -15,6 +15,7 @@ using Tweetinvi.Models.V2;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
+using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -29,7 +30,7 @@ namespace UVOCBot.Commands
 
         private readonly ILogger<TwitterCommands> _logger;
         private readonly ICommandContext _context;
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
         private readonly IDbApiService _dbApi;
         private readonly IPermissionChecksService _permissionChecksService;
         private readonly ITwitterClient _twitterClient;
@@ -37,7 +38,7 @@ namespace UVOCBot.Commands
         public TwitterCommands(
             ILogger<TwitterCommands> logger,
             ICommandContext context,
-            MessageResponseHelpers responder,
+            ReplyService responder,
             IDbApiService dbAPI,
             IPermissionChecksService permissionChecksService,
             ITwitterClient twitterClient)

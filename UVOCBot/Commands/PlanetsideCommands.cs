@@ -17,6 +17,7 @@ using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
+using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -24,12 +25,12 @@ namespace UVOCBot.Commands
     public class PlanetsideCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly MessageResponseHelpers _responder;
+        private readonly ReplyService _responder;
         private readonly IDbApiService _dbAPI;
         private readonly ICensusApiService _censusApi;
         private readonly IFisuApiService _fisuAPI;
 
-        public PlanetsideCommands(ICommandContext context, MessageResponseHelpers responder, IDbApiService dbAPI, ICensusApiService censusApi, IFisuApiService fisuAPI)
+        public PlanetsideCommands(ICommandContext context, ReplyService responder, IDbApiService dbAPI, ICensusApiService censusApi, IFisuApiService fisuAPI)
         {
             _context = context;
             _responder = responder;

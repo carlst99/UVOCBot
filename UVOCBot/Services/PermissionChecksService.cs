@@ -19,13 +19,13 @@ namespace UVOCBot.Services
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _responder;
 
         public PermissionChecksService(
             ICommandContext context,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            MessageResponseHelpers responder)
+            IReplyService responder)
         {
             _context = context;
             _channelApi = channelApi;
@@ -38,14 +38,14 @@ namespace UVOCBot.Services
             Result<IReadOnlyList<IRole>> getGuildRoles = await _guildApi.GetGuildRolesAsync(guildId, ct).ConfigureAwait(false);
             if (!getGuildRoles.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", ct).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", ct).ConfigureAwait(false);
                 return getGuildRoles;
             }
 
             Result<IGuildMember> getCurrentMember = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, BotConstants.UserId, ct).ConfigureAwait(false);
             if (!getCurrentMember.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", ct).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", ct).ConfigureAwait(false);
                 return getCurrentMember;
             }
 
@@ -61,19 +61,18 @@ namespace UVOCBot.Services
             }
 
             if (highestRole is null)
-                return await _responder.RespondWithUserErrorAsync(_context, "I cannot assign these roles, as I do not have a role myself.", ct).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("I cannot assign these roles, as I do not have a role myself.", ct).ConfigureAwait(false);
 
             // Check that each role is assignable by us
             foreach (ulong roleId in roleIds)
             {
                 if (!getGuildRoles.Entity.Any(r => r.ID.Value == roleId))
-                    return await _responder.RespondWithUserErrorAsync(_context, "A supplied role does not exist.", ct).ConfigureAwait(false);
+                    return await _responder.RespondWithUserErrorAsync("A supplied role does not exist.", ct).ConfigureAwait(false);
 
                 IRole role = getGuildRoles.Entity.First(r => r.ID.Value == roleId);
                 if (role.Position > highestRole.Position)
                 {
                     return await _responder.RespondWithUserErrorAsync(
-                        _context,
                         $"I cannot assign the { Formatter.RoleMention(role.ID) } role, as it is positioned above my own highest role.",
                         ct).ConfigureAwait(false);
                 }
@@ -92,7 +91,7 @@ namespace UVOCBot.Services
             IChannel channel = getChannelResult.Entity;
             if (!channel.GuildID.HasValue)
             {
-                await _responder.RespondWithUserErrorAsync(_context, "This command must be executed in a guild.", ct).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("This command must be executed in a guild.", ct).ConfigureAwait(false);
                 return new Exception("Command requires a guild permission but was executed outside of a guild.");
             }
 

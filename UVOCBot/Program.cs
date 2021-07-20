@@ -77,6 +77,7 @@ namespace UVOCBot
             ILogger? logger = null;
 
             return Host.CreateDefaultBuilder(args)
+                .UseDefaultServiceProvider(s => s.ValidateScopes = true)
                 .ConfigureServices((c, _) =>
                 {
                     string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
@@ -104,17 +105,16 @@ namespace UVOCBot
 
                     // Setup other services
                     services.AddSingleton(fileSystem)
-                            .AddSingleton<IPermissionChecksService, PermissionChecksService>()
                             .AddSingleton<ISettingsService, SettingsService>()
-                            .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
-                            .AddSingleton<IWelcomeMessageService, WelcomeMessageService>()
+                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
                     services.AddDiscordServices()
-                            .AddSingleton<IExecutionEventService, ExecutionEventService>()
+                            .AddScoped<IExecutionEventService, ExecutionEventService>()
                             .AddScoped<IPermissionChecksService, PermissionChecksService>()
-                            .AddSingleton<MessageResponseHelpers>()
+                            .AddScoped<IReplyService, ReplyService>()
+                            .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
                     services.AddHostedService<DiscordService>()

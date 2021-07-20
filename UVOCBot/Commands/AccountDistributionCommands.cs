@@ -14,10 +14,10 @@ namespace UVOCBot.Commands
     public class AccountDistributionCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _responder;
         private readonly IDbApiService _dbApi;
 
-        public AccountDistributionCommands(ICommandContext context, MessageResponseHelpers responder, IDbApiService dbApi)
+        public AccountDistributionCommands(ICommandContext context, IReplyService responder, IDbApiService dbApi)
         {
             _context = context;
             _responder = responder;

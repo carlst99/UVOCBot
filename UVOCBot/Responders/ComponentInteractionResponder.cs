@@ -2,10 +2,13 @@
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Extensions;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders
@@ -14,13 +17,16 @@ namespace UVOCBot.Responders
     {
         private readonly IDiscordRestInteractionAPI _interactionApi;
         private readonly IWelcomeMessageService _welcomeMessageService;
+        private readonly ContextInjectionService _contextInjectionService;
 
         public ComponentInteractionResponder(
             IDiscordRestInteractionAPI interactionApi,
-            IWelcomeMessageService welcomeMessageService)
+            IWelcomeMessageService welcomeMessageService,
+            ContextInjectionService contextInjectionService)
         {
             _interactionApi = interactionApi;
             _welcomeMessageService = welcomeMessageService;
+            _contextInjectionService = contextInjectionService;
         }
 
         public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
@@ -59,6 +65,12 @@ namespace UVOCBot.Responders
                 response,
                 ct
             );
+
+            // Provide the created context to any services inside this scope
+            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
+            if (!context.IsSuccess)
+                return Result.FromError(context);
+            _contextInjectionService.Context = context.Entity;
 
             if (gatewayEvent.Data.Value.CustomID.Value is null)
                 return Result.FromSuccess();

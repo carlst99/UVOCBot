@@ -26,7 +26,7 @@ namespace UVOCBot.Commands
         private readonly IDbApiService _dbApi;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IPermissionChecksService _permissionChecksService;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _responder;
 
         public WelcomeMessageCommands(
             ICommandContext context,
@@ -34,7 +34,7 @@ namespace UVOCBot.Commands
             IDbApiService dbApi,
             IDiscordRestGuildAPI guildApi,
             IPermissionChecksService permissionChecksService,
-            MessageResponseHelpers responder)
+            IReplyService responder)
         {
             _context = context;
             _censusApi = censusApi;
@@ -51,7 +51,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> welcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!welcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return welcomeMessage;
             }
 
@@ -60,12 +60,11 @@ namespace UVOCBot.Commands
 
             if (!dbUpdateResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return dbUpdateResult;
             }
 
             return await _responder.RespondWithSuccessAsync(
-                _context,
                 "The welcome message feature has been " + Formatter.Bold(isEnabled ? "enabled." : "disabled."),
                 CancellationToken).ConfigureAwait(false);
         }
@@ -83,7 +82,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -101,12 +100,11 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
             return await _responder.RespondWithSuccessAsync(
-                _context,
                 "Success! The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
                 CancellationToken).ConfigureAwait(false);
         }
@@ -118,23 +116,23 @@ namespace UVOCBot.Commands
             Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel.ID, _context.User.ID, CancellationToken).ConfigureAwait(false);
             if (!getPermissionSet.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getPermissionSet;
             }
 
             if (!getPermissionSet.Entity.HasPermission(DiscordPermission.SendMessages))
-                return await _responder.RespondWithUserErrorAsync(_context, "I do not have permission to send messages in this channel.", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("I do not have permission to send messages in this channel.", CancellationToken).ConfigureAwait(false);
 
             if (!getPermissionSet.Entity.HasPermission(DiscordPermission.ManageRoles))
-                return await _responder.RespondWithUserErrorAsync(_context, "I do not have permission to manage roles in this channel.", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("I do not have permission to manage roles in this channel.", CancellationToken).ConfigureAwait(false);
 
             if (!getPermissionSet.Entity.HasPermission(DiscordPermission.ChangeNickname))
-                return await _responder.RespondWithUserErrorAsync(_context, "I do not have permission to change nicknames in this channel.", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("I do not have permission to change nicknames in this channel.", CancellationToken).ConfigureAwait(false);
 
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -142,12 +140,11 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return updateWelcomeMessage;
             }
 
             return await _responder.RespondWithSuccessAsync(
-                _context,
                 $"The welcome message will now be posted in { Formatter.ChannelMention(channel.ID.Value) }.",
                 CancellationToken).ConfigureAwait(false);
         }
@@ -164,7 +161,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -181,12 +178,11 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
             return await _responder.RespondWithSuccessAsync(
-                _context,
                 "Success! The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
                 CancellationToken).ConfigureAwait(false);
         }
@@ -201,17 +197,17 @@ namespace UVOCBot.Commands
             Result<Outfit?> getOutfit = await _censusApi.GetOutfit(outfitTag, CancellationToken).ConfigureAwait(false);
             if (!getOutfit.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getOutfit;
             }
 
             if (getOutfit.Entity is null)
-                return await _responder.RespondWithUserErrorAsync(_context, "That outfit does not exist.", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("That outfit does not exist.", CancellationToken).ConfigureAwait(false);
 
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -219,12 +215,11 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(updatedWelcomeMessage.GuildId, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return updateWelcomeMessage;
             }
 
             return await _responder.RespondWithSuccessAsync(
-                _context,
                 $"Nickname guesses from the outfit { Formatter.Bold(getOutfit.Entity.Name) } will now be presented on the welcome message.",
                 CancellationToken).ConfigureAwait(false);
         }
@@ -236,7 +231,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -244,11 +239,11 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(updatedWelcomeMessage.GuildId, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
                 return updateWelcomeMessage;
             }
 
-            return await _responder.RespondWithSuccessAsync(_context, "Message successfully updated!", CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync("Message successfully updated!", CancellationToken).ConfigureAwait(false);
         }
 
         private static IEnumerable<ulong> ParseRoles(string roles)

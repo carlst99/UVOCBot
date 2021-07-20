@@ -5,7 +5,6 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
@@ -14,6 +13,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
 using System.Threading.Tasks;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
@@ -23,14 +23,12 @@ namespace UVOCBot.Commands
             "\r\n• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
             "\r\n• Made the `population` command faster.";
 
-        private readonly ICommandContext _context;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _responder;
         private readonly IDiscordRestUserAPI _userAPI;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestUserAPI userAPI)
+        public GeneralCommands(IReplyService responder, IDiscordRestUserAPI userAPI)
         {
-            _context = context;
             _responder = responder;
             _userAPI = userAPI;
 
@@ -44,7 +42,7 @@ namespace UVOCBot.Commands
             int? year = null, int? month = null, int? day = null, int? hour = null, int? minute = null)
         {
             if (gmtOffset < -12 || gmtOffset > 14)
-                return await _responder.RespondWithSuccessAsync(_context, "GMT offset must be between -12 and 14.", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithSuccessAsync("GMT offset must be between -12 and 14.", CancellationToken).ConfigureAwait(false);
 
             DateTimeOffset time = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(gmtOffset));
 
@@ -60,11 +58,10 @@ namespace UVOCBot.Commands
             }
             catch
             {
-                return await _responder.RespondWithUserErrorAsync(_context, "Invalid arguments!", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("Invalid arguments!", CancellationToken).ConfigureAwait(false);
             }
 
             await _responder.RespondWithSuccessAsync(
-                _context,
                 $"{ Formatter.Timestamp(time.ToUnixTimeSeconds()) }\n\n{ Formatter.InlineQuote($"<t:{ time.ToUnixTimeSeconds() }>") }",
                 CancellationToken).ConfigureAwait(false);
 
@@ -87,7 +84,7 @@ namespace UVOCBot.Commands
                 Description = description
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("http-cat")]
@@ -100,7 +97,7 @@ namespace UVOCBot.Commands
                 Footer = new EmbedFooter("Image from http.cat")
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("info")]
@@ -141,7 +138,7 @@ namespace UVOCBot.Commands
                 }
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
     }
 }

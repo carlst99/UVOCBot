@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands.Conditions
 {
@@ -24,7 +25,7 @@ namespace UVOCBot.Commands.Conditions
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _responder;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RequireGuildPermissionCondition"/> class.
@@ -37,7 +38,7 @@ namespace UVOCBot.Commands.Conditions
             ICommandContext context,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            MessageResponseHelpers responder)
+            IReplyService responder)
         {
             _context = context;
             _channelApi = channelApi;
@@ -56,7 +57,7 @@ namespace UVOCBot.Commands.Conditions
             IChannel channel = getChannelResult.Entity;
             if (!channel.GuildID.HasValue)
             {
-                await _responder.RespondWithUserErrorAsync(_context, "This command must be executed in a guild.", ct).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("This command must be executed in a guild.", ct).ConfigureAwait(false);
                 return new ConditionNotSatisfiedError("Command requires a guild permission but was executed outside of a guild.");
             }
 
@@ -102,7 +103,6 @@ namespace UVOCBot.Commands.Conditions
                 if (!hasPermissionsResult.IsSuccess)
                 {
                     await _responder.RespondWithUserErrorAsync(
-                        _context,
                         $"<@{ BotConstants.UserId }> (that's me!) needs the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission in this channel to perform this action.",
                         ct).ConfigureAwait(false);
 
@@ -122,7 +122,6 @@ namespace UVOCBot.Commands.Conditions
                 if (!hasPermissionsResult.IsSuccess)
                 {
                     await _responder.RespondWithUserErrorAsync(
-                        _context,
                         $"You need the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission in this channel to use this command.",
                         ct).ConfigureAwait(false);
 

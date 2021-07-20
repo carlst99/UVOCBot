@@ -63,10 +63,8 @@ namespace UVOCBot.Commands
                 return Result.FromError(messageResult);
 
             // Check that the provided reaction exists
-#pragma warning disable CS8604 // Possible null reference argument.
             if (!messageResult.Entity.Reactions.Value.Any(r => r.Emoji.Name.Equals(emoji)))
-#pragma warning restore CS8604 // Possible null reference argument.
-                return await _responder.RespondWithErrorAsync(_context, $"The emoji {emoji} doesn't exist as a reaction on that message", ct: CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync($"The emoji {emoji} doesn't exist as a reaction on that message", ct: CancellationToken).ConfigureAwait(false);
 
             // Ensure that we can manipulate this role
             IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID.Value }, CancellationToken).ConfigureAwait(false);
@@ -81,7 +79,7 @@ namespace UVOCBot.Commands
             {
                 if (!usersWhoReacted.IsSuccess || usersWhoReacted.Entity is null)
                 {
-                    await _responder.RespondWithErrorAsync(_context, "Could not get the members who have reacted with " + emoji, ct: CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync("Could not get the members who have reacted with " + emoji, ct: CancellationToken).ConfigureAwait(false);
                     return Result.FromError(usersWhoReacted);
                 }
 
@@ -105,7 +103,7 @@ namespace UVOCBot.Commands
             if (userCount <= MAX_USERNAMES_IN_LIST)
                 messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 
-            return await _responder.RespondWithSuccessAsync(_context, messageContent, CancellationToken, new AllowedMentions()).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(messageContent, CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         [Command("remove-from-all")]
@@ -124,15 +122,13 @@ namespace UVOCBot.Commands
             {
                 if (!users.IsSuccess || users.Entity is null)
                 {
-                    await _responder.RespondWithErrorAsync(_context, "Could not get members with this role. Please try again later", ct: CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync("Could not get members with this role. Please try again later", ct: CancellationToken).ConfigureAwait(false);
                     return Result.FromError(users);
                 }
 
                 foreach (IGuildMember member in users.Entity)
                 {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
                     Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, CancellationToken).ConfigureAwait(false);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
                     if (roleRemoveResult.IsSuccess)
                     {
                         if (userCount < MAX_USERNAMES_IN_LIST)
@@ -147,7 +143,7 @@ namespace UVOCBot.Commands
             if (userCount <= MAX_USERNAMES_IN_LIST)
                 messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 
-            return await _responder.RespondWithSuccessAsync(_context, messageContent, CancellationToken, new AllowedMentions()).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(messageContent, CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -160,15 +156,14 @@ namespace UVOCBot.Commands
         {
             //Try to parse the message ID
             if (!ulong.TryParse(messageID, out ulong messageIDParsed))
-                return await _responder.RespondWithErrorAsync(_context, "Please submit a valid message ID. You can obtain this by right-clicking a message", ct: CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("Please submit a valid message ID. You can obtain this by right-clicking a message", ct: CancellationToken).ConfigureAwait(false);
 
             // Attempt to get the message
             Snowflake messageSnowflake = new(messageIDParsed);
             Result<IMessage> messageResult = await _channelApi.GetChannelMessageAsync(channel, messageSnowflake, CancellationToken).ConfigureAwait(false);
             if (!messageResult.IsSuccess || messageResult.Entity?.Reactions.HasValue != true)
             {
-                await _responder.RespondWithErrorAsync(
-                    _context,
+                await _responder.RespondWithUserErrorAsync(
                     "Could not find the message. Please ensure you copied the right ID, and that I have permissions to view the channel that the message was sent in",
                     ct: CancellationToken).ConfigureAwait(false);
             }

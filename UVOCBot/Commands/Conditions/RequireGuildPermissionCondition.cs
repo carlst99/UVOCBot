@@ -57,7 +57,7 @@ namespace UVOCBot.Commands.Conditions
             IChannel channel = getChannelResult.Entity;
             if (!channel.GuildID.HasValue)
             {
-                await _responder.RespondWithUserErrorAsync(_context, "This command must be executed in a guild.", ct).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("This command must be executed in a guild.", ct).ConfigureAwait(false);
                 return new ConditionNotSatisfiedError("Command requires a guild permission but was executed outside of a guild.");
             }
 
@@ -103,7 +103,6 @@ namespace UVOCBot.Commands.Conditions
                 if (!hasPermissionsResult.IsSuccess)
                 {
                     await _responder.RespondWithUserErrorAsync(
-                        _context,
                         $"<@{ BotConstants.UserId }> (that's me!) needs the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission in this channel to perform this action.",
                         ct).ConfigureAwait(false);
 
@@ -123,7 +122,6 @@ namespace UVOCBot.Commands.Conditions
                 if (!hasPermissionsResult.IsSuccess)
                 {
                     await _responder.RespondWithUserErrorAsync(
-                        _context,
                         $"You need the { Formatter.InlineQuote(attribute.Permission.ToString()) } permission in this channel to use this command.",
                         ct).ConfigureAwait(false);
 

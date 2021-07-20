@@ -24,14 +24,12 @@ namespace UVOCBot.Commands
             "\r\n• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
             "\r\n• Made the `population` command faster.";
 
-        private readonly ICommandContext _context;
         private readonly ReplyService _responder;
         private readonly IDiscordRestUserAPI _userAPI;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ICommandContext context, ReplyService responder, IDiscordRestUserAPI userAPI)
+        public GeneralCommands(ReplyService responder, IDiscordRestUserAPI userAPI)
         {
-            _context = context;
             _responder = responder;
             _userAPI = userAPI;
 
@@ -45,7 +43,7 @@ namespace UVOCBot.Commands
             int? year = null, int? month = null, int? day = null, int? hour = null, int? minute = null)
         {
             if (gmtOffset < -12 || gmtOffset > 14)
-                return await _responder.RespondWithSuccessAsync(_context, "GMT offset must be between -12 and 14.", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithSuccessAsync("GMT offset must be between -12 and 14.", CancellationToken).ConfigureAwait(false);
 
             DateTimeOffset time = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(gmtOffset));
 
@@ -61,11 +59,10 @@ namespace UVOCBot.Commands
             }
             catch
             {
-                return await _responder.RespondWithUserErrorAsync(_context, "Invalid arguments!", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("Invalid arguments!", CancellationToken).ConfigureAwait(false);
             }
 
             await _responder.RespondWithSuccessAsync(
-                _context,
                 $"{ Formatter.Timestamp(time.ToUnixTimeSeconds()) }\n\n{ Formatter.InlineQuote($"<t:{ time.ToUnixTimeSeconds() }>") }",
                 CancellationToken).ConfigureAwait(false);
 
@@ -88,7 +85,7 @@ namespace UVOCBot.Commands
                 Description = description
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("http-cat")]
@@ -101,7 +98,7 @@ namespace UVOCBot.Commands
                 Footer = new EmbedFooter("Image from http.cat")
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("info")]
@@ -142,7 +139,7 @@ namespace UVOCBot.Commands
                 }
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
     }
 }

@@ -57,12 +57,12 @@ namespace UVOCBot.Commands
         {
             // Check that the username conforms to Twitters standards
             if (!Regex.IsMatch(username, TWITTER_USERNAME_REGEX))
-                return await _responder.RespondWithErrorAsync(_context, "That user doesn't exist!", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("That's an invalid username", CancellationToken).ConfigureAwait(false);
 
             Result<UserV2Response> user = await GetTwitterUserByUsernameAsync(username).ConfigureAwait(false);
             if (!user.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Could not find that user.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Could not find that user.", CancellationToken).ConfigureAwait(false);
                 _logger.LogError("Could not get twitter user to add: " + user.Error.Message);
                 return user;
             }
@@ -71,7 +71,7 @@ namespace UVOCBot.Commands
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 _logger.LogError("Could not get guild twitter settings while adding twitter user: " + settings.Error.Message);
                 return settings;
             }
@@ -86,14 +86,14 @@ namespace UVOCBot.Commands
                 }
                 else
                 {
-                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                     _logger.LogError("Could not get twitter user from database while adding: " + twitterUser.Error.Message);
                     return twitterUser;
                 }
 
                 if (!twitterUser.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                     _logger.LogError("Could not add twitter user to database: " + twitterUser.Error.Message);
                     return twitterUser;
                 }
@@ -104,7 +104,7 @@ namespace UVOCBot.Commands
                 Result linkCreationResult = await _dbApi.CreateGuildTwitterLinkAsync(settings.Entity.GuildId, twitterUser.Entity.UserId, CancellationToken).ConfigureAwait(false);
                 if (!linkCreationResult.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                     _logger.LogError("Could not create twitter user/guild link: " + linkCreationResult.Error.Message);
                     return linkCreationResult;
                 }
@@ -112,13 +112,12 @@ namespace UVOCBot.Commands
 
             if (settings.Entity.RelayChannelId is null)
             {
-                await _responder.RespondWithErrorAsync(
-                    _context,
+                await _responder.RespondWithUserErrorAsync(
                     $"You haven't set a channel to relay tweets to. Please use the { Formatter.InlineQuote("twitter relay-channel") } command",
                     CancellationToken).ConfigureAwait(false);
             }
 
-            return await _responder.RespondWithSuccessAsync(_context, $"Tweets from { Formatter.Bold(username) } will now be relayed", CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync($"Tweets from { Formatter.Bold(username) } will now be relayed", CancellationToken).ConfigureAwait(false);
         }
 
         [Command("remove-user")]
@@ -127,12 +126,12 @@ namespace UVOCBot.Commands
         {
             // Check that the username conforms to Twitter's standards
             if (!Regex.IsMatch(username, TWITTER_USERNAME_REGEX))
-                return await _responder.RespondWithUserErrorAsync(_context, "That's an invalid username!", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("That's an invalid username", CancellationToken).ConfigureAwait(false);
 
             Result<UserV2Response> user = await GetTwitterUserByUsernameAsync(username).ConfigureAwait(false);
             if (!user.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Could not find that user.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Could not find that user.", CancellationToken).ConfigureAwait(false);
                 return user;
             }
 
@@ -140,7 +139,7 @@ namespace UVOCBot.Commands
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 return settings;
             }
 
@@ -149,17 +148,17 @@ namespace UVOCBot.Commands
                 Result linkDeletionResult = await _dbApi.DeleteGuildTwitterLinkAsync(settings.Entity.GuildId, twitterUserId, CancellationToken).ConfigureAwait(false);
                 if (!linkDeletionResult.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                     return linkDeletionResult;
                 }
                 else
                 {
-                    return await _responder.RespondWithSuccessAsync(_context, $"Tweets from { Formatter.Bold(username) } are no longer being relayed", CancellationToken).ConfigureAwait(false);
+                    return await _responder.RespondWithSuccessAsync($"Tweets from { Formatter.Bold(username) } are no longer being relayed", CancellationToken).ConfigureAwait(false);
                 }
             }
             else
             {
-                return await _responder.RespondWithErrorAsync(_context, $"You weren't relaying tweets from { Formatter.Bold(username) }", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync($"You weren't relaying tweets from { Formatter.Bold(username) }", CancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -171,13 +170,13 @@ namespace UVOCBot.Commands
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 return settings;
             }
 
             if (settings.Entity.TwitterUsers.Count == 0)
             {
-                return await _responder.RespondWithSuccessAsync(_context, "You aren't relaying tweets from any users", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithSuccessAsync("You aren't relaying tweets from any users", CancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -203,7 +202,7 @@ namespace UVOCBot.Commands
                         sb.Append(actualUser.User.Username).Append(" (ID: ").Append(twitterUserId).AppendLine(")");
                 }
 
-                return await _responder.RespondWithSuccessAsync(_context, sb.ToString(), CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithSuccessAsync(sb.ToString(), CancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -214,14 +213,13 @@ namespace UVOCBot.Commands
             Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.GetPermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!botPermissions.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again later", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again later", CancellationToken).ConfigureAwait(false);
                 return botPermissions;
             }
 
             if (!botPermissions.Entity.HasPermission(DiscordPermission.ViewChannel) || !botPermissions.Entity.HasPermission(DiscordPermission.SendMessages))
             {
-                return await _responder.RespondWithErrorAsync(
-                    _context,
+                return await _responder.RespondWithUserErrorAsync(
                     $"I need permissions to view { Formatter.ChannelMention(channel.ID) }, and send messages to it. Your relay channel has { Formatter.Bold("not") } been updated",
                     CancellationToken).ConfigureAwait(false);
             }
@@ -229,7 +227,7 @@ namespace UVOCBot.Commands
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 return settings;
             }
 
@@ -237,11 +235,11 @@ namespace UVOCBot.Commands
             Result updateResult = await _dbApi.UpdateGuildTwitterSettingsAsync(settings.Entity.GuildId, settings.Entity, CancellationToken).ConfigureAwait(false);
             if (!updateResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 return updateResult;
             }
 
-            return await _responder.RespondWithSuccessAsync(_context, "Tweets will now be relayed to " + Formatter.ChannelMention(channel.ID), CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync("Tweets will now be relayed to " + Formatter.ChannelMention(channel.ID), CancellationToken).ConfigureAwait(false);
         }
 
         [Command("relaying-enabled")]
@@ -251,7 +249,7 @@ namespace UVOCBot.Commands
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 return settings;
             }
 
@@ -259,11 +257,11 @@ namespace UVOCBot.Commands
             Result updateResult = await _dbApi.UpdateGuildTwitterSettingsAsync(settings.Entity.GuildId, settings.Entity, CancellationToken).ConfigureAwait(false);
             if (!updateResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 return updateResult;
             }
 
-            return await _responder.RespondWithSuccessAsync(_context, "Tweet relaying is now " + Formatter.Bold(isEnabled ? "enabled" : "disabled"), CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync("Tweet relaying is now " + Formatter.Bold(isEnabled ? "enabled" : "disabled"), CancellationToken).ConfigureAwait(false);
         }
 
         [Command("status")]
@@ -273,7 +271,7 @@ namespace UVOCBot.Commands
             Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Something went wrong. Please try again!", CancellationToken).ConfigureAwait(false);
                 return settings;
             }
 
@@ -289,7 +287,7 @@ namespace UVOCBot.Commands
             else
                 sb.Append("Tweets are being relayed to ").AppendLine(Formatter.ChannelMention(settings.Entity.RelayChannelId.Value));
 
-            return await _responder.RespondWithSuccessAsync(_context, sb.ToString(), CancellationToken).ConfigureAwait(false);
+            return await _responder.RespondWithSuccessAsync(sb.ToString(), CancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -308,13 +306,13 @@ namespace UVOCBot.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Could not get Twitter user information");
-                await _responder.RespondWithErrorAsync(_context, "Sorry, an error occurred! Please try again later", ct: CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync("Sorry, an error occurred! Please try again later", ct: CancellationToken).ConfigureAwait(false);
                 return Result<UserV2Response>.FromError(ex);
             }
 
             if (user.User is null)
             {
-                await _responder.RespondWithErrorAsync(_context, "That user doesn't exist!", ct: CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("That user doesn't exist!", ct: CancellationToken).ConfigureAwait(false);
                 return Result<UserV2Response>.FromError(new ArgumentException("Username does not exist"));
             }
 

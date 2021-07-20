@@ -75,10 +75,10 @@ namespace UVOCBot.Responders
             Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
             if (!context.IsSuccess)
                 return Result.FromError(context);
+            _contextInjectionService.Context = context.Entity;
 
             IApplicationCommandInteractionData interactionData = gatewayEvent.Data.Value!;
             interactionData.UnpackInteraction(out var command, out var parameters);
-            _contextInjectionService.Context = context.Entity;
 
             // Run any user-provided pre execution events
             Result preExecutionResult = await _eventCollector.RunPreExecutionEvents(context.Entity, ct).ConfigureAwait(false);

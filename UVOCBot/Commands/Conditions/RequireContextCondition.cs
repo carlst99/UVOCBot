@@ -49,17 +49,17 @@ namespace UVOCBot.Commands.Conditions
 
             if (attribute.Context is ChannelContext.DM && channel.Type is not ChannelType.DM)
             {
-                await _responder.RespondWithUserErrorAsync(_context, "This command can only be used in a DM.", ct).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("This command can only be used in a DM.", ct).ConfigureAwait(false);
                 return new ConditionNotSatisfiedError("This command can only be used in a DM.");
             }
             else if (attribute.Context is ChannelContext.GroupDM && channel.Type is not ChannelType.GroupDM)
             {
-                await _responder.RespondWithUserErrorAsync(_context, "This command can only be used in a group DM.", ct).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("This command can only be used in a group DM.", ct).ConfigureAwait(false);
                 return new ConditionNotSatisfiedError("This command can only be used in a group DM.");
             }
             else if (attribute.Context is ChannelContext.GroupDM && channel.Type is ChannelType.DM or ChannelType.GroupDM)
             {
-                await _responder.RespondWithUserErrorAsync(_context, "This command can only be used in a guild.", ct).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("This command can only be used in a guild.", ct).ConfigureAwait(false);
                 return new ConditionNotSatisfiedError("This command can only be used in a guild.");
             }
             else

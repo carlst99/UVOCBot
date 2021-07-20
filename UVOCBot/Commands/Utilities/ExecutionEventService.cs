@@ -23,7 +23,7 @@ namespace UVOCBot.Commands
         {
             if (context is MessageContext)
             {
-                Result res = await _responder.TriggerTypingAsync(context, ct).ConfigureAwait(false);
+                Result res = await _responder.TriggerTypingAsync(ct).ConfigureAwait(false);
                 if (!res.IsSuccess)
                     _logger.LogWarning("Failed to show typing indicator: {message}", res.Error);
             }

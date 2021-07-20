@@ -8,10 +8,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
-    public class ReplyService
+    public class ReplyService : IReplyService
     {
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
@@ -24,11 +25,13 @@ namespace UVOCBot.Services
             _webhookApi = webhookApi;
         }
 
+        /// <inheritdoc />
         public async Task<Result> TriggerTypingAsync(CancellationToken ct)
         {
             return await _channelApi.TriggerTypingIndicatorAsync(_context.ChannelID, ct).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithEmbedAsync(IEmbed embed, CancellationToken ct, Optional<FileData> file = default, Optional<IAllowedMentions> allowedMentions = default)
         {
             if (_context is InteractionContext)
@@ -37,6 +40,7 @@ namespace UVOCBot.Services
                 return await RespondToMessageAsync(ct, default, embed: new List<IEmbed>() { embed }, allowedMentions: allowedMentions).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithEmbedAsync(IReadOnlyList<IEmbed> embed, CancellationToken ct, Optional<FileData> file = default, Optional<IAllowedMentions> allowedMentions = default)
         {
             if (_context is InteractionContext)
@@ -45,6 +49,7 @@ namespace UVOCBot.Services
                 return await RespondToMessageAsync(ct, default, embed: new Optional<IReadOnlyList<IEmbed>>(embed), allowedMentions: allowedMentions).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithContentAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             if (_context is InteractionContext)
@@ -53,6 +58,7 @@ namespace UVOCBot.Services
                 return await RespondToMessageAsync(ct, content, default, allowedMentions: allowedMentions).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithSuccessAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             Embed embed = new()
@@ -63,6 +69,7 @@ namespace UVOCBot.Services
             return await RespondWithEmbedAsync(embed, ct, default, allowedMentions).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithUserErrorAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             Embed embed = new()
@@ -73,6 +80,7 @@ namespace UVOCBot.Services
             return await RespondWithEmbedAsync(embed, ct, default, allowedMentions).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithErrorAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
         {
             Embed embed = new()
@@ -84,6 +92,7 @@ namespace UVOCBot.Services
             return await RespondWithEmbedAsync(embed, ct, default, allowedMentions).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondToInteractionAsync(CancellationToken ct, Optional<string> content = default, Optional<FileData> file = default, Optional<IReadOnlyList<IEmbed>> embeds = default, Optional<IAllowedMentions> allowedMentions = default)
         {
             if (_context is not InteractionContext ictx)
@@ -99,6 +108,7 @@ namespace UVOCBot.Services
                 ct: ct).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task<Result<IMessage>> RespondToMessageAsync(CancellationToken ct, Optional<string> content = default, Optional<string> nonce = default, Optional<bool> isTTS = default, Optional<FileData> file = default, Optional<IReadOnlyList<IEmbed>> embed = default, Optional<IAllowedMentions> allowedMentions = default, Optional<IMessageReference> messageReference = default, Optional<IReadOnlyList<IMessageComponent>> components = default)
         {
             return await _channelApi.CreateMessageAsync(

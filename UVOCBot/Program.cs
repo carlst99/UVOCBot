@@ -113,8 +113,8 @@ namespace UVOCBot
                     services.AddDiscordServices()
                             .AddScoped<IExecutionEventService, ExecutionEventService>()
                             .AddScoped<IPermissionChecksService, PermissionChecksService>()
+                            .AddScoped<IReplyService, ReplyService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
-                            .AddScoped<ReplyService>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
                     services.AddHostedService<DiscordService>()

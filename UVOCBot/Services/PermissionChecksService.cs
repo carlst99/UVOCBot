@@ -38,14 +38,14 @@ namespace UVOCBot.Services
             Result<IReadOnlyList<IRole>> getGuildRoles = await _guildApi.GetGuildRolesAsync(guildId, ct).ConfigureAwait(false);
             if (!getGuildRoles.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", ct).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(ct).ConfigureAwait(false);
                 return getGuildRoles;
             }
 
             Result<IGuildMember> getCurrentMember = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, BotConstants.UserId, ct).ConfigureAwait(false);
             if (!getCurrentMember.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", ct).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(ct).ConfigureAwait(false);
                 return getCurrentMember;
             }
 

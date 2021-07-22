@@ -46,20 +46,20 @@ namespace UVOCBot.Commands
             if (server == 0)
             {
                 if (!_context.GuildID.HasValue)
-                    return await _responder.RespondWithErrorAsync("To use this command in a DM you must provide a server.", ct: CancellationToken).ConfigureAwait(false);
+                    return await _responder.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
                 Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
                 if (!settings.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync("Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return settings;
                 }
 
                 if (settings.Entity.DefaultWorld is null)
                 {
-                    return await _responder.RespondWithErrorAsync(
+                    return await _responder.RespondWithUserErrorAsync(
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
-                        ct: CancellationToken).ConfigureAwait(false);
+                        CancellationToken).ConfigureAwait(false);
                 }
 
                 server = (WorldType)settings.Entity.DefaultWorld;
@@ -76,20 +76,20 @@ namespace UVOCBot.Commands
             if (server == 0)
             {
                 if (!_context.GuildID.HasValue)
-                    return await _responder.RespondWithErrorAsync("To use this command in a DM you must provide a server.", ct: CancellationToken).ConfigureAwait(false);
+                    return await _responder.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
                 Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
                 if (!settings.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync("Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return settings;
                 }
 
                 if (settings.Entity.DefaultWorld is null)
                 {
-                    return await _responder.RespondWithErrorAsync(
+                    return await _responder.RespondWithUserErrorAsync(
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
-                        ct: CancellationToken).ConfigureAwait(false);
+                        CancellationToken).ConfigureAwait(false);
                 }
 
                 server = (WorldType)settings.Entity.DefaultWorld;
@@ -109,7 +109,7 @@ namespace UVOCBot.Commands
                 Result<OutfitOnlineMembers> onlineMembers = await _censusApi.GetOnlineMembersAsync(tags[0], CancellationToken).ConfigureAwait(false);
                 if (!onlineMembers.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync("The census query failed. Please try again later.", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return onlineMembers;
                 }
 
@@ -132,7 +132,7 @@ namespace UVOCBot.Commands
                 Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
                 if (!outfits.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync("The census query failed. Please try again later.", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return outfits;
                 }
 
@@ -189,7 +189,7 @@ namespace UVOCBot.Commands
             Result<PlanetsideSettingsDTO> settings = await _dbAPI.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return settings;
             }
 
@@ -198,7 +198,7 @@ namespace UVOCBot.Commands
             Result updateResult = await _dbAPI.UpdatePlanetsideSettingsAsync(_context.GuildID.Value.Value, settings.Entity, CancellationToken).ConfigureAwait(false);
             if (!updateResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong. Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return updateResult;
             }
 
@@ -214,8 +214,8 @@ namespace UVOCBot.Commands
             if (!populationResult.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(
-                    $"Could not get population statistics - the query to { Formatter.InlineQuote("fisu") } failed. Please try again.",
-                    CancellationToken).ConfigureAwait(false);
+                    CancellationToken,
+                    $"Could not get population statistics - the query to { Formatter.InlineQuote("fisu") } failed. Please try again.").ConfigureAwait(false);
                 return populationResult;
             }
 
@@ -261,7 +261,7 @@ namespace UVOCBot.Commands
             }
             catch
             {
-                return await _responder.RespondWithErrorAsync("Failed to get data from the PlanetSide API", CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
             }
         }
 

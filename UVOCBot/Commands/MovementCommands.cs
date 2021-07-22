@@ -134,7 +134,7 @@ namespace UVOCBot.Commands
                 }
                 else
                 {
-                    await _responder.RespondWithErrorAsync("Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return Result<IReadOnlyList<Snowflake>>.FromError(group);
                 }
             }

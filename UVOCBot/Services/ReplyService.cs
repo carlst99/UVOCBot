@@ -81,7 +81,7 @@ namespace UVOCBot.Services
         }
 
         /// <inheritdoc />
-        public async Task<Result<IMessage>> RespondWithErrorAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
+        public async Task<Result<IMessage>> RespondWithErrorAsync(CancellationToken ct, string content = "Something went wrong! Please try again.", Optional<IAllowedMentions> allowedMentions = default)
         {
             Embed embed = new()
             {

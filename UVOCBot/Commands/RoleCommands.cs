@@ -78,7 +78,7 @@ namespace UVOCBot.Commands
             {
                 if (!usersWhoReacted.IsSuccess || usersWhoReacted.Entity is null)
                 {
-                    await _responder.RespondWithErrorAsync("Could not get the members who have reacted with " + emoji, ct: CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return Result.FromError(usersWhoReacted);
                 }
 
@@ -121,7 +121,7 @@ namespace UVOCBot.Commands
             {
                 if (!users.IsSuccess || users.Entity is null)
                 {
-                    await _responder.RespondWithErrorAsync("Could not get members with this role. Please try again later", ct: CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithUserErrorAsync("Could not get members with this role. Please try again later", CancellationToken).ConfigureAwait(false);
                     return Result.FromError(users);
                 }
 

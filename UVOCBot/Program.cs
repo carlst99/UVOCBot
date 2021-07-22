@@ -225,6 +225,7 @@ namespace UVOCBot
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
+                    .AddCommandGroup<RoleMenuCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
                     .AddCommandGroup<TwitterCommands>()

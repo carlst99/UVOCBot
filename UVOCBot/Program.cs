@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
+using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Commands.Responders;
 using Remora.Discord.Commands.Services;
@@ -106,7 +107,7 @@ namespace UVOCBot
                     // Setup other services
                     services.AddSingleton(fileSystem)
                             .AddSingleton<ISettingsService, SettingsService>()
-                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
+                            .AddSingleton<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
@@ -204,6 +205,45 @@ namespace UVOCBot
                     | GatewayIntents.GuildMembers
             });
             services.AddSingleton(gatewayClientOptions);
+
+            // Add the helpers used for context injection.
+            services.TryAddScoped<ContextInjectionService>();
+
+            services.TryAddTransient<ICommandContext>
+                (
+                    s =>
+                    {
+                        var injectionService = s.GetRequiredService<ContextInjectionService>();
+                        return injectionService.Context ?? throw new InvalidOperationException
+                        (
+                            "No context has been set for this scope."
+                        );
+                    }
+                );
+
+            services.TryAddTransient
+                (
+                    s =>
+                    {
+                        var injectionService = s.GetRequiredService<ContextInjectionService>();
+                        return injectionService.Context as MessageContext ?? throw new InvalidOperationException
+                        (
+                            "No message context has been set for this scope."
+                        );
+                    }
+                );
+
+            services.TryAddTransient
+                (
+                    s =>
+                    {
+                        var injectionService = s.GetRequiredService<ContextInjectionService>();
+                        return injectionService.Context as InteractionContext ?? throw new InvalidOperationException
+                        (
+                            "No interaction context has been set for this scope."
+                        );
+                    }
+                );
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(false)

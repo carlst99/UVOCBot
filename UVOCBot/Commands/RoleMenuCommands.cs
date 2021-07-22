@@ -16,6 +16,7 @@ namespace UVOCBot.Commands
     [Description("Commands to create and edit role menus.")]
     [RequireContext(ChannelContext.Guild)]
     [RequireGuildPermission(DiscordPermission.ManageRoles)]
+    [RequireGuildPermission(DiscordPermission.SendMessages)]
     public class RoleMenuCommands : CommandGroup
     {
         private readonly IDiscordRestChannelAPI _channelApi;
@@ -33,7 +34,7 @@ namespace UVOCBot.Commands
         [Description("Creates a new role menu")]
         public async Task<IResult> CreateCommand(
             [Description("The channel to post the role menu in.")] IChannel channel,
-            [Description("The title of the role menu.")] string? title = null,
+            [Description("The title of the role menu.")] string title,
             [Description("The description of the role menu.")] string? description = null)
         {
             Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
@@ -44,10 +45,21 @@ namespace UVOCBot.Commands
             }
 
             if (!permissionsResult.Entity.HasPermission(DiscordPermission.ManageRoles))
-                return await _replyService.RespondWithUserErrorAsync("I don't have permission to maniuplate roles in that channel!", CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithUserErrorAsync("I don't have permission to manipulate roles in that channel!", CancellationToken).ConfigureAwait(false);
 
-            Embed e = new(title ?? default(Optional<string>), Description: description ?? default(Optional<string>), Colour: BotConstants.DEFAULT_EMBED_COLOUR);
-            return await _channelApi.CreateMessageAsync(channel.ID, embeds: new Embed[] { e }, ct: CancellationToken).ConfigureAwait(false);
+            if (!permissionsResult.Entity.HasPermission(DiscordPermission.SendMessages))
+                return await _replyService.RespondWithUserErrorAsync("I don't have permission to send messages in that channel!", CancellationToken).ConfigureAwait(false);
+
+            Embed e = new(title, Description: description ?? default(Optional<string>), Colour: BotConstants.DEFAULT_EMBED_COLOUR);
+
+            Result<IMessage> menuCreationResult = await _channelApi.CreateMessageAsync(channel.ID, embeds: new Embed[] { e }, ct: CancellationToken).ConfigureAwait(false);
+            if (!menuCreationResult.IsSuccess)
+            {
+                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                return menuCreationResult;
+            }
+
+            return await _replyService.RespondWithSuccessAsync("Menu created!", CancellationToken).ConfigureAwait(false);
         }
     }
 }

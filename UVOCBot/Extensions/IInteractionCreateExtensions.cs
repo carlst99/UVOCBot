@@ -35,5 +35,14 @@ namespace UVOCBot.Extensions
 
             return Result<InteractionContext>.FromSuccess(context);
         }
+
+        public static IUser? GetUser(this IInteractionCreate gatewayEvent)
+            => gatewayEvent.User.HasValue
+                ? gatewayEvent.User.Value
+                : gatewayEvent.Member.HasValue
+                    ? gatewayEvent.Member.Value.User.HasValue
+                        ? gatewayEvent.Member.Value.User.Value
+                        : null
+                    : null;
     }
 }

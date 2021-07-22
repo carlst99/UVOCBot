@@ -38,14 +38,7 @@ namespace UVOCBot.Responders
                 return Result.FromSuccess();
 
             // Get the user who initiated the interaction
-            IUser? user = gatewayEvent.User.HasValue
-                ? gatewayEvent.User.Value
-                : gatewayEvent.Member.HasValue
-                    ? gatewayEvent.Member.Value.User.HasValue
-                        ? gatewayEvent.Member.Value.User.Value
-                        : null
-                    : null;
-
+            IUser? user = gatewayEvent.GetUser();
             if (user is null)
                 return Result.FromSuccess();
 

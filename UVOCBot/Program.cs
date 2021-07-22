@@ -206,45 +206,6 @@ namespace UVOCBot
             });
             services.AddSingleton(gatewayClientOptions);
 
-            // Add the helpers used for context injection.
-            services.TryAddScoped<ContextInjectionService>();
-
-            services.TryAddTransient<ICommandContext>
-                (
-                    s =>
-                    {
-                        var injectionService = s.GetRequiredService<ContextInjectionService>();
-                        return injectionService.Context ?? throw new InvalidOperationException
-                        (
-                            "No context has been set for this scope."
-                        );
-                    }
-                );
-
-            services.TryAddTransient
-                (
-                    s =>
-                    {
-                        var injectionService = s.GetRequiredService<ContextInjectionService>();
-                        return injectionService.Context as MessageContext ?? throw new InvalidOperationException
-                        (
-                            "No message context has been set for this scope."
-                        );
-                    }
-                );
-
-            services.TryAddTransient
-                (
-                    s =>
-                    {
-                        var injectionService = s.GetRequiredService<ContextInjectionService>();
-                        return injectionService.Context as InteractionContext ?? throw new InvalidOperationException
-                        (
-                            "No interaction context has been set for this scope."
-                        );
-                    }
-                );
-
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(false)
                     .AddSingleton<SlashService>()

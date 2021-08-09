@@ -3,6 +3,7 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,6 +25,7 @@ namespace UVOCBot.Commands
         private readonly ICommandContext _context;
         private readonly ICensusApiService _censusApi;
         private readonly IDbApiService _dbApi;
+        private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IPermissionChecksService _permissionChecksService;
         private readonly IReplyService _responder;
@@ -32,6 +34,7 @@ namespace UVOCBot.Commands
             ICommandContext context,
             ICensusApiService censusApi,
             IDbApiService dbApi,
+            IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
             IPermissionChecksService permissionChecksService,
             IReplyService responder)
@@ -40,6 +43,7 @@ namespace UVOCBot.Commands
             _censusApi = censusApi;
             _responder = responder;
             _dbApi = dbApi;
+            _channelApi = channelApi;
             _guildApi = guildApi;
             _permissionChecksService = permissionChecksService;
         }
@@ -114,7 +118,7 @@ namespace UVOCBot.Commands
         public async Task<IResult> ChannelCommand(IChannel channel)
         {
             // TODO: This must be a bug - we need to check our own permission set, not that of the calling user
-            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel.ID, _context.User.ID, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!getPermissionSet.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -227,8 +231,20 @@ namespace UVOCBot.Commands
 
         [Command("message")]
         [Description("Sets the message to present to new members.")]
-        public async Task<IResult> MessageCommand([Description("The message. Use <name> as a placeholder for the member's name.")] string message)
+        public async Task<IResult> MessageCommand(
+            [Description("The ID of the message to replicate as the welcome message.")] Snowflake? messageId = null)
         {
+            if (messageId is null)
+            {
+                // Return info
+                return await _responder.RespondWithSuccessAsync
+                (
+                    "This command requires you to post the message you'd like to set as the welcome message. You can do this anywhere you like." +
+                    "\r\nThen, copy the ID by right-clicking said message, and re-run this command while supplying the ID. Make sure you do this in the same channel that you posted the message in." +
+                    $"\r\nNote that you can use { Formatter.InlineQuote("<name>") } as a placeholder for the joining member's name.", CancellationToken
+                ).ConfigureAwait(false);
+            }
+
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
@@ -236,7 +252,18 @@ namespace UVOCBot.Commands
                 return getWelcomeMessage;
             }
 
-            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with { Message = message };
+            Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync(_context.ChannelID, (Snowflake)messageId, CancellationToken).ConfigureAwait(false);
+            if (!getMessageResult.IsSuccess)
+            {
+                await _responder.RespondWithUserErrorAsync
+                (
+                    "I couldn't find that message. Make sure you use this command in the same channel as you sent the message, and that you've provided the right ID.",
+                    CancellationToken
+                ).ConfigureAwait(false);
+                return getMessageResult;
+            }
+
+            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with { Message = getMessageResult.Entity.Content };
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(updatedWelcomeMessage.GuildId, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {

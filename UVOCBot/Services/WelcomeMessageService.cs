@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Commands;
 using UVOCBot.Core.Dto;
+using UVOCBot.Extensions;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 

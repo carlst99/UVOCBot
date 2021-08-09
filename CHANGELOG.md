@@ -1,5 +1,10 @@
 # Changelog
 
+## Release vNext
+
+**Bug fixes**
+- Fixed a critical bug with the *Welcome Message* feature, that prevented the role and nickname buttons from working.
+
 ## Release v0.3.2 - 17/07/2021
 
 **New Feature**

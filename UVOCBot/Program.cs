@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
+using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Commands.Responders;
 using Remora.Discord.Commands.Services;
@@ -110,7 +111,7 @@ namespace UVOCBot
                     // Setup other services
                     services.AddSingleton(fileSystem)
                             .AddSingleton<ISettingsService, SettingsService>()
-                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
+                            .AddSingleton<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services

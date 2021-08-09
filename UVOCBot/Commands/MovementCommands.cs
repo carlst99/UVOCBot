@@ -12,7 +12,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -123,7 +123,7 @@ namespace UVOCBot.Commands
 
         private async Task<Result<IReadOnlyList<Snowflake>>> GetGroupMembersAsync(string groupName)
         {
-            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
+            Result<MemberGroupDto> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
 
             if (!group.IsSuccess)
             {

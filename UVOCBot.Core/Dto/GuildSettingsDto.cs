@@ -1,6 +1,6 @@
-﻿namespace UVOCBot.Core.Model
+﻿namespace UVOCBot.Core.Dto
 {
-    public sealed class GuildSettingsDTO
+    public sealed class GuildSettingsDto
     {
         /// <summary>
         /// Gets the Discord ID of this guild
@@ -12,18 +12,18 @@
         /// </summary>
         public string? Prefix { get; set; }
 
-        public GuildSettingsDTO()
+        public GuildSettingsDto()
         {
         }
 
-        public GuildSettingsDTO(ulong guildId)
+        public GuildSettingsDto(ulong guildId)
         {
             GuildId = guildId;
             Prefix = null;
         }
 
         public override bool Equals(object? obj)
-            => obj is GuildSettingsDTO s
+            => obj is GuildSettingsDto s
             && s.GuildId.Equals(GuildId);
 
         public override int GetHashCode() => GuildId.GetHashCode();

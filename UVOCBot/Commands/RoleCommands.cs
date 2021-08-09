@@ -84,7 +84,7 @@ namespace UVOCBot.Commands
 
                 foreach (IUser user in usersWhoReacted.Entity)
                 {
-                    Result roleAddResult = await _guildApi.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, CancellationToken).ConfigureAwait(false);
+                    Result roleAddResult = await _guildApi.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, default, CancellationToken).ConfigureAwait(false);
                     if (roleAddResult.IsSuccess)
                     {
                         // Don't flood the stringbuilder with more names than we'll actually ever use when sending the success message
@@ -127,7 +127,7 @@ namespace UVOCBot.Commands
 
                 foreach (IGuildMember member in users.Entity)
                 {
-                    Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, CancellationToken).ConfigureAwait(false);
+                    Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, default, CancellationToken).ConfigureAwait(false);
                     if (roleRemoveResult.IsSuccess)
                     {
                         if (userCount < MAX_USERNAMES_IN_LIST)

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 
-namespace UVOCBot.Api.Model
+namespace UVOCBot.Core.Model
 {
     public class PlanetsideSettings
     {
@@ -16,14 +16,14 @@ namespace UVOCBot.Api.Model
         /// </summary>
         public int? DefaultWorld { get; set; }
 
-        public PlanetsideSettingsDTO ToDto()
+        public PlanetsideSettingsDto ToDto()
             => new()
             {
                 GuildId = GuildId,
                 DefaultWorld = DefaultWorld
             };
 
-        public static PlanetsideSettings FromDto(PlanetsideSettingsDTO dto)
+        public static PlanetsideSettings FromDto(PlanetsideSettingsDto dto)
             => new()
             {
                 GuildId = dto.GuildId,

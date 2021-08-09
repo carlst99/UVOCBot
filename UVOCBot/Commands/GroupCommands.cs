@@ -11,7 +11,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 
@@ -39,7 +39,7 @@ namespace UVOCBot.Commands
         [Description("Gets all of the groups in this guild")]
         public async Task<IResult> ListGroupsCommandAsync()
         {
-            Result<List<MemberGroupDTO>> groups = await _dbAPI.ListGuildMemberGroupsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<List<MemberGroupDto>> groups = await _dbAPI.ListGuildMemberGroupsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!groups.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -49,13 +49,13 @@ namespace UVOCBot.Commands
             StringBuilder sb = new();
             sb.Append("Showing ").Append(Formatter.InlineQuote(groups.Entity.Count.ToString())).AppendLine(" groups.").AppendLine();
 
-            foreach (MemberGroupDTO g in groups.Entity)
+            foreach (MemberGroupDto g in groups.Entity)
             {
                 sb.Append("• ").Append(Formatter.InlineQuote(g.GroupName))
                     .Append(" (").Append(g.UserIds.Count).Append(" members) - created by ")
                     .Append(Formatter.UserMention(g.CreatorId))
                     .Append(", expiring in ")
-                    .AppendLine((g.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"));
+                    .AppendLine((g.CreatedAt.AddHours(MemberGroupDto.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"));
             }
 
             return await _responder.RespondWithSuccessAsync(sb.ToString(), CancellationToken, new AllowedMentions()).ConfigureAwait(false);
@@ -65,17 +65,17 @@ namespace UVOCBot.Commands
         [Description("Gets information about a group")]
         public async Task<IResult> GetGroupCommandAsync([Description("The name of the group to retrieve")] string groupName)
         {
-            Result<MemberGroupDTO> groupResult = await GetGroupAsync(groupName).ConfigureAwait(false);
+            Result<MemberGroupDto> groupResult = await GetGroupAsync(groupName).ConfigureAwait(false);
             if (!groupResult.IsSuccess)
                 return groupResult;
 
-            MemberGroupDTO group = groupResult.Entity;
+            MemberGroupDto group = groupResult.Entity;
 
             StringBuilder sb = new();
             sb.Append("Group: ").AppendLine(Formatter.InlineQuote(group.GroupName))
                 .Append(group.UserIds.Count).AppendLine(" members")
                 .Append("Created by ").AppendLine(Formatter.UserMention(group.CreatorId))
-                .Append("Expiring in ").AppendLine((group.CreatedAt.AddHours(MemberGroupDTO.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"))
+                .Append("Expiring in ").AppendLine((group.CreatedAt.AddHours(MemberGroupDto.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"))
                 .AppendLine()
                 .AppendLine(Formatter.Bold("Members"));
 
@@ -102,9 +102,9 @@ namespace UVOCBot.Commands
             if (users.Count > 25 || users.Count < 2)
                 return await _responder.RespondWithUserErrorAsync("A group must have between 2 and 25 members", CancellationToken).ConfigureAwait(false);
 
-            MemberGroupDTO group = new(groupName, _context.GuildID.Value.Value, _context.User.ID.Value, users);
+            MemberGroupDto group = new(groupName, _context.GuildID.Value.Value, _context.User.ID.Value, users);
 
-            Result<MemberGroupDTO> groupCreationResult = await _dbAPI.CreateMemberGroupAsync(group, CancellationToken).ConfigureAwait(false);
+            Result<MemberGroupDto> groupCreationResult = await _dbAPI.CreateMemberGroupAsync(group, CancellationToken).ConfigureAwait(false);
             if (!groupCreationResult.IsSuccess)
             {
                 if (groupCreationResult.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -129,7 +129,7 @@ namespace UVOCBot.Commands
         [Description("Deletes a group")]
         public async Task<IResult> DeleteGroupCommandAsync([Description("The name of the group")] string groupName)
         {
-            Result<MemberGroupDTO> group = await GetGroupAsync(groupName).ConfigureAwait(false);
+            Result<MemberGroupDto> group = await GetGroupAsync(groupName).ConfigureAwait(false);
             if (!group.IsSuccess)
                 return group;
 
@@ -159,9 +159,9 @@ namespace UVOCBot.Commands
             return await _responder.RespondWithSuccessAsync($"The group {group.Entity.GroupName} was successfully deleted.", CancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Result<MemberGroupDTO>> GetGroupAsync(string groupName)
+        private async Task<Result<MemberGroupDto>> GetGroupAsync(string groupName)
         {
-            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
+            Result<MemberGroupDto> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
 
             if (!group.IsSuccess)
             {

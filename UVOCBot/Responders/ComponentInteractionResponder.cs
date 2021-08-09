@@ -77,6 +77,7 @@ namespace UVOCBot.Responders
 
             ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out ComponentAction action, out string _);
 
+            // TODO: I don't think we need to pass the gateway event anymore, now that the interaction context includes the full app data.
             return action switch
             {
                 ComponentAction.WelcomeMessageSetAlternate => await _welcomeMessageService.SetAlternateRoles(gatewayEvent, ct).ConfigureAwait(false),

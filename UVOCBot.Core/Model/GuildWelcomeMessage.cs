@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 
-namespace UVOCBot.Api.Model
+namespace UVOCBot.Core.Model
 {
     /// <summary>
     /// Contains settings for the welcome message feature

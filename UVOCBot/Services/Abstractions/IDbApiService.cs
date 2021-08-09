@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 
 namespace UVOCBot.Services.Abstractions
 {
@@ -12,15 +12,15 @@ namespace UVOCBot.Services.Abstractions
 
         #region TwitterUser
 
-        Task<Result<List<TwitterUserDTO>>> ListTwitterUsersAsync(CancellationToken ct = default);
+        Task<Result<List<TwitterUserDto>>> ListTwitterUsersAsync(CancellationToken ct = default);
 
-        Task<Result<TwitterUserDTO>> GetTwitterUserAsync(long id, CancellationToken ct = default);
+        Task<Result<TwitterUserDto>> GetTwitterUserAsync(long id, CancellationToken ct = default);
 
         Task<Result<bool>> TwitterUserExistsAsync(long id, CancellationToken ct = default);
 
-        Task<Result> UpdateTwitterUserAsync(long id, TwitterUserDTO user, CancellationToken ct = default);
+        Task<Result> UpdateTwitterUserAsync(long id, TwitterUserDto user, CancellationToken ct = default);
 
-        Task<Result<TwitterUserDTO>> CreateTwitterUserAsync(TwitterUserDTO user, CancellationToken ct = default);
+        Task<Result<TwitterUserDto>> CreateTwitterUserAsync(TwitterUserDto user, CancellationToken ct = default);
 
         Task<Result> DeleteTwitterUserAsync(long id, CancellationToken ct = default);
 
@@ -34,15 +34,15 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="filterByEnabled">If true, only returns guilds that have tweet relaying enabled, and are relaying from at least one user.</param>
         /// <param name="ct">A token with which to cancel any asynchronous operations.</param>
         /// <returns>A list of <see cref="GuildTwitterSettingsDTO"/> objects.</returns>
-        Task<Result<List<GuildTwitterSettingsDTO>>> ListGuildTwitterSettingsAsync(bool filterByEnabled, CancellationToken ct = default);
+        Task<Result<List<GuildTwitterSettingsDto>>> ListGuildTwitterSettingsAsync(bool filterByEnabled, CancellationToken ct = default);
 
-        Task<Result<GuildTwitterSettingsDTO>> GetGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default);
+        Task<Result<GuildTwitterSettingsDto>> GetGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default);
 
         Task<Result<bool>> GuildTwitterSettingsExistsAsync(ulong id, CancellationToken ct = default);
 
-        Task<Result> UpdateGuildTwitterSettingsAsync(ulong id, GuildTwitterSettingsDTO settings, CancellationToken ct = default);
+        Task<Result> UpdateGuildTwitterSettingsAsync(ulong id, GuildTwitterSettingsDto settings, CancellationToken ct = default);
 
-        Task<Result<GuildTwitterSettingsDTO>> CreateGuildTwitterSettingsAsync(GuildTwitterSettingsDTO settings, CancellationToken ct = default);
+        Task<Result<GuildTwitterSettingsDto>> CreateGuildTwitterSettingsAsync(GuildTwitterSettingsDto settings, CancellationToken ct = default);
 
         Task<Result> DeleteGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default);
 
@@ -58,13 +58,13 @@ namespace UVOCBot.Services.Abstractions
 
         #region GuildSettings
 
-        Task<Result<List<GuildSettingsDTO>>> ListGuildSettingsAsync(bool hasPrefix = false, CancellationToken ct = default);
+        Task<Result<List<GuildSettingsDto>>> ListGuildSettingsAsync(bool hasPrefix = false, CancellationToken ct = default);
 
-        Task<Result<GuildSettingsDTO>> GetGuildSettingsAsync(ulong id, CancellationToken ct = default);
+        Task<Result<GuildSettingsDto>> GetGuildSettingsAsync(ulong id, CancellationToken ct = default);
 
-        Task<Result> UpdateGuildSettingsAsync(ulong id, GuildSettingsDTO settings, CancellationToken ct = default);
+        Task<Result> UpdateGuildSettingsAsync(ulong id, GuildSettingsDto settings, CancellationToken ct = default);
 
-        Task<Result<GuildSettingsDTO>> CreateGuildSettingsAsync(GuildSettingsDTO settings, CancellationToken ct = default);
+        Task<Result<GuildSettingsDto>> CreateGuildSettingsAsync(GuildSettingsDto settings, CancellationToken ct = default);
 
         Task<Result> DeleteGuildSettingsAsync(ulong id, CancellationToken ct = default);
 
@@ -72,13 +72,13 @@ namespace UVOCBot.Services.Abstractions
 
         #region PlanetsideSettings
 
-        Task<Result<List<PlanetsideSettingsDTO>>> ListPlanetsideSettingsAsync(CancellationToken ct = default);
+        Task<Result<List<PlanetsideSettingsDto>>> ListPlanetsideSettingsAsync(CancellationToken ct = default);
 
-        Task<Result<PlanetsideSettingsDTO>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
+        Task<Result<PlanetsideSettingsDto>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
 
-        Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDTO settings, CancellationToken ct = default);
+        Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDto settings, CancellationToken ct = default);
 
-        Task<Result<PlanetsideSettingsDTO>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDTO settings, CancellationToken ct = default);
+        Task<Result<PlanetsideSettingsDto>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDto settings, CancellationToken ct = default);
 
         Task<Result> DeletePlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
 
@@ -86,15 +86,15 @@ namespace UVOCBot.Services.Abstractions
 
         #region MemberGroups
 
-        Task<Result<MemberGroupDTO>> GetMemberGroupAsync(ulong id, CancellationToken ct = default);
+        Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong id, CancellationToken ct = default);
 
-        Task<Result<MemberGroupDTO>> GetMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
+        Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
 
-        Task<Result<List<MemberGroupDTO>>> ListGuildMemberGroupsAsync(ulong guildId, CancellationToken ct = default);
+        Task<Result<List<MemberGroupDto>>> ListGuildMemberGroupsAsync(ulong guildId, CancellationToken ct = default);
 
-        Task<Result> UpdateMemberGroupAsync(ulong id, MemberGroupDTO group, CancellationToken ct = default);
+        Task<Result> UpdateMemberGroupAsync(ulong id, MemberGroupDto group, CancellationToken ct = default);
 
-        Task<Result<MemberGroupDTO>> CreateMemberGroupAsync(MemberGroupDTO group, CancellationToken ct = default);
+        Task<Result<MemberGroupDto>> CreateMemberGroupAsync(MemberGroupDto group, CancellationToken ct = default);
 
         Task<Result> DeleteMemberGroupAsync(ulong id, CancellationToken ct = default);
 

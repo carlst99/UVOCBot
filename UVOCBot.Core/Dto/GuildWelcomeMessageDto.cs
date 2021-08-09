@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace UVOCBot.Core.Model
+namespace UVOCBot.Core.Dto
 {
     public record GuildWelcomeMessageDto
     {

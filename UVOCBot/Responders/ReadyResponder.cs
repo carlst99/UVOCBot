@@ -10,12 +10,9 @@ using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
-using UVOCBot.Core.Model;
-using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders

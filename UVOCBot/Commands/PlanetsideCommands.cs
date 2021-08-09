@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
@@ -48,7 +48,7 @@ namespace UVOCBot.Commands
                 if (!_context.GuildID.HasValue)
                     return await _responder.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
-                Result<PlanetsideSettingsDTO> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+                Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
                 if (!settings.IsSuccess)
                 {
                     await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -78,7 +78,7 @@ namespace UVOCBot.Commands
                 if (!_context.GuildID.HasValue)
                     return await _responder.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
-                Result<PlanetsideSettingsDTO> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+                Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
                 if (!settings.IsSuccess)
                 {
                     await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -186,7 +186,7 @@ namespace UVOCBot.Commands
         [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
         public async Task<IResult> DefaultWorldCommand([DiscordTypeHint(TypeHint.String)] WorldType server)
         {
-            Result<PlanetsideSettingsDTO> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);

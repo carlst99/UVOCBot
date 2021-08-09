@@ -1,4 +1,4 @@
-﻿namespace UVOCBot.Api
+﻿namespace UVOCBot.Core
 {
     public class DatabaseOptions
     {

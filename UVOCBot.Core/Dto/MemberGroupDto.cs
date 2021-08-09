@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace UVOCBot.Core.Model
+namespace UVOCBot.Core.Dto
 {
-    public class MemberGroupDTO
+    public class MemberGroupDto
     {
         public const int MAX_LIFETIME_HOURS = 24;
 
@@ -31,9 +31,9 @@ namespace UVOCBot.Core.Model
 
         public List<ulong> UserIds { get; set; } = new List<ulong>();
 
-        public MemberGroupDTO() { }
+        public MemberGroupDto() { }
 
-        public MemberGroupDTO(string groupName, ulong guildId, ulong creatorId, List<ulong> userIds)
+        public MemberGroupDto(string groupName, ulong guildId, ulong creatorId, List<ulong> userIds)
         {
             GroupName = groupName;
             GuildId = guildId;

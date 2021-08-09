@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models.V2;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 
@@ -67,7 +67,7 @@ namespace UVOCBot.Commands
             }
 
             // Find or create the guild twitter settings record
-            Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<GuildTwitterSettingsDto> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -76,12 +76,12 @@ namespace UVOCBot.Commands
             }
 
             // Find or create the twitter user record
-            Result<TwitterUserDTO> twitterUser = await _dbApi.GetTwitterUserAsync(long.Parse(user.Entity.User.Id), CancellationToken).ConfigureAwait(false);
+            Result<TwitterUserDto> twitterUser = await _dbApi.GetTwitterUserAsync(long.Parse(user.Entity.User.Id), CancellationToken).ConfigureAwait(false);
             if (!twitterUser.IsSuccess)
             {
                 if (twitterUser.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    twitterUser = await _dbApi.CreateTwitterUserAsync(new TwitterUserDTO(long.Parse(user.Entity.User.Id)), CancellationToken).ConfigureAwait(false);
+                    twitterUser = await _dbApi.CreateTwitterUserAsync(new TwitterUserDto(long.Parse(user.Entity.User.Id)), CancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -135,7 +135,7 @@ namespace UVOCBot.Commands
             }
 
             long twitterUserId = long.Parse(user.Entity.User.Id);
-            Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<GuildTwitterSettingsDto> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -166,7 +166,7 @@ namespace UVOCBot.Commands
         public async Task<IResult> ListUsersCommandAsync()
         {
             // Find the settings record for the calling guild
-            Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<GuildTwitterSettingsDto> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -223,7 +223,7 @@ namespace UVOCBot.Commands
                     CancellationToken).ConfigureAwait(false);
             }
 
-            Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<GuildTwitterSettingsDto> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -245,7 +245,7 @@ namespace UVOCBot.Commands
         [Description("Lets you enable or disable tweet relaying")]
         public async Task<IResult> RelayingEnabledCommandAsync([Description("Whether tweets should be relayed")] bool isEnabled)
         {
-            Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<GuildTwitterSettingsDto> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -267,7 +267,7 @@ namespace UVOCBot.Commands
         [Description("Gets the current status of the tweet relay feature")]
         public async Task<IResult> StatusCommandAsync()
         {
-            Result<GuildTwitterSettingsDTO> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            Result<GuildTwitterSettingsDto> settings = await _dbApi.GetGuildTwitterSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
                 await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);

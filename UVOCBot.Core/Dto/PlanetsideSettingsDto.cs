@@ -1,6 +1,6 @@
-﻿namespace UVOCBot.Core.Model
+﻿namespace UVOCBot.Core.Dto
 {
-    public class PlanetsideSettingsDTO
+    public class PlanetsideSettingsDto
     {
         /// <summary>
         /// Gets the Discord ID of this guild
@@ -12,18 +12,18 @@
         /// </summary>
         public int? DefaultWorld { get; set; }
 
-        public PlanetsideSettingsDTO()
+        public PlanetsideSettingsDto()
         {
         }
 
-        public PlanetsideSettingsDTO(ulong guildId)
+        public PlanetsideSettingsDto(ulong guildId)
         {
             GuildId = guildId;
             DefaultWorld = null;
         }
 
         public override bool Equals(object? obj)
-            => obj is PlanetsideSettingsDTO s
+            => obj is PlanetsideSettingsDto s
             && s.GuildId.Equals(GuildId);
 
         public override int GetHashCode() => GuildId.GetHashCode();

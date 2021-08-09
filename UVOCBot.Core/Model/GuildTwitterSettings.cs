@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 
-namespace UVOCBot.Api.Model
+namespace UVOCBot.Core.Model
 {
     /// <summary>
     /// Contains guild-specific settings regarding their twitter preferences
@@ -41,7 +41,7 @@ namespace UVOCBot.Api.Model
             IsEnabled = true;
         }
 
-        public GuildTwitterSettingsDTO ToDto()
+        public GuildTwitterSettingsDto ToDto()
             => new()
             {
                 GuildId = GuildId,
@@ -50,7 +50,7 @@ namespace UVOCBot.Api.Model
                 TwitterUsers = TwitterUsers.Select(u => u.UserId).ToList()
             };
 
-        public static GuildTwitterSettings FromDto(GuildTwitterSettingsDTO dto)
+        public static GuildTwitterSettings FromDto(GuildTwitterSettingsDto dto)
             => new()
             {
                 GuildId = dto.GuildId,

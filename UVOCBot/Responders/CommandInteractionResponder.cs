@@ -81,7 +81,7 @@ namespace UVOCBot.Responders
             interactionData.UnpackInteraction(out var command, out var parameters);
 
             // Run any user-provided pre execution events
-            Result preExecutionResult = await _eventCollector.RunPreExecutionEvents(context.Entity, ct).ConfigureAwait(false);
+            Result preExecutionResult = await _eventCollector.RunPreExecutionEvents(_services, context.Entity, ct).ConfigureAwait(false);
             if (!preExecutionResult.IsSuccess)
                 return preExecutionResult;
 
@@ -100,7 +100,7 @@ namespace UVOCBot.Responders
                 return Result.FromError(executeResult);
 
             // Run any user-provided post execution events
-            Result postExecutionResult = await _eventCollector.RunPostExecutionEvents(context.Entity, executeResult.Entity, ct).ConfigureAwait(false);
+            Result postExecutionResult = await _eventCollector.RunPostExecutionEvents(_services, context.Entity, executeResult.Entity, ct).ConfigureAwait(false);
             if (!postExecutionResult.IsSuccess)
                 return postExecutionResult;
 

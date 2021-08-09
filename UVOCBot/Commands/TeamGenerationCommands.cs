@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -69,7 +69,7 @@ namespace UVOCBot.Commands
             if (numberOfTeams < 2)
                 return await _responder.RespondWithUserErrorAsync("At least two teams are required", CancellationToken).ConfigureAwait(false);
 
-            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
+            Result<MemberGroupDto> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
             if (!group.IsSuccess)
             {
                 if (group.Error is Model.HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)

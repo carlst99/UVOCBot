@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 
-namespace UVOCBot.Api.Model
+namespace UVOCBot.Core.Model
 {
     /// <summary>
     /// Contains settings pertinent to a guild's preferences
@@ -19,14 +19,14 @@ namespace UVOCBot.Api.Model
         /// </summary>
         public string? Prefix { get; set; }
 
-        public GuildSettingsDTO ToDto()
+        public GuildSettingsDto ToDto()
             => new()
             {
                 GuildId = GuildId,
                 Prefix = Prefix
             };
 
-        public static GuildSettings FromDto(GuildSettingsDTO dto)
+        public static GuildSettings FromDto(GuildSettingsDto dto)
             => new()
             {
                 GuildId = dto.GuildId,

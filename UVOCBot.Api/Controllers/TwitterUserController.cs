@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Controllers
@@ -21,14 +22,14 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/TwitterUser
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TwitterUserDTO>>> GetTwitterUsers()
+        public async Task<ActionResult<IEnumerable<TwitterUserDto>>> GetTwitterUsers()
         {
             return (await _context.TwitterUsers.ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
         }
 
         // GET: api/TwitterUser/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TwitterUserDTO>> GetTwitterUser(long id)
+        public async Task<ActionResult<TwitterUserDto>> GetTwitterUser(long id)
         {
             var twitterUser = await _context.TwitterUsers.FindAsync(id).ConfigureAwait(false);
 
@@ -43,7 +44,7 @@ namespace UVOCBot.Api.Controllers
 
         // PUT: api/TwitterUser/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTwitterUser(long id, TwitterUserDTO twitterUser)
+        public async Task<IActionResult> PutTwitterUser(long id, TwitterUserDto twitterUser)
         {
             if (id != twitterUser.UserId)
                 return BadRequest();
@@ -64,7 +65,7 @@ namespace UVOCBot.Api.Controllers
 
         // POST: api/TwitterUser
         [HttpPost]
-        public async Task<ActionResult<TwitterUserDTO>> PostTwitterUser(TwitterUserDTO twitterUser)
+        public async Task<ActionResult<TwitterUserDto>> PostTwitterUser(TwitterUserDto twitterUser)
         {
             if (await _context.TwitterUsers.AnyAsync(t => t.UserId == twitterUser.UserId).ConfigureAwait(false))
                 return Conflict();

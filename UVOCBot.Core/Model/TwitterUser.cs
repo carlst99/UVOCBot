@@ -2,9 +2,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 
-namespace UVOCBot.Api.Model
+namespace UVOCBot.Core.Model
 {
     public sealed class TwitterUser
     {
@@ -32,7 +32,7 @@ namespace UVOCBot.Api.Model
             LastRelayedTweetId = null;
         }
 
-        public TwitterUserDTO ToDto()
+        public TwitterUserDto ToDto()
             => new()
             {
                 UserId = UserId,
@@ -40,7 +40,7 @@ namespace UVOCBot.Api.Model
                 Guilds = Guilds.Select(g => g.GuildId).ToList()
             };
 
-        public static async Task<TwitterUser> FromDto(TwitterUserDTO dto, DiscordContext context)
+        public static async Task<TwitterUser> FromDto(TwitterUserDto dto, DiscordContext context)
         {
             TwitterUser user = new()
             {

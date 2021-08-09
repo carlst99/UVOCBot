@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace UVOCBot.Core.Model
+namespace UVOCBot.Core.Dto
 {
-    public class GuildTwitterSettingsDTO
+    public class GuildTwitterSettingsDto
     {
         /// <summary>
         /// Gets or sets the guild that these Twitter settings are for
@@ -21,17 +21,17 @@ namespace UVOCBot.Core.Model
         /// </summary>
         public IReadOnlyList<long> TwitterUsers { get; set; } = new List<long>().AsReadOnly();
 
-        public GuildTwitterSettingsDTO()
+        public GuildTwitterSettingsDto()
         {
         }
 
-        public GuildTwitterSettingsDTO(ulong guildId)
+        public GuildTwitterSettingsDto(ulong guildId)
         {
             GuildId = guildId;
         }
 
         public override bool Equals(object? obj)
-            => obj is GuildTwitterSettingsDTO s
+            => obj is GuildTwitterSettingsDto s
             && s.GuildId.Equals(GuildId);
 
         public override int GetHashCode() => GuildId.GetHashCode();

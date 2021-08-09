@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 
@@ -25,21 +25,21 @@ namespace UVOCBot.Services
         {
             foreach (ulong guild in guildIds)
             {
-                Result<GuildSettingsDTO> guildSettingsResult = await CreateGuildSettingsAsync(new GuildSettingsDTO(guild), ct).ConfigureAwait(false);
+                Result<GuildSettingsDto> guildSettingsResult = await CreateGuildSettingsAsync(new GuildSettingsDto(guild), ct).ConfigureAwait(false);
                 if (!guildSettingsResult.IsSuccess && !(guildSettingsResult.Error is HttpStatusCodeError er && er.StatusCode == HttpStatusCode.Conflict))
                 {
                     _logger.LogCritical("Could not scaffold guild settings database objects: {error}", guildSettingsResult.Error);
                     return Result.FromError(guildSettingsResult);
                 }
 
-                Result<GuildTwitterSettingsDTO> guildTwitterSettingsResult = await CreateGuildTwitterSettingsAsync(new GuildTwitterSettingsDTO(guild), ct).ConfigureAwait(false);
+                Result<GuildTwitterSettingsDto> guildTwitterSettingsResult = await CreateGuildTwitterSettingsAsync(new GuildTwitterSettingsDto(guild), ct).ConfigureAwait(false);
                 if (!guildTwitterSettingsResult.IsSuccess && !(guildTwitterSettingsResult.Error is HttpStatusCodeError er2 && er2.StatusCode == HttpStatusCode.Conflict))
                 {
                     _logger.LogCritical("Could not scaffold guild twitter settings database objects: {error}", guildSettingsResult.Error);
                     return Result.FromError(guildTwitterSettingsResult);
                 }
 
-                Result<PlanetsideSettingsDTO> planetsideSettingsResult = await CreatePlanetsideSettingsAsync(new PlanetsideSettingsDTO(guild), ct).ConfigureAwait(false);
+                Result<PlanetsideSettingsDto> planetsideSettingsResult = await CreatePlanetsideSettingsAsync(new PlanetsideSettingsDto(guild), ct).ConfigureAwait(false);
                 if (!planetsideSettingsResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er3 && er3.StatusCode == HttpStatusCode.Conflict))
                 {
                     _logger.LogCritical("Could not scaffold PlanetSide settings database objects: {error}", guildSettingsResult.Error);
@@ -65,19 +65,19 @@ namespace UVOCBot.Services
 
         #region TwitterUser
 
-        public async Task<Result<List<TwitterUserDTO>>> ListTwitterUsersAsync(CancellationToken ct = default)
+        public async Task<Result<List<TwitterUserDto>>> ListTwitterUsersAsync(CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser", Method.GET);
 
-            return await ExecuteAsync<List<TwitterUserDTO>>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<List<TwitterUserDto>>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<TwitterUserDTO>> GetTwitterUserAsync(long id, CancellationToken ct = default)
+        public async Task<Result<TwitterUserDto>> GetTwitterUserAsync(long id, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser/{id}", Method.GET);
             request.AddParameter("id", id, ParameterType.UrlSegment);
 
-            return await ExecuteAsync<TwitterUserDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<TwitterUserDto>(request, ct).ConfigureAwait(false);
         }
 
         public async Task<Result<bool>> TwitterUserExistsAsync(long id, CancellationToken ct = default)
@@ -88,7 +88,7 @@ namespace UVOCBot.Services
             return await ExecuteAsync<bool>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result> UpdateTwitterUserAsync(long id, TwitterUserDTO user, CancellationToken ct = default)
+        public async Task<Result> UpdateTwitterUserAsync(long id, TwitterUserDto user, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser/{id}", Method.PUT);
             request.AddParameter("id", id, ParameterType.UrlSegment);
@@ -98,12 +98,12 @@ namespace UVOCBot.Services
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<TwitterUserDTO>> CreateTwitterUserAsync(TwitterUserDTO user, CancellationToken ct = default)
+        public async Task<Result<TwitterUserDto>> CreateTwitterUserAsync(TwitterUserDto user, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("twitteruser", Method.POST);
             request.AddJsonBody(user);
 
-            return await ExecuteAsync<TwitterUserDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<TwitterUserDto>(request, ct).ConfigureAwait(false);
         }
 
         public async Task<Result> DeleteTwitterUserAsync(long id, CancellationToken ct = default)
@@ -119,20 +119,20 @@ namespace UVOCBot.Services
         #region GuildTwitterSettings
 
         /// <inheritdoc/>
-        public async Task<Result<List<GuildTwitterSettingsDTO>>> ListGuildTwitterSettingsAsync(bool filterByEnabled, CancellationToken ct = default)
+        public async Task<Result<List<GuildTwitterSettingsDto>>> ListGuildTwitterSettingsAsync(bool filterByEnabled, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildtwittersettings", Method.GET);
             request.AddParameter("filterByEnabled", filterByEnabled, ParameterType.QueryString);
 
-            return await ExecuteAsync<List<GuildTwitterSettingsDTO>>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<List<GuildTwitterSettingsDto>>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<GuildTwitterSettingsDTO>> GetGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default)
+        public async Task<Result<GuildTwitterSettingsDto>> GetGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildtwittersettings/{id}", Method.GET);
             request.AddParameter("id", id, ParameterType.UrlSegment);
 
-            return await ExecuteAsync<GuildTwitterSettingsDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<GuildTwitterSettingsDto>(request, ct).ConfigureAwait(false);
         }
 
         public async Task<Result<bool>> GuildTwitterSettingsExistsAsync(ulong id, CancellationToken ct = default)
@@ -143,7 +143,7 @@ namespace UVOCBot.Services
             return await ExecuteAsync<bool>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result> UpdateGuildTwitterSettingsAsync(ulong id, GuildTwitterSettingsDTO settings, CancellationToken ct = default)
+        public async Task<Result> UpdateGuildTwitterSettingsAsync(ulong id, GuildTwitterSettingsDto settings, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildtwittersettings/{id}", Method.PUT);
             request.AddParameter("id", id, ParameterType.UrlSegment);
@@ -153,12 +153,12 @@ namespace UVOCBot.Services
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<GuildTwitterSettingsDTO>> CreateGuildTwitterSettingsAsync(GuildTwitterSettingsDTO settings, CancellationToken ct = default)
+        public async Task<Result<GuildTwitterSettingsDto>> CreateGuildTwitterSettingsAsync(GuildTwitterSettingsDto settings, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildtwittersettings", Method.POST);
             request.AddJsonBody(settings);
 
-            return await ExecuteAsync<GuildTwitterSettingsDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<GuildTwitterSettingsDto>(request, ct).ConfigureAwait(false);
         }
 
         public async Task<Result> DeleteGuildTwitterSettingsAsync(ulong id, CancellationToken ct = default)
@@ -195,23 +195,23 @@ namespace UVOCBot.Services
 
         #region GuildSettings
 
-        public async Task<Result<List<GuildSettingsDTO>>> ListGuildSettingsAsync(bool hasPrefix = false, CancellationToken ct = default)
+        public async Task<Result<List<GuildSettingsDto>>> ListGuildSettingsAsync(bool hasPrefix = false, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildsettings", Method.GET);
             request.AddParameter("hasPrefix", hasPrefix, ParameterType.QueryString);
 
-            return await ExecuteAsync<List<GuildSettingsDTO>>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<List<GuildSettingsDto>>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<GuildSettingsDTO>> GetGuildSettingsAsync(ulong id, CancellationToken ct = default)
+        public async Task<Result<GuildSettingsDto>> GetGuildSettingsAsync(ulong id, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildsettings/{id}", Method.GET);
             request.AddParameter("id", id, ParameterType.UrlSegment);
 
-            return await ExecuteAsync<GuildSettingsDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<GuildSettingsDto>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result> UpdateGuildSettingsAsync(ulong id, GuildSettingsDTO settings, CancellationToken ct = default)
+        public async Task<Result> UpdateGuildSettingsAsync(ulong id, GuildSettingsDto settings, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildsettings/{id}", Method.PUT);
             request.AddParameter("id", id, ParameterType.UrlSegment);
@@ -221,12 +221,12 @@ namespace UVOCBot.Services
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<GuildSettingsDTO>> CreateGuildSettingsAsync(GuildSettingsDTO settings, CancellationToken ct = default)
+        public async Task<Result<GuildSettingsDto>> CreateGuildSettingsAsync(GuildSettingsDto settings, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("guildsettings", Method.POST);
             request.AddJsonBody(settings);
 
-            return await ExecuteAsync<GuildSettingsDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<GuildSettingsDto>(request, ct).ConfigureAwait(false);
         }
 
         public async Task<Result> DeleteGuildSettingsAsync(ulong id, CancellationToken ct = default)
@@ -241,22 +241,22 @@ namespace UVOCBot.Services
 
         #region PlanetsideSettings
 
-        public async Task<Result<List<PlanetsideSettingsDTO>>> ListPlanetsideSettingsAsync(CancellationToken ct = default)
+        public async Task<Result<List<PlanetsideSettingsDto>>> ListPlanetsideSettingsAsync(CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("planetsidesettings", Method.GET);
 
-            return await ExecuteAsync<List<PlanetsideSettingsDTO>>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<List<PlanetsideSettingsDto>>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<PlanetsideSettingsDTO>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default)
+        public async Task<Result<PlanetsideSettingsDto>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("planetsidesettings/{id}", Method.GET);
             request.AddParameter("id", id, ParameterType.UrlSegment);
 
-            return await ExecuteAsync<PlanetsideSettingsDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<PlanetsideSettingsDto>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDTO settings, CancellationToken ct = default)
+        public async Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDto settings, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("planetsidesettings/{id}", Method.PUT);
             request.AddParameter("id", id, ParameterType.UrlSegment);
@@ -266,12 +266,12 @@ namespace UVOCBot.Services
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<PlanetsideSettingsDTO>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDTO settings, CancellationToken ct = default)
+        public async Task<Result<PlanetsideSettingsDto>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDto settings, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("planetsidesettings", Method.POST);
             request.AddJsonBody(settings);
 
-            return await ExecuteAsync<PlanetsideSettingsDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<PlanetsideSettingsDto>(request, ct).ConfigureAwait(false);
         }
 
         public async Task<Result> DeletePlanetsideSettingsAsync(ulong id, CancellationToken ct = default)
@@ -286,32 +286,32 @@ namespace UVOCBot.Services
 
         #region MemberGroups
 
-        public async Task<Result<MemberGroupDTO>> GetMemberGroupAsync(ulong id, CancellationToken ct = default)
+        public async Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong id, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("membergroup/{id}", Method.GET);
             request.AddParameter("id", id, ParameterType.UrlSegment);
 
-            return await ExecuteAsync<MemberGroupDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<MemberGroupDto>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<MemberGroupDTO>> GetMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default)
+        public async Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("membergroup", Method.GET);
             request.AddParameter("guildId", guildId, ParameterType.QueryString);
             request.AddParameter("groupName", groupName, ParameterType.QueryString);
 
-            return await ExecuteAsync<MemberGroupDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<MemberGroupDto>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<List<MemberGroupDTO>>> ListGuildMemberGroupsAsync(ulong guildId, CancellationToken ct = default)
+        public async Task<Result<List<MemberGroupDto>>> ListGuildMemberGroupsAsync(ulong guildId, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("membergroup/guildgroups/{guildId}", Method.GET);
             request.AddParameter("guildId", guildId, ParameterType.UrlSegment);
 
-            return await ExecuteAsync<List<MemberGroupDTO>>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<List<MemberGroupDto>>(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result> UpdateMemberGroupAsync(ulong id, MemberGroupDTO group, CancellationToken ct = default)
+        public async Task<Result> UpdateMemberGroupAsync(ulong id, MemberGroupDto group, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("membergroup/{id}", Method.PUT);
             request.AddParameter("id", id, ParameterType.UrlSegment);
@@ -321,13 +321,13 @@ namespace UVOCBot.Services
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<MemberGroupDTO>> CreateMemberGroupAsync(MemberGroupDTO group, CancellationToken ct = default)
+        public async Task<Result<MemberGroupDto>> CreateMemberGroupAsync(MemberGroupDto group, CancellationToken ct = default)
         {
             IRestRequest request = new RestRequest("membergroup", Method.POST);
 
             request.AddJsonBody(group);
 
-            return await ExecuteAsync<MemberGroupDTO>(request, ct).ConfigureAwait(false);
+            return await ExecuteAsync<MemberGroupDto>(request, ct).ConfigureAwait(false);
         }
 
         public async Task<Result> DeleteMemberGroupAsync(ulong id, CancellationToken ct = default)

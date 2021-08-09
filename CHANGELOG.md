@@ -2,8 +2,14 @@
 
 ## Release vNext
 
-**Bug fixes**
+**New features:**
+- Modified the `welcome-message message` command to accept an existing message which it will replicate. This makes it much easier to use detailed formatting in your welcome messages.
+
+**Bug fixes:**
 - Fixed a critical bug with the *Welcome Message* feature, that prevented the role and nickname buttons from working.
+
+**Other changes:**
+- Moved EF Core models and contexts to `UVOCBot.Core`.
 
 ## Release v0.3.2 - 17/07/2021
 

@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System;
-using UVOCBot.Api.Model;
+using UVOCBot.Core.Model;
 
-namespace UVOCBot.Api
+namespace UVOCBot.Core
 {
     public sealed class DiscordContext : DbContext
     {

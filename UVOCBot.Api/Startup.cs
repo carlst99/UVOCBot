@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using UVOCBot.Api.Workers;
+using UVOCBot.Core;
 
 namespace UVOCBot.Api
 {

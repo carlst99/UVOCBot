@@ -30,7 +30,7 @@ namespace UVOCBot.Extensions
                 gatewayEvent.Token,
                 gatewayEvent.ID,
                 gatewayEvent.ApplicationID,
-                interactionData.Resolved
+                interactionData
             );
 
             return Result<InteractionContext>.FromSuccess(context);

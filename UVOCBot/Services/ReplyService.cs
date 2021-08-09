@@ -27,9 +27,7 @@ namespace UVOCBot.Services
 
         /// <inheritdoc />
         public async Task<Result> TriggerTypingAsync(CancellationToken ct)
-        {
-            return await _channelApi.TriggerTypingIndicatorAsync(_context.ChannelID, ct).ConfigureAwait(false);
-        }
+            => await _channelApi.TriggerTypingIndicatorAsync(_context.ChannelID, ct).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithEmbedAsync(IEmbed embed, CancellationToken ct, Optional<FileData> file = default, Optional<IAllowedMentions> allowedMentions = default)
@@ -60,37 +58,15 @@ namespace UVOCBot.Services
 
         /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithSuccessAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
-        {
-            Embed embed = new()
-            {
-                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
-                Description = content
-            };
-            return await RespondWithEmbedAsync(embed, ct, default, allowedMentions).ConfigureAwait(false);
-        }
+            => await RespondWithEmbedAsync(GetSuccessEmbed(content), ct, default, allowedMentions).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<Result<IMessage>> RespondWithUserErrorAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
-        {
-            Embed embed = new()
-            {
-                Colour = Color.Red,
-                Description = content,
-            };
-            return await RespondWithEmbedAsync(embed, ct, default, allowedMentions).ConfigureAwait(false);
-        }
+            => await RespondWithEmbedAsync(GetUserErrorEmbed(content), ct, default, allowedMentions).ConfigureAwait(false);
 
         /// <inheritdoc />
-        public async Task<Result<IMessage>> RespondWithErrorAsync(string content, CancellationToken ct, Optional<IAllowedMentions> allowedMentions = default)
-        {
-            Embed embed = new()
-            {
-                Colour = Color.Red,
-                Description = content,
-                Footer = new EmbedFooter("Recurring problem? Report it at https://github.com/carlst99/UVOCBot")
-            };
-            return await RespondWithEmbedAsync(embed, ct, default, allowedMentions).ConfigureAwait(false);
-        }
+        public async Task<Result<IMessage>> RespondWithErrorAsync(CancellationToken ct, string content = "Something went wrong! Please try again.", Optional<IAllowedMentions> allowedMentions = default)
+            => await RespondWithEmbedAsync(GetErrorEmbed(content), ct, default, allowedMentions).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<Result<IMessage>> RespondToInteractionAsync(CancellationToken ct, Optional<string> content = default, Optional<FileData> file = default, Optional<IReadOnlyList<IEmbed>> embeds = default, Optional<IAllowedMentions> allowedMentions = default)
@@ -121,7 +97,30 @@ namespace UVOCBot.Services
                 allowedMentions,
                 messageReference,
                 components,
+                stickerIds: default,
                 ct).ConfigureAwait(false);
         }
+
+        public IEmbed GetSuccessEmbed(string content)
+            => new Embed
+            {
+                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
+                Description = content
+            };
+
+        public IEmbed GetErrorEmbed(string content)
+            => new Embed
+            {
+                Colour = Color.Red,
+                Description = content,
+                Footer = new EmbedFooter("Recurring problem? Report it at https://github.com/carlst99/UVOCBot")
+            };
+
+        public IEmbed GetUserErrorEmbed(string content)
+            => new Embed
+            {
+                Colour = Color.Red,
+                Description = content,
+            };
     }
 }

@@ -78,13 +78,13 @@ namespace UVOCBot.Commands
             {
                 if (!usersWhoReacted.IsSuccess || usersWhoReacted.Entity is null)
                 {
-                    await _responder.RespondWithErrorAsync("Could not get the members who have reacted with " + emoji, ct: CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return Result.FromError(usersWhoReacted);
                 }
 
                 foreach (IUser user in usersWhoReacted.Entity)
                 {
-                    Result roleAddResult = await _guildApi.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, CancellationToken).ConfigureAwait(false);
+                    Result roleAddResult = await _guildApi.AddGuildMemberRoleAsync(_context.GuildID.Value, user.ID, role.ID, default, CancellationToken).ConfigureAwait(false);
                     if (roleAddResult.IsSuccess)
                     {
                         // Don't flood the stringbuilder with more names than we'll actually ever use when sending the success message
@@ -121,13 +121,13 @@ namespace UVOCBot.Commands
             {
                 if (!users.IsSuccess || users.Entity is null)
                 {
-                    await _responder.RespondWithErrorAsync("Could not get members with this role. Please try again later", ct: CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithUserErrorAsync("Could not get members with this role. Please try again later", CancellationToken).ConfigureAwait(false);
                     return Result.FromError(users);
                 }
 
                 foreach (IGuildMember member in users.Entity)
                 {
-                    Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, CancellationToken).ConfigureAwait(false);
+                    Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, default, CancellationToken).ConfigureAwait(false);
                     if (roleRemoveResult.IsSuccess)
                     {
                         if (userCount < MAX_USERNAMES_IN_LIST)

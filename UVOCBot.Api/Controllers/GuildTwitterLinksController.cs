@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Controllers
 {

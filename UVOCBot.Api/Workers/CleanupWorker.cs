@@ -3,7 +3,8 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Workers
 {

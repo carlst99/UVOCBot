@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Controllers
@@ -21,7 +22,7 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/GuildTwitterSettings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GuildTwitterSettingsDTO>>> GetGuildTwitterSettings([FromQuery] bool filterByEnabled = false)
+        public async Task<ActionResult<IEnumerable<GuildTwitterSettingsDto>>> GetGuildTwitterSettings([FromQuery] bool filterByEnabled = false)
         {
             if (filterByEnabled)
                 return (await _context.GuildTwitterSettings.Include(m => m.TwitterUsers).Where(s => s.IsEnabled && s.TwitterUsers.Count > 0).ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
@@ -31,7 +32,7 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/GuildTwitterSettings/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<GuildTwitterSettingsDTO>> GetGuildTwitterSettings(ulong id)
+        public async Task<ActionResult<GuildTwitterSettingsDto>> GetGuildTwitterSettings(ulong id)
         {
             var guildTwitterSettings = await _context.GuildTwitterSettings.Include(e => e.TwitterUsers).FirstOrDefaultAsync(e => e.GuildId == id).ConfigureAwait(false);
 
@@ -46,7 +47,7 @@ namespace UVOCBot.Api.Controllers
 
         // PUT: api/GuildTwitterSettings/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGuildTwitterSettings(ulong id, GuildTwitterSettingsDTO guildTwitterSettings)
+        public async Task<IActionResult> PutGuildTwitterSettings(ulong id, GuildTwitterSettingsDto guildTwitterSettings)
         {
             if (id != guildTwitterSettings.GuildId)
                 return BadRequest();
@@ -67,7 +68,7 @@ namespace UVOCBot.Api.Controllers
 
         // POST: api/GuildTwitterSettings
         [HttpPost]
-        public async Task<ActionResult<GuildTwitterSettingsDTO>> PostGuildTwitterSettings(GuildTwitterSettingsDTO guildTwitterSettings)
+        public async Task<ActionResult<GuildTwitterSettingsDto>> PostGuildTwitterSettings(GuildTwitterSettingsDto guildTwitterSettings)
         {
             if (await _context.GuildTwitterSettings.AnyAsync(s => s.GuildId == guildTwitterSettings.GuildId).ConfigureAwait(false))
                 return Conflict();

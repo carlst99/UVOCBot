@@ -2,7 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Controllers
@@ -52,7 +53,7 @@ namespace UVOCBot.Api.Controllers
         // POST: api/GuildSettings
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<GuildSettingsDTO>> PostGuildWelcomeMessage(GuildWelcomeMessageDto welcomeMessage)
+        public async Task<ActionResult<GuildSettingsDto>> PostGuildWelcomeMessage(GuildWelcomeMessageDto welcomeMessage)
         {
             if (await _context.GuildWelcomeMessages.AnyAsync(s => s.GuildId == welcomeMessage.GuildId).ConfigureAwait(false))
                 return Conflict();

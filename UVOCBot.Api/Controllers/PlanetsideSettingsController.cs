@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Controllers
@@ -21,14 +22,14 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/GuildSettings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<PlanetsideSettingsDTO>>> GetPlanetsideSettings()
+        public async Task<ActionResult<IEnumerable<PlanetsideSettingsDto>>> GetPlanetsideSettings()
         {
             return (await _context.PlanetsideSettings.ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
         }
 
         // GET: api/PlanetsideSettings/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<PlanetsideSettingsDTO>> GetPlanetsideSettings(ulong id)
+        public async Task<ActionResult<PlanetsideSettingsDto>> GetPlanetsideSettings(ulong id)
         {
             var planetsideSettings = await _context.PlanetsideSettings.FindAsync(id).ConfigureAwait(false);
 
@@ -38,7 +39,7 @@ namespace UVOCBot.Api.Controllers
         // PUT: api/PlanetsideSettings/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPlanetsideSettings(ulong id, PlanetsideSettingsDTO planetsideSettings)
+        public async Task<IActionResult> PutPlanetsideSettings(ulong id, PlanetsideSettingsDto planetsideSettings)
         {
             if (id != planetsideSettings.GuildId)
                 return BadRequest();
@@ -60,7 +61,7 @@ namespace UVOCBot.Api.Controllers
         // POST: api/PlanetsideSettings
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<PlanetsideSettingsDTO>> PostPlanetsideSettings(PlanetsideSettingsDTO planetsideSettings)
+        public async Task<ActionResult<PlanetsideSettingsDto>> PostPlanetsideSettings(PlanetsideSettingsDto planetsideSettings)
         {
             if (await _context.PlanetsideSettings.AnyAsync((s) => s.GuildId == planetsideSettings.GuildId).ConfigureAwait(false))
                 return Conflict();

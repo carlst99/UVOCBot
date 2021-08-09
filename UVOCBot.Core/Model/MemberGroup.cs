@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 
-namespace UVOCBot.Api.Model
+namespace UVOCBot.Core.Model
 {
     [Index(nameof(GroupName), IsUnique = false)]
     public class MemberGroup
@@ -40,7 +40,7 @@ namespace UVOCBot.Api.Model
         /// </summary>
         public string UserIds { get; set; } = string.Empty;
 
-        public MemberGroupDTO ToDto()
+        public MemberGroupDto ToDto()
             => new()
             {
                 Id = Id,
@@ -51,7 +51,7 @@ namespace UVOCBot.Api.Model
                 UserIds = new List<ulong>(UserIds.Split('\n').Select(s => ulong.Parse(s)))
             };
 
-        public static MemberGroup FromDto(MemberGroupDTO dto)
+        public static MemberGroup FromDto(MemberGroupDto dto)
             => new()
             {
                 Id = dto.Id,

@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace UVOCBot.Core.Model
+namespace UVOCBot.Core.Dto
 {
-    public sealed class TwitterUserDTO
+    public sealed class TwitterUserDto
     {
         /// <summary>
         /// The twitter ID of this user
@@ -19,16 +19,16 @@ namespace UVOCBot.Core.Model
         /// </summary>
         public IReadOnlyList<ulong> Guilds { get; set; } = new List<ulong>().AsReadOnly();
 
-        public TwitterUserDTO() { }
+        public TwitterUserDto() { }
 
-        public TwitterUserDTO(long id)
+        public TwitterUserDto(long id)
         {
             UserId = id;
             LastRelayedTweetId = null;
         }
 
         public override bool Equals(object? obj)
-            => obj is TwitterUserDTO user
+            => obj is TwitterUserDto user
                 && user.UserId.Equals(UserId);
 
         public override int GetHashCode() => UserId.GetHashCode();

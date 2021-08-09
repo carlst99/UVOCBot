@@ -6,14 +6,14 @@ using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Commands
+namespace UVOCBot.Commands.ExecutionEvents
 {
-    public class ExecutionEventService : IExecutionEventService
+    public class TriggerTypingExecutionEvent : IPreExecutionEvent
     {
-        private readonly ILogger<ExecutionEventService> _logger;
+        private readonly ILogger<TriggerTypingExecutionEvent> _logger;
         private readonly IDiscordRestChannelAPI _channelApi;
 
-        public ExecutionEventService(ILogger<ExecutionEventService> logger, IDiscordRestChannelAPI channelApi)
+        public TriggerTypingExecutionEvent(ILogger<TriggerTypingExecutionEvent> logger, IDiscordRestChannelAPI channelApi)
         {
             _logger = logger;
             _channelApi = channelApi;
@@ -30,11 +30,6 @@ namespace UVOCBot.Commands
 
             // Always return a successful value. We're not too worried about a failure to show the typing indicator, although we do log it
             return Result.FromSuccess();
-        }
-
-        public Task<Result> AfterExecutionAsync(ICommandContext context, IResult executionResult, CancellationToken ct = default)
-        {
-            return Task.FromResult(Result.FromSuccess());
         }
     }
 }

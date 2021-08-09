@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -23,7 +24,7 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/MemberGroup/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<MemberGroupDTO>> GetMemberGroup(ulong id)
+        public async Task<ActionResult<MemberGroupDto>> GetMemberGroup(ulong id)
         {
             MemberGroup group = await _context.MemberGroups.FindAsync(id).ConfigureAwait(false);
 
@@ -32,7 +33,7 @@ namespace UVOCBot.Api.Controllers
 
         // GET api/MemberGroup/guildGroups/5
         [HttpGet("guildgroups/{id}")]
-        public async Task<ActionResult<List<MemberGroupDTO>>> GetGuildGroups(ulong id)
+        public async Task<ActionResult<List<MemberGroupDto>>> GetGuildGroups(ulong id)
         {
             List<MemberGroup> groups = await _context.MemberGroups.Where(g => g.GuildId == id).ToListAsync().ConfigureAwait(false);
 
@@ -41,7 +42,7 @@ namespace UVOCBot.Api.Controllers
 
         // GET api/MemberGroup/?guildId=1&groupName=""
         [HttpGet]
-        public async Task<ActionResult<MemberGroupDTO>> GetMemberGroup([FromQuery] ulong guildId, [FromQuery] string groupName)
+        public async Task<ActionResult<MemberGroupDto>> GetMemberGroup([FromQuery] ulong guildId, [FromQuery] string groupName)
         {
             MemberGroup group = await _context.MemberGroups.FirstOrDefaultAsync(g => g.GuildId == guildId && g.GroupName == groupName).ConfigureAwait(false);
 
@@ -50,7 +51,7 @@ namespace UVOCBot.Api.Controllers
 
         // POST api/MemberGroup
         [HttpPost]
-        public async Task<ActionResult<MemberGroupDTO>> Post(MemberGroupDTO group)
+        public async Task<ActionResult<MemberGroupDto>> Post(MemberGroupDto group)
         {
             IQueryable<MemberGroup> guildGroups = _context.MemberGroups.Where(g => g.GuildId.Equals(group.GuildId));
             if (guildGroups.Any(g => g.GroupName.Equals(group.GroupName)))
@@ -64,7 +65,7 @@ namespace UVOCBot.Api.Controllers
 
         // PUT api/MemberGroup/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(ulong id, MemberGroupDTO memberGroup)
+        public async Task<IActionResult> Put(ulong id, MemberGroupDto memberGroup)
         {
             if (id != memberGroup.Id)
                 return BadRequest();

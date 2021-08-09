@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Services.Abstractions;
 using UVOCBot.Utilities;
 
@@ -51,21 +51,20 @@ namespace UVOCBot.Workers
                 int tweetCount = 0;
 
                 // Get all the guilds that have tweet relaying enabled
-                Result<List<GuildTwitterSettingsDTO>> settingsResult = await _dbApi.ListGuildTwitterSettingsAsync(true, stoppingToken).ConfigureAwait(false);
-                if (!settingsResult.IsSuccess)
+                Result<List<GuildTwitterSettingsDto>> settingsResult = await _dbApi.ListGuildTwitterSettingsAsync(true, stoppingToken).ConfigureAwait(false);                if (!settingsResult.IsSuccess)
                 {
                     _logger.LogError("Failed to load guild twitter settings: {ex}", settingsResult.Error);
                     return;
                 }
 
-                foreach (GuildTwitterSettingsDTO settings in settingsResult.Entity)
+                foreach (GuildTwitterSettingsDto settings in settingsResult.Entity)
                 {
                     foreach (long twitterUserId in settings.TwitterUsers)
                     {
                         // Get tweets from this user if we haven't already
                         if (!userTweetPairs.ContainsKey(twitterUserId))
                         {
-                            Result<TwitterUserDTO> dbTwitterUserResult = await _dbApi.GetTwitterUserAsync(twitterUserId, stoppingToken).ConfigureAwait(false);
+                            Result<TwitterUserDto> dbTwitterUserResult = await _dbApi.GetTwitterUserAsync(twitterUserId, stoppingToken).ConfigureAwait(false);
                             if (!dbTwitterUserResult.IsSuccess)
                             {
                                 _logger.LogError("Failed to get twitter user from database: {ex}", dbTwitterUserResult.Error);
@@ -107,7 +106,7 @@ namespace UVOCBot.Workers
         /// <param name="user">The twitter user to get tweets from.</param>
         /// <param name="ct">A token with which to cancel any asynchronous operations.</param>
         /// <returns></returns>
-        private async Task<List<ITweet>> GetUserTweetsAsync(TwitterUserDTO user, CancellationToken ct)
+        private async Task<List<ITweet>> GetUserTweetsAsync(TwitterUserDto user, CancellationToken ct)
         {
             GetUserTimelineParameters timelineParameters = new(user.UserId)
             {
@@ -155,7 +154,7 @@ namespace UVOCBot.Workers
             return validTweets;
         }
 
-        private async Task PostTweetsToChannelAsync(GuildTwitterSettingsDTO settings, List<ITweet> tweets, CancellationToken ct)
+        private async Task PostTweetsToChannelAsync(GuildTwitterSettingsDto settings, List<ITweet> tweets, CancellationToken ct)
         {
             if (tweets.Count == 0)
                 return;

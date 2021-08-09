@@ -1,7 +1,6 @@
 using DbgCensus.Rest;
 using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
@@ -26,7 +25,9 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
 using UVOCBot.Commands.Conditions;
+using UVOCBot.Commands.ExecutionEvents;
 using UVOCBot.Config;
+using UVOCBot.Core;
 using UVOCBot.Responders;
 using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
@@ -95,8 +96,11 @@ namespace UVOCBot
                 {
                     // Setup the configuration bindings
                     services.Configure<CensusQueryOptions>(c.Configuration.GetSection(nameof(CensusQueryOptions)))
+                            .Configure<DatabaseOptions>(c.Configuration.GetSection(nameof(DatabaseOptions)))
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
+
+                    services.AddDbContext<DiscordContext>();
 
                     //Setup API services
                     services.AddCensusRestServices()
@@ -112,7 +116,7 @@ namespace UVOCBot
 
                     // Add Discord-related services
                     services.AddDiscordServices()
-                            .AddScoped<IExecutionEventService, ExecutionEventService>()
+                            .AddPreExecutionEvent<TriggerTypingExecutionEvent>()
                             .AddScoped<IPermissionChecksService, PermissionChecksService>()
                             .AddScoped<IReplyService, ReplyService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
@@ -226,6 +230,7 @@ namespace UVOCBot
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
+                    .AddCommandGroup<RoleMenuCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
                     .AddCommandGroup<TwitterCommands>()

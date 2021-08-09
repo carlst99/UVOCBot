@@ -9,7 +9,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 
@@ -51,7 +51,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> welcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!welcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return welcomeMessage;
             }
 
@@ -60,7 +60,7 @@ namespace UVOCBot.Commands
 
             if (!dbUpdateResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return dbUpdateResult;
             }
 
@@ -82,7 +82,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -100,7 +100,7 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -113,10 +113,11 @@ namespace UVOCBot.Commands
         [Description("Sets the channel to post the welcome message in.")]
         public async Task<IResult> ChannelCommand(IChannel channel)
         {
+            // TODO: This must be a bug - we need to check our own permission set, not that of the calling user
             Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel.ID, _context.User.ID, CancellationToken).ConfigureAwait(false);
             if (!getPermissionSet.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getPermissionSet;
             }
 
@@ -132,7 +133,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -140,7 +141,7 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return updateWelcomeMessage;
             }
 
@@ -161,7 +162,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -178,7 +179,7 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -197,7 +198,7 @@ namespace UVOCBot.Commands
             Result<Outfit?> getOutfit = await _censusApi.GetOutfit(outfitTag, CancellationToken).ConfigureAwait(false);
             if (!getOutfit.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getOutfit;
             }
 
@@ -207,7 +208,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -215,7 +216,7 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(updatedWelcomeMessage.GuildId, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return updateWelcomeMessage;
             }
 
@@ -231,7 +232,7 @@ namespace UVOCBot.Commands
             Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!getWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getWelcomeMessage;
             }
 
@@ -239,7 +240,7 @@ namespace UVOCBot.Commands
             Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(updatedWelcomeMessage.GuildId, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
             if (!updateWelcomeMessage.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync("Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return updateWelcomeMessage;
             }
 

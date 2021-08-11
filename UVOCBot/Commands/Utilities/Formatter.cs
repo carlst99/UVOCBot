@@ -1,4 +1,5 @@
 ﻿using Remora.Discord.Core;
+using UVOCBot.Model;
 
 namespace UVOCBot.Commands
 {
@@ -18,6 +19,21 @@ namespace UVOCBot.Commands
         public static string InlineQuote(string content) => $"`{content}`";
         public static string Quote(string content) => $">{content}\n";
         public static string CodeBlock(string content, string? language = null) => $"```{language}{content}```";
-        public static string Timestamp(long timestamp) => $"<t:{ timestamp }>";
+        public static string Timestamp(long timestamp, TimestampStyle style = TimestampStyle.ShortDate) => $"<t:{ timestamp }:{ TimestampStyleToCode(style) }>";
+
+        private static char TimestampStyleToCode(TimestampStyle style)
+        {
+            return style switch
+            {
+                TimestampStyle.ShortTime => 't',
+                TimestampStyle.LongTime => 'T',
+                TimestampStyle.ShortDate => 'd',
+                TimestampStyle.LongDate => 'D',
+                TimestampStyle.ShortDateTime => 'f',
+                TimestampStyle.LongDateTime => 'F',
+                TimestampStyle.RelativeTime => 'R',
+                _ => TimestampStyleToCode(TimestampStyle.ShortDate)
+            };
+        }
     }
 }

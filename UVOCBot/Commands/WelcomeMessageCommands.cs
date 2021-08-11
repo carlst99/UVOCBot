@@ -230,7 +230,7 @@ namespace UVOCBot.Commands
         }
 
         [Command("message")]
-        [Description("Sets the message to present to new members.")]
+        [Description("Sets the message to present to new members. Use without arguments for more information.")]
         public async Task<IResult> MessageCommand(
             [Description("The ID of the message to replicate as the welcome message.")] Snowflake? messageId = null)
         {

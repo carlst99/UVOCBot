@@ -233,6 +233,7 @@ namespace UVOCBot
                     .AddCommandGroup<RoleMenuCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
+                    .AddCommandGroup<TimeCommands>()
                     .AddCommandGroup<TwitterCommands>()
                     .AddCommandGroup<WelcomeMessageCommands>();
 

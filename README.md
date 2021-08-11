@@ -7,7 +7,7 @@
 Provides various functions to assist with the experience of the UVOC outfit Discord server. Current features include:
 
 - Tweet relaying - Posts tweets from Twitter users into a Discord channel.
-- PlanetSide 2 server population, status querying and online member checking.
+- PlanetSide 2 server population, status querying (borked atm) and online member checking.
 - Welcome messages - assign default roles, let users pick an alternate role set, and make guesses at their in-game name for easy nickname changes.
 - Bulk voice channel movement.
 - Bulk reaction-based role assignment.
@@ -27,7 +27,7 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a name and icon and **add a bot** to the application.
     1. :warning: Ensure that you enable the `Presence Intent` and `Server Members Intent`, found under the Bot tab of your application.
 2. Head on over to the wiki page [Hosting on Linux](https://github.com/carlst99/UVOCBot/wiki/Hosting-on-Linux) and follow the instructions there
-3. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot)
+3. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands)
 
 # Building and Developing
 

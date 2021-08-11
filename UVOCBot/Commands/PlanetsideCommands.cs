@@ -276,6 +276,7 @@ namespace UVOCBot.Commands
                 return result;
             }
 
+            // TODO: This is completely unreliable. Could be a map endpoint issue
             double regionCount = map.Regions.Row.Count(r => r.RowData.FactionId != Faction.None);
             double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.NC) / regionCount) * 100;
             double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.TR) / regionCount) * 100;
@@ -290,6 +291,7 @@ namespace UVOCBot.Commands
                 _ => Formatter.Emoji("no_entry_sign") + " Unknown Continent"
             };
 
+            // Can at least fix this easily by printing the result of the metagame event.
             if (Math.Round(ncPercent, 0) == 100 || Math.Round(trPercent, 0) == 100 || Math.Round(vsPercent, 0) == 100)
                 title += " " + Formatter.Emoji("lock");
 

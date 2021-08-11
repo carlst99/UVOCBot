@@ -1,5 +1,4 @@
 ﻿using DbgCensus.Core.Exceptions;
-using DbgCensus.Core.Utils;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;

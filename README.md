@@ -17,7 +17,8 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
 - (COMING SOON) Role menus and bulk timestamp formatting
 
 To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence if you'd like to use it in your own server, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
-Contrary to the above, if you know me through the PlanetSide 2 community, feel free to get in touch and ask for a private invite link. I *might* say yes :slightly_smiling_face:.
+
+Contrary to the above, if you know me through the PlanetSide 2 community, feel free to get in touch and ask for a private invite link. I might say yes :slightly_smiling_face:.
 
 # Setup for Hosting
 

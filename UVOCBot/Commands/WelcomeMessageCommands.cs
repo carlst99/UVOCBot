@@ -112,14 +112,13 @@ namespace UVOCBot.Commands
         [Description("Sets the channel to post the welcome message in.")]
         public async Task<IResult> ChannelCommand(IChannel channel)
         {
-            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!getPermissionSet.IsSuccess)
             {
                 await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getPermissionSet;
             }
 
-            // TODO: We aren't properly checking for send messages perms, apparently
             if (!getPermissionSet.Entity.HasPermission(DiscordPermission.SendMessages))
                 return await _replyService.RespondWithUserErrorAsync("I do not have permission to send messages in this channel.", CancellationToken).ConfigureAwait(false);
 

@@ -21,10 +21,19 @@ namespace UVOCBot.Services.Abstractions
         /// <summary>
         /// Gets the permission set of a user in a given channel.
         /// </summary>
-        /// <param name="channelId"></param>
+        /// <param name="channelId">The channel used to calculate the permission set.</param>
         /// <param name="userId">The user to get the permissions of.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
-        /// <returns></returns>
+        /// <returns>The user's permission set.</returns>
         Task<Result<IDiscordPermissionSet>> GetPermissionsInChannel(Snowflake channelId, Snowflake userId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets the permission set of a user in a given channel.
+        /// </summary>
+        /// <param name="channel">The channel used to calculate the permission set.</param>
+        /// <param name="userId">The user to get the permissions of.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>The user's permission set.</returns>
+        Task<Result<IDiscordPermissionSet>> GetPermissionsInChannel(IChannel channel, Snowflake userId, CancellationToken ct = default);
     }
 }

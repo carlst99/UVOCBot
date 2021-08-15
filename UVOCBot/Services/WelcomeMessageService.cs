@@ -1,13 +1,11 @@
 ﻿using FuzzySharp;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Services;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
@@ -18,7 +16,6 @@ using System.Threading.Tasks;
 using UVOCBot.Commands;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
-using UVOCBot.Extensions;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
 
@@ -27,26 +24,29 @@ namespace UVOCBot.Services
     public class WelcomeMessageService : IWelcomeMessageService
     {
         private readonly ILogger<WelcomeMessageService> _logger;
-        private readonly IDbContextFactory<DbContext> _dbContext;
+        private readonly DbContext _dbContext;
+        private readonly InteractionContext _context;
         private readonly ICensusApiService _censusApi;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IReplyService _replyService;
 
         public WelcomeMessageService(
             ILogger<WelcomeMessageService> logger,
-            IDbContextFactory<DiscordContext> dbContext,
+            DiscordContext dbContext,
+            InteractionContext context,
             ICensusApiService censusApi,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            IServiceProvider serviceProvider)
+            IReplyService replyService)
         {
             _logger = logger;
             _dbContext = dbContext;
+            _context = context;
             _censusApi = censusApi;
             _channelApi = channelApi;
             _guildApi = guildApi;
-            _serviceProvider = serviceProvider;
+            _replyService = replyService;
         }
 
         public async Task<Result> SendWelcomeMessage(IGuildMemberAdd gatewayEvent, CancellationToken ct = default)
@@ -55,7 +55,7 @@ namespace UVOCBot.Services
                 return Result.FromSuccess();
 
             // Get the welcome message settings
-            GuildWelcomeMessage welcomeMessage = await _dbContext.CreateDbContext().FindOrDefaultAsync<GuildWelcomeMessage>(gatewayEvent.GuildID.Value, ct).ConfigureAwait(false);
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(gatewayEvent.GuildID.Value, ct).ConfigureAwait(false);
 
             if (!welcomeMessage.IsEnabled)
                 return Result.FromSuccess();
@@ -132,32 +132,28 @@ namespace UVOCBot.Services
 
         #region Nicknames
 
-        public async Task<Result> SetNicknameFromGuess(IInteractionCreate gatewayEvent, CancellationToken ct = default)
+        public async Task<Result> SetNicknameFromGuess(CancellationToken ct = default)
         {
-            if (!gatewayEvent.GuildID.HasValue)
+            if (!_context.GuildID.HasValue)
                 return Result.FromSuccess();
 
-            if (gatewayEvent.Data.Value is null || gatewayEvent.Data.Value.CustomID.Value is null)
+            if (_context.Data.CustomID.Value is null)
                 return Result.FromSuccess();
 
-            IUser? user = gatewayEvent.GetUser();
-            if (user is null)
-                return Result.FromSuccess();
-
-            ComponentIdFormatter.Parse(gatewayEvent.Data.Value.CustomID.Value, out ComponentAction _, out string payload);
+            ComponentIdFormatter.Parse(_context.Data.CustomID.Value, out ComponentAction _, out string payload);
             string[] payloadComponents = payload.Split('@');
             ulong userId = ulong.Parse(payloadComponents[0]);
 
             // Check that the user who clicked the button is the focus of the welcome message
-            if (user.ID.Value != userId)
+            if (_context.User.ID.Value != userId)
             {
-                await GetReplyService(gatewayEvent).RespondWithSuccessAsync("Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
+                await _replyService.RespondWithSuccessAsync("Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
                 return Result.FromSuccess();
             }
 
-            await _guildApi.ModifyGuildMemberAsync(gatewayEvent.GuildID.Value, user.ID, payloadComponents[1], ct: ct).ConfigureAwait(false);
+            await _guildApi.ModifyGuildMemberAsync(_context.GuildID.Value, _context.User.ID, payloadComponents[1], ct: ct).ConfigureAwait(false);
 
-            Result<IMessage> alertResponse = await GetReplyService(gatewayEvent).RespondWithSuccessAsync(
+            Result<IMessage> alertResponse = await _replyService.RespondWithSuccessAsync(
                 $"Your nickname has been updated to { Formatter.Bold(payloadComponents[1]) }!",
                 ct).ConfigureAwait(false);
 
@@ -166,9 +162,9 @@ namespace UVOCBot.Services
                 : Result.FromError(alertResponse);
         }
 
-        public async Task<Result> InformNicknameNoMatch(IInteractionCreate gatewayEvent, CancellationToken ct = default)
+        public async Task<Result> InformNicknameNoMatch(CancellationToken ct = default)
         {
-            Result<IMessage> alertResponse = await GetReplyService(gatewayEvent).RespondWithSuccessAsync(
+            Result<IMessage> alertResponse = await _replyService.RespondWithSuccessAsync(
                 "Please set your nickname to the name of your PlanetSide 2 character!",
                 ct).ConfigureAwait(false);
 
@@ -224,36 +220,31 @@ namespace UVOCBot.Services
         /// <param name="gatewayEvent">The interaction event to perform this operation on.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns>A <see cref="Result"/> indicating if the operation was successful.</returns>
-        public async Task<Result> SetAlternateRoles(IInteractionCreate gatewayEvent, CancellationToken ct = default)
+        public async Task<Result> SetAlternateRoles(CancellationToken ct = default)
         {
-            if (!gatewayEvent.GuildID.HasValue)
+            if (!_context.GuildID.HasValue)
                 return Result.FromSuccess();
 
-            if (gatewayEvent.Data.Value is null || gatewayEvent.Data.Value.CustomID.Value is null)
-                return Result.FromSuccess();
-
-            IUser? user = gatewayEvent.GetUser();
-            if (user is null)
+            if (_context.Data.CustomID.Value is null)
                 return Result.FromSuccess();
 
             // Get the welcome message settings
-            GuildWelcomeMessage welcomeMessage = await _dbContext.CreateDbContext().FindOrDefaultAsync<GuildWelcomeMessage>(gatewayEvent.GuildID.Value.Value, ct).ConfigureAwait(false);
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, ct).ConfigureAwait(false);
 
-            ComponentIdFormatter.Parse(gatewayEvent.Data.Value.CustomID.Value, out ComponentAction _, out string payload);
+            ComponentIdFormatter.Parse(_context.Data.CustomID.Value, out ComponentAction _, out string payload);
             ulong userId = ulong.Parse(payload);
 
             // Check that the user who clicked the button is the focus of the welcome message
-            if (user.ID.Value != userId)
+            if (_context.User.ID.Value != userId)
             {
-                await GetReplyService(gatewayEvent).RespondWithSuccessAsync("Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
-                return Result.FromSuccess();
+                await _replyService.RespondWithSuccessAsync("Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
             }
 
             // Remove the default roles and add the alternate roles
             Result roleChangeResult = await ModifyRoles(
-                gatewayEvent.GuildID.Value,
-                user.ID,
-                gatewayEvent.Member.Value?.Roles.ToList(),
+                _context.GuildID.Value,
+                _context.User.ID,
+                _context.Member.Value?.Roles.ToList(),
                 welcomeMessage.AlternateRoles,
                 welcomeMessage.DefaultRoles,
                 ct).ConfigureAwait(false);
@@ -266,7 +257,7 @@ namespace UVOCBot.Services
 
             // Inform the user of their role change
             string rolesStringList = string.Join(' ', welcomeMessage.AlternateRoles.Select(r => Formatter.RoleMention(r)));
-            Result<IMessage> alertResponse = await GetReplyService(gatewayEvent).RespondWithSuccessAsync(
+            Result<IMessage> alertResponse = await _replyService.RespondWithSuccessAsync(
                 $"You've been given the following roles: { rolesStringList }",
                 ct,
                 new AllowedMentions()).ConfigureAwait(false);
@@ -321,16 +312,5 @@ namespace UVOCBot.Services
         }
 
         #endregion
-
-        private IReplyService GetReplyService(IInteractionCreate gatewayEvent)
-        {
-            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
-            if (!context.IsSuccess)
-                throw new Exception("Failed to get interaction context from gateway event");
-
-            IServiceScope scope = _serviceProvider.CreateScope();
-            scope.ServiceProvider.GetRequiredService<ContextInjectionService>().Context = context.Entity;
-            return scope.ServiceProvider.GetRequiredService<IReplyService>();
-        }
     }
 }

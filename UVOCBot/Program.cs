@@ -111,7 +111,7 @@ namespace UVOCBot
                     // Setup other services
                     services.AddSingleton(fileSystem)
                             .AddSingleton<ISettingsService, SettingsService>()
-                            .AddSingleton<IWelcomeMessageService, WelcomeMessageService>()
+                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services

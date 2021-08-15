@@ -45,19 +45,6 @@ namespace UVOCBot.Services
                     _logger.LogCritical("Could not scaffold PlanetSide settings database objects: {error}", guildSettingsResult.Error);
                     return Result.FromError(planetsideSettingsResult);
                 }
-
-                Result<GuildWelcomeMessageDto> guildWelcomeMessageResult = await CreateGuildWelcomeMessageAsync(
-                    new GuildWelcomeMessageDto(guild)
-                    {
-                        IsEnabled = false
-                    },
-                    ct).ConfigureAwait(false);
-
-                if (!guildWelcomeMessageResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er4 && er4.StatusCode == HttpStatusCode.Conflict))
-                {
-                    _logger.LogCritical("Could not initialise guild welcome message database objects: {error}", guildWelcomeMessageResult.Error);
-                    return Result.FromError(guildWelcomeMessageResult);
-                }
             }
 
             return Result.FromSuccess();
@@ -343,44 +330,6 @@ namespace UVOCBot.Services
             IRestRequest request = new RestRequest("membergroup", Method.DELETE);
             request.AddParameter("guildId", guildId, ParameterType.QueryString);
             request.AddParameter("groupName", groupName, ParameterType.QueryString);
-
-            return await ExecuteAsync(request, ct).ConfigureAwait(false);
-        }
-
-        #endregion
-
-        #region GuildWelcomeMessage
-
-        public async Task<Result<GuildWelcomeMessageDto>> GetGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.GET);
-            request.AddParameter("id", id, ParameterType.UrlSegment);
-
-            return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
-        }
-
-        public async Task<Result> UpdateGuildWelcomeMessageAsync(ulong id, GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.PUT);
-            request.AddParameter("id", id, ParameterType.UrlSegment);
-
-            request.AddJsonBody(welcomeMessage);
-
-            return await ExecuteAsync(request, ct).ConfigureAwait(false);
-        }
-
-        public async Task<Result<GuildWelcomeMessageDto>> CreateGuildWelcomeMessageAsync(GuildWelcomeMessageDto welcomeMessage, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("guildwelcomemessage", Method.POST);
-            request.AddJsonBody(welcomeMessage);
-
-            return await ExecuteAsync<GuildWelcomeMessageDto>(request, ct).ConfigureAwait(false);
-        }
-
-        public async Task<Result> DeleteGuildWelcomeMessageAsync(ulong id, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("guildwelcomemessage/{id}", Method.DELETE);
-            request.AddParameter("id", id, ParameterType.UrlSegment);
 
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }

@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using UVOCBot.Core.Dto;
 
 namespace UVOCBot.Core.Model
 {
     /// <summary>
     /// Contains settings for the welcome message feature
     /// </summary>
-    public class GuildWelcomeMessage
+    public class GuildWelcomeMessage : IGuildObject
     {
-        private const char ROLE_SPLIT_CHAR = ';';
-
         /// <summary>
         /// Gets or sets the ID of the guild that this object is storing data for.
         /// </summary>
@@ -24,9 +20,19 @@ namespace UVOCBot.Core.Model
         public string AlternateRoleLabel { get; set; }
 
         /// <summary>
+        /// Gets the list of alternate roles that can be assigned.
+        /// </summary>
+        public List<ulong> AlternateRoles { get; set; }
+
+        /// <summary>
         /// Gets or sets the channel in which to send the welcome message.
         /// </summary>
         public ulong ChannelId { get; set; }
+
+        /// <summary>
+        /// Gets the list of default roles to assign.
+        /// </summary>
+        public List<ulong> DefaultRoles { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating if an attempt will be made to provide nickname options, based off the last few in-game joins.
@@ -44,66 +50,32 @@ namespace UVOCBot.Core.Model
         public string Message { get; set; }
 
         /// <summary>
-        /// Gets or sets the roles to let the user alternatively assign to themselves.
+        /// Gets or sets a value indicating if the alternate roles should be offered.
         /// </summary>
-        /// <remarks>Useful for separation between new members and people visiting from an existing outfit.</remarks>
-        public string SerialisedAlternateRoles { get; set; }
-
-        /// <summary>
-        /// Gets or sets the roles to assign the user by default.
-        /// </summary>
-        public string SerialisedDefaultRoles { get; set; }
+        public bool OfferAlternateRoles { get; set; }
 
         /// <summary>
         /// Gets or sets the tag to use for making nickname guesses.
         /// </summary>
         public ulong OutfitId { get; set; }
 
+        /// <summary>
+        /// Only use this constructor if you are setting the <see cref="GuildId"/> immediately after construction.
+        /// </summary>
+        public GuildWelcomeMessage()
+            : this(0)
+        {
+        }
+
         public GuildWelcomeMessage(ulong guildId)
         {
             AlternateRoleLabel = string.Empty;
+            AlternateRoles = new List<ulong>();
+            DefaultRoles = new List<ulong>();
+            DoIngameNameGuess = false;
             GuildId = guildId;
+            IsEnabled = false;
             Message = "Welcome <name>!";
-            SerialisedAlternateRoles = string.Empty;
-            SerialisedDefaultRoles = string.Empty;
         }
-
-        public GuildWelcomeMessageDto ToDto()
-            => new(GuildId)
-            {
-                AlternateRoles = SerialisedRolesToList(SerialisedAlternateRoles),
-                AlternateRoleLabel = AlternateRoleLabel,
-                ChannelId = ChannelId,
-                DefaultRoles = SerialisedRolesToList(SerialisedDefaultRoles),
-                DoIngameNameGuess = DoIngameNameGuess,
-                IsEnabled = IsEnabled,
-                Message = Message,
-                OutfitId = OutfitId
-            };
-
-        public static GuildWelcomeMessage FromDto(GuildWelcomeMessageDto dto)
-            => new(dto.GuildId)
-            {
-                AlternateRoleLabel = dto.AlternateRoleLabel,
-                ChannelId = dto.ChannelId,
-                DoIngameNameGuess = dto.DoIngameNameGuess,
-                IsEnabled = dto.IsEnabled,
-                Message = dto.Message,
-                SerialisedAlternateRoles = SerialiseRolesList(dto.AlternateRoles),
-                SerialisedDefaultRoles = SerialiseRolesList(dto.DefaultRoles),
-                OutfitId = dto.OutfitId
-            };
-
-        private static IReadOnlyList<ulong> SerialisedRolesToList(string serialisedRoles)
-        {
-            List<ulong> roles = new();
-
-            foreach (string value in serialisedRoles.Split(ROLE_SPLIT_CHAR, StringSplitOptions.RemoveEmptyEntries))
-                roles.Add(ulong.Parse(value));
-
-            return roles.AsReadOnly();
-        }
-
-        private static string SerialiseRolesList(IEnumerable<ulong> roles) => string.Join(ROLE_SPLIT_CHAR, roles);
     }
 }

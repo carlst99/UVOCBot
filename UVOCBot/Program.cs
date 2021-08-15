@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
-using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Commands.Responders;
 using Remora.Discord.Commands.Services;
@@ -100,7 +99,8 @@ namespace UVOCBot
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
-                    services.AddDbContext<DiscordContext>();
+                    services.AddDbContext<DiscordContext>(optionsLifetime: ServiceLifetime.Singleton)
+                            .AddDbContextFactory<DiscordContext>();
 
                     //Setup API services
                     services.AddCensusRestServices()

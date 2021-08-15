@@ -1,4 +1,5 @@
 ﻿using FuzzySharp;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Remora.Discord.API.Abstractions.Gateway.Events;
@@ -15,7 +16,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Commands;
-using UVOCBot.Core.Dto;
+using UVOCBot.Core;
+using UVOCBot.Core.Model;
 using UVOCBot.Extensions;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
@@ -25,23 +27,23 @@ namespace UVOCBot.Services
     public class WelcomeMessageService : IWelcomeMessageService
     {
         private readonly ILogger<WelcomeMessageService> _logger;
+        private readonly IDbContextFactory<DbContext> _dbContext;
         private readonly ICensusApiService _censusApi;
-        private readonly IDbApiService _dbApi;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IServiceProvider _serviceProvider;
 
         public WelcomeMessageService(
             ILogger<WelcomeMessageService> logger,
+            IDbContextFactory<DiscordContext> dbContext,
             ICensusApiService censusApi,
-            IDbApiService dbApi,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
             IServiceProvider serviceProvider)
         {
             _logger = logger;
+            _dbContext = dbContext;
             _censusApi = censusApi;
-            _dbApi = dbApi;
             _channelApi = channelApi;
             _guildApi = guildApi;
             _serviceProvider = serviceProvider;
@@ -53,11 +55,8 @@ namespace UVOCBot.Services
                 return Result.FromSuccess();
 
             // Get the welcome message settings
-            Result<GuildWelcomeMessageDto> welcomeMessageResult = await GetGuildWelcomeMessage(gatewayEvent.GuildID.Value, ct).ConfigureAwait(false);
-            if (!welcomeMessageResult.IsSuccess)
-                return Result.FromError(welcomeMessageResult);
+            GuildWelcomeMessage welcomeMessage = await _dbContext.CreateDbContext().FindOrDefaultAsync<GuildWelcomeMessage>(gatewayEvent.GuildID.Value, ct).ConfigureAwait(false);
 
-            GuildWelcomeMessageDto welcomeMessage = welcomeMessageResult.Entity;
             if (!welcomeMessage.IsEnabled)
                 return Result.FromSuccess();
 
@@ -91,22 +90,13 @@ namespace UVOCBot.Services
                 : Result.FromError(sendWelcomeMessageResult);
         }
 
-        private async Task<Result<GuildWelcomeMessageDto>> GetGuildWelcomeMessage(ulong guildId, CancellationToken ct = default)
-        {
-            Result<GuildWelcomeMessageDto> welcomeMessageResult = await _dbApi.GetGuildWelcomeMessageAsync(guildId, ct).ConfigureAwait(false);
-            if (!welcomeMessageResult.IsSuccess)
-                _logger.LogError("Failed to retrieve GuildWelcomeMessage object: {error}", welcomeMessageResult.Error);
-
-            return welcomeMessageResult;
-        }
-
         #region Message composition
 
-        private static List<ButtonComponent> CreateWelcomeMessageButtons(GuildWelcomeMessageDto welcomeMessage, IEnumerable<string>? nicknameGuesses, ulong userId)
+        private static List<ButtonComponent> CreateWelcomeMessageButtons(GuildWelcomeMessage welcomeMessage, IEnumerable<string>? nicknameGuesses, ulong userId)
         {
             List<ButtonComponent> messageButtons = new();
 
-            if (welcomeMessage.AlternateRoles.Count > 0 && !string.IsNullOrEmpty(welcomeMessage.AlternateRoleLabel))
+            if (welcomeMessage.OfferAlternateRoles)
             {
                 messageButtons.Add(new ButtonComponent(
                     ButtonComponentStyle.Danger,
@@ -247,9 +237,7 @@ namespace UVOCBot.Services
                 return Result.FromSuccess();
 
             // Get the welcome message settings
-            Result<GuildWelcomeMessageDto> welcomeMessage = await GetGuildWelcomeMessage(gatewayEvent.GuildID.Value.Value, ct).ConfigureAwait(false);
-            if (!welcomeMessage.IsSuccess)
-                return Result.FromError(welcomeMessage);
+            GuildWelcomeMessage welcomeMessage = await _dbContext.CreateDbContext().FindOrDefaultAsync<GuildWelcomeMessage>(gatewayEvent.GuildID.Value.Value, ct).ConfigureAwait(false);
 
             ComponentIdFormatter.Parse(gatewayEvent.Data.Value.CustomID.Value, out ComponentAction _, out string payload);
             ulong userId = ulong.Parse(payload);
@@ -266,8 +254,8 @@ namespace UVOCBot.Services
                 gatewayEvent.GuildID.Value,
                 user.ID,
                 gatewayEvent.Member.Value?.Roles.ToList(),
-                welcomeMessage.Entity.AlternateRoles,
-                welcomeMessage.Entity.DefaultRoles,
+                welcomeMessage.AlternateRoles,
+                welcomeMessage.DefaultRoles,
                 ct).ConfigureAwait(false);
 
             if (!roleChangeResult.IsSuccess)
@@ -277,7 +265,7 @@ namespace UVOCBot.Services
             }
 
             // Inform the user of their role change
-            string rolesStringList = string.Join(' ', welcomeMessage.Entity.AlternateRoles.Select(r => Formatter.RoleMention(r)));
+            string rolesStringList = string.Join(' ', welcomeMessage.AlternateRoles.Select(r => Formatter.RoleMention(r)));
             Result<IMessage> alertResponse = await GetReplyService(gatewayEvent).RespondWithSuccessAsync(
                 $"You've been given the following roles: { rolesStringList }",
                 ct,

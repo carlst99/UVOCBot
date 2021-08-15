@@ -1,5 +1,6 @@
 using DbgCensus.Rest;
 using DbgCensus.Rest.Extensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -99,8 +100,25 @@ namespace UVOCBot
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
-                    services.AddDbContext<DiscordContext>(optionsLifetime: ServiceLifetime.Singleton)
-                            .AddDbContextFactory<DiscordContext>();
+                    DatabaseOptions dbOptions = services.BuildServiceProvider().GetRequiredService<IOptions<DatabaseOptions>>().Value;
+                    services.AddDbContext<DiscordContext>
+                    (
+                        options =>
+                        {
+                            options.UseMySql(
+                                dbOptions.ConnectionString,
+                                new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)))
+#if DEBUG
+                                    .EnableSensitiveDataLogging()
+                                    .EnableDetailedErrors();
+#else
+                                    ;
+#endif
+                        },
+                        optionsLifetime: ServiceLifetime.Singleton
+                    );
+
+                    services.AddDbContextFactory<DiscordContext>();
 
                     //Setup API services
                     services.AddCensusRestServices()

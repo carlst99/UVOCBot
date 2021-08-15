@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -9,8 +8,6 @@ namespace UVOCBot.Core
 {
     public sealed class DiscordContext : DbContext
     {
-        private readonly DatabaseOptions _config;
-
         public DbSet<GuildSettings> GuildSettings { get; set; }
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
         public DbSet<GuildWelcomeMessage> GuildWelcomeMessages { get; set; }
@@ -19,24 +16,13 @@ namespace UVOCBot.Core
         public DbSet<MemberGroup> MemberGroups { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public DiscordContext(IOptions<DatabaseOptions> config)
-        {
-            _config = config.Value;
-        }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
+        public DiscordContext(DbContextOptions<DiscordContext> options)
+            : base(options)
         {
-            options.UseMySql(
-                _config.ConnectionString,
-                new MariaDbServerVersion(new Version(_config.DatabaseVersion)))
-#if DEBUG
-                    .EnableSensitiveDataLogging()
-                    .EnableDetailedErrors();
-#else
-                ;
-#endif
         }
+
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

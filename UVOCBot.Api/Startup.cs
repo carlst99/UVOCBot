@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using System;
 using UVOCBot.Api.Workers;
 using UVOCBot.Core;
 
@@ -22,7 +25,24 @@ namespace UVOCBot.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<DatabaseOptions>(Configuration.GetSection(DatabaseOptions.ConfigSectionName));
-            services.AddDbContext<DiscordContext>();
+
+            DatabaseOptions dbOptions = services.BuildServiceProvider().GetRequiredService<IOptions<DatabaseOptions>>().Value;
+            services.AddDbContext<DiscordContext>
+            (
+                options =>
+                {
+                    options.UseMySql(
+                    dbOptions.ConnectionString,
+                    new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)))
+#if DEBUG
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors();
+#else
+                        ;
+#endif
+                    }
+            );
+
             services.AddControllers();
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo { Title = "UVOCBot.Api", Version = "v1" }));
             services.AddHostedService<CleanupWorker>();

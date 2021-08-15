@@ -11,7 +11,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core;
-using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;

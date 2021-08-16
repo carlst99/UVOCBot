@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Services.Abstractions;
 
@@ -20,9 +19,7 @@ namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• **World `status` Command** - Check the territory control and status of a world and it's continents." +
-            "\r\n• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
-            "\r\n• Made the `population` command faster.";
+        public const string RELEASE_NOTES = "• **Role menus!** - Let members toggle roles with ease.";
 
         private readonly IReplyService _replyService;
         private readonly IDiscordRestUserAPI _userAPI;

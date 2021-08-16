@@ -1,5 +1,4 @@
 ﻿using FuzzySharp;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
@@ -24,7 +23,7 @@ namespace UVOCBot.Services
     public class WelcomeMessageService : IWelcomeMessageService
     {
         private readonly ILogger<WelcomeMessageService> _logger;
-        private readonly DbContext _dbContext;
+        private readonly DiscordContext _dbContext;
         private readonly InteractionContext _context;
         private readonly ICensusApiService _censusApi;
         private readonly IDiscordRestChannelAPI _channelApi;

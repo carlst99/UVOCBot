@@ -129,6 +129,7 @@ namespace UVOCBot
                     // Setup other services
                     services.AddSingleton(fileSystem)
                             .AddSingleton<ISettingsService, SettingsService>()
+                            .AddScoped<IRoleMenuService, RoleMenuService>()
                             .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 

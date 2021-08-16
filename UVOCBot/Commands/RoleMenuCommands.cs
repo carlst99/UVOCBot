@@ -234,14 +234,19 @@ namespace UVOCBot.Commands
 
         private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
         {
-            // TODO: base type required.
             List<SelectOption> selectOptions = menu.Roles.ConvertAll(r => new SelectOption(
                 r.Label,
                 r.RoleId.ToString(),
                 r.Description ?? "",
                 default,
                 false));
-            SelectMenuComponent selectMenu = new("rolemenu", selectOptions, "Toggle roles...", 1, menu.Roles.Count, false);
+            SelectMenuComponent selectMenu = new(
+                ComponentIdFormatter.GetId(ComponentAction.RoleMenuToggleRole, menu.MessageId.ToString()),
+                selectOptions,
+                "Toggle roles...",
+                1,
+                menu.Roles.Count,
+                false);
 
             ActionRowComponent actionRow = new(new List<IMessageComponent> { selectMenu });
             return new List<IMessageComponent> { actionRow };

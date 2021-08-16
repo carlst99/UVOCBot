@@ -14,6 +14,7 @@ namespace UVOCBot.Core
         public DbSet<TwitterUser> TwitterUsers { get; set; }
         public DbSet<PlanetsideSettings> PlanetsideSettings { get; set; }
         public DbSet<MemberGroup> MemberGroups { get; set; }
+        public DbSet<GuildRoleMenu> RoleMenus { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 

@@ -68,8 +68,8 @@ namespace UVOCBot.Commands
             return await SendWorldPopulation(server).ConfigureAwait(false);
         }
 
-        [Command("status")]
-        [Description("Gets the status of a PlanetSide server.")]
+        //[Command("status")]
+        //[Description("Gets the status of a PlanetSide server.")]
         public async Task<IResult> GetServerStatusCommandAsync(
             [Description("Set your default server with '/default-server'.")] WorldType server = 0)
         {

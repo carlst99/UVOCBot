@@ -4,6 +4,9 @@
 
 **New features:**
 - Modified the `welcome-message message` command to accept an existing message which it will replicate. This makes it much easier to use detailed formatting in your welcome messages.
+- Added role menus!
+
+:warning: **You will need to reset the default roles and alternate roles on your welcome message.**
 
 **Bug fixes:**
 - Fixed a critical bug with the *Welcome Message* feature, that prevented the role and nickname buttons from working.

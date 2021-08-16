@@ -77,7 +77,7 @@ namespace UVOCBot.Responders
                 return Result.FromError(context);
             _contextInjectionService.Context = context.Entity;
 
-            IApplicationCommandInteractionData interactionData = gatewayEvent.Data.Value!;
+            IInteractionData interactionData = gatewayEvent.Data.Value!;
             interactionData.UnpackInteraction(out var command, out var parameters);
 
             // Run any user-provided pre execution events

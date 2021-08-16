@@ -42,7 +42,7 @@ namespace UVOCBot.Responders
                 string.Empty,
                 new Snowflake(),
                 new Snowflake(),
-                new ApplicationCommandInteractionData(default, default, default));
+                new InteractionData(default, default, default));
 
             // Resolve the welcome message service here so that the context is properly injected
             return await _services.GetRequiredService<IWelcomeMessageService>().SendWelcomeMessage(gatewayEvent, ct).ConfigureAwait(false);

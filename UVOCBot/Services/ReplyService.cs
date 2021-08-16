@@ -16,13 +16,13 @@ namespace UVOCBot.Services
     {
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
-        private readonly IDiscordRestWebhookAPI _webhookApi;
+        private readonly IDiscordRestInteractionAPI _interactionApi;
 
-        public ReplyService(ICommandContext context, IDiscordRestChannelAPI channelApi, IDiscordRestWebhookAPI webhookApi)
+        public ReplyService(ICommandContext context, IDiscordRestChannelAPI channelApi, IDiscordRestInteractionAPI interactionApi)
         {
             _context = context;
             _channelApi = channelApi;
-            _webhookApi = webhookApi;
+            _interactionApi = interactionApi;
         }
 
         /// <inheritdoc />
@@ -74,7 +74,7 @@ namespace UVOCBot.Services
             if (_context is not InteractionContext ictx)
                 return new InvalidOperationError("Cannot respond to a non-interaction context with an interaction response.");
 
-            return await _webhookApi.CreateFollowupMessageAsync(
+            return await _interactionApi.CreateFollowupMessageAsync(
                 ictx.ApplicationID,
                 ictx.Token,
                 content,

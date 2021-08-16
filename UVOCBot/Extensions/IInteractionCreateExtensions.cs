@@ -20,7 +20,7 @@ namespace UVOCBot.Extensions
             if (user is null)
                 return Result<InteractionContext>.FromError(Result.FromSuccess()); // Lazy man's way of getting around no generic error class and having to work with this silly Results infrastructure
 
-            IApplicationCommandInteractionData interactionData = gatewayEvent.Data.Value!;
+            IInteractionData interactionData = gatewayEvent.Data.Value!;
             InteractionContext context = new
             (
                 gatewayEvent.GuildID,

@@ -47,7 +47,7 @@ namespace UVOCBot.Responders
             var response = new InteractionResponse
             (
                 InteractionCallbackType.DeferredChannelMessageWithSource,
-                new InteractionApplicationCommandCallbackData(Flags: MessageFlags.Ephemeral)
+                new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
             );
 
             // Signal to Discord that we'll be handling this one asynchronously
@@ -74,13 +74,14 @@ namespace UVOCBot.Responders
 
             // Resolve the service here so that our interaction context is properly injected
             IWelcomeMessageService welcomeMessageService = _services.GetRequiredService<IWelcomeMessageService>();
+            IRoleMenuService roleMenuService = _services.GetRequiredService<IRoleMenuService>();
 
-            // TODO: I don't think we need to pass the gateway event anymore, now that the interaction context includes the full app data.
             return action switch
             {
                 ComponentAction.WelcomeMessageSetAlternate => await welcomeMessageService.SetAlternateRoles(ct).ConfigureAwait(false),
                 ComponentAction.WelcomeMessageNicknameGuess => await welcomeMessageService.SetNicknameFromGuess(ct).ConfigureAwait(false),
                 ComponentAction.WelcomeMessageNicknameNoMatch => await welcomeMessageService.InformNicknameNoMatch(ct).ConfigureAwait(false),
+                ComponentAction.RoleMenuToggleRole => await roleMenuService.ToggleRolesAsync(ct).ConfigureAwait(false),
                 _ => await createInteractionResponse.ConfigureAwait(false),
             };
         }

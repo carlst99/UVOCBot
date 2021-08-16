@@ -30,10 +30,10 @@
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
-    <PackageReference Include="Remora.Discord" Version="3.0.47" />
-    <PackageReference Include="Remora.Discord.Caching" Version="10.0.2" />
-    <PackageReference Include="Remora.Discord.Commands" Version="8.0.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
+    <PackageReference Include="Remora.Discord" Version="3.0.51" />
+    <PackageReference Include="Remora.Discord.Caching" Version="11.0.1" />
+    <PackageReference Include="Remora.Discord.Commands" Version="8.3.0" />
     <PackageReference Include="RestSharp" Version="106.12.0" />
     <PackageReference Include="RestSharp.Serializers.SystemTextJson" Version="106.12.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />

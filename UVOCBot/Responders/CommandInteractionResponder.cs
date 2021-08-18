@@ -150,6 +150,21 @@ namespace UVOCBot.Responders
         {
             EphemeralAttribute? attr = commandNode.Node.CommandMethod.GetCustomAttribute<EphemeralAttribute>();
 
+            if (attr is null)
+            {
+                // Traverse each parent node
+                while (commandNode.Node.Parent is GroupNode g && attr is null)
+                {
+                    // See if any of the types in this group have expressed ephemerality
+                    foreach (Type t in g.GroupTypes)
+                    {
+                        attr = t.GetCustomAttribute<EphemeralAttribute>();
+                        if (attr is not null)
+                            break;
+                    }
+                }
+            }
+
             return attr?.IsEphemeral == true;
         }
     }

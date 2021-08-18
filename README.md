@@ -14,7 +14,7 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
 - Bulk reaction-based role assignment.
 - Temporary group creation (for use with movement commands).
 - Random team generation.
-- Various other features, such as coinflips and timestamp generation.
+- Various other features, such as coinflips, timestamp generation and basic admin logs.
 - (COMING SOON) Bulk timestamp formatting
 
 To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence if you'd like to use it in your own server, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.

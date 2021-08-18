@@ -14,7 +14,6 @@
     <PackageIconUrl />
     <RepositoryUrl>https://github.com/carlst99/UVOCBot</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>Added role menus.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

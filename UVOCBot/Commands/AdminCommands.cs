@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Commands.Utilities;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
@@ -19,6 +20,7 @@ namespace UVOCBot.Commands
     [Description("Administorial commands.")]
     [RequireContext(ChannelContext.Guild)]
     [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+    [Ephemeral]
     public class AdminCommands : CommandGroup
     {
         private readonly ICommandContext _context;
@@ -55,7 +57,7 @@ namespace UVOCBot.Commands
             _dbContext.Update(settings);
             await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-            return await _replyService.RespondWithSuccessAsync("Admin logs have been " + (isEnabled ? "enabled." : "disabled."), CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithSuccessAsync("Admin logs have been " + Formatter.Bold(isEnabled ? "enabled." : "disabled."), CancellationToken).ConfigureAwait(false);
         }
 
         [Command("logging-channel")]

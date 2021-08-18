@@ -1,18 +1,23 @@
 # Changelog
 
-## Release vNext
+## Release v0.4.0 - 19/08/2021
 
 **New features:**
 - Modified the `welcome-message message` command to accept an existing message which it will replicate. This makes it much easier to use detailed formatting in your welcome messages.
 - Added role menus!
+- Added basic admin logging for member join/leave.
+- Added ephemeral responses.
 
 :warning: **You will need to reset the default roles and alternate roles on your welcome message.**
 
 **Bug fixes:**
 - Fixed a critical bug with the *Welcome Message* feature, that prevented the role and nickname buttons from working.
+- Fixed a critical bug with permission checks that could result in UVOCBot accepting or rejecting actions that it otherwise wouldn't have.
 
 **Other changes:**
 - Moved EF Core models and contexts to `UVOCBot.Core`.
+- Refactored `MessageResponseHelpers` into the `ReplyService`.
+- Disabled the `status` command due to incorrect behaviour.
 
 ## Release v0.3.2 - 17/07/2021
 

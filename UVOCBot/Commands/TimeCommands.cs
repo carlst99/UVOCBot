@@ -6,6 +6,7 @@ using Remora.Results;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Utilities;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 
@@ -20,33 +21,9 @@ namespace UVOCBot.Commands
             _replyService = responder;
         }
 
-        [Command("timestamp-natural")]
-        [Description("Generates a Discord timestamp. Run without arguments to get more information.")]
-        public async Task<IResult> TimestampNaturalCommand(
-            [Description("The natural time string to format.")] string? time = null,
-            [Description("The style of timestamp to generate.")] TimestampStyle style = TimestampStyle.ShortDate)
-        {
-            if (time is null)
-            {
-                return await _replyService.RespondWithSuccessAsync("See <INSERT LINK HERE> for formatting options.", CancellationToken).ConfigureAwait(false);
-            }
-
-            if (DateTimeOffset.TryParse(time,  out DateTimeOffset timestamp))
-            {
-                return await SendTimestampEmbed(timestamp, style).ConfigureAwait(false);
-            }
-            else
-            {
-                return await _replyService.RespondWithUserErrorAsync
-                (
-                    "Your time string was incorrectly formatted. See <INSERT LINK HERE> for more information on formatting time strings.",
-                    CancellationToken
-                ).ConfigureAwait(false);
-            }
-        }
-
         [Command("timestamp")]
         [Description("Generates a Discord timestamp.")]
+        [Ephemeral]
         public async Task<IResult> TimestampCommand(
             [Description("The offset (in hours) from UTC that your given time is.")] double utcOffset,
             int? year = null, int? month = null, int? day = null, int? hour = null, int? minute = null, TimestampStyle style = TimestampStyle.ShortDate)
@@ -74,7 +51,7 @@ namespace UVOCBot.Commands
             return await SendTimestampEmbed(time, style).ConfigureAwait(false);
         }
 
-        [Command("timestamp-format")]
+        // [Command("timestamp-format")]
         [Description("Replaces keys in a message with the given timestamps. Run without arguments to get more information.")]
         public async Task<IResult> TimestampFormatCommand(
             [Description("The message to format timestamps into.")] Snowflake? messageId = null,

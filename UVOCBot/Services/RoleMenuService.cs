@@ -96,6 +96,11 @@ namespace UVOCBot.Services
                 : Result.FromError(res);
         }
 
+        public async Task<Result> ConfirmRemoveRolesAsync(CancellationToken ct = default)
+        {
+            return Result.FromSuccess();
+        }
+
         private GuildRoleMenu? GetGuildRoleMenu(ulong messageId)
             => _dbContext.RoleMenus.Include(r => r.Roles).FirstOrDefault(r => r.GuildId == _context.GuildID.Value.Value && r.MessageId == messageId);
     }

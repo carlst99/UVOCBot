@@ -20,7 +20,12 @@
         /// <summary>
         /// This originates from a select menu and stores information about roles that should be toggled.
         /// </summary>
-        RoleMenuToggleRole = 4
+        RoleMenuToggleRole = 4,
+
+        /// <summary>
+        /// This originates from a button and contains information about a role removal confirmation.
+        /// </summary>
+        RoleMenuConfirmRemoveRole = 5
     }
 
     public static class ComponentIdFormatter

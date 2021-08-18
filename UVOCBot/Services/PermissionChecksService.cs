@@ -128,6 +128,8 @@ namespace UVOCBot.Services
             // Get every complete role object of the member
             List<IRole> guildMemberRoles = getGuildResult.Entity.Roles.Where(r => getGuildMemberResult.Entity.Roles.Contains(r.ID)).ToList();
 
+            // TODO: CHECK FOR ADMIN
+
             // Compute the final permissions
             if (channel.PermissionOverwrites.HasValue)
                 return Result<IDiscordPermissionSet>.FromSuccess(DiscordPermissionSet.ComputePermissions(userId, everyoneRole, guildMemberRoles, channel.PermissionOverwrites.Value));

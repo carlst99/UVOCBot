@@ -82,6 +82,7 @@ namespace UVOCBot.Responders
                 ComponentAction.WelcomeMessageNicknameGuess => await welcomeMessageService.SetNicknameFromGuess(ct).ConfigureAwait(false),
                 ComponentAction.WelcomeMessageNicknameNoMatch => await welcomeMessageService.InformNicknameNoMatch(ct).ConfigureAwait(false),
                 ComponentAction.RoleMenuToggleRole => await roleMenuService.ToggleRolesAsync(ct).ConfigureAwait(false),
+                ComponentAction.RoleMenuConfirmRemoveRole => await roleMenuService.ConfirmRemoveRolesAsync(ct).ConfigureAwait(false),
                 _ => await createInteractionResponse.ConfigureAwait(false),
             };
         }

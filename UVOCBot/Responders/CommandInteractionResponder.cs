@@ -1,5 +1,8 @@
-﻿using Remora.Commands.Services;
+﻿using Remora.Commands.Results;
+using Remora.Commands.Services;
+using Remora.Commands.Signatures;
 using Remora.Commands.Trees;
+using Remora.Commands.Trees.Nodes;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -10,8 +13,12 @@ using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Utilities;
 using UVOCBot.Extensions;
 
 namespace UVOCBot.Responders
@@ -60,6 +67,22 @@ namespace UVOCBot.Responders
 
             var response = new InteractionResponse(InteractionCallbackType.DeferredChannelMessageWithSource);
 
+            // Provide the created context to any services inside this scope
+            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
+            if (!context.IsSuccess)
+                return Result.FromError(context);
+            _contextInjectionService.Context = context.Entity;
+
+            IInteractionData interactionData = gatewayEvent.Data.Value!;
+            interactionData.UnpackInteraction(out var command, out var parameters);
+
+            Result<BoundCommandNode> getCommandResult = GetCommandNode(command, parameters);
+            if (!getCommandResult.IsSuccess)
+                return Result.FromError(getCommandResult);
+
+            if (IsEphemeral(getCommandResult.Entity))
+                response = response with { Data = new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral) };
+
             // Signal to Discord that we'll be handling this one asynchronously
             // We're not awaiting this, so that the command processing begins ASAP
             // This can cause some wacky user-side behaviour if Discord doesn't process the interaction response in time
@@ -71,23 +94,14 @@ namespace UVOCBot.Responders
                 ct
             );
 
-            // Provide the created context to any services inside this scope
-            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
-            if (!context.IsSuccess)
-                return Result.FromError(context);
-            _contextInjectionService.Context = context.Entity;
-
-            IInteractionData interactionData = gatewayEvent.Data.Value!;
-            interactionData.UnpackInteraction(out var command, out var parameters);
-
             // Run any user-provided pre execution events
             Result preExecutionResult = await _eventCollector.RunPreExecutionEvents(_services, context.Entity, ct).ConfigureAwait(false);
             if (!preExecutionResult.IsSuccess)
                 return preExecutionResult;
 
             // Run the actual command
-            var searchOptions = new TreeSearchOptions(StringComparison.OrdinalIgnoreCase);
-            var executeResult = await _commandService.TryExecuteAsync
+            TreeSearchOptions searchOptions = new(StringComparison.OrdinalIgnoreCase);
+            Result<IResult> executeResult = await _commandService.TryExecuteAsync
             (
                 command,
                 parameters,
@@ -105,6 +119,38 @@ namespace UVOCBot.Responders
                 return postExecutionResult;
 
             return await createInteractionResponse.ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Attempts to find a command in the command tree.
+        /// </summary>
+        /// <param name="commandName">The name of the command.</param>
+        /// <param name="commandParameters">The parameters of the command.</param>
+        /// <returns>A <see cref="Result{BoundCommandNode}"/> indicating if the command was successfully found, and containing the command node if so.</returns>
+        private Result<BoundCommandNode> GetCommandNode(string commandName, IReadOnlyDictionary<string, IReadOnlyList<string>> commandParameters)
+        {
+            TreeSearchOptions searchOptions = new(StringComparison.OrdinalIgnoreCase);
+            List<BoundCommandNode> commands = _commandService.Tree.Search(commandName, commandParameters, searchOptions: searchOptions).ToList();
+
+            if (commands.Count == 0)
+                return new CommandNotFoundError(commandName);
+
+            if (commands.Count > 1)
+                return new AmbiguousCommandInvocationError();
+
+            return commands.Single();
+        }
+
+        /// <summary>
+        /// Gets a value indicating that the given command should produce an ephemeral response.
+        /// </summary>
+        /// <param name="commandNode">The command to check.</param>
+        /// <returns>A value indicating if an ephemeral response should be created.</returns>
+        private static bool IsEphemeral(BoundCommandNode commandNode)
+        {
+            EphemeralAttribute? attr = commandNode.Node.CommandMethod.GetCustomAttribute<EphemeralAttribute>();
+
+            return attr?.IsEphemeral == true;
         }
     }
 }

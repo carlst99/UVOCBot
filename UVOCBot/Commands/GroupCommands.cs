@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Commands.Utilities;
 using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
@@ -37,6 +38,7 @@ namespace UVOCBot.Commands
 
         [Command("list")]
         [Description("Gets all of the groups in this guild")]
+        [Ephemeral]
         public async Task<IResult> ListGroupsCommandAsync()
         {
             Result<List<MemberGroupDto>> groups = await _dbAPI.ListGuildMemberGroupsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
@@ -63,6 +65,7 @@ namespace UVOCBot.Commands
 
         [Command("info")]
         [Description("Gets information about a group")]
+        [Ephemeral]
         public async Task<IResult> GetGroupCommandAsync([Description("The name of the group to retrieve")] string groupName)
         {
             Result<MemberGroupDto> groupResult = await GetGroupAsync(groupName).ConfigureAwait(false);

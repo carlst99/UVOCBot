@@ -14,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Commands.Utilities;
 using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
@@ -100,6 +101,7 @@ namespace UVOCBot.Commands
 
         [Command("online")]
         [Description("Gets the number of online members for an outfit.")]
+        [Ephemeral]
         public async Task<IResult> GetOnlineOutfitMembersCommandAsync([Description("A space-separated, case-insensitive list of outfit tags.")] string outfitTags)
         {
             string[] tags = outfitTags.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

@@ -7,5 +7,6 @@ namespace UVOCBot.Services.Abstractions
     public interface IRoleMenuService
     {
         Task<Result> ToggleRolesAsync(CancellationToken ct = default);
+        Task<Result> ConfirmRemoveRolesAsync(CancellationToken ct = default);
     }
 }

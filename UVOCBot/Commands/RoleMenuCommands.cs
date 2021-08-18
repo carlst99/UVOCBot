@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Commands.Utilities;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
@@ -46,6 +47,7 @@ namespace UVOCBot.Commands
 
         [Command("create")]
         [Description("Creates a new role menu.")]
+        [Ephemeral]
         public async Task<IResult> CreateCommand(
             [Description("The channel to post the role menu in.")] IChannel channel,
             [Description("The title of the role menu.")] string title,
@@ -88,6 +90,7 @@ namespace UVOCBot.Commands
 
         [Command("edit")]
         [Description("Edits a role menu.")]
+        [Ephemeral]
         public async Task<IResult> EditCommand(
             [Description("The ID of the role menu message.")] Snowflake messageId,
             [Description("The title of the role menu.")] string newTitle,
@@ -109,6 +112,7 @@ namespace UVOCBot.Commands
 
         [Command("delete")]
         [Description("Deletes a role menu.")]
+        [Ephemeral]
         public async Task<IResult> DeleteCommand(
             [Description("The ID of the role menu message.")] Snowflake messageId)
         {
@@ -133,6 +137,7 @@ namespace UVOCBot.Commands
 
         [Command("add-role")]
         [Description("Adds a role selection item to a role menu.")]
+        [Ephemeral]
         public async Task<IResult> AddRole(
             [Description("The ID of the role menu message.")] Snowflake messageId,
             [Description("The role to add.")] IRole roleToAdd,
@@ -173,6 +178,7 @@ namespace UVOCBot.Commands
 
         [Command("remove-role")]
         [Description("Removes a role selection item from a role menu.")]
+        [Ephemeral]
         public async Task<IResult> RemoveRole(
             [Description("The ID of the role menue message.")] Snowflake messageId,
             [Description("The role to remove.")] IRole roleToRemove)
@@ -229,7 +235,8 @@ namespace UVOCBot.Commands
             return new Embed(
                 menu.Title,
                 Description: menu.Description,
-                Colour: BotConstants.DEFAULT_EMBED_COLOUR);
+                Colour: BotConstants.DEFAULT_EMBED_COLOUR,
+                Footer: new EmbedFooter("If you can't deselect a role, refresh your client by pressing Ctrl+R."));
         }
 
         private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)

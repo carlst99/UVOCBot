@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UVOCBot.Core;
 
 namespace UVOCBot.Core.Migrations
 {
     [DbContext(typeof(DiscordContext))]
-    partial class BotContextModelSnapshot : ModelSnapshot
+    [Migration("20210818043450_GuildAdminSettings")]
+    partial class GuildAdminSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,9 +39,6 @@ namespace UVOCBot.Core.Migrations
                     b.Property<ulong>("GuildId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint unsigned");
-
-                    b.Property<bool>("IsLoggingEnabled")
-                        .HasColumnType("tinyint(1)");
 
                     b.Property<ulong>("LogTypes")
                         .HasColumnType("bigint unsigned");

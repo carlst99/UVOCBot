@@ -60,10 +60,10 @@ namespace UVOCBot.Commands
                 return permissionsResult;
             }
 
-            if (!permissionsResult.Entity.HasPermission(DiscordPermission.ManageRoles))
+            if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.ManageRoles))
                 return await _replyService.RespondWithUserErrorAsync("I don't have permission to manipulate roles in that channel!", CancellationToken).ConfigureAwait(false);
 
-            if (!permissionsResult.Entity.HasPermission(DiscordPermission.SendMessages))
+            if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
                 return await _replyService.RespondWithUserErrorAsync("I don't have permission to send messages in that channel!", CancellationToken).ConfigureAwait(false);
 
             GuildRoleMenu menu = new(_context.GuildID.Value.Value, 0, channel.ID.Value, _context.User.ID.Value, title)

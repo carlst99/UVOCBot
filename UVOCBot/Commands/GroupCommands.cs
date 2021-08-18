@@ -144,7 +144,7 @@ namespace UVOCBot.Commands
 
                 IDiscordPermissionSet senderPerms = sender.Entity.Permissions.Value;
 
-                if (!senderPerms.HasPermission(DiscordPermission.Administrator) || !senderPerms.HasPermission(DiscordPermission.ManageGuild) || !senderPerms.HasPermission(DiscordPermission.ManageRoles))
+                if (!senderPerms.HasAdminOrPermission(DiscordPermission.ManageGuild) || !senderPerms.HasAdminOrPermission(DiscordPermission.ManageRoles))
                 {
                     return await _responder.RespondWithUserErrorAsync(
                         "You must either be the group owner, or have guild/role management permissions, to remove a group.",

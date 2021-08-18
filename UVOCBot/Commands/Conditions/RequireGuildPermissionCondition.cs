@@ -150,11 +150,7 @@ namespace UVOCBot.Commands.Conditions
                 );
             }
 
-            // Succeed if the user is an Administrator of the guild
-            if (computedPermissions.HasPermission(DiscordPermission.Administrator))
-                return Result.FromSuccess();
-
-            bool hasPermission = computedPermissions.HasPermission(permission);
+            bool hasPermission = computedPermissions.HasAdminOrPermission(permission);
             return !hasPermission
                 ? new ConditionNotSatisfiedError($"Guild User requesting the command does not have the required { permission } permission")
                 : Result.FromSuccess();

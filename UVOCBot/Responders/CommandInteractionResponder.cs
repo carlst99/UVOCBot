@@ -153,8 +153,11 @@ namespace UVOCBot.Responders
             if (attr is null)
             {
                 // Traverse each parent node
-                while (commandNode.Node.Parent is GroupNode g && attr is null)
+                IParentNode p = commandNode.Node.Parent;
+                while (p is GroupNode g && attr is null)
                 {
+                    p = g.Parent;
+
                     // See if any of the types in this group have expressed ephemerality
                     foreach (Type t in g.GroupTypes)
                     {

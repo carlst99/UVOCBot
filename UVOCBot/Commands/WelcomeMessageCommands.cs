@@ -119,13 +119,16 @@ namespace UVOCBot.Commands
                 return getPermissionSet;
             }
 
-            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.SendMessages))
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ViewChannel))
+                return await _replyService.RespondWithUserErrorAsync("I do not have permission to view that channel.", CancellationToken).ConfigureAwait(false);
+
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
                 return await _replyService.RespondWithUserErrorAsync("I do not have permission to send messages in this channel.", CancellationToken).ConfigureAwait(false);
 
-            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.ManageRoles))
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ManageRoles))
                 return await _replyService.RespondWithUserErrorAsync("I do not have permission to manage roles in this channel.", CancellationToken).ConfigureAwait(false);
 
-            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.ChangeNickname))
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ChangeNickname))
                 return await _replyService.RespondWithUserErrorAsync("I do not have permission to change nicknames in this channel.", CancellationToken).ConfigureAwait(false);
 
             GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);

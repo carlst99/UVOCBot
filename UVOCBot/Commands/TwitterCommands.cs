@@ -221,7 +221,7 @@ namespace UVOCBot.Commands
                 return botPermissions;
             }
 
-            if (!botPermissions.Entity.HasPermission(DiscordPermission.ViewChannel) || !botPermissions.Entity.HasPermission(DiscordPermission.SendMessages))
+            if (!botPermissions.Entity.HasAdminOrPermission(DiscordPermission.ViewChannel) || !botPermissions.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
             {
                 return await _replyService.RespondWithUserErrorAsync(
                     $"I need permissions to view { Formatter.ChannelMention(channel.ID) }, and send messages to it. Your relay channel has { Formatter.Bold("not") } been updated",

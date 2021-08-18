@@ -9,6 +9,11 @@ namespace UVOCBot.Core.Model
         public ulong GuildId { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating if admin logging is enabled.
+        /// </summary>
+        public bool IsLoggingEnabled { get; set; }
+
+        /// <summary>
         /// Gets or sets the ID of the channel to which admin logs will be made.
         /// </summary>
         public ulong? LoggingChannelId { get; set; }

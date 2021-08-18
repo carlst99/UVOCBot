@@ -2,7 +2,9 @@
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Core;
 using Remora.Results;
+using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
@@ -32,21 +34,39 @@ namespace UVOCBot.Commands
             _replyService = replyService;
         }
 
+        [Command("enable-logging")]
+        [Description("Enables or disables admin logging.")]
+        public async Task<IResult> EnabledCommand(bool isEnabled)
+        {
+            GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+
+            if (isEnabled)
+            {
+                if (settings.LoggingChannelId is null)
+                    return await _replyService.RespondWithUserErrorAsync("You must set a logging channel to enable admin logging.", CancellationToken).ConfigureAwait(false);
+
+                Result canLogToChannel = await CheckLoggingChannelPermissions(new Snowflake(settings.LoggingChannelId.Value)).ConfigureAwait(false);
+                if (!canLogToChannel.IsSuccess)
+                    return Result.FromSuccess();
+            }
+
+            settings.IsLoggingEnabled = isEnabled;
+
+            _dbContext.Update(settings);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+            return await _replyService.RespondWithSuccessAsync("Admin logs have been " + (isEnabled ? "enabled." : "disabled."), CancellationToken).ConfigureAwait(false);
+        }
+
         [Command("logging-channel")]
         [Description("Sets the channel to post admin logs to.")]
         public async Task<IResult> SetLoggingChannelCommandAsync(IChannel channel)
         {
             GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
-            Result<IDiscordPermissionSet> permissions = await _permissionChecksService.GetPermissionsInChannel(channel, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
-            if (!permissions.IsSuccess)
-                return await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-
-            if (!permissions.Entity.HasAdminOrPermission(DiscordPermission.ViewChannel))
-                return await _replyService.RespondWithUserErrorAsync("I need permission to view that channel.", CancellationToken).ConfigureAwait(false);
-
-            if (!permissions.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
-                return await _replyService.RespondWithUserErrorAsync("I need permission to send messages in that channel.", CancellationToken).ConfigureAwait(false);
+            Result canLogToChannel = await CheckLoggingChannelPermissions(channel.ID).ConfigureAwait(false);
+            if (!canLogToChannel.IsSuccess)
+                return Result.FromSuccess();
 
             settings.LoggingChannelId = channel.ID.Value;
 
@@ -73,6 +93,30 @@ namespace UVOCBot.Commands
             await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
             return await _replyService.RespondWithSuccessAsync($"Logging for the {logType} event has been " + (isEnabled ? "enabled" : "disabled"), CancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<Result> CheckLoggingChannelPermissions(Snowflake channelId)
+        {
+            Result<IDiscordPermissionSet> permissions = await _permissionChecksService.GetPermissionsInChannel(channelId, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
+            if (!permissions.IsSuccess)
+            {
+                await _replyService.RespondWithUserErrorAsync(permissions.Error.Message, CancellationToken).ConfigureAwait(false);
+                return new Exception();
+            }
+
+            if (!permissions.Entity.HasAdminOrPermission(DiscordPermission.ViewChannel))
+            {
+                await _replyService.RespondWithUserErrorAsync("I need permission to view the logging channel.", CancellationToken).ConfigureAwait(false);
+                return new Exception();
+            }
+
+            if (!permissions.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
+            {
+                await _replyService.RespondWithUserErrorAsync("I need permission to send messages in the logging channel.", CancellationToken).ConfigureAwait(false);
+                return new Exception();
+            }
+
+            return Result.FromSuccess();
         }
     }
 }

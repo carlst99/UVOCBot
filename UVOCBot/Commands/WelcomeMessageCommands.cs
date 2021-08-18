@@ -3,12 +3,14 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
@@ -22,50 +24,43 @@ namespace UVOCBot.Commands
     public class WelcomeMessageCommands : CommandGroup
     {
         private readonly ICommandContext _context;
+        private readonly DiscordContext _dbContext;
         private readonly ICensusApiService _censusApi;
-        private readonly IDbApiService _dbApi;
+        private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IPermissionChecksService _permissionChecksService;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _replyService;
 
         public WelcomeMessageCommands(
             ICommandContext context,
+            DiscordContext dbContext,
             ICensusApiService censusApi,
-            IDbApiService dbApi,
+            IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
             IPermissionChecksService permissionChecksService,
-            MessageResponseHelpers responder)
+            IReplyService responder)
         {
             _context = context;
+            _dbContext = dbContext;
             _censusApi = censusApi;
-            _responder = responder;
-            _dbApi = dbApi;
+            _replyService = responder;
+            _channelApi = channelApi;
             _guildApi = guildApi;
             _permissionChecksService = permissionChecksService;
         }
 
         [Command("enabled")]
-        [Description("Enables or disables the welcome message feature.")]
+        [Description("Enables or disables the entire welcome message feature.")]
         public async Task<IResult> EnabledCommand([Description("True to enable the welcome message feature.")] bool isEnabled)
         {
-            Result<GuildWelcomeMessageDto> welcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!welcomeMessage.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return welcomeMessage;
-            }
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
-            GuildWelcomeMessageDto returnValue = welcomeMessage.Entity with { IsEnabled = isEnabled };
-            Result dbUpdateResult = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, returnValue, CancellationToken).ConfigureAwait(false);
+            welcomeMessage.IsEnabled = isEnabled;
 
-            if (!dbUpdateResult.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return dbUpdateResult;
-            }
+            _dbContext.Update(welcomeMessage);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-            return await _responder.RespondWithSuccessAsync(
-                _context,
+            return await _replyService.RespondWithSuccessAsync(
                 "The welcome message feature has been " + Formatter.Bold(isEnabled ? "enabled." : "disabled."),
                 CancellationToken).ConfigureAwait(false);
         }
@@ -74,80 +69,75 @@ namespace UVOCBot.Commands
         [Description("Provides the new member with the option to give themself an alternative set of roles.")]
         [RequireGuildPermission(DiscordPermission.ManageRoles)]
         public async Task<IResult> AlternateRolesCommand(
-            [Description("The label of the alternate role button. Leave empty to disable the alternate role feature.")] string? alternateRoleButtonLabel,
-            [Description("The roles to apply.")] string roles)
+            [Description("Set whether the alternate roles will be offered.")] bool offerAlternateRoles,
+            [Description("The label of the alternate role button.")] string? alternateRoleButtonLabel = null,
+            [Description("The roles to apply.")] string? roles = null)
         {
-            if (alternateRoleButtonLabel is null)
-                alternateRoleButtonLabel = string.Empty;
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            welcomeMessage.OfferAlternateRoles = offerAlternateRoles;
 
-            Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!getWelcomeMessage.IsSuccess)
+            if (offerAlternateRoles && string.IsNullOrEmpty(alternateRoleButtonLabel))
+                return await _replyService.RespondWithUserErrorAsync("You must set a label.", CancellationToken).ConfigureAwait(false);
+
+            if (offerAlternateRoles && string.IsNullOrEmpty(roles))
+                return await _replyService.RespondWithUserErrorAsync("You must provide some roles.", CancellationToken).ConfigureAwait(false);
+
+            Result<IMessage> replyResult;
+            if (!offerAlternateRoles)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getWelcomeMessage;
+                replyResult = await _replyService.RespondWithSuccessAsync("Alternate roles will not be offered to new members.", CancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                IEnumerable<ulong> roleIds = ParseRoles(roles!);
+                IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
+                if (!canManipulateRoles.IsSuccess)
+                    return canManipulateRoles;
+
+                welcomeMessage.AlternateRoleLabel = alternateRoleButtonLabel ?? string.Empty;
+                welcomeMessage.AlternateRoles = roleIds.ToList();
+
+                replyResult = await _replyService.RespondWithSuccessAsync(
+                    "The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
+                    CancellationToken).ConfigureAwait(false);
             }
 
-            IEnumerable<ulong> roleIds = ParseRoles(roles);
-            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
-            if (!canManipulateRoles.IsSuccess)
-                return canManipulateRoles;
+            _dbContext.Update(welcomeMessage);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with
-            {
-                AlternateRoleLabel = alternateRoleButtonLabel,
-                AlternateRoles = roleIds.ToList()
-            };
-
-            Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
-            if (!updateWelcomeMessage.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getWelcomeMessage;
-            }
-
-            return await _responder.RespondWithSuccessAsync(
-                _context,
-                "Success! The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
-                CancellationToken).ConfigureAwait(false);
+            return replyResult;
         }
 
         [Command("channel")]
         [Description("Sets the channel to post the welcome message in.")]
         public async Task<IResult> ChannelCommand(IChannel channel)
         {
-            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel.ID, _context.User.ID, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!getPermissionSet.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
+                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return getPermissionSet;
             }
 
-            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.SendMessages))
-                return await _responder.RespondWithUserErrorAsync(_context, "I do not have permission to send messages in this channel.", CancellationToken).ConfigureAwait(false);
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ViewChannel))
+                return await _replyService.RespondWithUserErrorAsync("I do not have permission to view that channel.", CancellationToken).ConfigureAwait(false);
 
-            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.ManageRoles))
-                return await _responder.RespondWithUserErrorAsync(_context, "I do not have permission to manage roles in this channel.", CancellationToken).ConfigureAwait(false);
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
+                return await _replyService.RespondWithUserErrorAsync("I do not have permission to send messages in this channel.", CancellationToken).ConfigureAwait(false);
 
-            if (!getPermissionSet.Entity.HasPermission(DiscordPermission.ChangeNickname))
-                return await _responder.RespondWithUserErrorAsync(_context, "I do not have permission to change nicknames in this channel.", CancellationToken).ConfigureAwait(false);
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ManageRoles))
+                return await _replyService.RespondWithUserErrorAsync("I do not have permission to manage roles in this channel.", CancellationToken).ConfigureAwait(false);
 
-            Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!getWelcomeMessage.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getWelcomeMessage;
-            }
+            if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ChangeNickname))
+                return await _replyService.RespondWithUserErrorAsync("I do not have permission to change nicknames in this channel.", CancellationToken).ConfigureAwait(false);
 
-            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with { ChannelId = channel.ID.Value };
-            Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
-            if (!getWelcomeMessage.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return updateWelcomeMessage;
-            }
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            welcomeMessage.ChannelId = channel.ID.Value;
 
-            return await _responder.RespondWithSuccessAsync(
-                _context,
+            _dbContext.Update(welcomeMessage);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+            return await _replyService.RespondWithSuccessAsync(
                 $"The welcome message will now be posted in { Formatter.ChannelMention(channel.ID.Value) }.",
                 CancellationToken).ConfigureAwait(false);
         }
@@ -158,37 +148,32 @@ namespace UVOCBot.Commands
         public async Task<IResult> DefaultRolesCommand(
             [Description("The roles to apply. Leave empty to apply no roles.")] string? roles)
         {
-            if (roles is null)
-                roles = string.Empty;
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
-            Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!getWelcomeMessage.IsSuccess)
+            Result<IMessage> replyResult;
+            if (string.IsNullOrEmpty(roles))
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getWelcomeMessage;
+                welcomeMessage.DefaultRoles.Clear();
+                replyResult = await _replyService.RespondWithUserErrorAsync("No roles will be assigned by default.", CancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                IEnumerable<ulong> roleIds = ParseRoles(roles);
+                IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
+                if (!canManipulateRoles.IsSuccess)
+                    return canManipulateRoles;
+
+                welcomeMessage.DefaultRoles = roleIds.ToList();
+
+                replyResult = await _replyService.RespondWithSuccessAsync(
+                    "The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
+                    CancellationToken).ConfigureAwait(false);
             }
 
-            IEnumerable<ulong> roleIds = ParseRoles(roles);
-            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
-            if (!canManipulateRoles.IsSuccess)
-                return canManipulateRoles;
+            _dbContext.Update(welcomeMessage);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with
-            {
-                DefaultRoles = roleIds.ToList()
-            };
-
-            Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(_context.GuildID.Value.Value, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
-            if (!updateWelcomeMessage.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getWelcomeMessage;
-            }
-
-            return await _responder.RespondWithSuccessAsync(
-                _context,
-                "Success! The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
-                CancellationToken).ConfigureAwait(false);
+            return replyResult;
         }
 
         [Command("ingame-name-guess")]
@@ -196,59 +181,79 @@ namespace UVOCBot.Commands
         [RequireGuildPermission(DiscordPermission.ChangeNickname)]
         public async Task<IResult> IngameNameGuessCommand(
             [Description("Is the nickname guess feature enabled.")] bool isEnabled,
-            [Description("The tag of the outfit to make nickname guesses from, based on its newest members.")] string outfitTag)
+            [Description("The tag of the outfit to make nickname guesses from, based on its newest members.")] string? outfitTag = null)
         {
-            Result<Outfit?> getOutfit = await _censusApi.GetOutfit(outfitTag, CancellationToken).ConfigureAwait(false);
-            if (!getOutfit.IsSuccess)
+            if (isEnabled && string.IsNullOrEmpty(outfitTag))
+                return await _replyService.RespondWithUserErrorAsync("You must provide an outfit tag to enable the name guess feature.", CancellationToken).ConfigureAwait(false);
+
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            welcomeMessage.DoIngameNameGuess = isEnabled;
+
+            Result<IMessage> replyResult;
+            if (!isEnabled)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getOutfit;
+                welcomeMessage.DoIngameNameGuess = false;
+                replyResult = await _replyService.RespondWithSuccessAsync($"In-game name guesses will { Formatter.Italic("not") } be made.", CancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                Result<Outfit?> getOutfit = await _censusApi.GetOutfit(outfitTag!, CancellationToken).ConfigureAwait(false);
+                if (!getOutfit.IsSuccess)
+                {
+                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                    return getOutfit;
+                }
+
+                if (getOutfit.Entity is null)
+                    return await _replyService.RespondWithUserErrorAsync("That outfit does not exist.", CancellationToken).ConfigureAwait(false);
+
+                welcomeMessage.OutfitId = getOutfit.Entity.OutfitId;
+
+                replyResult = await _replyService.RespondWithSuccessAsync(
+                    $"Nickname guesses from the outfit { Formatter.Bold(getOutfit.Entity.Name) } will now be presented on the welcome message.",
+                    CancellationToken).ConfigureAwait(false);
             }
 
-            if (getOutfit.Entity is null)
-                return await _responder.RespondWithUserErrorAsync(_context, "That outfit does not exist.", CancellationToken).ConfigureAwait(false);
+            _dbContext.Update(welcomeMessage);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-            Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!getWelcomeMessage.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getWelcomeMessage;
-            }
-
-            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with { DoIngameNameGuess = isEnabled, OutfitId = getOutfit.Entity.OutfitId };
-            Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(updatedWelcomeMessage.GuildId, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
-            if (!updateWelcomeMessage.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return updateWelcomeMessage;
-            }
-
-            return await _responder.RespondWithSuccessAsync(
-                _context,
-                $"Nickname guesses from the outfit { Formatter.Bold(getOutfit.Entity.Name) } will now be presented on the welcome message.",
-                CancellationToken).ConfigureAwait(false);
+            return replyResult;
         }
 
         [Command("message")]
-        [Description("Sets the message to present to new members.")]
-        public async Task<IResult> MessageCommand([Description("The message. Use <name> as a placeholder for the member's name.")] string message)
+        [Description("Sets the message to present to new members. Use without arguments for more information.")]
+        public async Task<IResult> MessageCommand(
+            [Description("The ID of the message to replicate as the welcome message.")] Snowflake? messageId = null)
         {
-            Result<GuildWelcomeMessageDto> getWelcomeMessage = await _dbApi.GetGuildWelcomeMessageAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!getWelcomeMessage.IsSuccess)
+            if (messageId is null)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return getWelcomeMessage;
+                // Return info
+                return await _replyService.RespondWithSuccessAsync
+                (
+                    "This command requires you to post the message you'd like to set as the welcome message. You can do this anywhere you like." +
+                    "\r\nThen, copy the ID by right-clicking said message, and re-run this command while supplying the ID. Make sure you do this in the same channel that you posted the message in." +
+                    $"\r\nNote that you can use { Formatter.InlineQuote("<name>") } as a placeholder for the joining member's name.", CancellationToken
+                ).ConfigureAwait(false);
             }
 
-            GuildWelcomeMessageDto updatedWelcomeMessage = getWelcomeMessage.Entity with { Message = message };
-            Result updateWelcomeMessage = await _dbApi.UpdateGuildWelcomeMessageAsync(updatedWelcomeMessage.GuildId, updatedWelcomeMessage, CancellationToken).ConfigureAwait(false);
-            if (!updateWelcomeMessage.IsSuccess)
+            Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync(_context.ChannelID, (Snowflake)messageId, CancellationToken).ConfigureAwait(false);
+            if (!getMessageResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", CancellationToken).ConfigureAwait(false);
-                return updateWelcomeMessage;
+                await _replyService.RespondWithUserErrorAsync
+                (
+                    "I couldn't find that message. Make sure you use this command in the same channel as you sent the message, and that you've provided the right ID.",
+                    CancellationToken
+                ).ConfigureAwait(false);
+                return getMessageResult;
             }
 
-            return await _responder.RespondWithSuccessAsync(_context, "Message successfully updated!", CancellationToken).ConfigureAwait(false);
+            GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+            welcomeMessage.Message = getMessageResult.Entity.Content;
+
+            _dbContext.Update(welcomeMessage);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+            return await _replyService.RespondWithSuccessAsync("Message successfully updated!", CancellationToken).ConfigureAwait(false);
         }
 
         private static IEnumerable<ulong> ParseRoles(string roles)

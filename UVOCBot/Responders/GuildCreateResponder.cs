@@ -13,19 +13,20 @@ namespace UVOCBot.Responders
     public class GuildCreateResponder : IResponder<IGuildCreate>
     {
         private readonly IVoiceStateCacheService _cache;
+        private readonly IDbApiService _dbApi;
 
-        public GuildCreateResponder(IVoiceStateCacheService cache)
+        public GuildCreateResponder(IVoiceStateCacheService cache, IDbApiService dbApi)
         {
             _cache = cache;
+            _dbApi = dbApi;
         }
 
-        public Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
+        public async Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
         {
             if (gatewayEvent.VoiceStates.HasValue)
             {
                 foreach (IPartialVoiceState voiceState in gatewayEvent.VoiceStates.Value.Where(v => v.ChannelID.HasValue))
                 {
-#pragma warning disable CS8604 // Possible null reference argument.
                     VoiceState trueState = new(
                         gatewayEvent.ID,
                         voiceState.ChannelID.Value,
@@ -40,13 +41,18 @@ namespace UVOCBot.Responders
                         voiceState.IsVideoEnabled.Value,
                         voiceState.IsSuppressed.Value,
                         null);
-#pragma warning restore CS8604 // Possible null reference argument.
 
                     _cache.Set(trueState);
                 }
             }
 
-            return Task.FromResult(Result.FromSuccess());
+            Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(new ulong[] { gatewayEvent.ID.Value }, ct).ConfigureAwait(false);
+            if (!dbScaffoldResult.IsSuccess)
+            {
+                // TODO: Proper handling here
+            }
+
+            return dbScaffoldResult;
         }
     }
 }

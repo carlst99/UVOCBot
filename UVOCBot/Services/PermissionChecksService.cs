@@ -14,18 +14,19 @@ using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
 {
+    /// <inheritdoc cref="IPermissionChecksService"/>
     public class PermissionChecksService : IPermissionChecksService
     {
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _responder;
 
         public PermissionChecksService(
             ICommandContext context,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi,
-            MessageResponseHelpers responder)
+            IReplyService responder)
         {
             _context = context;
             _channelApi = channelApi;
@@ -33,19 +34,20 @@ namespace UVOCBot.Services
             _responder = responder;
         }
 
+        /// <inheritdoc />
         public async Task<IResult> CanManipulateRoles(Snowflake guildId, IEnumerable<ulong> roleIds, CancellationToken ct = default)
         {
             Result<IReadOnlyList<IRole>> getGuildRoles = await _guildApi.GetGuildRolesAsync(guildId, ct).ConfigureAwait(false);
             if (!getGuildRoles.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", ct).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(ct).ConfigureAwait(false);
                 return getGuildRoles;
             }
 
             Result<IGuildMember> getCurrentMember = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, BotConstants.UserId, ct).ConfigureAwait(false);
             if (!getCurrentMember.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(_context, "Something went wrong! Please try again.", ct).ConfigureAwait(false);
+                await _responder.RespondWithErrorAsync(ct).ConfigureAwait(false);
                 return getCurrentMember;
             }
 
@@ -61,19 +63,18 @@ namespace UVOCBot.Services
             }
 
             if (highestRole is null)
-                return await _responder.RespondWithUserErrorAsync(_context, "I cannot assign these roles, as I do not have a role myself.", ct).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("I cannot assign these roles, as I do not have a role myself.", ct).ConfigureAwait(false);
 
             // Check that each role is assignable by us
             foreach (ulong roleId in roleIds)
             {
                 if (!getGuildRoles.Entity.Any(r => r.ID.Value == roleId))
-                    return await _responder.RespondWithUserErrorAsync(_context, "A supplied role does not exist.", ct).ConfigureAwait(false);
+                    return await _responder.RespondWithUserErrorAsync("A supplied role does not exist.", ct).ConfigureAwait(false);
 
                 IRole role = getGuildRoles.Entity.First(r => r.ID.Value == roleId);
                 if (role.Position > highestRole.Position)
                 {
                     return await _responder.RespondWithUserErrorAsync(
-                        _context,
                         $"I cannot assign the { Formatter.RoleMention(role.ID) } role, as it is positioned above my own highest role.",
                         ct).ConfigureAwait(false);
                 }
@@ -82,17 +83,24 @@ namespace UVOCBot.Services
             return Result.FromSuccess();
         }
 
+        /// <inheritdoc />
         public async Task<Result<IDiscordPermissionSet>> GetPermissionsInChannel(Snowflake channelId, Snowflake userId, CancellationToken ct = default)
         {
             // Get and check the channel
-            Result<IChannel> getChannelResult = await _channelApi.GetChannelAsync(_context.ChannelID, ct).ConfigureAwait(false);
+            Result<IChannel> getChannelResult = await _channelApi.GetChannelAsync(channelId, ct).ConfigureAwait(false);
             if (!getChannelResult.IsSuccess)
                 return Result<IDiscordPermissionSet>.FromError(getChannelResult);
 
-            IChannel channel = getChannelResult.Entity;
+            return await GetPermissionsInChannel(getChannelResult.Entity, userId, ct).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<Result<IDiscordPermissionSet>> GetPermissionsInChannel(IChannel channel, Snowflake userId, CancellationToken ct = default)
+        {
+            // Check the channel belongs to a guild
             if (!channel.GuildID.HasValue)
             {
-                await _responder.RespondWithUserErrorAsync(_context, "This command must be executed in a guild.", ct).ConfigureAwait(false);
+                await _responder.RespondWithUserErrorAsync("This command must be executed in a guild.", ct).ConfigureAwait(false);
                 return new Exception("Command requires a guild permission but was executed outside of a guild.");
             }
 
@@ -103,21 +111,24 @@ namespace UVOCBot.Services
             if (!getGuildResult.IsSuccess)
                 return Result<IDiscordPermissionSet>.FromError(getGuildResult);
 
+            // Get the relevant guild roles
             IReadOnlyList<IRole> guildRoles = getGuildResult.Entity.Roles;
             IRole? everyoneRole = guildRoles.FirstOrDefault(r => r.ID == guildId);
             if (everyoneRole is null)
                 return new Exception("No @everyone role found.");
 
-            // Get and check the executing guild member
-            Result<IGuildMember> getGuildMemberResult = await _guildApi.GetGuildMemberAsync(guildId, _context.User.ID, ct).ConfigureAwait(false);
+            // Get and check the guild member
+            Result<IGuildMember> getGuildMemberResult = await _guildApi.GetGuildMemberAsync(guildId, userId, ct).ConfigureAwait(false);
             if (!getGuildMemberResult.IsSuccess)
                 return Result<IDiscordPermissionSet>.FromError(getGuildMemberResult);
 
             if (getGuildMemberResult.Entity is null)
-                return new Exception("Executing member not found");
-            IGuildMember member = getGuildMemberResult.Entity;
+                return new Exception("Member not found");
 
+            // Get every complete role object of the member
             List<IRole> guildMemberRoles = getGuildResult.Entity.Roles.Where(r => getGuildMemberResult.Entity.Roles.Contains(r.ID)).ToList();
+
+            // TODO: CHECK FOR ADMIN
 
             // Compute the final permissions
             if (channel.PermissionOverwrites.HasValue)

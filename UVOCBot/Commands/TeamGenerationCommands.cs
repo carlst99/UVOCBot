@@ -12,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -23,11 +23,11 @@ namespace UVOCBot.Commands
     public class TeamGenerationCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _responder;
         private readonly IDiscordRestGuildAPI _guildAPI;
         private readonly IDbApiService _dbAPI;
 
-        public TeamGenerationCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI)
+        public TeamGenerationCommands(ICommandContext context, IReplyService responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI)
         {
             _context = context;
             _responder = responder;
@@ -42,7 +42,7 @@ namespace UVOCBot.Commands
             [Description("The number of teams to generate")] int numberOfTeams)
         {
             if (numberOfTeams < 2)
-                return await _responder.RespondWithErrorAsync(_context, "At least two teams are required", ct: CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("At least two teams are required", CancellationToken).ConfigureAwait(false);
 
             List<ulong> roleMembers = new();
 
@@ -50,13 +50,11 @@ namespace UVOCBot.Commands
             {
                 if (!users.IsSuccess || users.Entity is null)
                 {
-                    await _responder.RespondWithErrorAsync(_context, "Could not get members with this role. Please try again later", ct: CancellationToken).ConfigureAwait(false);
+                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return Result.FromError(users);
                 }
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference. // User should not be null
                 roleMembers.AddRange(users.Entity.Select(m => m.User.Value.ID.Value));
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
             }
 
             return await SendRandomTeams(roleMembers, numberOfTeams, $"Build from the role {Formatter.RoleMention(role.ID)}").ConfigureAwait(false);
@@ -69,15 +67,15 @@ namespace UVOCBot.Commands
             [Description("The number of teams to generate")] int numberOfTeams)
         {
             if (numberOfTeams < 2)
-                return await _responder.RespondWithErrorAsync(_context, "At least two teams are required", ct: CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("At least two teams are required", CancellationToken).ConfigureAwait(false);
 
-            Result<MemberGroupDTO> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
+            Result<MemberGroupDto> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
             if (!group.IsSuccess)
             {
                 if (group.Error is Model.HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    return await _responder.RespondWithErrorAsync(_context, "That group doesn't exist.", CancellationToken).ConfigureAwait(false);
+                    return await _responder.RespondWithUserErrorAsync("That group doesn't exist.", CancellationToken).ConfigureAwait(false);
                 else
-                    return await _responder.RespondWithErrorAsync(_context, "Something went wrong. Please try again", CancellationToken).ConfigureAwait(false);
+                    return await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
             }
 
             return await SendRandomTeams(group.Entity.UserIds, numberOfTeams, $"Built from the group {Formatter.InlineQuote(group.Entity.GroupName)}").ConfigureAwait(false);
@@ -86,12 +84,11 @@ namespace UVOCBot.Commands
         private async Task<IResult> SendRandomTeams(IList<ulong> memberPool, int teamCount, string embedDescription)
         {
             if (memberPool.Count < teamCount)
-                return await _responder.RespondWithErrorAsync(_context, "There cannot be more teams than team members", ct: CancellationToken).ConfigureAwait(false);
+                return await _responder.RespondWithUserErrorAsync("There cannot be more teams than team members", CancellationToken).ConfigureAwait(false);
 
             List<List<ulong>> teams = await CreateRandomTeams(memberPool, teamCount).ConfigureAwait(false);
 
             return await _responder.RespondWithEmbedAsync(
-                _context,
                 BuildTeamsEmbed(teams, "Random Teams", embedDescription),
                 CancellationToken,
                 allowedMentions: new AllowedMentions()).ConfigureAwait(false);

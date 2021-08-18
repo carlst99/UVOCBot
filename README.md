@@ -6,15 +6,20 @@
 
 Provides various functions to assist with the experience of the UVOC outfit Discord server. Current features include:
 
-- Tweet relaying - Posts tweets from Twitter users into a Discord channel
-- Reaction-based role assignment
-- Bulk voice channel movement
-- Temporary group creation (for use with movement commands)
-- Random team generation
-- PlanetSide 2 server population and status querying
-- Various other features, such as coinflips and bonking people :smirk:
+- Tweet relaying - Posts tweets from Twitter users into a Discord channel.
+- PlanetSide 2 server population, status querying (borked atm) and online member checking.
+- Welcome messages - assign default roles, let users pick an alternate role set, and make guesses at their in-game name for easy nickname changes.
+- Role menus
+- Bulk voice channel movement.
+- Bulk reaction-based role assignment.
+- Temporary group creation (for use with movement commands).
+- Random team generation.
+- Various other features, such as coinflips, timestamp generation and basic admin logs.
+- (COMING SOON) Bulk timestamp formatting
 
 To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence if you'd like to use it in your own server, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
+
+Contrary to the above, if you know me through the PlanetSide 2 community, feel free to get in touch and ask for a private invite link. I might say yes :slightly_smiling_face:.
 
 # Setup for Hosting
 
@@ -23,7 +28,7 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a name and icon and **add a bot** to the application.
     1. :warning: Ensure that you enable the `Presence Intent` and `Server Members Intent`, found under the Bot tab of your application.
 2. Head on over to the wiki page [Hosting on Linux](https://github.com/carlst99/UVOCBot/wiki/Hosting-on-Linux) and follow the instructions there
-3. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2435927120&scope=bot)
+3. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands)
 
 # Building and Developing
 

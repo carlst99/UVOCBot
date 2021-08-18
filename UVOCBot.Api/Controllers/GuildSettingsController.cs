@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Api.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Api.Controllers
@@ -21,7 +22,7 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/GuildSettings
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GuildSettingsDTO>>> GetGuildSettings([FromQuery] bool hasPrefix)
+        public async Task<ActionResult<IEnumerable<GuildSettingsDto>>> GetGuildSettings([FromQuery] bool hasPrefix)
         {
             if (hasPrefix)
                 return (await _context.GuildSettings.Where(s => !string.IsNullOrEmpty(s.Prefix)).ToListAsync().ConfigureAwait(false)).ConvertAll(e => e.ToDto());
@@ -31,7 +32,7 @@ namespace UVOCBot.Api.Controllers
 
         // GET: api/GuildSettings/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<GuildSettingsDTO>> GetGuildSettings(ulong id)
+        public async Task<ActionResult<GuildSettingsDto>> GetGuildSettings(ulong id)
         {
             var guildSettings = await _context.GuildSettings.FindAsync(id).ConfigureAwait(false);
 
@@ -41,7 +42,7 @@ namespace UVOCBot.Api.Controllers
         // PUT: api/GuildSettings/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutGuildSettings(ulong id, GuildSettingsDTO guildSettings)
+        public async Task<IActionResult> PutGuildSettings(ulong id, GuildSettingsDto guildSettings)
         {
             if (id != guildSettings.GuildId)
                 return BadRequest();
@@ -63,7 +64,7 @@ namespace UVOCBot.Api.Controllers
         // POST: api/GuildSettings
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<GuildSettingsDTO>> PostGuildSettings(GuildSettingsDTO guildSettings)
+        public async Task<ActionResult<GuildSettingsDto>> PostGuildSettings(GuildSettingsDto guildSettings)
         {
             if (await _context.GuildSettings.AnyAsync(s => s.GuildId == guildSettings.GuildId).ConfigureAwait(false))
                 return Conflict();

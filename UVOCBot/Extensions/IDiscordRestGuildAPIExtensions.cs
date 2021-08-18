@@ -26,7 +26,7 @@ namespace Remora.Discord.API.Abstractions.Rest
             Snowflake guildID,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
-            await foreach (Result<IReadOnlyList<IGuildMember>> element in GetAllMembersAsync(guildApi, guildID, (_) => true).WithCancellation(ct).ConfigureAwait(false))
+            await foreach (Result<IReadOnlyList<IGuildMember>> element in GetAllMembersAsync(guildApi, guildID, (_) => true, ct).ConfigureAwait(false))
                 yield return element;
         }
 

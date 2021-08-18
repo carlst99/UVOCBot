@@ -5,7 +5,6 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
@@ -14,61 +13,25 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
 using System.Threading.Tasks;
+using UVOCBot.Commands.Utilities;
+using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• **World `status` Command** - Check the territory control and status of a world and it's continents." +
-            "\r\n• **`timestamp` command** - Get a snippet you can use to insert localised datetimes into messages." +
-            "\r\n• Made the `population` command faster.";
+        public const string RELEASE_NOTES = "• **Role menus!** - Let members toggle roles with ease.";
 
-        private readonly ICommandContext _context;
-        private readonly MessageResponseHelpers _responder;
+        private readonly IReplyService _replyService;
         private readonly IDiscordRestUserAPI _userAPI;
         private readonly Random _rndGen;
 
-        public GeneralCommands(ICommandContext context, MessageResponseHelpers responder, IDiscordRestUserAPI userAPI)
+        public GeneralCommands(IReplyService responder, IDiscordRestUserAPI userAPI)
         {
-            _context = context;
-            _responder = responder;
+            _replyService = responder;
             _userAPI = userAPI;
 
             _rndGen = new Random();
-        }
-
-        [Command("timestamp")]
-        [Description("Generates a Discord timestamp.")]
-        public async Task<IResult> TimestampCommand(
-            [Description("The offset (in hours) from GMT that your given timestamp is.")] double gmtOffset,
-            int? year = null, int? month = null, int? day = null, int? hour = null, int? minute = null)
-        {
-            if (gmtOffset < -12 || gmtOffset > 14)
-                return await _responder.RespondWithSuccessAsync(_context, "GMT offset must be between -12 and 14.", CancellationToken).ConfigureAwait(false);
-
-            DateTimeOffset time = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(gmtOffset));
-
-            year ??= time.Year;
-            month ??= time.Month;
-            day ??= time.Day;
-            hour ??= time.Hour;
-            minute ??= time.Minute;
-
-            try
-            {
-                time = new((int)year, (int)month, (int)day, (int)hour, (int)minute, 0, TimeSpan.FromHours(gmtOffset));
-            }
-            catch
-            {
-                return await _responder.RespondWithUserErrorAsync(_context, "Invalid arguments!", CancellationToken).ConfigureAwait(false);
-            }
-
-            await _responder.RespondWithSuccessAsync(
-                _context,
-                $"{ Formatter.Timestamp(time.ToUnixTimeSeconds()) }\n\n{ Formatter.InlineQuote($"<t:{ time.ToUnixTimeSeconds() }>") }",
-                CancellationToken).ConfigureAwait(false);
-
-            return Result.FromSuccess();
         }
 
         [Command("coinflip")]
@@ -87,11 +50,12 @@ namespace UVOCBot.Commands
                 Description = description
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("http-cat")]
         [Description("Posts a cat image that represents the given HTTP error code.")]
+        [Ephemeral]
         public async Task<IResult> PostHttpCatCommandAsync([Description("The HTTP code.")] [DiscordTypeHint(TypeHint.Integer)] int httpCode)
         {
             var embed = new Embed
@@ -100,11 +64,12 @@ namespace UVOCBot.Commands
                 Footer = new EmbedFooter("Image from http.cat")
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("info")]
         [Description("Gets information about UVOCBot")]
+        [Ephemeral]
         public async Task<IResult> InfoCommandAsync()
         {
             Optional<string> botAvatar = new();
@@ -141,7 +106,7 @@ namespace UVOCBot.Commands
                 }
             };
 
-            return await _responder.RespondWithEmbedAsync(_context, embed, CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
     }
 }

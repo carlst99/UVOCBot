@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
-using UVOCBot.Core.Model;
+using UVOCBot.Core.Dto;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
@@ -42,11 +42,11 @@ namespace UVOCBot.Services
         /// <returns>A result indicating if the operation was successful.</returns>
         public async Task<Result> InitialiseAsync(CancellationToken ct = default)
         {
-            Result<List<GuildSettingsDTO>> guildSettings = await _dbApi.ListGuildSettingsAsync(true, ct).ConfigureAwait(false);
+            Result<List<GuildSettingsDto>> guildSettings = await _dbApi.ListGuildSettingsAsync(true, ct).ConfigureAwait(false);
             if (!guildSettings.IsSuccess)
                 return Result.FromError(guildSettings);
 
-            foreach (GuildSettingsDTO dto in guildSettings.Entity)
+            foreach (GuildSettingsDto dto in guildSettings.Entity)
             {
                 if (dto.Prefix is not null && !_guildPrefixPairs.ContainsKey(dto.GuildId))
                     _guildPrefixPairs.Add(dto.GuildId, dto.Prefix);
@@ -63,7 +63,7 @@ namespace UVOCBot.Services
 
         private async Task<Result> UpdateDbPrefix(ulong guildId, string? newPrefix, CancellationToken ct = default)
         {
-            Result<GuildSettingsDTO> settings = await _dbApi.GetGuildSettingsAsync(guildId, ct).ConfigureAwait(false);
+            Result<GuildSettingsDto> settings = await _dbApi.GetGuildSettingsAsync(guildId, ct).ConfigureAwait(false);
             if (!settings.IsSuccess)
                 return Result.FromError(settings);
 

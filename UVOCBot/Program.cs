@@ -1,7 +1,7 @@
 using DbgCensus.Rest;
 using DbgCensus.Rest.Extensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
@@ -25,7 +25,9 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
 using UVOCBot.Commands.Conditions;
+using UVOCBot.Commands.ExecutionEvents;
 using UVOCBot.Config;
+using UVOCBot.Core;
 using UVOCBot.Responders;
 using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
@@ -77,6 +79,7 @@ namespace UVOCBot
             ILogger? logger = null;
 
             return Host.CreateDefaultBuilder(args)
+                .UseDefaultServiceProvider(s => s.ValidateScopes = true)
                 .ConfigureServices((c, _) =>
                 {
                     string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
@@ -93,8 +96,29 @@ namespace UVOCBot
                 {
                     // Setup the configuration bindings
                     services.Configure<CensusQueryOptions>(c.Configuration.GetSection(nameof(CensusQueryOptions)))
+                            .Configure<DatabaseOptions>(c.Configuration.GetSection(nameof(DatabaseOptions)))
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
+
+                    DatabaseOptions dbOptions = services.BuildServiceProvider().GetRequiredService<IOptions<DatabaseOptions>>().Value;
+                    services.AddDbContext<DiscordContext>
+                    (
+                        options =>
+                        {
+                            options.UseMySql(
+                                dbOptions.ConnectionString,
+                                new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)))
+#if DEBUG
+                                    .EnableSensitiveDataLogging()
+                                    .EnableDetailedErrors();
+#else
+                                    ;
+#endif
+                        },
+                        optionsLifetime: ServiceLifetime.Singleton
+                    );
+
+                    services.AddDbContextFactory<DiscordContext>();
 
                     //Setup API services
                     services.AddCensusRestServices()
@@ -104,17 +128,17 @@ namespace UVOCBot
 
                     // Setup other services
                     services.AddSingleton(fileSystem)
-                            .AddSingleton<IPermissionChecksService, PermissionChecksService>()
-                            .AddSingleton<ISettingsService, SettingsService>()
-                            .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
-                            .AddSingleton<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
                     services.AddDiscordServices()
-                            .AddSingleton<IExecutionEventService, ExecutionEventService>()
+                            .AddPreExecutionEvent<TriggerTypingExecutionEvent>()
+                            .AddScoped<IAdminLogService, AdminLogService>()
                             .AddScoped<IPermissionChecksService, PermissionChecksService>()
-                            .AddSingleton<MessageResponseHelpers>()
+                            .AddScoped<IReplyService, ReplyService>()
+                            .AddScoped<IRoleMenuService, RoleMenuService>()
+                            .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
+                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
                     services.AddHostedService<DiscordService>()
@@ -214,19 +238,22 @@ namespace UVOCBot
             services.AddResponder<CommandInteractionResponder>()
                     .AddResponder<ComponentInteractionResponder>()
                     .AddResponder<GuildCreateResponder>()
-                    .AddResponder<GuildMemberAddResponder>()
+                    .AddResponder<GuildMemberResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 
             services.AddCondition<RequireContextCondition>()
                     .AddCondition<RequireGuildPermissionCondition>();
 
-            services.AddCommandGroup<GeneralCommands>()
+            services.AddCommandGroup<AdminCommands>()
+                    .AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
+                    .AddCommandGroup<RoleMenuCommands>()
                     .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
+                    .AddCommandGroup<TimeCommands>()
                     .AddCommandGroup<TwitterCommands>()
                     .AddCommandGroup<WelcomeMessageCommands>();
 

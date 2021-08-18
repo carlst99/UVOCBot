@@ -15,7 +15,17 @@
         /// <summary>
         /// This button tells the user to set their own nickname, as none of the provided guesses matched.
         /// </summary>
-        WelcomeMessageNicknameNoMatch = 2
+        WelcomeMessageNicknameNoMatch = 2,
+
+        /// <summary>
+        /// This originates from a select menu and stores information about roles that should be toggled.
+        /// </summary>
+        RoleMenuToggleRole = 4,
+
+        /// <summary>
+        /// This originates from a button and contains information about a role removal confirmation.
+        /// </summary>
+        RoleMenuConfirmRemoveRole = 5
     }
 
     public static class ComponentIdFormatter

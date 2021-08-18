@@ -128,17 +128,17 @@ namespace UVOCBot
 
                     // Setup other services
                     services.AddSingleton(fileSystem)
-                            .AddSingleton<ISettingsService, SettingsService>()
-                            .AddScoped<IRoleMenuService, RoleMenuService>()
-                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
                     services.AddDiscordServices()
                             .AddPreExecutionEvent<TriggerTypingExecutionEvent>()
+                            .AddScoped<IAdminLogService, AdminLogService>()
                             .AddScoped<IPermissionChecksService, PermissionChecksService>()
                             .AddScoped<IReplyService, ReplyService>()
+                            .AddScoped<IRoleMenuService, RoleMenuService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
+                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
 
                     services.AddHostedService<DiscordService>()
@@ -238,14 +238,15 @@ namespace UVOCBot
             services.AddResponder<CommandInteractionResponder>()
                     .AddResponder<ComponentInteractionResponder>()
                     .AddResponder<GuildCreateResponder>()
-                    .AddResponder<GuildMemberAddResponder>()
+                    .AddResponder<GuildMemberResponder>()
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 
             services.AddCondition<RequireContextCondition>()
                     .AddCondition<RequireGuildPermissionCondition>();
 
-            services.AddCommandGroup<GeneralCommands>()
+            services.AddCommandGroup<AdminCommands>()
+                    .AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()

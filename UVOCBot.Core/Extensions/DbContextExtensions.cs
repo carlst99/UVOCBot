@@ -13,10 +13,15 @@ namespace UVOCBot.Core
 
             if (value is null)
             {
-                return new TEntity()
+                TEntity e = new()
                 {
                     GuildId = guildId
                 };
+
+                context.Add(e);
+                await context.SaveChangesAsync(ct).ConfigureAwait(false);
+
+                return e;
             }
             else
             {

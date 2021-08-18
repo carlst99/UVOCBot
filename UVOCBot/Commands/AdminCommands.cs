@@ -72,7 +72,7 @@ namespace UVOCBot.Commands
             _dbContext.Update(settings);
             await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-            return await _replyService.RespondWithSuccessAsync($"Logging for the {logType} event has been" + (isEnabled ? "enabled" : "disabled"), CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithSuccessAsync($"Logging for the {logType} event has been " + (isEnabled ? "enabled" : "disabled"), CancellationToken).ConfigureAwait(false);
         }
     }
 }

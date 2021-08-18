@@ -59,6 +59,7 @@ namespace UVOCBot.Services
             if (!welcomeMessage.IsEnabled)
                 return Result.FromSuccess();
 
+            // TODO: Speed up by first sending without, and then modifying the messages to factor this in.
             // Make some nickname guesses
             IEnumerable<string>? nicknameGuesses = null;
             if (welcomeMessage.DoIngameNameGuess)

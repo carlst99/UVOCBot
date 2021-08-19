@@ -148,11 +148,12 @@ namespace UVOCBot.Responders
         /// <returns>A value indicating if an ephemeral response should be created.</returns>
         private static bool IsEphemeral(BoundCommandNode commandNode)
         {
+            // Attempt to first check for ephemerailty on the command itself
             EphemeralAttribute? attr = commandNode.Node.CommandMethod.GetCustomAttribute<EphemeralAttribute>();
 
             if (attr is null)
             {
-                // Traverse each parent node
+                // Traverse each parent group node, until we find the root node
                 IParentNode p = commandNode.Node.Parent;
                 while (p is GroupNode g && attr is null)
                 {

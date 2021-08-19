@@ -139,7 +139,7 @@ namespace UVOCBot
                             .AddScoped<IRoleMenuService, RoleMenuService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
                             .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
-                            .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
+                            .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
                     services.AddHostedService<DiscordService>()
                             .AddHostedService<GenericWorker>()

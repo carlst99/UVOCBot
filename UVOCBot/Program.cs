@@ -219,15 +219,15 @@ namespace UVOCBot
 
         private static IServiceCollection AddDiscordServices(this IServiceCollection services)
         {
-            IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
-            {
-                Intents = GatewayIntents.DirectMessages
-                    | GatewayIntents.GuildMessages
-                    | GatewayIntents.Guilds
-                    | GatewayIntents.GuildVoiceStates
-                    | GatewayIntents.GuildMembers
-            });
-            services.AddSingleton(gatewayClientOptions);
+            services.Configure<DiscordGatewayClientOptions>(
+                o =>
+                {
+                    o.Intents |= GatewayIntents.DirectMessages
+                        | GatewayIntents.GuildMessages
+                        | GatewayIntents.Guilds
+                        | GatewayIntents.GuildVoiceStates
+                        | GatewayIntents.GuildMembers;
+                });
 
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(false)

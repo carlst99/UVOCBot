@@ -237,7 +237,8 @@ namespace UVOCBot.Services
             // Check that the user who clicked the button is the focus of the welcome message
             if (_context.User.ID.Value != userId)
             {
-                await _replyService.RespondWithSuccessAsync("Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
+                await _replyService.RespondWithUserErrorAsync("Hold it, bud. You can't do that!", ct, new AllowedMentions()).ConfigureAwait(false);
+                return Result.FromSuccess();
             }
 
             // Remove the default roles and add the alternate roles

@@ -131,8 +131,7 @@ namespace UVOCBot
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
-                    services.AddDiscordServices()
-                            .AddPreExecutionEvent<TriggerTypingExecutionEvent>()
+                    services.AddRemoraServices()
                             .AddScoped<IAdminLogService, AdminLogService>()
                             .AddScoped<IPermissionChecksService, PermissionChecksService>()
                             .AddScoped<IReplyService, ReplyService>()
@@ -217,7 +216,7 @@ namespace UVOCBot
             });
         }
 
-        private static IServiceCollection AddDiscordServices(this IServiceCollection services)
+        private static IServiceCollection AddRemoraServices(this IServiceCollection services)
         {
             services.Configure<DiscordGatewayClientOptions>(
                 o =>
@@ -256,6 +255,9 @@ namespace UVOCBot
                     .AddCommandGroup<TimeCommands>()
                     .AddCommandGroup<TwitterCommands>()
                     .AddCommandGroup<WelcomeMessageCommands>();
+
+            services.AddPreExecutionEvent<TriggerTypingExecutionEvent>()
+                    .AddPostExecutionEvent<ErrorLogExecutionEvent>();
 
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();

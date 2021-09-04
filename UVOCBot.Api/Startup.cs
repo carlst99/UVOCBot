@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System;
 using UVOCBot.Api.Workers;
@@ -26,21 +25,21 @@ namespace UVOCBot.Api
         {
             services.Configure<DatabaseOptions>(Configuration.GetSection(DatabaseOptions.ConfigSectionName));
 
-            DatabaseOptions dbOptions = services.BuildServiceProvider().GetRequiredService<IOptions<DatabaseOptions>>().Value;
+            // We have to build the service provider here, because using a nested configure doesn't call the lambda function
             services.AddDbContext<DiscordContext>
             (
                 options =>
                 {
                     options.UseMySql(
-                    dbOptions.ConnectionString,
-                    new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)))
+                        Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.ConnectionString) }"],
+                        new MariaDbServerVersion(new Version(Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.DatabaseVersion) }"]))
+                    )
 #if DEBUG
-                        .EnableSensitiveDataLogging()
-                        .EnableDetailedErrors();
-#else
-                        ;
+                    .EnableSensitiveDataLogging()
+                    .EnableDetailedErrors()
 #endif
-                    }
+                    ;
+                }
             );
 
             services.AddControllers();

@@ -59,7 +59,35 @@ namespace UVOCBot
         {
             try
             {
-                CreateHostBuilder(args).Build().Run();
+                IHost host = CreateHostBuilder(args).Build();
+
+                IOptions<GeneralOptions> options = host.Services.GetRequiredService<IOptions<GeneralOptions>>();
+                SlashService slashService = host.Services.GetRequiredService<SlashService>();
+
+                IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
+                Result slashCommandsSupported = slashService.SupportsSlashCommands();
+
+                if (!slashCommandsSupported.IsSuccess)
+                {
+                    Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
+                }
+                else
+                {
+#if DEBUG
+                    foreach (Snowflake guild in debugServerSnowflakes)
+                    {
+                        Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
+                        if (!updateSlashCommandsResult.IsSuccess)
+                            Log.Warning("Could not update slash commands for the debug guild {id}", guild.Value);
+                    }
+#else
+                Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
+                if (!updateSlashCommandsResult.IsSuccess)
+                    Log.Warning("Could not update global application commands");
+#endif
+                }
+
+                host.Run();
                 return 0;
             }
             catch (Exception ex)
@@ -100,20 +128,19 @@ namespace UVOCBot
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
-                    DatabaseOptions dbOptions = services.BuildServiceProvider().GetRequiredService<IOptions<DatabaseOptions>>().Value;
                     services.AddDbContext<DiscordContext>
                     (
                         options =>
                         {
                             options.UseMySql(
-                                dbOptions.ConnectionString,
-                                new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)))
+                                c.Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.ConnectionString) }"],
+                                new MariaDbServerVersion(new Version(c.Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.DatabaseVersion) }"]))
+                            )
 #if DEBUG
-                                    .EnableSensitiveDataLogging()
-                                    .EnableDetailedErrors();
-#else
-                                    ;
+                            .EnableSensitiveDataLogging()
+                            .EnableDetailedErrors()
 #endif
+                            ;
                         },
                         optionsLifetime: ServiceLifetime.Singleton
                     );
@@ -228,16 +255,11 @@ namespace UVOCBot
                         | GatewayIntents.GuildMembers;
                 });
 
-            services.Configure<InteractionResponderOptions>(o => o.SuppressAutomaticResponses = true);
-
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                    .AddDiscordCommands(false)
-                    .AddSingleton<SlashService>()
-                    .AddDiscordCaching()
-                    .AddHttpClient();
+                    .AddDiscordCommands(true)
+                    .AddDiscordCaching();
 
-            services.AddResponder<CommandInteractionResponder>()
-                    .AddResponder<ComponentInteractionResponder>()
+            services.AddResponder<ComponentInteractionResponder>()
                     .AddResponder<GuildCreateResponder>()
                     .AddResponder<GuildMemberResponder>()
                     .AddResponder<ReadyResponder>()
@@ -260,33 +282,6 @@ namespace UVOCBot
 
             services.AddPreExecutionEvent<TriggerTypingExecutionEvent>()
                     .AddPostExecutionEvent<ErrorLogExecutionEvent>();
-
-            ServiceProvider serviceProvider = services.BuildServiceProvider(true);
-            IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();
-            SlashService slashService = serviceProvider.GetRequiredService<SlashService>();
-
-            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
-            Result slashCommandsSupported = slashService.SupportsSlashCommands();
-
-            if (!slashCommandsSupported.IsSuccess)
-            {
-                Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
-            }
-            else
-            {
-#if DEBUG
-                foreach (Snowflake guild in debugServerSnowflakes)
-                {
-                    Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
-                    if (!updateSlashCommandsResult.IsSuccess)
-                        Log.Warning("Could not update slash commands for the debug guild {id}", guild.Value);
-                }
-#else
-                Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
-                if (!updateSlashCommandsResult.IsSuccess)
-                    Log.Warning("Could not update global application commands");
-#endif
-            }
 
             return services;
         }

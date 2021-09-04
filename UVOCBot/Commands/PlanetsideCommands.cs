@@ -100,7 +100,7 @@ namespace UVOCBot.Commands
 
         [Command("online")]
         [Description("Gets the number of online members for an outfit.")]
-        [Utilities.Ephemeral]
+        [Ephemeral]
         public async Task<IResult> GetOnlineOutfitMembersCommandAsync([Description("A space-separated, case-insensitive list of outfit tags.")] string outfitTags)
         {
             string[] tags = outfitTags.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

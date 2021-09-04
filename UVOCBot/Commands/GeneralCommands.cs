@@ -13,7 +13,6 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Utilities;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands

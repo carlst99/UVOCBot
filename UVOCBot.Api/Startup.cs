@@ -26,22 +26,24 @@ namespace UVOCBot.Api
         {
             services.Configure<DatabaseOptions>(Configuration.GetSection(DatabaseOptions.ConfigSectionName));
 
-            DatabaseOptions dbOptions = services.BuildServiceProvider().GetRequiredService<IOptions<DatabaseOptions>>().Value;
-            services.AddDbContext<DiscordContext>
-            (
-                options =>
-                {
-                    options.UseMySql(
-                    dbOptions.ConnectionString,
-                    new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)))
+            services.Configure<IOptions<DatabaseOptions>>(dbOptions =>
+            {
+                services.AddDbContext<DiscordContext>
+                (
+                    options =>
+                    {
+                        options.UseMySql(
+                        dbOptions.Value.ConnectionString,
+                        new MariaDbServerVersion(new Version(dbOptions.Value.DatabaseVersion)))
 #if DEBUG
-                        .EnableSensitiveDataLogging()
-                        .EnableDetailedErrors();
+                            .EnableSensitiveDataLogging()
+                            .EnableDetailedErrors();
 #else
-                        ;
+                            ;
 #endif
-                    }
-            );
+                        }
+                    );
+            });
 
             services.AddControllers();
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo { Title = "UVOCBot.Api", Version = "v1" }));

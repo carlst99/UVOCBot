@@ -228,16 +228,13 @@ namespace UVOCBot
                         | GatewayIntents.GuildMembers;
                 });
 
-            services.Configure<InteractionResponderOptions>(o => o.SuppressAutomaticResponses = true);
-
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(false)
                     .AddSingleton<SlashService>()
                     .AddDiscordCaching()
                     .AddHttpClient();
 
-            services.AddResponder<CommandInteractionResponder>()
-                    .AddResponder<ComponentInteractionResponder>()
+            services.AddResponder<ComponentInteractionResponder>()
                     .AddResponder<GuildCreateResponder>()
                     .AddResponder<GuildMemberResponder>()
                     .AddResponder<ReadyResponder>()

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Serilog.Core;
-using Serilog.Events;
 using System;
 using System.IO;
+#if RELEASE
+using Serilog.Core;
+using Serilog.Events;
+#endif
 
 namespace UVOCBot.Api
 {
@@ -36,26 +38,32 @@ namespace UVOCBot.Api
             return Host.CreateDefaultBuilder(args)
                 .ConfigureServices((c, _) =>
                 {
+#if DEBUG
+                    logger = SetupLogging();
+#else
                     string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
                     string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
                     logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
+#endif
                 })
                 .UseSerilog(logger)
                 .UseSystemd()
                 .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>());
         }
 
+#if DEBUG
+        private static ILogger SetupLogging()
+#else
         private static ILogger SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
+#endif
         {
             LoggerConfiguration logConfig = new LoggerConfiguration()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 #if DEBUG
-            logConfig.MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information);
+            logConfig.MinimumLevel.Verbose();
 #else
-            logConfig.MinimumLevel.Override("Microsoft", LogEventLevel.Error);
+            logConfig.MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
 
             if (seqIngestionEndpoint is not null)
             {

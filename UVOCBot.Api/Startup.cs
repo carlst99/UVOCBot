@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System;
 using UVOCBot.Api.Workers;
@@ -26,24 +25,22 @@ namespace UVOCBot.Api
         {
             services.Configure<DatabaseOptions>(Configuration.GetSection(DatabaseOptions.ConfigSectionName));
 
-            services.Configure<IOptions<DatabaseOptions>>(dbOptions =>
-            {
-                services.AddDbContext<DiscordContext>
-                (
-                    options =>
-                    {
-                        options.UseMySql(
-                        dbOptions.Value.ConnectionString,
-                        new MariaDbServerVersion(new Version(dbOptions.Value.DatabaseVersion)))
+            // We have to build the service provider here, because using a nested configure doesn't call the lambda function
+            services.AddDbContext<DiscordContext>
+            (
+                options =>
+                {
+                    options.UseMySql(
+                        Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.ConnectionString) }"],
+                        new MariaDbServerVersion(new Version(Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.DatabaseVersion) }"]))
+                    )
 #if DEBUG
-                            .EnableSensitiveDataLogging()
-                            .EnableDetailedErrors();
-#else
-                            ;
+                    .EnableSensitiveDataLogging()
+                    .EnableDetailedErrors()
 #endif
-                        }
-                    );
-            });
+                    ;
+                }
+            );
 
             services.AddControllers();
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo { Title = "UVOCBot.Api", Version = "v1" }));

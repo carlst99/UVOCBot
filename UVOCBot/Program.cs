@@ -228,6 +228,8 @@ namespace UVOCBot
                         | GatewayIntents.GuildMembers;
                 });
 
+            services.Configure<InteractionResponderOptions>(o => o.SuppressAutomaticResponses = true);
+
             services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                     .AddDiscordCommands(false)
                     .AddSingleton<SlashService>()
@@ -261,7 +263,6 @@ namespace UVOCBot
 
             ServiceProvider serviceProvider = services.BuildServiceProvider(true);
             IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();
-            IOptions<CommandResponderOptions> cOptions = serviceProvider.GetRequiredService<IOptions<CommandResponderOptions>>();
             SlashService slashService = serviceProvider.GetRequiredService<SlashService>();
 
             IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
@@ -274,19 +275,6 @@ namespace UVOCBot
             else
             {
 #if DEBUG
-                // Use the following to get rid of troublesome commands
-
-                //IDiscordRestApplicationAPI applicationAPI = serviceProvider.GetRequiredService<IDiscordRestApplicationAPI>();
-                //var applicationCommands = applicationAPI.GetGlobalApplicationCommandsAsync(new Snowflake(APPLICATION_CLIENT_ID)).Result;
-
-                //if (applicationCommands.IsSuccess)
-                //{
-                //    foreach (IApplicationCommand command in applicationCommands.Entity)
-                //    {
-                //        applicationAPI.DeleteGlobalApplicationCommandAsync(new Snowflake(APPLICATION_CLIENT_ID), command.ID).Wait();
-                //    }
-                //}
-
                 foreach (Snowflake guild in debugServerSnowflakes)
                 {
                     Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;

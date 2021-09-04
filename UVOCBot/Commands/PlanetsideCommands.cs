@@ -14,7 +14,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Commands.Utilities;
 using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
@@ -25,7 +24,7 @@ namespace UVOCBot.Commands
     public class PlanetsideCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly IReplyService _responder;
+        private readonly IReplyService _replyService;
         private readonly IDbApiService _dbApi;
         private readonly ICensusApiService _censusApi;
         private readonly IFisuApiService _fisuAPI;
@@ -33,7 +32,7 @@ namespace UVOCBot.Commands
         public PlanetsideCommands(ICommandContext context, IReplyService responder, IDbApiService dbApi, ICensusApiService censusApi, IFisuApiService fisuAPI)
         {
             _context = context;
-            _responder = responder;
+            _replyService = responder;
             _dbApi = dbApi;
             _censusApi = censusApi;
             _fisuAPI = fisuAPI;
@@ -47,18 +46,18 @@ namespace UVOCBot.Commands
             if (server == 0)
             {
                 if (!_context.GuildID.HasValue)
-                    return await _responder.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
+                    return await _replyService.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
                 Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
                 if (!settings.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return settings;
                 }
 
                 if (settings.Entity.DefaultWorld is null)
                 {
-                    return await _responder.RespondWithUserErrorAsync(
+                    return await _replyService.RespondWithUserErrorAsync(
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         CancellationToken).ConfigureAwait(false);
                 }
@@ -77,18 +76,18 @@ namespace UVOCBot.Commands
             if (server == 0)
             {
                 if (!_context.GuildID.HasValue)
-                    return await _responder.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
+                    return await _replyService.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
                 Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
                 if (!settings.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return settings;
                 }
 
                 if (settings.Entity.DefaultWorld is null)
                 {
-                    return await _responder.RespondWithUserErrorAsync(
+                    return await _replyService.RespondWithUserErrorAsync(
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         CancellationToken).ConfigureAwait(false);
                 }
@@ -101,7 +100,7 @@ namespace UVOCBot.Commands
 
         [Command("online")]
         [Description("Gets the number of online members for an outfit.")]
-        [Ephemeral]
+        [Utilities.Ephemeral]
         public async Task<IResult> GetOnlineOutfitMembersCommandAsync([Description("A space-separated, case-insensitive list of outfit tags.")] string outfitTags)
         {
             string[] tags = outfitTags.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -111,7 +110,7 @@ namespace UVOCBot.Commands
                 Result<OutfitOnlineMembers> onlineMembers = await _censusApi.GetOnlineMembersAsync(tags[0], CancellationToken).ConfigureAwait(false);
                 if (!onlineMembers.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return onlineMembers;
                 }
 
@@ -127,14 +126,14 @@ namespace UVOCBot.Commands
                     Colour = BotConstants.DEFAULT_EMBED_COLOUR
                 };
 
-                return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
             }
             else if (tags.Length > 1)
             {
                 Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
                 if (!outfits.IsSuccess)
                 {
-                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                     return outfits;
                 }
 
@@ -154,7 +153,7 @@ namespace UVOCBot.Commands
                     Colour = BotConstants.DEFAULT_EMBED_COLOUR
                 };
 
-                return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
             }
 
             return Result.FromSuccess();
@@ -162,7 +161,7 @@ namespace UVOCBot.Commands
 
         [Command("map")]
         [Description("Gets a PlanetSide 2 continent map.")]
-        public async Task<IResult> MapCommand(TileMap map)
+        public async Task<IResult> MapCommand(TileMap map, NoDeploymentType noDeployType = NoDeploymentType.None)
         {
             string mapFileName = map.ToString() + ".jpg";
             string mapFilePath = Path.Combine("Assets", "PS2Maps", mapFileName);
@@ -179,7 +178,7 @@ namespace UVOCBot.Commands
                 Type = EmbedType.Image,
             };
 
-            return await _responder.RespondWithEmbedAsync(embed, CancellationToken, new FileData(mapFileName, File.OpenRead(mapFilePath))).ConfigureAwait(false);
+            return await _replyService.RespondWithEmbedAsync(embed, CancellationToken, new FileData(mapFileName, File.OpenRead(mapFilePath))).ConfigureAwait(false);
         }
 
         [Command("default-server")]
@@ -191,7 +190,7 @@ namespace UVOCBot.Commands
             Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             if (!settings.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return settings;
             }
 
@@ -200,11 +199,11 @@ namespace UVOCBot.Commands
             Result updateResult = await _dbApi.UpdatePlanetsideSettingsAsync(_context.GuildID.Value.Value, settings.Entity, CancellationToken).ConfigureAwait(false);
             if (!updateResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
                 return updateResult;
             }
 
-            return await _responder.RespondWithSuccessAsync(
+            return await _replyService.RespondWithSuccessAsync(
                 $"{Formatter.Emoji("earth_asia")} Your default server has been set to {Formatter.InlineQuote(server.ToString())}",
                 ct: CancellationToken).ConfigureAwait(false);
         }
@@ -215,7 +214,7 @@ namespace UVOCBot.Commands
 
             if (!populationResult.IsSuccess)
             {
-                await _responder.RespondWithErrorAsync(
+                await _replyService.RespondWithErrorAsync(
                     CancellationToken,
                     $"Could not get population statistics - the query to { Formatter.InlineQuote("fisu") } failed. Please try again.").ConfigureAwait(false);
                 return populationResult;
@@ -237,7 +236,7 @@ namespace UVOCBot.Commands
                 }
             };
 
-            return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
         private async Task<IResult> SendWorldStatus(WorldType world)
@@ -259,11 +258,11 @@ namespace UVOCBot.Commands
                     Fields = embedFields
                 };
 
-                return await _responder.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
             }
             catch
             {
-                return await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
             }
         }
 

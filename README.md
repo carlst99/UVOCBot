@@ -23,12 +23,12 @@ Contrary to the above, if you know me through the PlanetSide 2 community, feel f
 
 # Setup for Hosting
 
-Before continuing, you should note that UVOCBot is designed with a linux system in mind; it has support for systemd and I only provide linux binaries. If you'd like support for Windows services and binaries, please open an Issue.
+Before continuing, you should note that UVOCBot is designed with a linux host in mind; it has support for systemd and I only provide linux binaries. If you'd like support for running as a Windows service and the corresponding binaries, please open an Issue.
 
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a name and icon and **add a bot** to the application.
     1. :warning: Ensure that you enable the `Presence Intent` and `Server Members Intent`, found under the Bot tab of your application.
-2. Head on over to the wiki page [Hosting on Linux](https://github.com/carlst99/UVOCBot/wiki/Hosting-on-Linux) and follow the instructions there
-3. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands)
+2. Head on over to the wiki page [Hosting on Linux](https://github.com/carlst99/UVOCBot/wiki/Hosting-on-Linux) and follow the instructions there.
+3. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands).
 
 # Building and Developing
 
@@ -49,23 +49,21 @@ Before continuing, you should note that UVOCBot is designed with a linux system 
 
 ### Project Structure
 
-UVOCBot has two main components:
+UVOCBot has three components:
 - The bot itself, `UVOCBot`. This is a .NET 5 Worker project, based on the `Microsoft.Extensions.Hosting` framework.
-- A RESTful API that abstracts the MariaDB database, `UVOCBot.Api`. An `ASP.NET Core 5` project utilising `Entity Framework Core`. This is by and large a data abstraction layer; very little data manipulation occurs here, except for where it would be inefficient for the client to perform non-user-dependent actions.
-
-There is also a shared project, `UVOCBot.Core`, which contains models common to both projects.
+- A shared library, `UVOCBot.Core`, which contains the database models.
+- A RESTful API that abstracts the database, `UVOCBot.Api`. An `ASP.NET Core 5` project utilising `Entity Framework Core`. This is by and large a data abstraction layer; very little data manipulation occurs here, except for where it would be inefficient for the client to perform non-user-dependent actions. Note that I am slowly migrating away from this API in favour of directly using EF core in the bot.
 
 # Acknowledgements
 
-UVOCBot is built on the following amazing libraries and frameworks:
+UVOCBot is built on these amazing libraries:
 
-- [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/)
 - [DbgCensus](https://github.com/carlst99/DbgCensus)
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
 - [FuzzySharp](https://github.com/JakeBayer/FuzzySharp)
 - [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)
-- [RestSharp](https://restsharp.dev)
 - [Remora.Discord](https://github.com/Nihlus/Remora.Discord)
+- [RestSharp](https://restsharp.dev)
 - [Serilog](https://github.com/serilog/serilog)
 - [System.IO.Abstractions](https://github.com/System-IO-Abstractions/System.IO.Abstractions)
 - [Tweetinvi](https://github.com/linvi/tweetinvi)

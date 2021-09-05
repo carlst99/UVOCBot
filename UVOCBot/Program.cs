@@ -14,7 +14,6 @@ using Remora.Discord.Core;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
 using Remora.Discord.Hosting.Extensions;
-using Remora.Discord.Hosting.Services;
 using Remora.Results;
 using Serilog;
 using Serilog.Events;

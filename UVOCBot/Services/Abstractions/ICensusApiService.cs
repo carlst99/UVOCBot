@@ -18,22 +18,6 @@ namespace UVOCBot.Services.Abstractions
         Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default);
 
         /// <summary>
-        /// Gets information about a world.
-        /// </summary>
-        /// <param name="world"></param>
-        /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
-        /// <returns></returns>
-        Task<Result<World>> GetWorld(WorldDefinition world, CancellationToken ct = default);
-
-        /// <summary>
-        /// Gets the online members of an outfit.
-        /// </summary>
-        /// <param name="outfitTag">The case-insensitive tag of the outfit.</param>
-        /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
-        /// <returns></returns>
-        Task<Result<OutfitOnlineMembers>> GetOnlineMembersAsync(string outfitTag, CancellationToken ct = default);
-
-        /// <summary>
         /// Gets the online members of a number of outfits.
         /// </summary>
         /// <param name="outfitTags">The case-insensitive tags of the outfit.</param>

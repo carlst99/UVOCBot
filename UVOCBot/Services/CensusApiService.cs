@@ -51,29 +51,6 @@ namespace UVOCBot.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Result<World>> GetWorld(WorldDefinition world, CancellationToken ct = default)
-        {
-            IQueryBuilder query = _queryService.CreateQuery()
-                .OnCollection("world")
-                .Where("world_id", SearchModifier.Equals, (int)world)
-                .WithLimitPerDatabase(15); // Adding a limit that isn't 10 or 100 here significantly improves the chances of the correct state being returned
-
-            return await GetAsync<World>(query, ct).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
-        public async Task<Result<OutfitOnlineMembers>> GetOnlineMembersAsync(string outfitTag, CancellationToken ct = default)
-        {
-            IQueryBuilder query = _queryService.CreateQuery()
-                .OnCollection("outfit")
-                .Where("alias_lower", SearchModifier.Equals, outfitTag.ToLower());
-
-            ConstructOnlineMembersQuery(query);
-
-            return await GetAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
         public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default)
         {
             List<ulong> outfitIds = new();

@@ -1,8 +1,10 @@
-﻿using Remora.Commands.Attributes;
+﻿using Microsoft.EntityFrameworkCore;
+using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 using System;
@@ -11,9 +13,8 @@ using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Commands.Utilities;
-using UVOCBot.Core.Dto;
-using UVOCBot.Model;
+using UVOCBot.Core;
+using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -24,15 +25,19 @@ namespace UVOCBot.Commands
     public class GroupCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly IReplyService _responder;
-        private readonly IDbApiService _dbAPI;
+        private readonly DiscordContext _dbContext;
+        private readonly IReplyService _replyService;
         private readonly IDiscordRestGuildAPI _guildAPI;
 
-        public GroupCommands(ICommandContext context, IReplyService responder, IDbApiService dbAPI, IDiscordRestGuildAPI guildAPI)
+        public GroupCommands(
+            ICommandContext context,
+            DiscordContext dbContext,
+            IReplyService replyService,
+            IDiscordRestGuildAPI guildAPI)
         {
             _context = context;
-            _responder = responder;
-            _dbAPI = dbAPI;
+            _dbContext = dbContext;
+            _replyService = replyService;
             _guildAPI = guildAPI;
         }
 
@@ -41,26 +46,16 @@ namespace UVOCBot.Commands
         [Ephemeral]
         public async Task<IResult> ListGroupsCommandAsync()
         {
-            Result<List<MemberGroupDto>> groups = await _dbAPI.ListGuildMemberGroupsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!groups.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                return groups;
-            }
-
             StringBuilder sb = new();
-            sb.Append("Showing ").Append(Formatter.InlineQuote(groups.Entity.Count.ToString())).AppendLine(" groups.").AppendLine();
+            sb.AppendLine("Groups:");
 
-            foreach (MemberGroupDto g in groups.Entity)
+            foreach (MemberGroup g in _dbContext.MemberGroups)
             {
                 sb.Append("• ").Append(Formatter.InlineQuote(g.GroupName))
-                    .Append(" (").Append(g.UserIds.Count).Append(" members) - created by ")
-                    .Append(Formatter.UserMention(g.CreatorId))
-                    .Append(", expiring in ")
-                    .AppendLine((g.CreatedAt.AddHours(MemberGroupDto.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"));
+                    .Append(" (").Append(g.UserIds.Count).AppendLine(" members).");
             }
 
-            return await _responder.RespondWithSuccessAsync(sb.ToString(), CancellationToken, new AllowedMentions()).ConfigureAwait(false);
+            return await _replyService.RespondWithSuccessAsync(sb.ToString(), CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         [Command("info")]
@@ -68,17 +63,17 @@ namespace UVOCBot.Commands
         [Ephemeral]
         public async Task<IResult> GetGroupCommandAsync([Description("The name of the group to retrieve")] string groupName)
         {
-            Result<MemberGroupDto> groupResult = await GetGroupAsync(groupName).ConfigureAwait(false);
-            if (!groupResult.IsSuccess)
-                return groupResult;
+            Result<MemberGroup> getGroupResult = await GetGroupAsync(groupName).ConfigureAwait(false);
+            if (!getGroupResult.IsSuccess)
+                return Result.FromSuccess();
 
-            MemberGroupDto group = groupResult.Entity;
+            MemberGroup group = getGroupResult.Entity;
 
             StringBuilder sb = new();
             sb.Append("Group: ").AppendLine(Formatter.InlineQuote(group.GroupName))
                 .Append(group.UserIds.Count).AppendLine(" members")
                 .Append("Created by ").AppendLine(Formatter.UserMention(group.CreatorId))
-                .Append("Expiring in ").AppendLine((group.CreatedAt.AddHours(MemberGroupDto.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"))
+                .Append("Expiring in ").AppendLine((group.CreatedAt.AddHours(MemberGroup.MAX_LIFETIME_HOURS) - DateTimeOffset.UtcNow).ToString(@"hh\h\ mm\m"))
                 .AppendLine()
                 .AppendLine(Formatter.Bold("Members"));
 
@@ -88,7 +83,7 @@ namespace UVOCBot.Commands
                 sb.Append(' ');
             }
 
-            return await _responder.RespondWithSuccessAsync(sb.ToString(), CancellationToken, new AllowedMentions()).ConfigureAwait(false);
+            return await _replyService.RespondWithSuccessAsync(sb.ToString(), CancellationToken, new AllowedMentions()).ConfigureAwait(false);
         }
 
         [Command("create")]
@@ -98,32 +93,27 @@ namespace UVOCBot.Commands
             [Description("The members to include in the group")] string members)
         {
             if (string.IsNullOrEmpty(groupName) || groupName.Length < 3)
-                return await _responder.RespondWithUserErrorAsync("The group name must be at least three characters in length.", CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithUserErrorAsync("The group name must be at least three characters in length.", CancellationToken).ConfigureAwait(false);
 
             List<ulong> users = ParseUsers(members);
 
             if (users.Count > 25 || users.Count < 2)
-                return await _responder.RespondWithUserErrorAsync("A group must have between 2 and 25 members", CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithUserErrorAsync("A group must have between 2 and 25 members", CancellationToken).ConfigureAwait(false);
 
-            MemberGroupDto group = new(groupName, _context.GuildID.Value.Value, _context.User.ID.Value, users);
+            bool groupExists = await _dbContext.MemberGroups.AnyAsync(g => g.GuildId == _context.GuildID.Value.Value && g.GroupName == groupName).ConfigureAwait(false);
+            if (groupExists)
+                return await _replyService.RespondWithUserErrorAsync("A group with this name already exists. Please try again with a different name.", CancellationToken).ConfigureAwait(false);
 
-            Result<MemberGroupDto> groupCreationResult = await _dbAPI.CreateMemberGroupAsync(group, CancellationToken).ConfigureAwait(false);
-            if (!groupCreationResult.IsSuccess)
+            MemberGroup group = new(_context.GuildID.Value.Value, groupName)
             {
-                if (groupCreationResult.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    return await _responder.RespondWithUserErrorAsync(
-                        "A group with this name already exists. Please try again with a different name.",
-                        CancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    return Result<IMessage>.FromError(groupCreationResult);
-                }
-            }
+                UserIds = users,
+                CreatorId = _context.User.ID.Value
+            };
 
-            return await _responder.RespondWithSuccessAsync(
+            _dbContext.Add(group);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+            return await _replyService.RespondWithSuccessAsync(
                 $"The group {Formatter.Bold(groupName)} has been created with {Formatter.Bold(users.Count.ToString())} members.",
                 ct: CancellationToken).ConfigureAwait(false);
         }
@@ -132,52 +122,40 @@ namespace UVOCBot.Commands
         [Description("Deletes a group")]
         public async Task<IResult> DeleteGroupCommandAsync([Description("The name of the group")] string groupName)
         {
-            Result<MemberGroupDto> group = await GetGroupAsync(groupName).ConfigureAwait(false);
+            Result<MemberGroup> group = await GetGroupAsync(groupName).ConfigureAwait(false);
             if (!group.IsSuccess)
-                return group;
+                return Result.FromSuccess();
 
             if (_context.User.ID.Value != group.Entity.CreatorId)
             {
                 Result<IGuildMember> sender = await _guildAPI.GetGuildMemberAsync(_context.GuildID.Value, _context.User.ID, CancellationToken).ConfigureAwait(false);
                 if (!sender.IsSuccess || !sender.Entity.Permissions.HasValue)
-                    return await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                    return await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
 
                 IDiscordPermissionSet senderPerms = sender.Entity.Permissions.Value;
 
                 if (!senderPerms.HasAdminOrPermission(DiscordPermission.ManageGuild) || !senderPerms.HasAdminOrPermission(DiscordPermission.ManageRoles))
                 {
-                    return await _responder.RespondWithUserErrorAsync(
+                    return await _replyService.RespondWithUserErrorAsync(
                         "You must either be the group owner, or have guild/role management permissions, to remove a group.",
                         CancellationToken).ConfigureAwait(false);
                 }
             }
 
-            Result groupDeletionResult = await _dbAPI.DeleteMemberGroupAsync(group.Entity.Id).ConfigureAwait(false);
-            if (!groupDeletionResult.IsSuccess)
-            {
-                await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                return groupDeletionResult;
-            }
+            _dbContext.Remove(group.Entity);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-            return await _responder.RespondWithSuccessAsync($"The group {group.Entity.GroupName} was successfully deleted.", CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithSuccessAsync($"The group {group.Entity.GroupName} was successfully deleted.", CancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Result<MemberGroupDto>> GetGroupAsync(string groupName)
+        private async Task<Result<MemberGroup>> GetGroupAsync(string groupName)
         {
-            Result<MemberGroupDto> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
+            MemberGroup? group = await _dbContext.MemberGroups.FirstOrDefaultAsync(g => g.GuildId == _context.GuildID.Value.Value && g.GroupName == groupName, CancellationToken).ConfigureAwait(false);
 
-            if (!group.IsSuccess)
+            if (group is null)
             {
-                if (group.Error is HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    await _responder.RespondWithUserErrorAsync("That group does not exist.", CancellationToken).ConfigureAwait(false);
-                    return group;
-                }
-                else
-                {
-                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    return group;
-                }
+                await _replyService.RespondWithUserErrorAsync("A group with that name does not exist.", CancellationToken).ConfigureAwait(false);
+                return new NotFoundError();
             }
 
             return group;

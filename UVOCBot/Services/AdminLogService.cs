@@ -35,7 +35,7 @@ namespace UVOCBot.Services
                 return Result.FromSuccess();
             IUser user = member.User.Value;
 
-            Result<Snowflake> canLogToChannel = await CheckCanLog(member.GuildID, AdminLogTypes.MemberLeave, ct).ConfigureAwait(false);
+            Result<Snowflake> canLogToChannel = await CheckCanLog(member.GuildID, AdminLogTypes.MemberJoin, ct).ConfigureAwait(false);
             if (!canLogToChannel.IsSuccess)
                 return Result.FromSuccess();
 
@@ -48,7 +48,7 @@ namespace UVOCBot.Services
 
             Result<Uri> userAvatar = CDN.GetUserAvatarUrl(user);
             if (userAvatar.IsSuccess)
-                e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri) };
+                e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri, Height: 64, Width: 64) };
 
             _ = _channelApi.CreateMessageAsync(canLogToChannel.Entity, embeds: new List<IEmbed> { e }, ct: ct);
 
@@ -70,7 +70,7 @@ namespace UVOCBot.Services
 
             Result<Uri> userAvatar = CDN.GetUserAvatarUrl(user.User);
             if (userAvatar.IsSuccess)
-                e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri) };
+                e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri, Height: 64, Width: 64) };
 
             _ = _channelApi.CreateMessageAsync(canLogToChannel.Entity, embeds: new List<IEmbed> { e }, ct: ct);
 

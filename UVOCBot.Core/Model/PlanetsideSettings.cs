@@ -1,13 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using UVOCBot.Core.Dto;
 
 namespace UVOCBot.Core.Model
 {
-    public class PlanetsideSettings
+    public class PlanetsideSettings : IGuildObject
     {
-        /// <summary>
-        /// Gets the Discord ID of this guild
-        /// </summary>
+        /// <inheritdoc />
         [Key]
         public ulong GuildId { get; set; }
 
@@ -16,18 +13,17 @@ namespace UVOCBot.Core.Model
         /// </summary>
         public int? DefaultWorld { get; set; }
 
-        public PlanetsideSettingsDto ToDto()
-            => new()
-            {
-                GuildId = GuildId,
-                DefaultWorld = DefaultWorld
-            };
+        /// <summary>
+        /// Only use this constructor if you are setting the <see cref="GuildId"/> immediately after construction.
+        /// </summary>
+        public PlanetsideSettings()
+            : this(0)
+        {
+        }
 
-        public static PlanetsideSettings FromDto(PlanetsideSettingsDto dto)
-            => new()
-            {
-                GuildId = dto.GuildId,
-                DefaultWorld = dto.DefaultWorld
-            };
+        public PlanetsideSettings(ulong guildId)
+        {
+            GuildId = guildId;
+        }
     }
 }

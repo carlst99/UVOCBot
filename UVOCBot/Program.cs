@@ -13,7 +13,7 @@ using Remora.Discord.Commands.Services;
 using Remora.Discord.Core;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
-using Remora.Discord.Hosting.Services;
+using Remora.Discord.Hosting.Extensions;
 using Remora.Results;
 using Serilog;
 using Serilog.Events;
@@ -59,7 +59,35 @@ namespace UVOCBot
         {
             try
             {
-                CreateHostBuilder(args).Build().Run();
+                IHost host = CreateHostBuilder(args).Build();
+
+                IOptions<GeneralOptions> options = host.Services.GetRequiredService<IOptions<GeneralOptions>>();
+                SlashService slashService = host.Services.GetRequiredService<SlashService>();
+
+                IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
+                Result slashCommandsSupported = slashService.SupportsSlashCommands();
+
+                if (!slashCommandsSupported.IsSuccess)
+                {
+                    Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
+                }
+                else
+                {
+#if DEBUG
+                    foreach (Snowflake guild in debugServerSnowflakes)
+                    {
+                        Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
+                        if (!updateSlashCommandsResult.IsSuccess)
+                            Log.Warning("Could not update slash commands for the debug guild {id}", guild.Value);
+                    }
+#else
+                Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
+                if (!updateSlashCommandsResult.IsSuccess)
+                    Log.Warning("Could not update global application commands");
+#endif
+                }
+
+                host.Run();
                 return 0;
             }
             catch (Exception ex)
@@ -90,6 +118,7 @@ namespace UVOCBot
                     logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
 #endif
                 })
+                .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                 .UseSerilog(logger)
                 .UseSystemd()
                 .ConfigureServices((c, services) =>
@@ -100,20 +129,19 @@ namespace UVOCBot
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
-                    DatabaseOptions dbOptions = services.BuildServiceProvider().GetRequiredService<IOptions<DatabaseOptions>>().Value;
                     services.AddDbContext<DiscordContext>
                     (
                         options =>
                         {
                             options.UseMySql(
-                                dbOptions.ConnectionString,
-                                new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)))
+                                c.Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.ConnectionString) }"],
+                                new MariaDbServerVersion(new Version(c.Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.DatabaseVersion) }"]))
+                            )
 #if DEBUG
-                                    .EnableSensitiveDataLogging()
-                                    .EnableDetailedErrors();
-#else
-                                    ;
+                            .EnableSensitiveDataLogging()
+                            .EnableDetailedErrors()
 #endif
+                            ;
                         },
                         optionsLifetime: ServiceLifetime.Singleton
                     );
@@ -131,18 +159,16 @@ namespace UVOCBot
                             .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
-                    services.AddDiscordServices()
-                            .AddPreExecutionEvent<TriggerTypingExecutionEvent>()
+                    services.AddRemoraServices()
                             .AddScoped<IAdminLogService, AdminLogService>()
                             .AddScoped<IPermissionChecksService, PermissionChecksService>()
                             .AddScoped<IReplyService, ReplyService>()
                             .AddScoped<IRoleMenuService, RoleMenuService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
                             .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
-                            .Configure<CommandResponderOptions>((o) => o.Prefix = "<>"); // Sets the text command prefix
+                            .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
-                    services.AddHostedService<DiscordService>()
-                            .AddHostedService<GenericWorker>()
+                    services.AddHostedService<GenericWorker>()
                             .AddHostedService<TwitterWorker>();
                 });
         }
@@ -173,9 +199,9 @@ namespace UVOCBot
 #endif
         {
             LoggerConfiguration logConfig = new LoggerConfiguration()
-                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                .MinimumLevel.Override("DaybreakGames.Census", LogEventLevel.Warning)
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
+                .MinimumLevel.Override("System.Net.Http.HttpClient.CensusRestClient", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 #if DEBUG
@@ -217,26 +243,22 @@ namespace UVOCBot
             });
         }
 
-        private static IServiceCollection AddDiscordServices(this IServiceCollection services)
+        private static IServiceCollection AddRemoraServices(this IServiceCollection services)
         {
-            IOptions<DiscordGatewayClientOptions> gatewayClientOptions = Options.Create(new DiscordGatewayClientOptions
-            {
-                Intents = GatewayIntents.DirectMessages
-                    | GatewayIntents.GuildMessages
-                    | GatewayIntents.Guilds
-                    | GatewayIntents.GuildVoiceStates
-                    | GatewayIntents.GuildMembers
-            });
-            services.AddSingleton(gatewayClientOptions);
+            services.Configure<DiscordGatewayClientOptions>(
+                o =>
+                {
+                    o.Intents |= GatewayIntents.DirectMessages
+                        | GatewayIntents.GuildMessages
+                        | GatewayIntents.Guilds
+                        | GatewayIntents.GuildVoiceStates
+                        | GatewayIntents.GuildMembers;
+                });
 
-            services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                    .AddDiscordCommands(false)
-                    .AddSingleton<SlashService>()
-                    .AddDiscordCaching()
-                    .AddHttpClient();
+            services.AddDiscordCommands(true)
+                    .AddDiscordCaching();
 
-            services.AddResponder<CommandInteractionResponder>()
-                    .AddResponder<ComponentInteractionResponder>()
+            services.AddResponder<ComponentInteractionResponder>()
                     .AddResponder<GuildCreateResponder>()
                     .AddResponder<GuildMemberResponder>()
                     .AddResponder<ReadyResponder>()
@@ -257,46 +279,8 @@ namespace UVOCBot
                     .AddCommandGroup<TwitterCommands>()
                     .AddCommandGroup<WelcomeMessageCommands>();
 
-            ServiceProvider serviceProvider = services.BuildServiceProvider(true);
-            IOptions<GeneralOptions> options = serviceProvider.GetRequiredService<IOptions<GeneralOptions>>();
-            IOptions<CommandResponderOptions> cOptions = serviceProvider.GetRequiredService<IOptions<CommandResponderOptions>>();
-            SlashService slashService = serviceProvider.GetRequiredService<SlashService>();
-
-            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
-            Result slashCommandsSupported = slashService.SupportsSlashCommands();
-
-            if (!slashCommandsSupported.IsSuccess)
-            {
-                Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
-            }
-            else
-            {
-#if DEBUG
-                // Use the following to get rid of troublesome commands
-
-                //IDiscordRestApplicationAPI applicationAPI = serviceProvider.GetRequiredService<IDiscordRestApplicationAPI>();
-                //var applicationCommands = applicationAPI.GetGlobalApplicationCommandsAsync(new Snowflake(APPLICATION_CLIENT_ID)).Result;
-
-                //if (applicationCommands.IsSuccess)
-                //{
-                //    foreach (IApplicationCommand command in applicationCommands.Entity)
-                //    {
-                //        applicationAPI.DeleteGlobalApplicationCommandAsync(new Snowflake(APPLICATION_CLIENT_ID), command.ID).Wait();
-                //    }
-                //}
-
-                foreach (Snowflake guild in debugServerSnowflakes)
-                {
-                    Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
-                    if (!updateSlashCommandsResult.IsSuccess)
-                        Log.Warning("Could not update slash commands for the debug guild {id}", guild.Value);
-                }
-#else
-                Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
-                if (!updateSlashCommandsResult.IsSuccess)
-                    Log.Warning("Could not update global application commands");
-#endif
-            }
+            services.AddPreExecutionEvent<TriggerTypingExecutionEvent>()
+                    .AddPostExecutionEvent<ErrorLogExecutionEvent>();
 
             return services;
         }

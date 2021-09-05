@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DbgCensus.Core.Objects;
+using System;
 
 namespace UVOCBot.Model.Census
 {
@@ -14,8 +15,8 @@ namespace UVOCBot.Model.Census
         public double FactionVS { get; init; }
         public int ExperienceBonus { get; init; }
         public DateTimeOffset Timestamp { get; init; }
-        public ZoneType ZoneId { get; init; }
-        public WorldType WorldId { get; init; }
+        public ZoneId ZoneId { get; init; }
+        public WorldDefinition WorldId { get; init; }
         public int InstanceId { get; init; }
         public string MetagameEventStateName { get; init; }
         public World World { get; init; }
@@ -23,6 +24,7 @@ namespace UVOCBot.Model.Census
         public MetagameEvent()
         {
             MetagameEventStateName = string.Empty;
+            ZoneId = ZoneId.Default;
             World = new World();
         }
     }

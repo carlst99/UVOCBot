@@ -1,4 +1,5 @@
-﻿using Remora.Results;
+﻿using DbgCensus.Core.Objects;
+using Remora.Results;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,22 +16,6 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns></returns>
         Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default);
-
-        /// <summary>
-        /// Gets information about a world.
-        /// </summary>
-        /// <param name="world"></param>
-        /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
-        /// <returns></returns>
-        Task<Result<World>> GetWorld(WorldType world, CancellationToken ct = default);
-
-        /// <summary>
-        /// Gets the online members of an outfit.
-        /// </summary>
-        /// <param name="outfitTag">The case-insensitive tag of the outfit.</param>
-        /// <param name="ct">A token which can be used to cancel asynchronous logic.</param>
-        /// <returns></returns>
-        Task<Result<OutfitOnlineMembers>> GetOnlineMembersAsync(string outfitTag, CancellationToken ct = default);
 
         /// <summary>
         /// Gets the online members of a number of outfits.
@@ -72,6 +57,6 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="zones">The zones to retrieve maps for.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns>A list of maps.</returns>
-        Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneType> zones, CancellationToken ct = default);
+        Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneDefinition> zones, CancellationToken ct = default);
     }
 }

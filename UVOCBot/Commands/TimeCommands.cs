@@ -1,12 +1,12 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Core;
 using Remora.Results;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Utilities;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 

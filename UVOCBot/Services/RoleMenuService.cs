@@ -19,20 +19,17 @@ namespace UVOCBot.Services
 {
     public class RoleMenuService : IRoleMenuService
     {
-        private readonly ILogger<WelcomeMessageService> _logger;
         private readonly DiscordContext _dbContext;
         private readonly InteractionContext _context;
         private readonly IDiscordRestGuildAPI _guildApi;
         private readonly IReplyService _replyService;
 
         public RoleMenuService(
-            ILogger<WelcomeMessageService> logger,
             DiscordContext dbContext,
             InteractionContext context,
             IDiscordRestGuildAPI guildApi,
             IReplyService replyService)
         {
-            _logger = logger;
             _dbContext = dbContext;
             _context = context;
             _guildApi = guildApi;

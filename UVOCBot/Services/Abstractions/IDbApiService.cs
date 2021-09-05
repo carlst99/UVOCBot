@@ -55,51 +55,5 @@ namespace UVOCBot.Services.Abstractions
         Task<Result> DeleteGuildTwitterLinkAsync(ulong guildTwitterSettingsId, long twitterUserId, CancellationToken ct = default);
 
         #endregion
-
-        #region GuildSettings
-
-        Task<Result<List<GuildSettingsDto>>> ListGuildSettingsAsync(bool hasPrefix = false, CancellationToken ct = default);
-
-        Task<Result<GuildSettingsDto>> GetGuildSettingsAsync(ulong id, CancellationToken ct = default);
-
-        Task<Result> UpdateGuildSettingsAsync(ulong id, GuildSettingsDto settings, CancellationToken ct = default);
-
-        Task<Result<GuildSettingsDto>> CreateGuildSettingsAsync(GuildSettingsDto settings, CancellationToken ct = default);
-
-        Task<Result> DeleteGuildSettingsAsync(ulong id, CancellationToken ct = default);
-
-        #endregion
-
-        #region PlanetsideSettings
-
-        Task<Result<List<PlanetsideSettingsDto>>> ListPlanetsideSettingsAsync(CancellationToken ct = default);
-
-        Task<Result<PlanetsideSettingsDto>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
-
-        Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDto settings, CancellationToken ct = default);
-
-        Task<Result<PlanetsideSettingsDto>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDto settings, CancellationToken ct = default);
-
-        Task<Result> DeletePlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
-
-        #endregion
-
-        #region MemberGroups
-
-        Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong id, CancellationToken ct = default);
-
-        Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
-
-        Task<Result<List<MemberGroupDto>>> ListGuildMemberGroupsAsync(ulong guildId, CancellationToken ct = default);
-
-        Task<Result> UpdateMemberGroupAsync(ulong id, MemberGroupDto group, CancellationToken ct = default);
-
-        Task<Result<MemberGroupDto>> CreateMemberGroupAsync(MemberGroupDto group, CancellationToken ct = default);
-
-        Task<Result> DeleteMemberGroupAsync(ulong id, CancellationToken ct = default);
-
-        Task<Result> DeleteMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
-
-        #endregion
     }
 }

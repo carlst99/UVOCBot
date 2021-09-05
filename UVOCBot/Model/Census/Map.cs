@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using DbgCensus.Core.Objects;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace UVOCBot.Model.Census
@@ -43,7 +44,7 @@ namespace UVOCBot.Model.Census
         }
 
         [JsonPropertyName("ZoneId")]
-        public ZoneType ZoneId { get; init; }
+        public ZoneId ZoneId { get; init; }
 
         [JsonPropertyName("Regions")]
         public RegionModel Regions { get; init; }
@@ -51,6 +52,7 @@ namespace UVOCBot.Model.Census
         public Map()
         {
             Regions = new RegionModel();
+            ZoneId = ZoneId.Default;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Exceptions;
+using DbgCensus.Core.Objects;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
@@ -18,14 +19,12 @@ namespace UVOCBot.Services
     public class CensusApiService : ICensusApiService
     {
         private readonly ILogger<CensusApiService> _logger;
-        private readonly IQueryBuilderFactory _queryFactory;
-        private readonly ICensusRestClient _censusClient;
+        private readonly IQueryService _queryService;
 
-        public CensusApiService(ILogger<CensusApiService> logger, IQueryBuilderFactory censusQueryFactory, ICensusRestClient censusClient)
+        public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService)
         {
             _logger = logger;
-            _queryFactory = censusQueryFactory;
-            _censusClient = censusClient;
+            _queryService = queryService;
         }
 
         // TODO: No result exception
@@ -36,13 +35,13 @@ namespace UVOCBot.Services
         /// <inheritdoc />
         public async Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default)
         {
-            IQueryBuilder query = _queryFactory.Get()
+            IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("outfit")
                 .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
 
             try
             {
-                return await _censusClient.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
+                return await _queryService.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -52,41 +51,18 @@ namespace UVOCBot.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Result<World>> GetWorld(WorldType world, CancellationToken ct = default)
-        {
-            IQueryBuilder query = _queryFactory.Get()
-                .OnCollection("world")
-                .Where("world_id", SearchModifier.Equals, (int)world)
-                .WithLimitPerDatabase(15); // Adding a limit that isn't 10 or 100 here significantly improves the chances of the correct state being returned
-
-            return await GetAsync<World>(query, ct).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
-        public async Task<Result<OutfitOnlineMembers>> GetOnlineMembersAsync(string outfitTag, CancellationToken ct = default)
-        {
-            IQueryBuilder query = _queryFactory.Get()
-                .OnCollection("outfit")
-                .Where("alias_lower", SearchModifier.Equals, outfitTag.ToLower());
-
-            ConstructOnlineMembersQuery(query);
-
-            return await GetAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
         public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default)
         {
             List<ulong> outfitIds = new();
 
             foreach (string tag in outfitTags)
             {
-                IQueryBuilder query = _queryFactory.Get();
+                IQueryBuilder query = _queryService.CreateQuery();
 
                 query.OnCollection("outfit")
                      .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
 
-                Outfit? outfit = await _censusClient.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
+                Outfit? outfit = await _queryService.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
 
                 if (outfit is not null)
                     outfitIds.Add(outfit.OutfitId);
@@ -98,7 +74,7 @@ namespace UVOCBot.Services
         /// <inheritdoc/>
         public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default)
         {
-            IQueryBuilder query = _queryFactory.Get()
+            IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("outfit")
                 .WhereAll("outfit_id", SearchModifier.Equals, outfitIds);
 
@@ -112,7 +88,7 @@ namespace UVOCBot.Services
         {
             // https://census.daybreakgames.com/get/ps2/outfit_member?outfit_id=37562651025751157&c:sort=member_since:-1&c:show=character_id,member_since&c:join=character%5Eshow:name.first%5Einject_at:character_name&c:limit=10
 
-            IQueryBuilder query = _queryFactory.Get()
+            IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("outfit_member")
                 .Where("outfit_id", SearchModifier.Equals, outfitId)
                 .WithSortOrder("member_since", SortOrder.Descending)
@@ -132,7 +108,7 @@ namespace UVOCBot.Services
         {
             // https://census.daybreakgames.com/get/ps2/world_event?type=METAGAME&world_id=1&c:limit=20&c:sort=timestamp&c:join=world%5Einject_at:world
 
-            IQueryBuilder query = _queryFactory.Get()
+            IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("world_event")
                 .Where("type", SearchModifier.Equals, "METAGAME")
                 .Where("world_id", SearchModifier.Equals, (int)world)
@@ -144,11 +120,11 @@ namespace UVOCBot.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneType> zones, CancellationToken ct = default)
+        public async Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneDefinition> zones, CancellationToken ct = default)
         {
             // https://census.daybreakgames.com/get/ps2/map?world_id=1&zone_ids=2,4,6,8
 
-            IQueryBuilder query = _queryFactory.Get()
+            IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("map")
                 .Where("world_id", SearchModifier.Equals, (int)world)
                 .WhereAll("zone_ids", SearchModifier.Equals, zones.Select(z => (int)z));
@@ -161,7 +137,7 @@ namespace UVOCBot.Services
         {
             try
             {
-                T? result = await _censusClient.GetAsync<T>(query, ct).ConfigureAwait(false);
+                T? result = await _queryService.GetAsync<T>(query, ct).ConfigureAwait(false);
 
                 if (result is null)
                     throw new CensusException($"Census returned no data for query { callerName }.");
@@ -180,7 +156,7 @@ namespace UVOCBot.Services
         {
             try
             {
-                List<T>? result = await _censusClient.GetAsync<List<T>>(query, ct).ConfigureAwait(false);
+                List<T>? result = await _queryService.GetAsync<List<T>>(query, ct).ConfigureAwait(false);
 
                 if (result is null)
                     throw new CensusException($"Census returned no data for query { callerName }.");

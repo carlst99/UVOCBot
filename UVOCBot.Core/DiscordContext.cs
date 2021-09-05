@@ -8,7 +8,6 @@ namespace UVOCBot.Core
 {
     public sealed class DiscordContext : DbContext
     {
-        public DbSet<GuildSettings> GuildSettings { get; set; }
         public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
         public DbSet<GuildWelcomeMessage> GuildWelcomeMessages { get; set; }
         public DbSet<TwitterUser> TwitterUsers { get; set; }
@@ -36,6 +35,12 @@ namespace UVOCBot.Core
 
             modelBuilder.Entity<GuildWelcomeMessage>()
                         .Property(p => p.DefaultRoles)
+                        .HasConversion(
+                            v => IdListToBytes(v),
+                            v => BytesToIdList(v));
+
+            modelBuilder.Entity<MemberGroup>()
+                        .Property(p => p.UserIds)
                         .HasConversion(
                             v => IdListToBytes(v),
                             v => BytesToIdList(v));

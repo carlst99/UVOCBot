@@ -2,64 +2,57 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using UVOCBot.Core.Dto;
 
 namespace UVOCBot.Core.Model
 {
     [Index(nameof(GroupName), IsUnique = false)]
-    public class MemberGroup
+    public class MemberGroup : IGuildObject
     {
+        /// <summary>
+        /// Gets the maximum length of time that a group can exist for.
+        /// </summary>
         public const int MAX_LIFETIME_HOURS = 24;
 
         [Key]
         public ulong Id { get; set; }
 
-        /// <summary>
-        /// Gets or sets ID of the guild that this group belongs to
-        /// </summary>
+        /// <inheritdoc />
         public ulong GuildId { get; set; }
 
         /// <summary>
-        /// The ID of the Discord user that created this group
+        /// The ID of the Discord user that created this group.
         /// </summary>
         public ulong CreatorId { get; set; }
 
         /// <summary>
-        /// Gets or sets the time that this group was created at
+        /// Gets or sets the time that this group was created at.
         /// </summary>
         public DateTimeOffset CreatedAt { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the group
+        /// Gets or sets the name of the group.
         /// </summary>
         public string GroupName { get; set; } = Guid.NewGuid().ToString();
 
         /// <summary>
-        /// An LF delimited list of the users in this group
+        /// Gets the list of users in this group.
         /// </summary>
-        public string UserIds { get; set; } = string.Empty;
+        public List<ulong> UserIds { get; set; }
 
-        public MemberGroupDto ToDto()
-            => new()
-            {
-                Id = Id,
-                GuildId = GuildId,
-                CreatorId = CreatorId,
-                CreatedAt = CreatedAt,
-                GroupName = GroupName,
-                UserIds = new List<ulong>(UserIds.Split('\n').Select(s => ulong.Parse(s)))
-            };
+        /// <summary>
+        /// Only use this constructor if you are setting the <see cref="GuildId"/> immediately after construction.
+        /// </summary>
+        public MemberGroup()
+            : this(0, "Group")
+        {
+        }
 
-        public static MemberGroup FromDto(MemberGroupDto dto)
-            => new()
-            {
-                Id = dto.Id,
-                GuildId = dto.GuildId,
-                CreatorId = dto.CreatorId,
-                CreatedAt = dto.CreatedAt,
-                GroupName = dto.GroupName,
-                UserIds = string.Join('\n', dto.UserIds.Select(i => i.ToString()))
-            };
+        public MemberGroup(ulong guildId, string groupName)
+        {
+            GuildId = guildId;
+            UserIds = new List<ulong>();
+            CreatedAt = DateTimeOffset.UtcNow;
+            GroupName = groupName;
+        }
     }
 }

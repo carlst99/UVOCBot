@@ -2,6 +2,7 @@
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 using System;
@@ -13,7 +14,6 @@ using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models.V2;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Commands.Utilities;
 using UVOCBot.Core.Dto;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;

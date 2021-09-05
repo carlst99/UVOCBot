@@ -1,5 +1,16 @@
 # Changelog
 
+## Release v0.4.1 - 04/09/2021
+
+A servicing release.
+
+- Fixed the PlanetSide status command.
+- Improved the `online` command.
+- Removed the `GuildSettings` database object and updated the `MemberGroup` database object - a database migration is required.
+- Removed the `PlanetsideSettings` API endpoint.
+- Cleaned up existing code and removed unused code.
+- Removed our custom interaction responder and ephemeral system in favour of the recent Remora.Discord additions.
+
 ## Release v0.4.0 - 19/08/2021
 
 **New features:**

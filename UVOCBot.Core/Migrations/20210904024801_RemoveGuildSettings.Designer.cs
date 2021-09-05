@@ -2,15 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UVOCBot.Core;
 
 namespace UVOCBot.Core.Migrations
 {
     [DbContext(typeof(DiscordContext))]
-    partial class BotContextModelSnapshot : ModelSnapshot
+    [Migration("20210904024801_RemoveGuildSettings")]
+    partial class RemoveGuildSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -192,9 +194,9 @@ namespace UVOCBot.Core.Migrations
                     b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<byte[]>("UserIds")
+                    b.Property<string>("UserIds")
                         .IsRequired()
-                        .HasColumnType("longblob");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 

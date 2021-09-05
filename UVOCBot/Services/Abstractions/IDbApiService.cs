@@ -55,23 +55,5 @@ namespace UVOCBot.Services.Abstractions
         Task<Result> DeleteGuildTwitterLinkAsync(ulong guildTwitterSettingsId, long twitterUserId, CancellationToken ct = default);
 
         #endregion
-
-        #region MemberGroups
-
-        Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong id, CancellationToken ct = default);
-
-        Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
-
-        Task<Result<List<MemberGroupDto>>> ListGuildMemberGroupsAsync(ulong guildId, CancellationToken ct = default);
-
-        Task<Result> UpdateMemberGroupAsync(ulong id, MemberGroupDto group, CancellationToken ct = default);
-
-        Task<Result<MemberGroupDto>> CreateMemberGroupAsync(MemberGroupDto group, CancellationToken ct = default);
-
-        Task<Result> DeleteMemberGroupAsync(ulong id, CancellationToken ct = default);
-
-        Task<Result> DeleteMemberGroupAsync(ulong guildId, string groupName, CancellationToken ct = default);
-
-        #endregion
     }
 }

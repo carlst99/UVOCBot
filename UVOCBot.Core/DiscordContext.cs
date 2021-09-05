@@ -38,6 +38,12 @@ namespace UVOCBot.Core
                         .HasConversion(
                             v => IdListToBytes(v),
                             v => BytesToIdList(v));
+
+            modelBuilder.Entity<MemberGroup>()
+                        .Property(p => p.UserIds)
+                        .HasConversion(
+                            v => IdListToBytes(v),
+                            v => BytesToIdList(v));
         }
 
         private static byte[] IdListToBytes(IList<ulong> idList)

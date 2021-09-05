@@ -1,4 +1,5 @@
-﻿using Remora.Commands.Attributes;
+﻿using Microsoft.EntityFrameworkCore;
+using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -12,7 +13,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
-using UVOCBot.Core.Dto;
+using UVOCBot.Core;
+using UVOCBot.Core.Model;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -22,17 +24,17 @@ namespace UVOCBot.Commands
     public class MovementCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly IReplyService _responder;
+        private readonly DiscordContext _dbContext;
+        private readonly IReplyService _replyService;
         private readonly IDiscordRestGuildAPI _guildAPI;
-        private readonly IDbApiService _dbAPI;
         private readonly IVoiceStateCacheService _voiceStateCache;
 
-        public MovementCommands(ICommandContext context, IReplyService responder, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI, IVoiceStateCacheService voiceStateCache)
+        public MovementCommands(ICommandContext context, DiscordContext dbContext, IReplyService replyService, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI, IVoiceStateCacheService voiceStateCache)
         {
             _context = context;
-            _responder = responder;
+            _dbContext = dbContext;
+            _replyService = replyService;
             _guildAPI = guildAPI;
-            _dbAPI = dbAPI;
             _voiceStateCache = voiceStateCache;
         }
 
@@ -44,7 +46,7 @@ namespace UVOCBot.Commands
         {
             if (moveTo.Type != ChannelType.GuildVoice)
             {
-                await _responder.RespondWithUserErrorAsync($"Please specify a valid {Formatter.Bold("voice")} channel to move to.", ct: CancellationToken).ConfigureAwait(false);
+                await _replyService.RespondWithUserErrorAsync($"Please specify a valid {Formatter.Bold("voice")} channel to move to.", ct: CancellationToken).ConfigureAwait(false);
                 return Result.FromSuccess();
             }
 
@@ -54,12 +56,12 @@ namespace UVOCBot.Commands
 
             Optional<IReadOnlyList<IVoiceState>> voiceStates = _voiceStateCache.GetChannelVoiceStates(moveFromID.Entity);
             if (!voiceStates.HasValue)
-                return await _responder.RespondWithUserErrorAsync("There are no members to move", ct: CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithUserErrorAsync("There are no members to move", ct: CancellationToken).ConfigureAwait(false);
 
             foreach (IVoiceState voiceState in voiceStates.Value)
                 await _guildAPI.ModifyGuildMemberAsync(_context.GuildID.Value, voiceState.UserID, channelID: moveTo.ID, ct: CancellationToken).ConfigureAwait(false);
 
-            return await _responder.RespondWithSuccessAsync(Formatter.Emoji("white_check_mark"), ct: CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithSuccessAsync(Formatter.Emoji("white_check_mark"), ct: CancellationToken).ConfigureAwait(false);
         }
 
         [Command("move-group")]
@@ -71,7 +73,7 @@ namespace UVOCBot.Commands
         {
             if (moveTo.Type != ChannelType.GuildVoice)
             {
-                await _responder.RespondWithUserErrorAsync($"Please specify a valid {Formatter.Bold("voice")} channel to move to.", ct: CancellationToken).ConfigureAwait(false);
+                await _replyService.RespondWithUserErrorAsync($"Please specify a valid {Formatter.Bold("voice")} channel to move to.", ct: CancellationToken).ConfigureAwait(false);
                 return Result.FromSuccess();
             }
 
@@ -85,7 +87,7 @@ namespace UVOCBot.Commands
 
             Optional<IReadOnlyList<IVoiceState>> voiceStates = _voiceStateCache.GetChannelVoiceStates(moveFromID.Entity);
             if (!voiceStates.HasValue)
-                return await _responder.RespondWithUserErrorAsync("There are no members to move", ct: CancellationToken).ConfigureAwait(false);
+                return await _replyService.RespondWithUserErrorAsync("There are no members to move", ct: CancellationToken).ConfigureAwait(false);
 
             foreach (IVoiceState voiceState in voiceStates.Value)
             {
@@ -93,7 +95,7 @@ namespace UVOCBot.Commands
                     await _guildAPI.ModifyGuildMemberAsync(_context.GuildID.Value, voiceState.UserID, channelID: moveTo.ID, ct: CancellationToken).ConfigureAwait(false);
             }
 
-            return await _responder.RespondWithSuccessAsync(Formatter.Emoji("white_check_mark"), ct: CancellationToken).ConfigureAwait(false);
+            return await _replyService.RespondWithSuccessAsync(Formatter.Emoji("white_check_mark"), ct: CancellationToken).ConfigureAwait(false);
         }
 
         private async Task<Result<Snowflake>> GetMoveFromChannelIdAsync(IChannel? moveFromChannel = null)
@@ -103,7 +105,7 @@ namespace UVOCBot.Commands
                 Optional<IVoiceState> memberState = _voiceStateCache.GetUserVoiceState(_context.User.ID);
                 if (!memberState.HasValue)
                 {
-                    await _responder.RespondWithUserErrorAsync("You must be in a voice channel to omit the " + Formatter.InlineQuote("moveFrom") + "parameter.", ct: CancellationToken).ConfigureAwait(false);
+                    await _replyService.RespondWithUserErrorAsync("You must be in a voice channel to omit the " + Formatter.InlineQuote("moveFrom") + "parameter.", ct: CancellationToken).ConfigureAwait(false);
                     return Result<Snowflake>.FromError(new InvalidOperationException());
                 }
 
@@ -113,7 +115,7 @@ namespace UVOCBot.Commands
             {
                 if (moveFromChannel.Type != ChannelType.GuildVoice)
                 {
-                    await _responder.RespondWithUserErrorAsync($"Please specify a valid {Formatter.Bold("voice")} channel to move from.", ct: CancellationToken).ConfigureAwait(false);
+                    await _replyService.RespondWithUserErrorAsync($"Please specify a valid {Formatter.Bold("voice")} channel to move from.", ct: CancellationToken).ConfigureAwait(false);
                     return Result<Snowflake>.FromError(new InvalidOperationException());
                 }
 
@@ -123,23 +125,15 @@ namespace UVOCBot.Commands
 
         private async Task<Result<IReadOnlyList<Snowflake>>> GetGroupMembersAsync(string groupName)
         {
-            Result<MemberGroupDto> group = await _dbAPI.GetMemberGroupAsync(_context.GuildID.Value.Value, groupName, CancellationToken).ConfigureAwait(false);
+            MemberGroup? group = await _dbContext.MemberGroups.FirstAsync(g => g.GuildId == _context.GuildID.Value.Value && g.GroupName == groupName, CancellationToken).ConfigureAwait(false);
 
-            if (!group.IsSuccess)
+            if (group is null)
             {
-                if (group.Error is Model.HttpStatusCodeError er && er.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    await _responder.RespondWithUserErrorAsync("That group doesn't exist.", CancellationToken).ConfigureAwait(false);
-                    return Result<IReadOnlyList<Snowflake>>.FromError(group);
-                }
-                else
-                {
-                    await _responder.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    return Result<IReadOnlyList<Snowflake>>.FromError(group);
-                }
+                await _replyService.RespondWithUserErrorAsync("A group with that name does not exist.", CancellationToken).ConfigureAwait(false);
+                return new NotFoundError();
             }
 
-            return group.Entity.UserIds.ConvertAll(i => new Snowflake(i)).AsReadOnly();
+            return group.UserIds.ConvertAll(i => new Snowflake(i)).AsReadOnly();
         }
     }
 }

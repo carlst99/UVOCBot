@@ -16,7 +16,6 @@ using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core;
-using UVOCBot.Core.Dto;
 using UVOCBot.Core.Model;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
@@ -35,13 +34,13 @@ namespace UVOCBot.Commands
         public PlanetsideCommands(
             ICommandContext context,
             DiscordContext dbContext,
-            IReplyService responder,
+            IReplyService replyService,
             ICensusApiService censusApi,
             IFisuApiService fisuAPI)
         {
             _context = context;
             _dbContext = dbContext;
-            _replyService = responder;
+            _replyService = replyService;
             _censusApi = censusApi;
             _fisuAPI = fisuAPI;
         }

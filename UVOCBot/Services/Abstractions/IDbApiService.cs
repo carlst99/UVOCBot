@@ -56,20 +56,6 @@ namespace UVOCBot.Services.Abstractions
 
         #endregion
 
-        #region PlanetsideSettings
-
-        Task<Result<List<PlanetsideSettingsDto>>> ListPlanetsideSettingsAsync(CancellationToken ct = default);
-
-        Task<Result<PlanetsideSettingsDto>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
-
-        Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDto settings, CancellationToken ct = default);
-
-        Task<Result<PlanetsideSettingsDto>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDto settings, CancellationToken ct = default);
-
-        Task<Result> DeletePlanetsideSettingsAsync(ulong id, CancellationToken ct = default);
-
-        #endregion
-
         #region MemberGroups
 
         Task<Result<MemberGroupDto>> GetMemberGroupAsync(ulong id, CancellationToken ct = default);

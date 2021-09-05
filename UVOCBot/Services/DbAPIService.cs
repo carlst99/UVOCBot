@@ -31,13 +31,6 @@ namespace UVOCBot.Services
                     _logger.LogCritical("Could not scaffold guild twitter settings database objects: {error}", guildTwitterSettingsResult.Error);
                     return Result.FromError(guildTwitterSettingsResult);
                 }
-
-                Result<PlanetsideSettingsDto> planetsideSettingsResult = await CreatePlanetsideSettingsAsync(new PlanetsideSettingsDto(guild), ct).ConfigureAwait(false);
-                if (!planetsideSettingsResult.IsSuccess && !(planetsideSettingsResult.Error is HttpStatusCodeError er3 && er3.StatusCode == HttpStatusCode.Conflict))
-                {
-                    _logger.LogCritical("Could not scaffold PlanetSide settings database objects: {error}", planetsideSettingsResult.Error);
-                    return Result.FromError(planetsideSettingsResult);
-                }
             }
 
             return Result.FromSuccess();
@@ -167,51 +160,6 @@ namespace UVOCBot.Services
             IRestRequest request = new RestRequest("guildtwitterlinks", Method.DELETE);
             request.AddParameter("guildTwitterSettingsId", guildTwitterSettingsId, ParameterType.QueryString);
             request.AddParameter("twitterUserId", twitterUserId, ParameterType.QueryString);
-
-            return await ExecuteAsync(request, ct).ConfigureAwait(false);
-        }
-
-        #endregion
-
-        #region PlanetsideSettings
-
-        public async Task<Result<List<PlanetsideSettingsDto>>> ListPlanetsideSettingsAsync(CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("planetsidesettings", Method.GET);
-
-            return await ExecuteAsync<List<PlanetsideSettingsDto>>(request, ct).ConfigureAwait(false);
-        }
-
-        public async Task<Result<PlanetsideSettingsDto>> GetPlanetsideSettingsAsync(ulong id, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("planetsidesettings/{id}", Method.GET);
-            request.AddParameter("id", id, ParameterType.UrlSegment);
-
-            return await ExecuteAsync<PlanetsideSettingsDto>(request, ct).ConfigureAwait(false);
-        }
-
-        public async Task<Result> UpdatePlanetsideSettingsAsync(ulong id, PlanetsideSettingsDto settings, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("planetsidesettings/{id}", Method.PUT);
-            request.AddParameter("id", id, ParameterType.UrlSegment);
-
-            request.AddJsonBody(settings);
-
-            return await ExecuteAsync(request, ct).ConfigureAwait(false);
-        }
-
-        public async Task<Result<PlanetsideSettingsDto>> CreatePlanetsideSettingsAsync(PlanetsideSettingsDto settings, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("planetsidesettings", Method.POST);
-            request.AddJsonBody(settings);
-
-            return await ExecuteAsync<PlanetsideSettingsDto>(request, ct).ConfigureAwait(false);
-        }
-
-        public async Task<Result> DeletePlanetsideSettingsAsync(ulong id, CancellationToken ct = default)
-        {
-            IRestRequest request = new RestRequest("planetsidesettings/{id}", Method.DELETE);
-            request.AddParameter("id", id, ParameterType.UrlSegment);
 
             return await ExecuteAsync(request, ct).ConfigureAwait(false);
         }

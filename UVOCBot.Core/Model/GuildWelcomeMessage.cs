@@ -8,9 +8,7 @@ namespace UVOCBot.Core.Model
     /// </summary>
     public class GuildWelcomeMessage : IGuildObject
     {
-        /// <summary>
-        /// Gets or sets the ID of the guild that this object is storing data for.
-        /// </summary>
+        /// <inheritdoc />
         [Key]
         public ulong GuildId { get; set; }
 

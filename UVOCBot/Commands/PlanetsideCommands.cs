@@ -15,7 +15,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Core;
 using UVOCBot.Core.Dto;
+using UVOCBot.Core.Model;
 using UVOCBot.Model;
 using UVOCBot.Model.Census;
 using UVOCBot.Services.Abstractions;
@@ -25,16 +27,21 @@ namespace UVOCBot.Commands
     public class PlanetsideCommands : CommandGroup
     {
         private readonly ICommandContext _context;
+        private readonly DiscordContext _dbContext;
         private readonly IReplyService _replyService;
-        private readonly IDbApiService _dbApi;
         private readonly ICensusApiService _censusApi;
         private readonly IFisuApiService _fisuAPI;
 
-        public PlanetsideCommands(ICommandContext context, IReplyService responder, IDbApiService dbApi, ICensusApiService censusApi, IFisuApiService fisuAPI)
+        public PlanetsideCommands(
+            ICommandContext context,
+            DiscordContext dbContext,
+            IReplyService responder,
+            ICensusApiService censusApi,
+            IFisuApiService fisuAPI)
         {
             _context = context;
+            _dbContext = dbContext;
             _replyService = responder;
-            _dbApi = dbApi;
             _censusApi = censusApi;
             _fisuAPI = fisuAPI;
         }
@@ -49,21 +56,16 @@ namespace UVOCBot.Commands
                 if (!_context.GuildID.HasValue)
                     return await _replyService.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
-                Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-                if (!settings.IsSuccess)
-                {
-                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    return settings;
-                }
+                PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
-                if (settings.Entity.DefaultWorld is null)
+                if (settings.DefaultWorld is null)
                 {
                     return await _replyService.RespondWithUserErrorAsync(
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         CancellationToken).ConfigureAwait(false);
                 }
 
-                server = (WorldType)settings.Entity.DefaultWorld;
+                server = (WorldType)settings.DefaultWorld;
             }
 
             return await SendWorldPopulation(server).ConfigureAwait(false);
@@ -79,21 +81,16 @@ namespace UVOCBot.Commands
                 if (!_context.GuildID.HasValue)
                     return await _replyService.RespondWithUserErrorAsync("To use this command in a DM you must provide a server.", CancellationToken).ConfigureAwait(false);
 
-                Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-                if (!settings.IsSuccess)
-                {
-                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    return settings;
-                }
+                PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
-                if (settings.Entity.DefaultWorld is null)
+                if (settings.DefaultWorld is null)
                 {
                     return await _replyService.RespondWithUserErrorAsync(
                         $"You haven't set a default server! Please do so using the {Formatter.InlineQuote("/default-server")} command.",
                         CancellationToken).ConfigureAwait(false);
                 }
 
-                server = (WorldType)settings.Entity.DefaultWorld;
+                server = (WorldType)settings.DefaultWorld;
             }
 
             return await SendWorldStatus(server).ConfigureAwait(false);
@@ -188,21 +185,12 @@ namespace UVOCBot.Commands
         [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
         public async Task<IResult> DefaultWorldCommand([DiscordTypeHint(TypeHint.String)] WorldType server)
         {
-            Result<PlanetsideSettingsDto> settings = await _dbApi.GetPlanetsideSettingsAsync(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-            if (!settings.IsSuccess)
-            {
-                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                return settings;
-            }
+            PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
-            settings.Entity.DefaultWorld = (int)server;
+            settings.DefaultWorld = (int)server;
 
-            Result updateResult = await _dbApi.UpdatePlanetsideSettingsAsync(_context.GuildID.Value.Value, settings.Entity, CancellationToken).ConfigureAwait(false);
-            if (!updateResult.IsSuccess)
-            {
-                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                return updateResult;
-            }
+            _dbContext.Update(settings);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
             return await _replyService.RespondWithSuccessAsync(
                 $"{Formatter.Emoji("earth_asia")} Your default server has been set to {Formatter.InlineQuote(server.ToString())}",

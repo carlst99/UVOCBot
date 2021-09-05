@@ -13,6 +13,7 @@ using Remora.Discord.Commands.Services;
 using Remora.Discord.Core;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
+using Remora.Discord.Hosting.Extensions;
 using Remora.Discord.Hosting.Services;
 using Remora.Results;
 using Serilog;
@@ -118,6 +119,7 @@ namespace UVOCBot
                     logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
 #endif
                 })
+                .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
                 .UseSerilog(logger)
                 .UseSystemd()
                 .ConfigureServices((c, services) =>
@@ -167,8 +169,7 @@ namespace UVOCBot
                             .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
-                    services.AddHostedService<DiscordService>()
-                            .AddHostedService<GenericWorker>()
+                    services.AddHostedService<GenericWorker>()
                             .AddHostedService<TwitterWorker>();
                 });
         }
@@ -255,8 +256,7 @@ namespace UVOCBot
                         | GatewayIntents.GuildMembers;
                 });
 
-            services.AddDiscordGateway(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                    .AddDiscordCommands(true)
+            services.AddDiscordCommands(true)
                     .AddDiscordCaching();
 
             services.AddResponder<ComponentInteractionResponder>()

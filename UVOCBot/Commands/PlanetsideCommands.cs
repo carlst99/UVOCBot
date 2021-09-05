@@ -107,25 +107,25 @@ namespace UVOCBot.Commands
             if (tags.Length == 0 || tags.Length > 10)
                 return await _replyService.RespondWithUserErrorAsync("You must specify between 1-10 outfit tags.", CancellationToken).ConfigureAwait(false);
 
-            Result<List<OutfitOnlineMembers>> outfitOnlineMembers = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
-            if (!outfitOnlineMembers.IsSuccess)
+            Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
+            if (!outfits.IsSuccess)
             {
                 await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                return outfitOnlineMembers;
+                return outfits;
             }
 
             StringBuilder sb = new();
             List<Embed> embeds = new();
 
-            foreach (OutfitOnlineMembers onlineMembers in outfitOnlineMembers.Entity)
+            foreach (OutfitOnlineMembers oufit in outfits.Entity)
             {
-                foreach (OutfitOnlineMembers.MemberModel member in onlineMembers.OnlineMembers.OrderBy(m => m.Character.Name.First))
+                foreach (OutfitOnlineMembers.MemberModel member in oufit.OnlineMembers.OrderBy(m => m.Character.Name.First))
                     sb.AppendLine(member.Character.Name.First);
 
                 embeds.Add(new()
                 {
-                    Title = $"[{ onlineMembers.OutfitAlias }] - { onlineMembers.OnlineMembers.Count } online.",
-                    Description = onlineMembers.OnlineMembers.Count > 0 ? sb.ToString() : @"¯\_(ツ)_/¯",
+                    Title = $"[{ oufit.OutfitAlias }] { oufit.OutfitName } - { oufit.OnlineMembers.Count } online.",
+                    Description = oufit.OnlineMembers.Count > 0 ? sb.ToString() : @"¯\_(ツ)_/¯",
                     Colour = BotConstants.DEFAULT_EMBED_COLOUR
                 });
 

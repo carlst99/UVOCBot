@@ -7,7 +7,7 @@
 Provides various functions to assist with the experience of the UVOC outfit Discord server. Current features include:
 
 - Tweet relaying - Posts tweets from Twitter users into a Discord channel.
-- PlanetSide 2 server population, status querying (borked atm) and online member checking.
+- PlanetSide 2 server population, status querying and online member checking.
 - Welcome messages - assign default roles, let users pick an alternate role set, and make guesses at their in-game name for easy nickname changes.
 - Role menus
 - Bulk voice channel movement.

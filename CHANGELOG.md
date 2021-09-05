@@ -7,7 +7,7 @@ A servicing release.
 - Removed the `GuildSettings` database object - a database migration is required
 - Removed unused code
 - Removed our custom interaction responder and ephemeral system in favour of the recent Remora.Discord additions
-
+- Fixed the PlanetSide status command.
 
 ## Release v0.4.0 - 19/08/2021
 

@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Exceptions;
+using DbgCensus.Core.Objects;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ namespace UVOCBot.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Result<World>> GetWorld(WorldType world, CancellationToken ct = default)
+        public async Task<Result<World>> GetWorld(WorldDefinition world, CancellationToken ct = default)
         {
             IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("world")
@@ -142,7 +143,7 @@ namespace UVOCBot.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneType> zones, CancellationToken ct = default)
+        public async Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneDefinition> zones, CancellationToken ct = default)
         {
             // https://census.daybreakgames.com/get/ps2/map?world_id=1&zone_ids=2,4,6,8
 

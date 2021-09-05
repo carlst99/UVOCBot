@@ -19,7 +19,7 @@ namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• **Role menus!** - Let members toggle roles with ease.";
+        public const string RELEASE_NOTES = "• Fixed the `status` command.";
 
         private readonly IReplyService _replyService;
         private readonly IDiscordRestUserAPI _userAPI;
@@ -71,7 +71,7 @@ namespace UVOCBot.Commands
         [Ephemeral]
         public async Task<IResult> InfoCommandAsync()
         {
-            Optional<string> botAvatar = new();
+            string? botAvatar = null;
             Optional<string> authorAvatar = new();
 
             Result<IUser> botUser = await _userAPI.GetCurrentUserAsync(CancellationToken).ConfigureAwait(false);
@@ -94,7 +94,7 @@ namespace UVOCBot.Commands
             {
                 Title = "UVOCBot",
                 Description = "A general-purpose bot built to assist the UVOC Discord server",
-                Thumbnail = new EmbedThumbnail(botAvatar, Height: 96, Width: 96),
+                Thumbnail = botAvatar is not null ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96) : new Optional<IEmbedThumbnail>(),
                 Author = new EmbedAuthor("Written by FalconEye#1153", IconUrl: authorAvatar),
                 Footer = new EmbedFooter($"Version {Assembly.GetEntryAssembly()?.GetName().Version}"),
                 Colour = BotConstants.DEFAULT_EMBED_COLOUR,

@@ -1,4 +1,5 @@
-﻿using Remora.Commands.Attributes;
+﻿using DbgCensus.Core.Objects;
+using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
@@ -243,7 +244,7 @@ namespace UVOCBot.Commands
         {
             try
             {
-                List<Map> maps = await _censusApi.GetMaps(world, Enum.GetValues<ZoneType>(), CancellationToken).ConfigureAwait(false);
+                List<Map> maps = await _censusApi.GetMaps(world, Enum.GetValues<ZoneDefinition>(), CancellationToken).ConfigureAwait(false);
                 List<MetagameEvent> events = await _censusApi.GetMetagameEventsAsync(world, CancellationToken).ConfigureAwait(false);
 
                 List<EmbedField> embedFields = new();
@@ -283,12 +284,12 @@ namespace UVOCBot.Commands
             double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.TR) / regionCount) * 100;
             double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.VS) / regionCount) * 100;
 
-            string title = map.ZoneId switch
+            string title = map.ZoneId.Definition switch
             {
-                ZoneType.Amerish => Formatter.Emoji("mountain") + " Amerish",
-                ZoneType.Esamir => Formatter.Emoji("snowflake") + " Esamir",
-                ZoneType.Hossin => Formatter.Emoji("deciduous_tree") + " Hossin",
-                ZoneType.Indar => Formatter.Emoji("desert") + " Indar",
+                ZoneDefinition.Amerish => Formatter.Emoji("mountain") + " Amerish",
+                ZoneDefinition.Esamir => Formatter.Emoji("snowflake") + " Esamir",
+                ZoneDefinition.Hossin => Formatter.Emoji("deciduous_tree") + " Hossin",
+                ZoneDefinition.Indar => Formatter.Emoji("desert") + " Indar",
                 _ => Formatter.Emoji("no_entry_sign") + " Unknown Continent"
             };
 

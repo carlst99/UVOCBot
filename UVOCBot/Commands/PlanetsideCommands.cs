@@ -99,62 +99,40 @@ namespace UVOCBot.Commands
         [Command("online")]
         [Description("Gets the number of online members for an outfit.")]
         [Ephemeral]
-        public async Task<IResult> GetOnlineOutfitMembersCommandAsync([Description("A space-separated, case-insensitive list of outfit tags.")] string outfitTags)
+        public async Task<IResult> GetOnlineOutfitMembersCommandAsync(
+            [Description("A space-separate, case-insensitive list of outfit tags.")] string outfitTags)
         {
-            string[] tags = outfitTags.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string[] tags = outfitTags.Split(' ');
 
-            if (tags.Length == 1)
+            if (tags.Length == 0 || tags.Length > 10)
+                return await _replyService.RespondWithUserErrorAsync("You must specify between 1-10 outfit tags.", CancellationToken).ConfigureAwait(false);
+
+            Result<List<OutfitOnlineMembers>> outfitOnlineMembers = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
+            if (!outfitOnlineMembers.IsSuccess)
             {
-                Result<OutfitOnlineMembers> onlineMembers = await _censusApi.GetOnlineMembersAsync(tags[0], CancellationToken).ConfigureAwait(false);
-                if (!onlineMembers.IsSuccess)
-                {
-                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    return onlineMembers;
-                }
+                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                return outfitOnlineMembers;
+            }
 
-                StringBuilder sb = new();
-                foreach (OutfitOnlineMembers.MemberModel member in onlineMembers.Entity.OnlineMembers.OrderBy(m => m.Character.Name.First))
+            StringBuilder sb = new();
+            List<Embed> embeds = new();
+
+            foreach (OutfitOnlineMembers onlineMembers in outfitOnlineMembers.Entity)
+            {
+                foreach (OutfitOnlineMembers.MemberModel member in onlineMembers.OnlineMembers.OrderBy(m => m.Character.Name.First))
                     sb.AppendLine(member.Character.Name.First);
 
-                Embed embed = new()
+                embeds.Add(new()
                 {
-                    Author = new EmbedAuthor($"{ onlineMembers.Entity.OutfitAlias } | { onlineMembers.Entity.OutfitName }"),
-                    Title = onlineMembers.Entity.OnlineMembers.Count.ToString() + " online",
-                    Description = sb.ToString(),
+                    Title = $"[{ onlineMembers.OutfitAlias }] - { onlineMembers.OnlineMembers.Count } online.",
+                    Description = onlineMembers.OnlineMembers.Count > 0 ? sb.ToString() : @"¯\_(ツ)_/¯",
                     Colour = BotConstants.DEFAULT_EMBED_COLOUR
-                };
+                });
 
-                return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
-            }
-            else if (tags.Length > 1)
-            {
-                Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
-                if (!outfits.IsSuccess)
-                {
-                    await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    return outfits;
-                }
-
-                List<IEmbedField> embedFields = new();
-                foreach (OutfitOnlineMembers onlineMembers in outfits.Entity)
-                {
-                    embedFields.Add(new EmbedField
-                        (
-                            onlineMembers.OutfitAlias + " | " + onlineMembers.OutfitName,
-                            onlineMembers.OnlineMembers.Count.ToString() + " online"
-                        ));
-                }
-
-                Embed embed = new()
-                {
-                    Fields = embedFields,
-                    Colour = BotConstants.DEFAULT_EMBED_COLOUR
-                };
-
-                return await _replyService.RespondWithEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
+                sb.Clear();
             }
 
-            return Result.FromSuccess();
+            return await _replyService.RespondWithEmbedAsync(embeds, CancellationToken).ConfigureAwait(false);
         }
 
         [Command("map")]

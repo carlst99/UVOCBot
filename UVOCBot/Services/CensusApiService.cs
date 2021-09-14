@@ -30,10 +30,7 @@ namespace UVOCBot.Services
             _cache = cache;
         }
 
-        // TODO: No result exception
-        // TODO: Caching
-
-        // TODO: Convert to standard model
+        // TODO: Use generic get methods where applicable?
 
         /// <inheritdoc />
         public async Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default)
@@ -211,7 +208,7 @@ namespace UVOCBot.Services
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "<Pending>")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "callerName filled by framework so should come last.")]
         private async Task<T> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
         {
             try
@@ -230,7 +227,7 @@ namespace UVOCBot.Services
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "<Pending>")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "callerName filled by framework so should come last.")]
         private async Task<List<T>> GetListAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
         {
             try

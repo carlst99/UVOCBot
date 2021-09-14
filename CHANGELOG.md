@@ -1,5 +1,11 @@
 # Changelog
 
+## Release v0.4.2 - 14/09/2021
+
+- Added base capture tracking for specified outfits
+
+:warning: A database update is required, and a new object has been added to `appsettings.json`.
+
 ## Release v0.4.1 - 04/09/2021
 
 A servicing release.

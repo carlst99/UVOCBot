@@ -19,18 +19,15 @@ namespace UVOCBot.Responders.Census
 {
     public class FacilityControlResponder : ICensusEventHandler<ServiceMessage<FacilityControl>>
     {
-        private readonly ILogger<FacilityControlResponder> _logger;
         private readonly DiscordContext _dbContext;
         private readonly ICensusApiService _censusApi;
         private readonly IDiscordRestChannelAPI _channelApi;
 
         public FacilityControlResponder(
-            ILogger<FacilityControlResponder> logger,
             DiscordContext dbContext,
             ICensusApiService censusApi,
             IDiscordRestChannelAPI channelApi)
         {
-            _logger = logger;
             _dbContext = dbContext;
             _censusApi = censusApi;
             _channelApi = channelApi;

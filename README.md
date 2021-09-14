@@ -8,14 +8,14 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
 
 - Tweet relaying - Posts tweets from Twitter users into a Discord channel.
 - PlanetSide 2 server population, status querying and online member checking.
+- Outfit base capture tracking.
 - Welcome messages - assign default roles, let users pick an alternate role set, and make guesses at their in-game name for easy nickname changes.
-- Role menus
+- Role menus.
 - Bulk voice channel movement.
 - Bulk reaction-based role assignment.
 - Temporary group creation (for use with movement commands).
 - Random team generation.
 - Various other features, such as coinflips, timestamp generation and basic admin logs.
-- (COMING SOON) Bulk timestamp formatting
 
 To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence if you'd like to use it in your own server, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
 
@@ -23,7 +23,7 @@ Contrary to the above, if you know me through the PlanetSide 2 community, feel f
 
 # Setup for Hosting
 
-Before continuing, you should note that UVOCBot is designed with a linux host in mind; it has support for systemd and I only provide linux binaries. If you'd like support for running as a Windows service and the corresponding binaries, please open an Issue.
+Before continuing, you should note that UVOCBot is designed with a Linux host in mind; it has support for systemd and I only provide Linux binaries. If you'd like support for running as a Windows service and the corresponding binaries, please open an Issue.
 
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a name and icon and **add a bot** to the application.
     1. :warning: Ensure that you enable the `Presence Intent` and `Server Members Intent`, found under the Bot tab of your application.

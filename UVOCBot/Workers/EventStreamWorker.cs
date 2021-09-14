@@ -30,8 +30,6 @@ namespace UVOCBot.Workers
 
                 try
                 {
-                    // We don't supply an initial subscription here, although you are able to.
-                    // Instead, it is supplied in the ConnectionStateChangedEventHandler .
                     await _client.StartAsync(ct: stoppingToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is not TaskCanceledException)

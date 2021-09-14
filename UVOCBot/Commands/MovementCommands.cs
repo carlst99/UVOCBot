@@ -29,7 +29,7 @@ namespace UVOCBot.Commands
         private readonly IDiscordRestGuildAPI _guildAPI;
         private readonly IVoiceStateCacheService _voiceStateCache;
 
-        public MovementCommands(ICommandContext context, DiscordContext dbContext, IReplyService replyService, IDiscordRestGuildAPI guildAPI, IDbApiService dbAPI, IVoiceStateCacheService voiceStateCache)
+        public MovementCommands(ICommandContext context, DiscordContext dbContext, IReplyService replyService, IDiscordRestGuildAPI guildAPI, IVoiceStateCacheService voiceStateCache)
         {
             _context = context;
             _dbContext = dbContext;

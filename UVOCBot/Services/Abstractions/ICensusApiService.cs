@@ -14,8 +14,16 @@ namespace UVOCBot.Services.Abstractions
         /// </summary>
         /// <param name="tag">The outfit tag.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
-        /// <returns></returns>
-        Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default);
+        /// <returns>A result representing the outfit, or <c>null</c> if the outfit does not exist.</returns>
+        Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets an outfit.
+        /// </summary>
+        /// <param name="id">The ID of the outfit.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>A result representing the outfit, or <c>null</c> if the outfit does not exist.</returns>
+        Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default);
 
         /// <summary>
         /// Gets the online members of a number of outfits.
@@ -58,5 +66,13 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns>A list of maps.</returns>
         Task<List<Map>> GetMaps(WorldType world, IEnumerable<ZoneDefinition> zones, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets a facility.
+        /// </summary>
+        /// <param name="facilityID">The facility.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>A <see cref="Result"/> representing the facility.</returns>
+        Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default);
     }
 }

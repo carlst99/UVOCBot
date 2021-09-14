@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Core
@@ -27,23 +29,38 @@ namespace UVOCBot.Core
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ValueComparer<IList<ulong>> idListComparer = new(
+                (l1, l2) => l1.SequenceEqual(l2),
+                l => l.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                l => l.ToList());
+
             modelBuilder.Entity<GuildWelcomeMessage>()
                         .Property(p => p.AlternateRoles)
                         .HasConversion(
                             v => IdListToBytes(v),
-                            v => BytesToIdList(v));
+                            v => BytesToIdList(v),
+                            idListComparer);
 
             modelBuilder.Entity<GuildWelcomeMessage>()
                         .Property(p => p.DefaultRoles)
                         .HasConversion(
                             v => IdListToBytes(v),
-                            v => BytesToIdList(v));
+                            v => BytesToIdList(v),
+                            idListComparer);
 
             modelBuilder.Entity<MemberGroup>()
                         .Property(p => p.UserIds)
                         .HasConversion(
                             v => IdListToBytes(v),
-                            v => BytesToIdList(v));
+                            v => BytesToIdList(v),
+                            idListComparer);
+
+            modelBuilder.Entity<PlanetsideSettings>()
+                        .Property(p => p.TrackedOutfits)
+                        .HasConversion(
+                            v => IdListToBytes(v),
+                            v => BytesToIdList(v),
+                            idListComparer);
         }
 
         private static byte[] IdListToBytes(IList<ulong> idList)

@@ -197,7 +197,7 @@ namespace UVOCBot.Commands
             }
             else
             {
-                Result<Outfit?> getOutfit = await _censusApi.GetOutfit(outfitTag!, CancellationToken).ConfigureAwait(false);
+                Result<Outfit?> getOutfit = await _censusApi.GetOutfitAsync(outfitTag!, CancellationToken).ConfigureAwait(false);
                 if (!getOutfit.IsSuccess)
                 {
                     await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);

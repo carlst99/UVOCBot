@@ -36,7 +36,7 @@ namespace UVOCBot.Api
             ILogger? logger = null;
 
             return Host.CreateDefaultBuilder(args)
-                .ConfigureServices((_, _) =>
+                .ConfigureServices((c, _) =>
                 {
 #if DEBUG
                     logger = SetupLogging();

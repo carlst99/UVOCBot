@@ -2,6 +2,7 @@
 using DbgCensus.Core.Objects;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
@@ -20,11 +21,13 @@ namespace UVOCBot.Services
     {
         private readonly ILogger<CensusApiService> _logger;
         private readonly IQueryService _queryService;
+        private readonly IMemoryCache _cache;
 
-        public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService)
+        public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService, IMemoryCache cache)
         {
             _logger = logger;
             _queryService = queryService;
+            _cache = cache;
         }
 
         // TODO: No result exception
@@ -42,6 +45,46 @@ namespace UVOCBot.Services
             try
             {
                 return await _queryService.GetAsync<Outfit>(query, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get census outfit");
+                return ex;
+            }
+        }
+
+        /// <inheritdoc />
+        /// <remarks>This query is cached.</remarks>
+        public async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
+        {
+            if (_cache.TryGetValue(GetOutfitCacheKey(id), out Outfit outfit))
+                return outfit;
+
+            IQueryBuilder query = _queryService.CreateQuery()
+                .OnCollection("outfit")
+                .Where("outfit_id", SearchModifier.Equals, id);
+
+            try
+            {
+                Result<List<Outfit>?> getOutfitResult = await _queryService.GetAsync<List<Outfit>?>(query, ct).ConfigureAwait(false);
+
+                if (getOutfitResult.IsDefined())
+                {
+                    outfit = getOutfitResult.Entity.Single();
+
+                    _cache.Set(
+                        GetOutfitCacheKey(id),
+                        outfit,
+                        new MemoryCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(3),
+                            Priority = CacheItemPriority.Low
+                        });
+                }
+
+                return getOutfitResult.IsSuccess
+                    ? Result<Outfit?>.FromSuccess(outfit)
+                    : Result<Outfit?>.FromError(getOutfitResult);
             }
             catch (Exception ex)
             {
@@ -132,6 +175,42 @@ namespace UVOCBot.Services
             return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
+        /// <remarks>This query is cached.</remarks>
+        public async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
+        {
+            if (_cache.TryGetValue(GetFacilityCacheKey(facilityID), out MapRegion region))
+                return region;
+
+            IQueryBuilder query = _queryService.CreateQuery()
+                .OnCollection("map_region")
+                .Where("facility_id", SearchModifier.Equals, facilityID);
+
+            try
+            {
+                Result<MapRegion?> getMapRegionResult = await _queryService.GetAsync<MapRegion?>(query, ct).ConfigureAwait(false);
+
+                if (getMapRegionResult.IsDefined())
+                {
+                    _cache.Set(
+                        GetFacilityCacheKey(facilityID),
+                        getMapRegionResult.Entity,
+                        new MemoryCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(3),
+                            Priority = CacheItemPriority.Low
+                        });
+                }
+
+                return getMapRegionResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get census outfit");
+                return ex;
+            }
+        }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "<Pending>")]
         private async Task<T> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
         {
@@ -199,5 +278,11 @@ namespace UVOCBot.Services
                                 .ShowFields("world_id")
                                 .IsInnerJoin();
         }
+
+        private static object GetOutfitCacheKey(ulong outfitId)
+            => (typeof(Outfit), outfitId);
+
+        private static object GetFacilityCacheKey(ulong facilityID)
+            => (typeof(MapRegion), facilityID);
     }
 }

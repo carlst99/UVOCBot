@@ -238,6 +238,9 @@ namespace UVOCBot.Commands
 
             if (channel is not null)
             {
+                if (channel.Type != ChannelType.GuildText)
+                    return await _replyService.RespondWithUserErrorAsync(Formatter.ChannelMention(channel) + " must be a text channel.", CancellationToken).ConfigureAwait(false);
+
                 Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
                 if (!getPermissionSet.IsSuccess)
                 {
@@ -250,6 +253,8 @@ namespace UVOCBot.Commands
 
                 if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
                     return await _replyService.RespondWithUserErrorAsync("I do not have permission to send messages in " + Formatter.ChannelMention(channel), CancellationToken).ConfigureAwait(false);
+
+                settings.BaseCaptureChannelId = channel.ID.Value;
             }
 
             _dbContext.Update(settings);

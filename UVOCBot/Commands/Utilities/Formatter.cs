@@ -1,4 +1,5 @@
-﻿using Remora.Discord.Core;
+﻿using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.Core;
 using UVOCBot.Model;
 
 namespace UVOCBot.Commands
@@ -6,11 +7,16 @@ namespace UVOCBot.Commands
     public static class Formatter
     {
         public static string ChannelMention(ulong channelID) => $"<#{channelID}>";
-        public static string ChannelMention(Snowflake channelID) => $"<#{channelID.Value}>";
+        public static string ChannelMention(Snowflake channelID) => ChannelMention(channelID.Value);
+        public static string ChannelMention(IChannel channel) => ChannelMention(channel.ID);
+
         public static string RoleMention(ulong roleID) => $"<@&{roleID}>";
-        public static string RoleMention(Snowflake roleID) => $"<@&{roleID.Value}>";
+        public static string RoleMention(Snowflake roleID) => RoleMention(roleID.Value);
+        public static string RoleMention(IRole role) => RoleMention(role.ID);
+
         public static string UserMention(ulong userID) => $"<@{userID}>";
-        public static string UserMention(Snowflake userID) => $"<@{userID.Value}>";
+        public static string UserMention(Snowflake userID) => UserMention(userID.Value);
+        public static string UserMention(IUser user) => UserMention(user.ID);
 
         public static string Bold(string content) => $"**{content}**";
         public static string CodeBlock(string content, string? language = null) => $"```{language}\n{content}\n```";

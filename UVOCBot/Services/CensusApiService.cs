@@ -33,7 +33,7 @@ namespace UVOCBot.Services
         // TODO: Convert to standard model
 
         /// <inheritdoc />
-        public async Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default)
+        public async Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default)
         {
             IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("outfit")

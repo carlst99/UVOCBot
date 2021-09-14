@@ -32,8 +32,7 @@ namespace UVOCBot.Core
             ValueComparer<IList<ulong>> idListComparer = new(
                 (l1, l2) => l1.SequenceEqual(l2),
                 l => l.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                l => l.ToList()
-            );
+                l => l.ToList());
 
             modelBuilder.Entity<GuildWelcomeMessage>()
                         .Property(p => p.AlternateRoles)
@@ -51,6 +50,13 @@ namespace UVOCBot.Core
 
             modelBuilder.Entity<MemberGroup>()
                         .Property(p => p.UserIds)
+                        .HasConversion(
+                            v => IdListToBytes(v),
+                            v => BytesToIdList(v),
+                            idListComparer);
+
+            modelBuilder.Entity<PlanetsideSettings>()
+                        .Property(p => p.TrackedOutfits)
                         .HasConversion(
                             v => IdListToBytes(v),
                             v => BytesToIdList(v),

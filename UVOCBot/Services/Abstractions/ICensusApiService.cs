@@ -15,7 +15,7 @@ namespace UVOCBot.Services.Abstractions
         /// <param name="tag">The outfit tag.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns></returns>
-        Task<Result<Outfit?>> GetOutfit(string tag, CancellationToken ct = default);
+        Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default);
 
         /// <summary>
         /// Gets the online members of a number of outfits.

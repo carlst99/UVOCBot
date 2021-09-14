@@ -25,6 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DbgCensus.EventStream.EventHandlers" Version="1.0.0-beta" />
     <PackageReference Include="DbgCensus.Rest" Version="1.0.1" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />

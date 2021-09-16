@@ -1,6 +1,5 @@
 ﻿using DbgCensus.EventStream.EventHandlers.Abstractions;
 using DbgCensus.EventStream.EventHandlers.Objects.Event;
-using Microsoft.Extensions.Logging;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
@@ -35,6 +34,10 @@ namespace UVOCBot.Responders.Census
 
         public async Task HandleAsync(ServiceMessage<FacilityControl> censusEvent, CancellationToken ct = default)
         {
+            // Shouldn't report same-faction control events (i.e. point defenses).
+            if (censusEvent.Payload.OldFactionId == censusEvent.Payload.NewFactionId)
+                return;
+
             Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(censusEvent.Payload.OutfitId, ct).ConfigureAwait(false);
             if (!getOutfitResult.IsDefined())
                 return;

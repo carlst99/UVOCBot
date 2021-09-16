@@ -67,6 +67,9 @@ namespace UVOCBot.Services
 
                 if (getOutfitResult.IsDefined())
                 {
+                    if (getOutfitResult.Entity.Count == 0)
+                        return Result<Outfit?>.FromSuccess(null);
+
                     outfit = getOutfitResult.Entity.Single();
 
                     _cache.Set(

@@ -31,7 +31,7 @@ namespace UVOCBot
 
         public const string CENSUS_EVENTSTREAM_CLIENT_NAME = "main";
 
-        public static readonly SubscribeCommand CENSUS_SUBSCRIPTION = new(
+        public static readonly SubscribeCommand CORE_CENSUS_SUBSCRIPTION = new(
             new string[] { "all" },
             new string[] { EventNames.FACILITY_CONTROL },
             worlds: new string[] { "all" });

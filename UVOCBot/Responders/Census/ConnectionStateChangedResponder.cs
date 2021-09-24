@@ -21,7 +21,7 @@ namespace UVOCBot.Responders.Census
                 return;
 
             IEventStreamClient client = _clientFactory.GetClient(censusEvent.DispatchingClientName);
-            await client.SendCommandAsync(BotConstants.CENSUS_SUBSCRIPTION, ct).ConfigureAwait(false);
+            await client.SendCommandAsync(BotConstants.CORE_CENSUS_SUBSCRIPTION, ct).ConfigureAwait(false);
         }
     }
 }

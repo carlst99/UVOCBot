@@ -1,5 +1,9 @@
 # Changelog
 
+## Release vNext
+
+- :warning: Updated the map assets. Ensure you update them in your installation.
+
 ## Release v0.4.2 - 14/09/2021
 
 - Added base capture tracking for specified outfits

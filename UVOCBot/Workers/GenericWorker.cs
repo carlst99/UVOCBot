@@ -70,7 +70,7 @@ namespace UVOCBot.Workers
                         /* Resubscribe to our census events */
                         IEventStreamClient client = _eventStreamClientFactory.GetClient(BotConstants.CENSUS_EVENTSTREAM_CLIENT_NAME);
                         if (client.IsRunning)
-                            await client.SendCommandAsync(BotConstants.CENSUS_SUBSCRIPTION, ct).ConfigureAwait(false);
+                            await client.SendCommandAsync(BotConstants.CORE_CENSUS_SUBSCRIPTION, ct).ConfigureAwait(false);
                     }
                     catch (Exception ex) when (ex is not TaskCanceledException)
                     {

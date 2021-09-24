@@ -63,18 +63,13 @@ namespace UVOCBot.Services
 
             try
             {
-                Result<List<Outfit>?> getOutfitResult = await _queryService.GetAsync<List<Outfit>?>(query, ct).ConfigureAwait(false);
+                Result<Outfit?> getOutfitResult = await _queryService.GetAsync<Outfit?>(query, ct).ConfigureAwait(false);
 
                 if (getOutfitResult.IsDefined())
                 {
-                    if (getOutfitResult.Entity.Count == 0)
-                        return Result<Outfit?>.FromSuccess(null);
-
-                    outfit = getOutfitResult.Entity.Single();
-
                     _cache.Set(
                         GetOutfitCacheKey(id),
-                        outfit,
+                        getOutfitResult.Entity,
                         new MemoryCacheEntryOptions
                         {
                             AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(3),
@@ -82,9 +77,7 @@ namespace UVOCBot.Services
                         });
                 }
 
-                return getOutfitResult.IsSuccess
-                    ? Result<Outfit?>.FromSuccess(outfit)
-                    : Result<Outfit?>.FromError(getOutfitResult);
+                return getOutfitResult;
             }
             catch (Exception ex)
             {
@@ -206,12 +199,11 @@ namespace UVOCBot.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get census outfit");
+                _logger.LogError(ex, "Failed to get facility region.");
                 return ex;
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "callerName filled by framework so should come last.")]
         private async Task<T> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
         {
             try
@@ -230,7 +222,6 @@ namespace UVOCBot.Services
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1068:CancellationToken parameters must come last", Justification = "callerName filled by framework so should come last.")]
         private async Task<List<T>> GetListAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
         {
             try

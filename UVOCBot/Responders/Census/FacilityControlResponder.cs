@@ -5,6 +5,8 @@ using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Core;
 using Remora.Results;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Commands;
@@ -38,6 +40,14 @@ namespace UVOCBot.Responders.Census
             if (censusEvent.Payload.OldFactionId == censusEvent.Payload.NewFactionId)
                 return;
 
+            IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings.Where(
+                s => s.BaseCaptureChannelId != null
+                && s.TrackedOutfits.Contains(censusEvent.Payload.OutfitId)
+            );
+
+            if (!validPSettings.Any())
+                return;
+
             Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(censusEvent.Payload.OutfitId, ct).ConfigureAwait(false);
             if (!getOutfitResult.IsDefined())
                 return;
@@ -48,17 +58,19 @@ namespace UVOCBot.Responders.Census
                 return;
             MapRegion facility = getFacilityResult.Entity;
 
-            foreach (PlanetsideSettings pSettings in _dbContext.PlanetsideSettings)
+            foreach (PlanetsideSettings pSettings in validPSettings)
             {
-                if (pSettings.BaseCaptureChannelId is null || !pSettings.TrackedOutfits.Contains(outfit.OutfitId))
-                    continue;
-
                 Embed embed = new(
                     "Base Captured",
                     Description: $"{ Formatter.Bold($"[{ outfit.Alias }]") } has captured { Formatter.Italic(facility.FacilityName) }",
-                    Colour: BotConstants.DEFAULT_EMBED_COLOUR);
+                    Colour: BotConstants.DEFAULT_EMBED_COLOUR
+                );
 
-                await _channelApi.CreateMessageAsync(new Snowflake(pSettings.BaseCaptureChannelId.Value), embeds: new IEmbed[] { embed }, ct: ct).ConfigureAwait(false);
+                await _channelApi.CreateMessageAsync(
+                    new Snowflake(pSettings.BaseCaptureChannelId!.Value),
+                    embeds: new IEmbed[] { embed },
+                    ct: ct
+                ).ConfigureAwait(false);
             }
         }
     }

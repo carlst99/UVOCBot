@@ -40,7 +40,7 @@ namespace UVOCBot.Responders.Census
             if (censusEvent.Payload.OldFactionId == censusEvent.Payload.NewFactionId)
                 return;
 
-            IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings.Where(
+            IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings.AsEnumerable().Where(
                 s => s.BaseCaptureChannelId != null
                 && s.TrackedOutfits.Contains(censusEvent.Payload.OutfitId)
             );

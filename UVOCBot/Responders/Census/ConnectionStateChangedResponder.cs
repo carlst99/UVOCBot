@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace UVOCBot.Responders.Census
 {
-    public class ConnectionStateChangedResponder : ICensusEventHandler<ConnectionStateChanged>
+    internal class ConnectionStateChangedResponder : ICensusEventHandler<ConnectionStateChanged>
     {
         private readonly IEventStreamClientFactory _clientFactory;
 

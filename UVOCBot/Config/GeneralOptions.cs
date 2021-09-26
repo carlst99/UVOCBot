@@ -15,16 +15,6 @@ namespace UVOCBot.Config
         public string ApiEndpoint { get; init; }
 
         /// <summary>
-        /// Gets or sets the endpoint at which the fisu's API can be found.
-        /// </summary>
-        public string FisuApiEndpoint { get; init; }
-
-        /// <summary>
-        /// Gets or sets the key used to connect to Daybreak Game's Census API.
-        /// </summary>
-        public string CensusApiKey { get; init; }
-
-        /// <summary>
         /// Gets or sets the default command prefix.
         /// </summary>
         public string CommandPrefix { get; init; }
@@ -43,11 +33,9 @@ namespace UVOCBot.Config
         {
             ApiEndpoint = string.Empty;
             BotToken = string.Empty;
-            CensusApiKey = string.Empty;
             CommandPrefix = "<>"; // No prefix, most commands use the slash infrastructure
             DebugGuildIds = new List<ulong>();
             DiscordPresence = string.Empty;
-            FisuApiEndpoint = string.Empty;
         }
     }
 }

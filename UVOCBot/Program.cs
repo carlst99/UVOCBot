@@ -161,8 +161,7 @@ namespace UVOCBot
                             .AddEventHandler<FacilityControlResponder, FacilityControl>(EventNames.FACILITY_CONTROL);
 
                     //Setup API services
-                    services.AddSingleton<IDbApiService, DbApiService>()
-                            .AddSingleton<IFisuApiService, FisuApiService>();
+                    services.AddSingleton<IDbApiService, DbApiService>();
 
                     // Setup other services
                     services.AddSingleton(fileSystem)

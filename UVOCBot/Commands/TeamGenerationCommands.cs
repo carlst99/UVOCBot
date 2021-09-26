@@ -12,9 +12,10 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
+using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -63,7 +64,7 @@ namespace UVOCBot.Commands
                 roleMembers.AddRange(users.Entity.Select(m => m.User.Value.ID.Value));
             }
 
-            return await SendRandomTeams(roleMembers, numberOfTeams, $"Build from the role {Formatter.RoleMention(role.ID)}").ConfigureAwait(false);
+            return await SendRandomTeams(roleMembers, numberOfTeams, $"Build from the role { Formatter.RoleMention(role.ID)  }").ConfigureAwait(false);
         }
 
         [Command("random-from-group")]

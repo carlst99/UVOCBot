@@ -1,37 +1,62 @@
 ﻿using DbgCensus.Core.Objects;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
 using System.ComponentModel;
+using UVOCBot.Core;
+using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.Census;
+using UVOCBot.Plugins.Planetside.Objects.Census.Map;
 using UVOCBot.Plugins.Planetside.Objects.Fisu;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Commands
 {
-
     public class WorldCommands : CommandGroup
     {
         private readonly ICommandContext _context;
         private readonly ICensusApiService _censusApi;
         private readonly IFisuApiService _fisuApi;
+        private readonly DiscordContext _dbContext;
         private readonly FeedbackService _feedbackService;
 
         public WorldCommands(
             ICommandContext context,
             ICensusApiService censusApi,
             IFisuApiService fisuApi,
+            DiscordContext dbContext,
             FeedbackService feedbackService)
         {
             _context = context;
             _censusApi = censusApi;
             _fisuApi = fisuApi;
+            _dbContext = dbContext;
             _feedbackService = feedbackService;
+        }
+
+        [Command("default-server")]
+        [Description("Sets the default world for planetside-related commands")]
+        [RequireContext(ChannelContext.Guild)]
+        [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+        public async Task<IResult> DefaultWorldCommand(ValidWorldDefinition server)
+        {
+            PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+
+            settings.DefaultWorld = (int)server;
+
+            _dbContext.Update(settings);
+            await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+            return await _feedbackService.SendContextualNeutralAsync(
+                $"{Formatter.Emoji("earth_asia")} Your default server has been set to {Formatter.InlineQuote(server.ToString())}",
+                ct: CancellationToken).ConfigureAwait(false);
         }
 
         [Command("population")]
@@ -125,11 +150,11 @@ namespace UVOCBot.Plugins.Planetside.Commands
 
         private async Task<IResult> SendWorldStatus(ValidWorldDefinition world)
         {
-            Result<List<Map>> getMapsResult = await _censusApi.GetMaps(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken).ConfigureAwait(false);
+            Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken).ConfigureAwait(false);
             Result<List<MetagameEvent>> getMetagameEventsResult = await _censusApi.GetMetagameEventsAsync(world, CancellationToken).ConfigureAwait(false);
 
             if (!getMapsResult.IsSuccess || !getMetagameEventsResult.IsSuccess)
-                return await _feedbackService.SendContextualErrorAsync("Something went wrong! Please try again.", ct: CancellationToken).ConfigureAwait(false);
+                return await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
 
             List<EmbedField> embedFields = new();
             foreach (Map m in getMapsResult.Entity)

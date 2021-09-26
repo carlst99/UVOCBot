@@ -14,7 +14,7 @@
 
         public PlanetsidePluginOptions()
         {
-            FisuApiEndpoint = "ps2.fisu.pw/api/population";
+            FisuApiEndpoint = "https://ps2.fisu.pw/api";
             CensusApiKey = "example";
         }
     }

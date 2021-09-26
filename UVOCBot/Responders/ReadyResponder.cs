@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
+using UVOCBot.Discord.Core;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders
@@ -45,9 +46,13 @@ namespace UVOCBot.Responders
         public async Task<Result> RespondAsync(IReady gatewayEvent, CancellationToken ct = default)
         {
             BotConstants.UserId = gatewayEvent.User.ID;
+            DiscordConstants.UserId = gatewayEvent.User.ID;
 
             if (gatewayEvent.Application.ID.HasValue)
+            {
                 BotConstants.ApplicationId = gatewayEvent.Application.ID.Value;
+                DiscordConstants.ApplicationId = gatewayEvent.Application.ID.Value;
+            }
 
             _client.SubmitCommandAsync(
                 new UpdatePresence(

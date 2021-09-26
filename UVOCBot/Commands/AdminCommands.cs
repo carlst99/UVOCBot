@@ -8,9 +8,11 @@ using Remora.Results;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
+using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 

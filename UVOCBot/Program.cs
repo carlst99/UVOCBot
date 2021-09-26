@@ -1,7 +1,3 @@
-using DbgCensus.EventStream;
-using DbgCensus.EventStream.EventHandlers.Extensions;
-using DbgCensus.Rest;
-using DbgCensus.Rest.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,13 +22,11 @@ using System.Linq;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
-using UVOCBot.Commands.Conditions;
 using UVOCBot.Commands.ExecutionEvents;
 using UVOCBot.Config;
 using UVOCBot.Core;
-using UVOCBot.Model.EventStream;
+using UVOCBot.Discord.Core.Extensions;
 using UVOCBot.Responders;
-using UVOCBot.Responders.Census;
 using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 using UVOCBot.Workers;
@@ -128,9 +122,7 @@ namespace UVOCBot
                 .ConfigureServices((c, services) =>
                 {
                     // Setup configuration bindings
-                    services.Configure<CensusQueryOptions>(c.Configuration.GetSection(nameof(CensusQueryOptions)))
-                            .Configure<EventStreamOptions>(c.Configuration.GetSection(nameof(EventStreamOptions)))
-                            .Configure<DatabaseOptions>(c.Configuration.GetSection(nameof(DatabaseOptions)))
+                    services.Configure<DatabaseOptions>(c.Configuration.GetSection(nameof(DatabaseOptions)))
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
@@ -153,13 +145,6 @@ namespace UVOCBot
 
                     services.AddDbContextFactory<DiscordContext>();
 
-                    // Setup Census services
-                    services.AddCensusRestServices()
-                            .AddSingleton<ICensusApiService, CensusApiService>();
-                    services.AddCensusEventHandlingServices()
-                            .AddEventHandler<ConnectionStateChangedResponder>()
-                            .AddEventHandler<FacilityControlResponder, FacilityControl>(EventNames.FACILITY_CONTROL);
-
                     //Setup API services
                     services.AddSingleton<IDbApiService, DbApiService>();
 
@@ -169,16 +154,15 @@ namespace UVOCBot
 
                     // Add Discord-related services
                     services.AddRemoraServices()
+                            .AddCoreDiscordServices()
                             .AddScoped<IAdminLogService, AdminLogService>()
-                            .AddScoped<IPermissionChecksService, PermissionChecksService>()
                             .AddScoped<IReplyService, ReplyService>()
                             .AddScoped<IRoleMenuService, RoleMenuService>()
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
                             .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
-                    services.AddHostedService<EventStreamWorker>()
-                            .AddHostedService<GenericWorker>()
+                    services.AddHostedService<GenericWorker>()
                             .AddHostedService<DbCleanupWorker>()
                             .AddHostedService<TwitterWorker>();
                 });
@@ -275,16 +259,12 @@ namespace UVOCBot
                     .AddResponder<ReadyResponder>()
                     .AddResponder<VoiceStateUpdateResponder>();
 
-            services.AddCondition<RequireContextCondition>()
-                    .AddCondition<RequireGuildPermissionCondition>();
-
             services.AddCommandGroup<AdminCommands>()
                     .AddCommandGroup<GeneralCommands>()
                     .AddCommandGroup<GroupCommands>()
                     .AddCommandGroup<MovementCommands>()
                     .AddCommandGroup<RoleCommands>()
                     .AddCommandGroup<RoleMenuCommands>()
-                    .AddCommandGroup<PlanetsideCommands>()
                     .AddCommandGroup<TeamGenerationCommands>()
                     .AddCommandGroup<TimeCommands>()
                     .AddCommandGroup<TwitterCommands>()

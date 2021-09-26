@@ -12,9 +12,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands

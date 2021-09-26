@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Reflection;
 using System.Threading.Tasks;
+using UVOCBot.Discord.Core;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -39,9 +40,9 @@ namespace UVOCBot.Commands
         {
             string description;
             if (_rndGen.Next(0, 2) == 0)
-                description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("heads")}! {Formatter.Emoji("coin")}";
+                description = $"{ Formatter.Emoji("coin") } You flipped a { Formatter.Bold("heads") }! { Formatter.Emoji("coin") }";
             else
-                description = $"{Formatter.Emoji("coin")} You flipped a {Formatter.Bold("tails")}! {Formatter.Emoji("coin")}";
+                description = $"{ Formatter.Emoji("coin") } You flipped a { Formatter.Bold("tails") }! { Formatter.Emoji("coin") }";
 
             Embed embed = new()
             {

@@ -12,7 +12,9 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -98,7 +100,7 @@ namespace UVOCBot.Commands
 
             // Include user mentions if less than 50 members had the role applied (to fit within embed limits, and to not look ridiculous).
             // I did the math in April 2021 and we technically could fit 76 usernames within the limits.
-            string messageContent = $"The role {Formatter.RoleMention(role.ID)} was granted to  {Formatter.Bold(userCount.ToString())} users. ";
+            string messageContent = $"The role { Formatter.RoleMention(role.ID) } was granted to  { Formatter.Bold(userCount.ToString()) } users. ";
             if (userCount <= MAX_USERNAMES_IN_LIST)
                 messageContent += userListBuilder.ToString().TrimEnd(',', ' ') + ".";
 

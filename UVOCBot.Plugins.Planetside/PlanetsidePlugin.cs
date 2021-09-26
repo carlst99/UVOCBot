@@ -1,5 +1,7 @@
 ﻿using DbgCensus.EventStream;
+using DbgCensus.EventStream.EventHandlers.Extensions;
 using DbgCensus.Rest;
+using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -7,9 +9,12 @@ using Remora.Commands.Extensions;
 using Remora.Plugins.Abstractions;
 using Remora.Plugins.Abstractions.Attributes;
 using UVOCBot.Plugins.Planetside;
+using UVOCBot.Plugins.Planetside.CensusEventHandlers;
 using UVOCBot.Plugins.Planetside.Commands;
+using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Services;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
+using UVOCBot.Plugins.Planetside.Workers;
 
 [assembly: RemoraPlugin(typeof(PlanetsidePlugin))]
 
@@ -39,15 +44,25 @@ namespace UVOCBot.Plugins.Planetside
                 ServiceId = pOptions.CensusApiKey
             };
 
-            serviceCollection.AddSingleton(Options.Create(pOptions));
-            serviceCollection.AddSingleton(Options.Create(queryOptions));
-            serviceCollection.AddSingleton(Options.Create(esOptions));
+            serviceCollection.AddSingleton(Options.Create(pOptions))
+                .AddSingleton(Options.Create(queryOptions))
+                .AddSingleton(Options.Create(esOptions));
 
-            serviceCollection.AddHttpClient();
-            serviceCollection.AddSingleton<IFisuApiService, CachingFisuApiService>();
-            serviceCollection.AddSingleton<ICensusApiService, CachingCensusApiService>();
+            serviceCollection.AddHttpClient()
+                .AddSingleton<IFisuApiService, CachingFisuApiService>()
+                .AddSingleton<ICensusApiService, CachingCensusApiService>();
+
+            serviceCollection.AddCensusRestServices()
+                    .AddSingleton<ICensusApiService, CensusApiService>();
+            serviceCollection.AddCensusEventHandlingServices()
+                    .AddSingleton<ISubscriptionBuilderService, SubscriptionBuilderService>()
+                    .AddEventHandler<ConnectionStateChangedResponder>()
+                    .AddEventHandler<FacilityControlResponder, FacilityControl>(EventStreamConstants.FACILITY_CONTROL_EVENT);
 
             serviceCollection.AddCommandGroup<WorldCommands>();
+
+            serviceCollection.AddHostedService<EventStreamWorker>()
+                .AddHostedService<SubscriptionWorker>();
         }
     }
 }

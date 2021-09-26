@@ -8,6 +8,7 @@ namespace UVOCBot.Discord.Core
         private static Snowflake _applicationId;
         private static Snowflake _userId;
 
+        public const string GENERIC_ERROR_MESSAGE = "Something went wrong. Please try again!";
         public static readonly Color DEFAULT_EMBED_COLOUR = Color.Purple;
 
         public static Snowflake ApplicationId

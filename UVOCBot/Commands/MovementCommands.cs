@@ -12,9 +12,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
+using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands
@@ -46,7 +47,7 @@ namespace UVOCBot.Commands
         {
             if (moveTo.Type != ChannelType.GuildVoice)
             {
-                await _replyService.RespondWithUserErrorAsync($"Please specify a valid {Formatter.Bold("voice")} channel to move to.", ct: CancellationToken).ConfigureAwait(false);
+                await _replyService.RespondWithUserErrorAsync($"Please specify a valid { Formatter.Bold("voice") } channel to move to.", ct: CancellationToken).ConfigureAwait(false);
                 return Result.FromSuccess();
             }
 

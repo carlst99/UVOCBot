@@ -12,16 +12,12 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0-rc.1.21451.13" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0-rc.1.21451.13" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0-rc.1.21451.13" />
-    <PackageReference Include="Remora.Discord.Commands" Version="10.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
     <PackageReference Include="Remora.Plugins.Abstractions" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Exceptions\" />
   </ItemGroup>
 
 </Project>

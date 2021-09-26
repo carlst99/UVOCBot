@@ -13,8 +13,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models.V2;
-using UVOCBot.Commands.Conditions.Attributes;
 using UVOCBot.Core.Dto;
+using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 

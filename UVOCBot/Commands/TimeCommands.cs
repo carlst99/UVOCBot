@@ -7,7 +7,7 @@ using Remora.Results;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using UVOCBot.Model;
+using UVOCBot.Discord.Core;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands

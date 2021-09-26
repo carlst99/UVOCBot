@@ -1,8 +1,6 @@
-﻿using DbgCensus.EventStream.Commands;
-using Remora.Discord.Core;
+﻿using Remora.Discord.Core;
 using System;
 using System.Drawing;
-using UVOCBot.Responders.Census;
 
 namespace UVOCBot
 {
@@ -28,12 +26,5 @@ namespace UVOCBot
                 : _userId;
             set => _userId = value;
         }
-
-        public const string CENSUS_EVENTSTREAM_CLIENT_NAME = "main";
-
-        public static readonly SubscribeCommand CORE_CENSUS_SUBSCRIPTION = new(
-            new string[] { "all" },
-            new string[] { EventNames.FACILITY_CONTROL },
-            worlds: new string[] { "all" });
     }
 }

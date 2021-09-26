@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -26,6 +27,7 @@ using UVOCBot.Commands.ExecutionEvents;
 using UVOCBot.Config;
 using UVOCBot.Core;
 using UVOCBot.Discord.Core.Extensions;
+using UVOCBot.Plugins.Planetside;
 using UVOCBot.Responders;
 using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
@@ -122,7 +124,11 @@ namespace UVOCBot
                 .ConfigureServices((c, services) =>
                 {
                     // Setup configuration bindings
-                    services.Configure<DatabaseOptions>(c.Configuration.GetSection(nameof(DatabaseOptions)))
+                    IConfigurationSection dbConfigSection = c.Configuration.GetSection(nameof(DatabaseOptions));
+                    DatabaseOptions dbOptions = new();
+                    dbConfigSection.Bind(dbOptions);
+
+                    services.Configure<DatabaseOptions>(dbConfigSection)
                             .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
                             .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
@@ -131,8 +137,8 @@ namespace UVOCBot
                         options =>
                         {
                             options.UseMySql(
-                                c.Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.ConnectionString) }"],
-                                new MariaDbServerVersion(new Version(c.Configuration[$"{ nameof(DatabaseOptions) }:{ nameof(DatabaseOptions.DatabaseVersion) }"]))
+                                dbOptions.ConnectionString,
+                                new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion))
                             )
 #if DEBUG
                             .EnableSensitiveDataLogging()
@@ -161,6 +167,9 @@ namespace UVOCBot
                             .AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>()
                             .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
+
+                    // Add plugins. TODO: Use proper loading mechanism here.
+                    new PlanetsidePlugin().ConfigureServices(services);
 
                     services.AddHostedService<GenericWorker>()
                             .AddHostedService<DbCleanupWorker>()

@@ -29,10 +29,10 @@ namespace UVOCBot.Core
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            ValueComparer<IList<ulong>> idListComparer = new(
-                (l1, l2) => l1.SequenceEqual(l2),
+            ValueComparer<List<ulong>> idListComparer = new(
+                (l1, l2) => l1 != null && l2 != null && l1.SequenceEqual(l2),
                 l => l.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                l => l.ToList());
+                l => l);
 
             modelBuilder.Entity<GuildWelcomeMessage>()
                         .Property(p => p.AlternateRoles)
@@ -63,7 +63,7 @@ namespace UVOCBot.Core
                             idListComparer);
         }
 
-        private static byte[] IdListToBytes(IList<ulong> idList)
+        private static byte[] IdListToBytes(List<ulong> idList)
         {
             byte[] buffer = new byte[idList.Count * sizeof(ulong)];
 

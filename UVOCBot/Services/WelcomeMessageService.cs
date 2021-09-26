@@ -12,10 +12,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Commands;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
-using UVOCBot.Model.Census;
+using UVOCBot.Discord.Core;
+using UVOCBot.Plugins.Planetside.Objects.Census.Outfit;
+using UVOCBot.Plugins.Planetside.Services.Abstractions;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
@@ -61,12 +62,16 @@ namespace UVOCBot.Services
 
             // TODO: Speed up by first sending without, and then modifying the messages to factor this in.
             // Make some nickname guesses
-            IEnumerable<string>? nicknameGuesses = null;
+            Result<IEnumerable<string>>? nicknameGuesses = null;
             if (welcomeMessage.DoIngameNameGuess)
                 nicknameGuesses = await DoFuzzyNicknameGuess(gatewayEvent.User.Value.Username, welcomeMessage.OutfitId, ct).ConfigureAwait(false);
 
             // Prepare components of the welcome message
-            List<ButtonComponent> messageButtons = CreateWelcomeMessageButtons(welcomeMessage, nicknameGuesses, gatewayEvent.User.Value.ID.Value);
+            List<ButtonComponent> messageButtons = CreateWelcomeMessageButtons
+                (welcomeMessage,
+                nicknameGuesses.HasValue && nicknameGuesses.Value.IsDefined() ? nicknameGuesses.Value.Entity : null,
+                gatewayEvent.User.Value.ID.Value);
+
             string messageContent = SubstituteMessageVariables(welcomeMessage.Message, gatewayEvent.User.Value.ID);
 
             // Send the welcome message
@@ -173,7 +178,7 @@ namespace UVOCBot.Services
                 : Result.FromError(alertResponse);
         }
 
-        private async Task<IEnumerable<string>> DoFuzzyNicknameGuess(string username, ulong outfitId, CancellationToken ct = default)
+        private async Task<Result<IEnumerable<string>>> DoFuzzyNicknameGuess(string username, ulong outfitId, CancellationToken ct = default)
         {
             const int minMatchRatio = 65;
             const int maxGuesses = 2;
@@ -181,7 +186,11 @@ namespace UVOCBot.Services
 
             try
             {
-                List<NewOutfitMember> newMembers = await _censusApi.GetNewOutfitMembersAsync(outfitId, 10, ct).ConfigureAwait(false);
+                Result<List<NewOutfitMember>> getNewMembers = await _censusApi.GetNewOutfitMembersAsync(outfitId, 10, ct).ConfigureAwait(false);
+                if (!getNewMembers.IsDefined())
+                    return Result<IEnumerable<string>>.FromError(getNewMembers);
+
+                List<NewOutfitMember> newMembers = getNewMembers.Entity;
                 newMembers.Sort((NewOutfitMember x, NewOutfitMember y) => y.MemberSince.CompareTo(x.MemberSince));
 
                 for (int i = 0; i < newMembers.Count; i++)
@@ -207,7 +216,7 @@ namespace UVOCBot.Services
                 _logger.LogError(ex, "Failed to make a nickname guess.");
             }
 
-            return nicknameGuesses.Take(2).Select(g => g.Item1);
+            return Result<IEnumerable<string>>.FromSuccess(nicknameGuesses.Take(2).Select(g => g.Item1));
         }
 
         #endregion

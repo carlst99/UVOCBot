@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Remora.Commands.Extensions;
+using Remora.Discord.Commands.Extensions;
 using UVOCBot.Discord.Core.Commands.Conditions;
+using UVOCBot.Discord.Core.ExecutionEvents;
 
 namespace UVOCBot.Discord.Core.Extensions
 {
@@ -10,6 +12,9 @@ namespace UVOCBot.Discord.Core.Extensions
         {
             services.AddCondition<RequireContextCondition>();
             services.AddCondition<RequireGuildPermissionCondition>();
+
+            services.AddPostExecutionEvent<UserErrorPostExecutionEvent>();
+            services.AddPostExecutionEvent<ErrorLogPostExecutionEvent>();
 
             return services;
         }

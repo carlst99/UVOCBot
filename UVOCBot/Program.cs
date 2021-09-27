@@ -23,7 +23,6 @@ using System.Linq;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
-using UVOCBot.Commands.ExecutionEvents;
 using UVOCBot.Config;
 using UVOCBot.Core;
 using UVOCBot.Discord.Core.Extensions;
@@ -278,9 +277,6 @@ namespace UVOCBot
                     .AddCommandGroup<TimeCommands>()
                     .AddCommandGroup<TwitterCommands>()
                     .AddCommandGroup<WelcomeMessageCommands>();
-
-            services.AddPreExecutionEvent<TriggerTypingExecutionEvent>()
-                    .AddPostExecutionEvent<ErrorLogExecutionEvent>();
 
             return services;
         }

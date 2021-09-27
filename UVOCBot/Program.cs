@@ -77,7 +77,7 @@ namespace UVOCBot
                     {
                         Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
                         if (!updateSlashCommandsResult.IsSuccess)
-                            Log.Warning("Could not update slash commands for the debug guild {id}", guild.Value);
+                            Log.Warning("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
                     }
 #else
                 Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;

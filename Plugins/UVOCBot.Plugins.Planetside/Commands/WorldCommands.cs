@@ -45,7 +45,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
         [Description("Sets the default world for planetside-related commands")]
         [RequireContext(ChannelContext.Guild)]
         [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
-        public async Task<IResult> DefaultWorldCommand(ValidWorldDefinition server)
+        public async Task<IResult> DefaultWorldCommandAsync(ValidWorldDefinition server)
         {
             PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
@@ -84,7 +84,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 server = (ValidWorldDefinition)settings.DefaultWorld;
             }
 
-            return await SendWorldPopulation(server).ConfigureAwait(false);
+            return await SendWorldPopulationAsync(server).ConfigureAwait(false);
         }
 
         [Command("status")]
@@ -113,10 +113,10 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 server = (ValidWorldDefinition)settings.DefaultWorld;
             }
 
-            return await SendWorldStatus(server).ConfigureAwait(false);
+            return await SendWorldStatusAsync(server).ConfigureAwait(false);
         }
 
-        private async Task<IResult> SendWorldPopulation(ValidWorldDefinition world)
+        private async Task<IResult> SendWorldPopulationAsync(ValidWorldDefinition world)
         {
             Result<Population> populationResult = await _fisuApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
 
@@ -138,17 +138,17 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
                 Fields = new List<EmbedField>
                 {
-                    new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", GetEmbedPopulationBar(population.VS, population.Total)),
-                    new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", GetEmbedPopulationBar(population.NC, population.Total)),
-                    new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", GetEmbedPopulationBar(population.TR, population.Total)),
-                    new EmbedField($"{Formatter.Emoji("white_circle")} NS - {population.NS}", GetEmbedPopulationBar(population.NS, population.Total))
+                    new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
+                    new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
+                    new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
+                    new EmbedField($"{Formatter.Emoji("white_circle")} NS - {population.NS}", BuildEmbedPopulationBar(population.NS, population.Total))
                 }
             };
 
             return await _feedbackService.SendContextualEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<IResult> SendWorldStatus(ValidWorldDefinition world)
+        private async Task<IResult> SendWorldStatusAsync(ValidWorldDefinition world)
         {
             Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken).ConfigureAwait(false);
             Result<List<MetagameEvent>> getMetagameEventsResult = await _censusApi.GetMetagameEventsAsync(world, CancellationToken).ConfigureAwait(false);
@@ -163,7 +163,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
             Embed embed = new()
             {
                 Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-                Description = GetWorldStatusString(getMetagameEventsResult.Entity[0].World),
+                Description = BuildWorldStatusString(getMetagameEventsResult.Entity[0].World),
                 Title = world.ToString(),
                 Fields = embedFields
             };
@@ -193,7 +193,8 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 ZoneDefinition.Esamir => Formatter.Emoji("snowflake") + " Esamir",
                 ZoneDefinition.Hossin => Formatter.Emoji("deciduous_tree") + " Hossin",
                 ZoneDefinition.Indar => Formatter.Emoji("desert") + " Indar",
-                _ => Formatter.Emoji("no_entry_sign") + " Unknown Continent"
+                ZoneDefinition.Koltyr => Formatter.Emoji("zap") + " Koltyr",
+                _ => map.ZoneId.Definition.ToString()
             };
 
             if (Math.Round(ncPercent, 0) == 100 || Math.Round(trPercent, 0) == 100 || Math.Round(vsPercent, 0) == 100)
@@ -209,7 +210,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
             return new EmbedField(title, popBar);
         }
 
-        private static string GetWorldStatusString(World world)
+        private static string BuildWorldStatusString(World world)
             => world.State switch
             {
                 "online" => $"Status: Online {Formatter.Emoji("green_circle")}",
@@ -218,7 +219,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 _ => $"Status: Unknown {Formatter.Emoji("black_circle")}"
             };
 
-        private static string GetEmbedPopulationBar(int population, int totalPopulation)
+        private static string BuildEmbedPopulationBar(int population, int totalPopulation)
         {
             // Can't divide by zero!
             if (totalPopulation == 0 || population > totalPopulation)

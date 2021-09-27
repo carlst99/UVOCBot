@@ -3,6 +3,8 @@ using Remora.Commands.Extensions;
 using Remora.Discord.Commands.Extensions;
 using UVOCBot.Discord.Core.Commands.Conditions;
 using UVOCBot.Discord.Core.ExecutionEvents;
+using UVOCBot.Discord.Core.Services;
+using UVOCBot.Discord.Core.Services.Abstractions;
 
 namespace UVOCBot.Discord.Core.Extensions
 {
@@ -10,6 +12,8 @@ namespace UVOCBot.Discord.Core.Extensions
     {
         public static IServiceCollection AddCoreDiscordServices(this IServiceCollection services)
         {
+            services.AddScoped<IPermissionChecksService, PermissionChecksService>(); // TODO: Can make this singleton after service refactor
+
             services.AddCondition<RequireContextCondition>();
             services.AddCondition<RequireGuildPermissionCondition>();
 

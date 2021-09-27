@@ -15,7 +15,7 @@ using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Commands
 {
-    [Group("online")]
+    [Group("outfit")]
     public class OutfitTrackingCommands : CommandGroup
     {
         private readonly ICommandContext _context;

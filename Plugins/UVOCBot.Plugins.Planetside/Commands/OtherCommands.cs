@@ -60,7 +60,8 @@ namespace UVOCBot.Plugins.Planetside.Commands
 
         [Command("map")]
         [Description("Gets a PlanetSide 2 continent map.")]
-        public async Task<IResult> MapCommand(TileMap map, NoDeploymentType noDeployType = NoDeploymentType.None) // TODO: Complete
+        [Ephemeral]
+        public async Task<IResult> MapCommandAsync(TileMap map, NoDeploymentType noDeployType = NoDeploymentType.None) // TODO: Complete
         {
             string mapFileName = map.ToString() + ".jpg";
             string mapFilePath = Path.Combine("Assets", "PS2Maps", mapFileName);
@@ -99,7 +100,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
         [Command("online")]
         [Description("Gets the number of online members for an outfit.")]
         [Ephemeral]
-        public async Task<IResult> GetOnlineOutfitMembersCommandAsync(
+        public async Task<IResult> OnlineOutfitMembersCommandAsync(
             [Description("A space-separate, case-insensitive list of outfit tags.")] string outfitTags)
         {
             string[] tags = outfitTags.Split(' ');

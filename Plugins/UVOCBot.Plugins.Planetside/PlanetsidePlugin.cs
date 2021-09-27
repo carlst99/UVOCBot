@@ -44,25 +44,28 @@ namespace UVOCBot.Plugins.Planetside
                 ServiceId = pOptions.CensusApiKey
             };
 
-            serviceCollection.AddSingleton(Options.Create(pOptions))
-                .AddSingleton(Options.Create(queryOptions))
-                .AddSingleton(Options.Create(esOptions));
+            serviceCollection.AddSingleton(Options.Create(pOptions));
+            serviceCollection.AddSingleton(Options.Create(queryOptions));
+            serviceCollection.AddSingleton(Options.Create(esOptions));
 
-            serviceCollection.AddHttpClient()
-                .AddSingleton<IFisuApiService, CachingFisuApiService>()
-                .AddSingleton<ICensusApiService, CachingCensusApiService>();
+            serviceCollection.AddHttpClient();
+            serviceCollection.AddSingleton<IFisuApiService, CachingFisuApiService>();
+            serviceCollection.AddSingleton<ICensusApiService, CachingCensusApiService>();
 
-            serviceCollection.AddCensusRestServices()
-                    .AddSingleton<ICensusApiService, CensusApiService>();
-            serviceCollection.AddCensusEventHandlingServices()
-                    .AddSingleton<ISubscriptionBuilderService, SubscriptionBuilderService>()
-                    .AddEventHandler<ConnectionStateChangedResponder>()
-                    .AddEventHandler<FacilityControlResponder, FacilityControl>(EventStreamConstants.FACILITY_CONTROL_EVENT);
+            serviceCollection.AddCensusRestServices();
+            serviceCollection.AddSingleton<ICensusApiService, CensusApiService>();
 
+            serviceCollection.AddCensusEventHandlingServices();
+            serviceCollection.AddSingleton<ISubscriptionBuilderService, SubscriptionBuilderService>();
+            serviceCollection.AddEventHandler<ConnectionStateChangedResponder>();
+            serviceCollection.AddEventHandler<FacilityControlResponder, FacilityControl>(EventStreamConstants.FACILITY_CONTROL_EVENT);
+
+            serviceCollection.AddCommandGroup<OtherCommands>();
+            serviceCollection.AddCommandGroup<OutfitTrackingCommands>();
             serviceCollection.AddCommandGroup<WorldCommands>();
 
-            serviceCollection.AddHostedService<EventStreamWorker>()
-                .AddHostedService<SubscriptionWorker>();
+            serviceCollection.AddHostedService<EventStreamWorker>();
+            serviceCollection.AddHostedService<SubscriptionWorker>();
         }
     }
 }

@@ -9,11 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Core", "UVOCBot.Cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot", "UVOCBot\UVOCBot.csproj", "{B59EA60A-0958-4536-BEC3-A220FB6D71CC}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{2204F712-60EE-44C1-9824-BA14CBA974A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Planetside", "Plugins\UVOCBot.Plugins.Planetside\UVOCBot.Plugins.Planetside.csproj", "{98B484AF-197E-4A4F-8BA8-994771E96E8B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Plugins.Planetside", "UVOCBot.Plugins.Planetside\UVOCBot.Plugins.Planetside.csproj", "{98B484AF-197E-4A4F-8BA8-994771E96E8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Discord.Core", "UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj", "{7AC89E0B-0413-4428-A240-2C7ED2038E71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Discord.Core", "UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj", "{7AC89E0B-0413-4428-A240-2C7ED2038E71}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{9A010CFF-90E5-4CCD-9B13-D4782016A02D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,7 +68,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{98B484AF-197E-4A4F-8BA8-994771E96E8B} = {2204F712-60EE-44C1-9824-BA14CBA974A2}
+		{98B484AF-197E-4A4F-8BA8-994771E96E8B} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3298591-9482-4E35-A1C5-B0B88D4C57A9}

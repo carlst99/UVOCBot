@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj" />
+    <ProjectReference Include="..\..\UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj" />
   </ItemGroup>
 
 </Project>

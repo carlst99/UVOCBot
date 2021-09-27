@@ -9,11 +9,11 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
     /// <summary>
     /// Handles user-generated errors that cause a command to fail.
     /// </summary>
-    public class UserErrorPostExecutionEvent : IPostExecutionEvent
+    public class UserFeedbackPostExecutionEvent : IPostExecutionEvent
     {
         private readonly FeedbackService _feedbackService;
 
-        public UserErrorPostExecutionEvent(FeedbackService feedbackService)
+        public UserFeedbackPostExecutionEvent(FeedbackService feedbackService)
         {
             _feedbackService = feedbackService;
         }
@@ -33,6 +33,10 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
                 sendErrorMessageResult = await _feedbackService.SendContextualErrorAsync(
                     $"{ userMention } have the required { permissionError.Permission } permission in { channelMention }.",
                     ct: ct).ConfigureAwait(false);
+            }
+            else if (commandResult.Error is GenericCommandError genericError)
+            {
+                sendErrorMessageResult = await _feedbackService.SendContextualErrorAsync(genericError.Message, ct: ct).ConfigureAwait(false);
             }
 
             return sendErrorMessageResult?.IsSuccess == false

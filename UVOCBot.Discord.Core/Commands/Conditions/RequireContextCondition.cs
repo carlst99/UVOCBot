@@ -1,11 +1,10 @@
 ﻿using Remora.Commands.Conditions;
-using Remora.Commands.Results;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Discord.Core.Commands.Conditions
 {
@@ -16,24 +15,20 @@ namespace UVOCBot.Discord.Core.Commands.Conditions
     {
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelAPI;
-        private readonly FeedbackService _feedbackService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RequireContextCondition"/> class.
         /// </summary>
         /// <param name="context">The command context.</param>
         /// <param name="channelAPI">The channel API.</param>
-        /// <param name="feedbackService">The message responder.</param>
         public RequireContextCondition
         (
             ICommandContext context,
             IDiscordRestChannelAPI channelAPI,
-            FeedbackService feedbackService
         )
         {
             _context = context;
             _channelAPI = channelAPI;
-            _feedbackService = feedbackService;
         }
 
         /// <inheritdoc />
@@ -46,24 +41,13 @@ namespace UVOCBot.Discord.Core.Commands.Conditions
             IChannel channel = getChannel.Entity;
 
             if (attribute.Context is ChannelContext.DM && channel.Type is not ChannelType.DM)
-            {
-                await _feedbackService.SendContextualErrorAsync("This command can only be used in a DM.", ct: ct).ConfigureAwait(false);
-                return new ConditionNotSatisfiedError("This command can only be used in a DM.");
-            }
+                return new ContextError(ChannelContext.DM);
             else if (attribute.Context is ChannelContext.GroupDM && channel.Type is not ChannelType.GroupDM)
-            {
-                await _feedbackService.SendContextualErrorAsync("This command can only be used in a group DM.", ct: ct).ConfigureAwait(false);
-                return new ConditionNotSatisfiedError("This command can only be used in a group DM.");
-            }
-            else if (attribute.Context is ChannelContext.GroupDM && channel.Type is ChannelType.DM or ChannelType.GroupDM)
-            {
-                await _feedbackService.SendContextualErrorAsync("This command can only be used in a guild.", ct: ct).ConfigureAwait(false);
-                return new ConditionNotSatisfiedError("This command can only be used in a guild.");
-            }
+                return new ContextError(ChannelContext.GroupDM);
+            else if (attribute.Context is ChannelContext.Guild && channel.Type is ChannelType.DM or ChannelType.GroupDM)
+                return new ContextError(ChannelContext.Guild);
             else
-            {
                 return Result.FromSuccess();
-            }
         }
     }
 }

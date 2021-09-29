@@ -2,9 +2,9 @@
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Core;
 using Remora.Results;
+using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Discord.Core.Services.Abstractions;
 
 // TODO: Refactor feedback service out of this class
@@ -19,18 +19,15 @@ namespace UVOCBot.Discord.Core.Services
         private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
-        private readonly FeedbackService _feedbackService;
 
         public PermissionChecksService(
             ICommandContext context,
             IDiscordRestChannelAPI channelApi,
-            IDiscordRestGuildAPI guildApi,
-            FeedbackService feedbackService)
+            IDiscordRestGuildAPI guildApi)
         {
             _context = context;
             _channelApi = channelApi;
             _guildApi = guildApi;
-            _feedbackService = feedbackService;
         }
 
         /// <inheritdoc />
@@ -38,17 +35,11 @@ namespace UVOCBot.Discord.Core.Services
         {
             Result<IReadOnlyList<IRole>> getGuildRoles = await _guildApi.GetGuildRolesAsync(guildId, ct).ConfigureAwait(false);
             if (!getGuildRoles.IsSuccess)
-            {
-                await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: ct).ConfigureAwait(false);
                 return getGuildRoles;
-            }
 
             Result<IGuildMember> getCurrentMember = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, DiscordConstants.UserId, ct).ConfigureAwait(false);
             if (!getCurrentMember.IsSuccess)
-            {
-                await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: ct).ConfigureAwait(false);
                 return getCurrentMember;
-            }
 
             // Enumerate roles in order from highest to lowest ranked, so that logically the first role in the current member's role list is its highest
             IRole? highestRole = null;
@@ -98,10 +89,7 @@ namespace UVOCBot.Discord.Core.Services
         {
             // Check the channel belongs to a guild
             if (!channel.GuildID.HasValue)
-            {
-                await _feedbackService.SendContextualErrorAsync("This command must be executed in a guild.", ct: ct).ConfigureAwait(false);
-                return new Exception("Command requires a guild permission but was executed outside of a guild.");
-            }
+                return new ContextError(Commands.Conditions.Attributes.ChannelContext.Guild);
 
             Snowflake guildId = channel.GuildID.Value;
 

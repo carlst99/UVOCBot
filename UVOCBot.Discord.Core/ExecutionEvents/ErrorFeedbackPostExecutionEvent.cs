@@ -55,6 +55,10 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
 
                 errorMessage = $"{ userMention } have the required { permissionMention } permission in { channelMention }.";
             }
+            else if (actualError is ContextError contextError)
+            {
+                errorMessage = $"This command must be executed in a { Formatter.InlineQuote(contextError.RequiredContext.ToString()) }.";
+            }
             else if (actualError is GenericCommandError || actualError is ConditionNotSatisfiedError)
             {
                 errorMessage = actualError.Message;

@@ -17,7 +17,7 @@ namespace UVOCBot.Discord.Core.Extensions
             services.AddCondition<RequireContextCondition>();
             services.AddCondition<RequireGuildPermissionCondition>();
 
-            services.AddPostExecutionEvent<UserFeedbackPostExecutionEvent>();
+            services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();
             services.AddPostExecutionEvent<ErrorLogPostExecutionEvent>();
 
             return services;

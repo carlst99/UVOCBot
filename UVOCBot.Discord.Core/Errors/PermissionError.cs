@@ -21,8 +21,8 @@ namespace UVOCBot.Discord.Core.Errors
         /// </summary>
         public Snowflake ChannelID { get; init; }
 
-        public PermissionError(DiscordPermission permission, Snowflake userID, Snowflake channelID, string Message)
-            : base(Message)
+        public PermissionError(DiscordPermission permission, Snowflake userID, Snowflake channelID, string? Message = null)
+            : base(Message ?? string.Empty)
         {
             Permission = permission;
             UserID = userID;

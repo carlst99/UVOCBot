@@ -5,7 +5,7 @@ namespace UVOCBot.Discord.Core.Errors
     public record GenericCommandError : ResultError
     {
         public GenericCommandError()
-            : base("Something went wrong! Please try again.")
+            : base(DiscordConstants.GENERIC_ERROR_MESSAGE)
         {
         }
 

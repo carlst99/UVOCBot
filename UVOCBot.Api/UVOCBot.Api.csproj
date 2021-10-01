@@ -5,7 +5,7 @@
     <Version>0.3.0</Version>
     <UserSecretsId>a7e2c9df-62af-4ea8-b2c3-6b068433d368</UserSecretsId>
     <Nullable>enable</Nullable>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64;AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,7 +2,9 @@
 
 ## Release vNext
 
+- Completely revamped the design of the bot. Each individual component is now part of its own plugin which you can freely swap in/out to customise UVOCBot's feature-set.
 - :warning: Updated the map assets. Ensure you update them in your installation.
+- :warning: Updated the `appsettings.json` files. Ensure you update them in your installation.
 
 ## Release v0.4.2 - 14/09/2021
 

@@ -24,7 +24,7 @@ namespace UVOCBot.Discord.Core.Commands.Conditions
         public RequireContextCondition
         (
             ICommandContext context,
-            IDiscordRestChannelAPI channelAPI,
+            IDiscordRestChannelAPI channelAPI
         )
         {
             _context = context;

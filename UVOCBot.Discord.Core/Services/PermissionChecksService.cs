@@ -53,20 +53,19 @@ namespace UVOCBot.Discord.Core.Services
             }
 
             if (highestRole is null)
-                return await _feedbackService.SendContextualErrorAsync("I cannot assign these roles, as I do not have a role myself.", ct: ct).ConfigureAwait(false);
+                return Result.FromError(new RoleManipulationError("I require a role to be able to assign roles to others."));
 
             // Check that each role is assignable by us
             foreach (ulong roleId in roleIds)
             {
                 if (!getGuildRoles.Entity.Any(r => r.ID.Value == roleId))
-                    return await _feedbackService.SendContextualErrorAsync("A supplied role does not exist.", ct: ct).ConfigureAwait(false);
+                    return Result.FromError(new RoleManipulationError("A given role does not exist."));
 
                 IRole role = getGuildRoles.Entity.First(r => r.ID.Value == roleId);
                 if (role.Position > highestRole.Position)
                 {
-                    return await _feedbackService.SendContextualErrorAsync(
-                        $"I cannot assign the { Formatter.RoleMention(role.ID) } role, as it is positioned above my own highest role.",
-                        ct: ct).ConfigureAwait(false);
+                    return Result.FromError(
+                        new RoleManipulationError($"Cannot assign the { Formatter.RoleMention(role.ID) } role, as it is positioned above my own highest role."));
                 }
             }
 

@@ -59,6 +59,10 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
             {
                 errorMessage = $"This command must be executed in a { Formatter.InlineQuote(contextError.RequiredContext.ToString()) }.";
             }
+            else if (actualError is RoleManipulationError roleManipulationError)
+            {
+                errorMessage = "Failed to modify roles: " + roleManipulationError.Message;
+            }
             else if (actualError is GenericCommandError || actualError is ConditionNotSatisfiedError)
             {
                 errorMessage = actualError.Message;

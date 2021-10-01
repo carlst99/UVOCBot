@@ -12,13 +12,12 @@ namespace UVOCBot.Discord.Core.Extensions
     {
         public static IServiceCollection AddCoreDiscordServices(this IServiceCollection services)
         {
-            services.AddScoped<IPermissionChecksService, PermissionChecksService>(); // TODO: Can make this singleton after service refactor
+            services.AddSingleton<IPermissionChecksService, PermissionChecksService>();
 
             services.AddCondition<RequireContextCondition>();
             services.AddCondition<RequireGuildPermissionCondition>();
 
             services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();
-            services.AddPostExecutionEvent<ErrorLogPostExecutionEvent>();
 
             return services;
         }

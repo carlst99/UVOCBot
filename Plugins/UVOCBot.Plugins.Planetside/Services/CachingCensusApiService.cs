@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
+using UVOCBot.Plugins.Planetside.Objects;
+using UVOCBot.Plugins.Planetside.Objects.Census;
 using UVOCBot.Plugins.Planetside.Objects.Census.Map;
 using UVOCBot.Plugins.Planetside.Objects.Census.Outfit;
 
@@ -75,10 +77,86 @@ namespace UVOCBot.Plugins.Planetside.Services
 
             return getMapRegionResult;
         }
+
+        ///<summary>
+        ///<inheritdoc />
+        /// This query is cached.
+        ///</summary>
+        public override async Task<Result<List<Map>>> GetMapsAsync(ValidWorldDefinition world, IEnumerable<ValidZoneDefinition> zones, CancellationToken ct = default)
+        {
+            List<Map> maps = new();
+            List<ValidZoneDefinition> toRetrieve = new();
+
+            foreach (ValidZoneDefinition zone in zones)
+            {
+                if (_cache.TryGetValue(GetMapCacheKey(world, zone), out Map region))
+                    maps.Add(region);
+                else
+                    toRetrieve.Add(zone);
+            }
+
+            if (toRetrieve.Count == 0)
+            {
+                _logger.LogInformation("Retrieved all from cache");
+                return maps;
+            }
+
+            Result<List<Map>> getMapsResult = await base.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
+
+            if (getMapsResult.IsDefined())
+            {
+                foreach (Map map in getMapsResult.Entity)
+                {
+                    _cache.Set(
+                        GetMapCacheKey(world, (ValidZoneDefinition)map.ZoneId.Definition),
+                        map,
+                        new MemoryCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                            Priority = CacheItemPriority.Low
+                        });
+
+                    maps.Add(map);
+                }
+
+                return maps;
+            }
+
+            return getMapsResult;
+        }
+
+        public override async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default)
+        {
+            if (_cache.TryGetValue(GetMetagameListCacheKey(world), out List<MetagameEvent> events))
+                return events;
+
+            Result<List<MetagameEvent>> getEventsResult = await base.GetMetagameEventsAsync(world, ct).ConfigureAwait(false);
+
+            if (getEventsResult.IsDefined())
+            {
+                _cache.Set(
+                    GetMetagameListCacheKey(world),
+                    getEventsResult.Entity,
+                    new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                        Priority = CacheItemPriority.Low
+                    });
+            }
+
+            return getEventsResult;
+        }
+
         private static object GetOutfitCacheKey(ulong outfitId)
             => (typeof(Outfit), outfitId);
 
         private static object GetFacilityCacheKey(ulong facilityID)
             => (typeof(MapRegion), facilityID);
+
+        private static object GetMapCacheKey(ValidWorldDefinition world, ValidZoneDefinition zone)
+            => (typeof(Map), (int)world, (int)zone);
+
+        private static object GetMetagameListCacheKey(ValidWorldDefinition world)
+            => (typeof(List<MetagameEvent>), (int)world);
     }
 }

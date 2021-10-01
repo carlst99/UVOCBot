@@ -50,10 +50,9 @@ namespace UVOCBot.Plugins.Planetside
 
             serviceCollection.AddHttpClient();
             serviceCollection.AddSingleton<IFisuApiService, CachingFisuApiService>();
-            serviceCollection.AddSingleton<ICensusApiService, CachingCensusApiService>();
 
             serviceCollection.AddCensusRestServices();
-            serviceCollection.AddSingleton<ICensusApiService, CensusApiService>();
+            serviceCollection.AddSingleton<ICensusApiService, CachingCensusApiService>();
 
             serviceCollection.AddCensusEventHandlingServices();
             serviceCollection.AddSingleton<ISubscriptionBuilderService, SubscriptionBuilderService>();

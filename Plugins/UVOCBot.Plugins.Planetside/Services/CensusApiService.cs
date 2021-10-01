@@ -15,8 +15,8 @@ namespace UVOCBot.Plugins.Planetside.Services
     /// <inheritdoc cref="ICensusApiService"/>
     public class CensusApiService : ICensusApiService
     {
-        private readonly ILogger<CensusApiService> _logger;
-        private readonly IQueryService _queryService;
+        protected readonly ILogger<CensusApiService> _logger;
+        protected readonly IQueryService _queryService;
 
         public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService)
         {

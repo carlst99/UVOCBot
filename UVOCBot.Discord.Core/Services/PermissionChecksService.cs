@@ -7,10 +7,6 @@ using Remora.Results;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Discord.Core.Services.Abstractions;
 
-// TODO: Refactor feedback service out of this class
-// Consumers should be responsible for feedback instead
-// Return a PermissionError with the reason for consumers to use.
-
 namespace UVOCBot.Discord.Core.Services
 {
     /// <inheritdoc cref="IPermissionChecksService"/>

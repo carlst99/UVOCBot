@@ -203,7 +203,8 @@ namespace UVOCBot
         {
             LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                
                 .MinimumLevel.Override("System.Net.Http.HttpClient.CensusRestClient", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
@@ -214,6 +215,7 @@ namespace UVOCBot
             {
                 LoggingLevelSwitch levelSwitch = new();
 
+                logConfig.MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Error);
                 logConfig.MinimumLevel.ControlledBy(levelSwitch)
                      .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
             }

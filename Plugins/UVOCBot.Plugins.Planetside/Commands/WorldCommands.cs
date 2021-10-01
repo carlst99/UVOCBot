@@ -150,8 +150,11 @@ namespace UVOCBot.Plugins.Planetside.Commands
 
         private async Task<IResult> SendWorldStatusAsync(ValidWorldDefinition world)
         {
-            Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken).ConfigureAwait(false);
-            Result<List<MetagameEvent>> getMetagameEventsResult = await _censusApi.GetMetagameEventsAsync(world, CancellationToken).ConfigureAwait(false);
+            Task<Result<List<Map>>> getMapsTask = _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken);
+            Task<Result<List<MetagameEvent>>> getMetagameEventsTask = _censusApi.GetMetagameEventsAsync(world, CancellationToken);
+
+            Result<List<Map>> getMapsResult = await getMapsTask.ConfigureAwait(false);
+            Result<List<MetagameEvent>> getMetagameEventsResult = await getMetagameEventsTask.ConfigureAwait(false);
 
             if (!getMapsResult.IsSuccess || !getMetagameEventsResult.IsSuccess)
                 return await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);

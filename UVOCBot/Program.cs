@@ -204,7 +204,7 @@ namespace UVOCBot
             LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-                
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("System.Net.Http.HttpClient.CensusRestClient", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");

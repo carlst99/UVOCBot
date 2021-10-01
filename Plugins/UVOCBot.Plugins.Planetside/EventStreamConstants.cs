@@ -8,5 +8,10 @@
         /// Pushed when a facility has changed hands.
         /// </summary>
         public const string FACILITY_CONTROL_EVENT = "FacilityControl";
+
+        /// <summary>
+        /// Pushed when a metagame event changes state.
+        /// </summary>
+        public const string METAGAME_EVENT_EVENT = "MetagameEvent";
     }
 }

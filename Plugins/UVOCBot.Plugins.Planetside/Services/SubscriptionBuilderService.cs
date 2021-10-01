@@ -9,10 +9,19 @@ namespace UVOCBot.Plugins.Planetside.Services
         /// <inheritdoc />
         public virtual Task<SubscribeCommand> BuildAsync(CancellationToken ct = default)
         {
-            return Task.FromResult(new SubscribeCommand(
-                new string[] { "all" },
-                new string[] { EventStreamConstants.FACILITY_CONTROL_EVENT },
-                worlds: new string[] { "all" }));
+            return Task.FromResult
+            (
+                new SubscribeCommand
+                (
+                    new string[] { "all" },
+                    new string[]
+                    {
+                        EventStreamConstants.FACILITY_CONTROL_EVENT,
+                        EventStreamConstants.METAGAME_EVENT_EVENT
+                    },
+                    worlds: new string[] { "all" }
+                )
+            );
         }
 
         /// <inheritdoc />

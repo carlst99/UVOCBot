@@ -15,7 +15,7 @@ using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
 {
-    public class FacilityControlResponder : ICensusEventHandler<ServiceMessage<FacilityControl>>
+    internal sealed class FacilityControlResponder : ICensusEventHandler<ServiceMessage<FacilityControl>>
     {
         private readonly DiscordContext _dbContext;
         private readonly ICensusApiService _censusApi;

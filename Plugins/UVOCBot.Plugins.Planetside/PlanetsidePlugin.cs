@@ -58,6 +58,7 @@ namespace UVOCBot.Plugins.Planetside
             serviceCollection.AddSingleton<ISubscriptionBuilderService, SubscriptionBuilderService>();
             serviceCollection.AddEventHandler<ConnectionStateChangedResponder>();
             serviceCollection.AddEventHandler<FacilityControlResponder, FacilityControl>(EventStreamConstants.FACILITY_CONTROL_EVENT);
+            serviceCollection.AddEventHandler<MetagameEventResponder, MetagameEvent>(EventStreamConstants.METAGAME_EVENT_EVENT);
 
             serviceCollection.AddCommandGroup<OtherCommands>();
             serviceCollection.AddCommandGroup<OutfitTrackingCommands>();

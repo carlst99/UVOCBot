@@ -6,7 +6,7 @@ using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
 {
-    internal class ConnectionStateChangedResponder : ICensusEventHandler<ConnectionStateChanged>
+    internal sealed class ConnectionStateChangedResponder : ICensusEventHandler<ConnectionStateChanged>
     {
         private readonly IEventStreamClientFactory _clientFactory;
         private readonly ISubscriptionBuilderService _subscriptionBuilder;

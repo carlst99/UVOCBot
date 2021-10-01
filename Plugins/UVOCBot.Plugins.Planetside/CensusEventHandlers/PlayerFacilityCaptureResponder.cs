@@ -4,7 +4,7 @@ using UVOCBot.Plugins.Planetside.Objects.EventStream;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
 {
-    public class PlayerFacilityCaptureResponder : ICensusEventHandler<ServiceMessage<PlayerFacilityCapture>>
+    internal sealed class PlayerFacilityCaptureResponder : ICensusEventHandler<ServiceMessage<PlayerFacilityCapture>>
     {
         public Task HandleAsync(ServiceMessage<PlayerFacilityCapture> censusEvent, CancellationToken ct = default)
         {

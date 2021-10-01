@@ -86,5 +86,12 @@ namespace UVOCBot.Plugins.Planetside.Objects.EventStream
         [property: JsonPropertyName("metagame_event_id")] MetagameEventDefinition EventDefinition,
         [property: JsonPropertyName("metagame_event_state")] MetagameEventState EventState,
         ZoneId ZoneID
-    );
+    )
+    {
+        public object GetCacheKey()
+            => (typeof(MetagameEvent), (int)WorldID, (int)ZoneID.Definition);
+
+        public static object GetCacheKey(WorldDefinition worldDefinition, ZoneDefinition zoneDefinition)
+            => (typeof(MetagameEvent), (int)worldDefinition, (int)zoneDefinition);
+    }
 }

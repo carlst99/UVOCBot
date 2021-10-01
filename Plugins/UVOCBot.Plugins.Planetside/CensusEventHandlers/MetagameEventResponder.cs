@@ -1,22 +1,22 @@
 ﻿using DbgCensus.EventStream.EventHandlers.Abstractions;
 using DbgCensus.EventStream.EventHandlers.Objects.Event;
+using Microsoft.Extensions.Caching.Memory;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;
-using UVOCBot.Plugins.Planetside.Services;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
 {
     internal sealed class MetagameEventResponder : ICensusEventHandler<ServiceMessage<MetagameEvent>>
     {
-        private readonly MetagameEventInjectionService _eventInjector;
+        private readonly IMemoryCache _cache;
 
-        public MetagameEventResponder(MetagameEventInjectionService eventInjector)
+        public MetagameEventResponder(IMemoryCache cache)
         {
-            _eventInjector = eventInjector;
+            _cache = cache;
         }
 
         public Task HandleAsync(ServiceMessage<MetagameEvent> censusEvent, CancellationToken ct = default)
         {
-            _eventInjector.Set(censusEvent.Payload);
+            _cache.Set(censusEvent.Payload.GetCacheKey(), censusEvent.Payload);
 
             return Task.CompletedTask;
         }

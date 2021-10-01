@@ -33,6 +33,10 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
 
         public async Task HandleAsync(ServiceMessage<FacilityControl> censusEvent, CancellationToken ct = default)
         {
+            // TODO: Update map cache
+            // Warm up cache in worker on startup
+            // Then go through and update maps every time we receive an event.
+
             // Shouldn't report same-faction control events (i.e. point defenses).
             if (censusEvent.Payload.OldFactionId == censusEvent.Payload.NewFactionId)
                 return;

@@ -190,6 +190,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
             double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.TR) / regionCount) * 100;
             double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.VS) / regionCount) * 100;
 
+            // TODO: Include time left in alert here if relevant.
             string title = map.ZoneId.Definition switch
             {
                 ZoneDefinition.Amerish => Formatter.Emoji("mountain") + " Amerish",

@@ -125,28 +125,6 @@ namespace UVOCBot.Plugins.Planetside.Services
             return getMapsResult;
         }
 
-        public override async Task<Result<List<CensusMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default)
-        {
-            if (_cache.TryGetValue(GetMetagameListCacheKey(world), out List<CensusMetagameEvent> events))
-                return events;
-
-            Result<List<CensusMetagameEvent>> getEventsResult = await base.GetMetagameEventsAsync(world, ct).ConfigureAwait(false);
-
-            if (getEventsResult.IsDefined())
-            {
-                _cache.Set(
-                    GetMetagameListCacheKey(world),
-                    getEventsResult.Entity,
-                    new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-                        Priority = CacheItemPriority.Low
-                    });
-            }
-
-            return getEventsResult;
-        }
-
         private static object GetOutfitCacheKey(ulong outfitId)
             => (typeof(Outfit), outfitId);
 
@@ -155,8 +133,5 @@ namespace UVOCBot.Plugins.Planetside.Services
 
         private static object GetMapCacheKey(ValidWorldDefinition world, ValidZoneDefinition zone)
             => (typeof(Map), (int)world, (int)zone);
-
-        private static object GetMetagameListCacheKey(ValidWorldDefinition world)
-            => (typeof(List<CensusMetagameEvent>), (int)world);
     }
 }

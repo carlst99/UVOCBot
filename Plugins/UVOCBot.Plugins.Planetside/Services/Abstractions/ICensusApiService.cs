@@ -53,14 +53,6 @@ namespace UVOCBot.Plugins.Planetside.Services.Abstractions
         Task<Result<List<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default);
 
         /// <summary>
-        /// Gets the most recent metagame events for a world.
-        /// </summary>
-        /// <param name="world">The world to retrieve events for.</param>
-        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
-        /// <returns>A list of metagame events.</returns>
-        Task<Result<List<CensusMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default);
-
-        /// <summary>
         /// Gets the maps for a world.
         /// </summary>
         /// <param name="world">The world to retrieve the maps for.</param>

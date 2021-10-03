@@ -146,22 +146,6 @@ namespace UVOCBot.Plugins.Planetside.Services
             return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
         }
 
-        /// <inheritdoc />
-        public virtual async Task<Result<List<CensusMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default)
-        {
-            // https://census.daybreakgames.com/get/ps2/world_event?type=METAGAME&world_id=1&c:limit=20&c:sort=timestamp&c:join=world%5Einject_at:world
-
-            IQueryBuilder query = _queryService.CreateQuery()
-                .OnCollection("world_event")
-                .Where("type", SearchModifier.Equals, "METAGAME")
-                .Where("world_id", SearchModifier.Equals, (int)world)
-                .WithLimit(20)
-                .WithSortOrder("timestamp")
-                .AddJoin("world", j => j.InjectAt("world"));
-
-            return await GetListAsync<CensusMetagameEvent>(query, ct).ConfigureAwait(false);
-        }
-
         protected async Task<Result<T?>> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
         {
             try

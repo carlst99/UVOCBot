@@ -66,7 +66,7 @@ namespace UVOCBot.Commands
             if (!user.IsSuccess)
             {
                 await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                _logger.LogError("Could not get twitter user to add: " + user.Error.Message);
+                _logger.LogError("Could not get twitter user to add: {error}", user.Error.Message);
                 return user;
             }
 
@@ -75,7 +75,7 @@ namespace UVOCBot.Commands
             if (!settings.IsSuccess)
             {
                 await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                _logger.LogError("Could not get guild twitter settings while adding twitter user: " + settings.Error.Message);
+                _logger.LogError("Could not get guild twitter settings while adding twitter user: {error}", settings.Error.Message);
                 return settings;
             }
 
@@ -90,14 +90,14 @@ namespace UVOCBot.Commands
                 else
                 {
                     await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    _logger.LogError("Could not get twitter user from database while adding: " + twitterUser.Error.Message);
+                    _logger.LogError("Could not get twitter user from database while adding: {error}", twitterUser.Error.Message);
                     return twitterUser;
                 }
 
                 if (!twitterUser.IsSuccess)
                 {
                     await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    _logger.LogError("Could not add twitter user to database: " + twitterUser.Error.Message);
+                    _logger.LogError("Could not add twitter user to database: {error}", twitterUser.Error.Message);
                     return twitterUser;
                 }
             }
@@ -108,7 +108,7 @@ namespace UVOCBot.Commands
                 if (!linkCreationResult.IsSuccess)
                 {
                     await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                    _logger.LogError("Could not create twitter user/guild link: " + linkCreationResult.Error.Message);
+                    _logger.LogError("Could not create twitter user/guild link: {error}", linkCreationResult.Error.Message);
                     return linkCreationResult;
                 }
             }
@@ -216,7 +216,7 @@ namespace UVOCBot.Commands
         [Ephemeral]
         public async Task<IResult> RelayChannelCommand([Description("The channel to relay tweets to")] IChannel channel)
         {
-            Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.GetPermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.GetPermissionsInChannel(channel.ID, DiscordConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!botPermissions.IsSuccess)
             {
                 await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);

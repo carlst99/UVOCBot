@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace UVOCBot.Plugins.Planetside.Workers
 {
-    public class EventStreamWorker : BackgroundService
+    internal sealed class EventStreamWorker : BackgroundService
     {
         private readonly ILogger<EventStreamWorker> _logger;
         private readonly IEventStreamClientFactory _clientFactory;

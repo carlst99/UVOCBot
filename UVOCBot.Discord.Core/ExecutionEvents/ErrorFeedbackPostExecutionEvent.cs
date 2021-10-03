@@ -7,7 +7,6 @@ using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Commands.Services;
 using Remora.Results;
-using System.Drawing;
 using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Discord.Core.ExecutionEvents
@@ -18,13 +17,18 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
     public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
     {
         private readonly ILogger<ErrorFeedbackPostExecutionEvent> _logger;
+        private readonly IDiscordRestInteractionAPI _interactionApi;
         private readonly FeedbackService _feedbackService;
 
-        public ErrorFeedbackPostExecutionEvent(
+        public ErrorFeedbackPostExecutionEvent
+        (
             ILogger<ErrorFeedbackPostExecutionEvent> logger,
-            FeedbackService feedbackService)
+            IDiscordRestInteractionAPI interactionApi,
+            FeedbackService feedbackService
+        )
         {
             _logger = logger;
+            _interactionApi = interactionApi;
             _feedbackService = feedbackService;
         }
 
@@ -40,6 +44,23 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
                 IResultError? nestedError = GetFirstInnerErrorOfNotTypeT<ConditionNotSatisfiedError>(commandResult);
                 if (nestedError is not null)
                     actualError = nestedError;
+
+                // Conditions are checked before the interaction is created.
+                if (context is InteractionContext ictx)
+                {
+                    // We're not worrying about an error. It's a rare occurence and more important to log the execution error.
+                    await _interactionApi.CreateInteractionResponseAsync
+                    (
+                        ictx.ID,
+                        ictx.Token,
+                        new InteractionResponse
+                        (
+                            InteractionCallbackType.DeferredChannelMessageWithSource,
+                            new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
+                        ),
+                        ct
+                    ).ConfigureAwait(false);
+                }
             }
 
             if (actualError is null)
@@ -66,6 +87,9 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
             else if (actualError is GenericCommandError || actualError is ConditionNotSatisfiedError)
             {
                 errorMessage = actualError.Message;
+            }
+            else
+            {
                 _logger.LogError("A command failed to execute: {error}", actualError.ToString());
             }
 

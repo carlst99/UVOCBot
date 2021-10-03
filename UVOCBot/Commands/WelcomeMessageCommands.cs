@@ -115,7 +115,7 @@ namespace UVOCBot.Commands
         [Description("Sets the channel to post the welcome message in.")]
         public async Task<IResult> ChannelCommand(IChannel channel)
         {
-            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel, DiscordConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!getPermissionSet.IsSuccess)
             {
                 await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);

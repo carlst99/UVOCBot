@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Discord.Core;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services
@@ -104,7 +105,7 @@ namespace UVOCBot.Services
         public IEmbed GetSuccessEmbed(string content)
             => new Embed
             {
-                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
+                Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
                 Description = content
             };
 

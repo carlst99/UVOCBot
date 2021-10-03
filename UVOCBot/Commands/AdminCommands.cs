@@ -101,7 +101,7 @@ namespace UVOCBot.Commands
 
         private async Task<Result> CheckLoggingChannelPermissions(Snowflake channelId)
         {
-            Result<IDiscordPermissionSet> permissions = await _permissionChecksService.GetPermissionsInChannel(channelId, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> permissions = await _permissionChecksService.GetPermissionsInChannel(channelId, DiscordConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!permissions.IsSuccess)
             {
                 await _replyService.RespondWithUserErrorAsync(permissions.Error.Message, CancellationToken).ConfigureAwait(false);

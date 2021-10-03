@@ -125,12 +125,12 @@ namespace UVOCBot.Plugins.Planetside.Services
             return getMapsResult;
         }
 
-        public override async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default)
+        public override async Task<Result<List<CensusMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default)
         {
-            if (_cache.TryGetValue(GetMetagameListCacheKey(world), out List<MetagameEvent> events))
+            if (_cache.TryGetValue(GetMetagameListCacheKey(world), out List<CensusMetagameEvent> events))
                 return events;
 
-            Result<List<MetagameEvent>> getEventsResult = await base.GetMetagameEventsAsync(world, ct).ConfigureAwait(false);
+            Result<List<CensusMetagameEvent>> getEventsResult = await base.GetMetagameEventsAsync(world, ct).ConfigureAwait(false);
 
             if (getEventsResult.IsDefined())
             {
@@ -157,6 +157,6 @@ namespace UVOCBot.Plugins.Planetside.Services
             => (typeof(Map), (int)world, (int)zone);
 
         private static object GetMetagameListCacheKey(ValidWorldDefinition world)
-            => (typeof(List<MetagameEvent>), (int)world);
+            => (typeof(List<CensusMetagameEvent>), (int)world);
     }
 }

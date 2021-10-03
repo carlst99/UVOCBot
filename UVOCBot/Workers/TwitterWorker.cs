@@ -78,7 +78,7 @@ namespace UVOCBot.Workers
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogError(ex, "Failed to get tweets: {ex}");
+                                _logger.LogError(ex, "Failed to get tweets.");
                                 continue;
                             }
 
@@ -90,7 +90,7 @@ namespace UVOCBot.Workers
                     }
                 }
 
-                _logger.LogTrace($"Finished getting {tweetCount} tweets");
+                _logger.LogTrace("Finished getting {count} tweets", tweetCount);
 
 #if DEBUG
                 await Task.Delay(30000, stoppingToken).ConfigureAwait(false);

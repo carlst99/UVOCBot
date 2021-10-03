@@ -80,9 +80,9 @@ namespace UVOCBot
                             Log.Warning("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
                     }
 #else
-                Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
-                if (!updateSlashCommandsResult.IsSuccess)
-                    Log.Warning("Could not update global application commands");
+                    Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
+                    if (!updateSlashCommandsResult.IsSuccess)
+                        Log.Warning("Could not update global application commands");
 #endif
                 }
 
@@ -203,7 +203,6 @@ namespace UVOCBot
         {
             LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
                 .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
                 .MinimumLevel.Override("System.Net.Http.HttpClient.CensusRestClient", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
@@ -211,11 +210,12 @@ namespace UVOCBot
 #if DEBUG
             logConfig.MinimumLevel.Debug();
 #else
+            logConfig.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
+
             if (seqIngestionEndpoint is not null)
             {
                 LoggingLevelSwitch levelSwitch = new();
 
-                logConfig.MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Error);
                 logConfig.MinimumLevel.ControlledBy(levelSwitch)
                      .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
             }

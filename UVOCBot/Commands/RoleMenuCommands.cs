@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
+using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Services.Abstractions;
@@ -54,7 +55,7 @@ namespace UVOCBot.Commands
             [Description("The title of the role menu.")] string title,
             [Description("The description of the role menu.")] string? description = null)
         {
-            Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel(channel.ID, BotConstants.UserId, CancellationToken).ConfigureAwait(false);
+            Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel(channel.ID, DiscordConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!permissionsResult.IsSuccess)
             {
                 await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
@@ -236,7 +237,7 @@ namespace UVOCBot.Commands
             return new Embed(
                 menu.Title,
                 Description: menu.Description,
-                Colour: BotConstants.DEFAULT_EMBED_COLOUR,
+                Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
                 Footer: new EmbedFooter("If you can't deselect a role, refresh your client by pressing Ctrl+R."));
         }
 

@@ -30,7 +30,7 @@ namespace UVOCBot.Core.Model
         {
         }
 
-        public GuildAdminSettings(ulong guildId )
+        public GuildAdminSettings(ulong guildId)
         {
             GuildId = guildId;
         }

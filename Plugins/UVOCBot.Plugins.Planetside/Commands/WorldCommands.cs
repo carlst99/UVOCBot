@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using Microsoft.Extensions.Caching.Memory;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
@@ -14,6 +15,7 @@ using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.Census;
 using UVOCBot.Plugins.Planetside.Objects.Census.Map;
+using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Objects.Fisu;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
@@ -24,6 +26,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
         private readonly ICommandContext _context;
         private readonly ICensusApiService _censusApi;
         private readonly IFisuApiService _fisuApi;
+        private readonly IMemoryCache _cache;
         private readonly DiscordContext _dbContext;
         private readonly FeedbackService _feedbackService;
 
@@ -31,12 +34,14 @@ namespace UVOCBot.Plugins.Planetside.Commands
             ICommandContext context,
             ICensusApiService censusApi,
             IFisuApiService fisuApi,
+            IMemoryCache cache,
             DiscordContext dbContext,
             FeedbackService feedbackService)
         {
             _context = context;
             _censusApi = censusApi;
             _fisuApi = fisuApi;
+            _cache = cache;
             _dbContext = dbContext;
             _feedbackService = feedbackService;
         }
@@ -150,23 +155,21 @@ namespace UVOCBot.Plugins.Planetside.Commands
 
         private async Task<IResult> SendWorldStatusAsync(ValidWorldDefinition world)
         {
-            Task<Result<List<Map>>> getMapsTask = _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken);
-            Task<Result<List<MetagameEvent>>> getMetagameEventsTask = _censusApi.GetMetagameEventsAsync(world, CancellationToken);
+            Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken).ConfigureAwait(false);
 
-            Result<List<Map>> getMapsResult = await getMapsTask.ConfigureAwait(false);
-            Result<List<MetagameEvent>> getMetagameEventsResult = await getMetagameEventsTask.ConfigureAwait(false);
-
-            if (!getMapsResult.IsSuccess || !getMetagameEventsResult.IsSuccess)
-                return await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
+            if (!getMapsResult.IsDefined())
+            {
+                await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
+                return getMapsResult;
+            }
 
             List<EmbedField> embedFields = new();
             foreach (Map m in getMapsResult.Entity)
-                embedFields.Add(GetMapStatusEmbedField(m, getMetagameEventsResult.Entity));
+                embedFields.Add(GetMapStatusEmbedField(m, (WorldDefinition)world));
 
             Embed embed = new()
             {
                 Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-                Description = BuildWorldStatusString(getMetagameEventsResult.Entity[0].World),
                 Title = world.ToString(),
                 Fields = embedFields
             };
@@ -174,7 +177,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
             return await _feedbackService.SendContextualEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
         }
 
-        private static EmbedField GetMapStatusEmbedField(Map map, List<MetagameEvent> metagameEvents)
+        private EmbedField GetMapStatusEmbedField(Map map, WorldDefinition world)
         {
             static string ConstructPopBar(double percent, string emojiName)
             {
@@ -204,8 +207,13 @@ namespace UVOCBot.Plugins.Planetside.Commands
             if (Math.Round(ncPercent, 0) == 100 || Math.Round(trPercent, 0) == 100 || Math.Round(vsPercent, 0) == 100)
                 title += " " + Formatter.Emoji("lock");
 
-            if (metagameEvents.Find(m => m.ZoneId == map.ZoneId)?.MetagameEventStateName == "started")
-                title += " " + Formatter.Emoji("rotating_light");
+            object cacheKey = MetagameEvent.GetCacheKey(world, map.ZoneId.Definition);
+            if (_cache.TryGetValue(cacheKey, out MetagameEvent? metagameEvent) && metagameEvent!.EventState is MetagameEventState.Started)
+            {
+                TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
+                TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.EventDefinition) - currentEventDuration;
+                title += $" {Formatter.Emoji("rotating_light")} {remainingTime:hh\\h mm\\m}";
+            }
 
             string popBar = ConstructPopBar(ncPercent, "blue_square");
             popBar += ConstructPopBar(trPercent, "red_square");
@@ -213,15 +221,6 @@ namespace UVOCBot.Plugins.Planetside.Commands
 
             return new EmbedField(title, popBar);
         }
-
-        private static string BuildWorldStatusString(World world)
-            => world.State switch
-            {
-                "online" => $"Status: Online {Formatter.Emoji("green_circle")}",
-                "offline" => $"Status: Offline {Formatter.Emoji("red_circle")}",
-                "locked" => $"Status: Locked {Formatter.Emoji("red_circle")}",
-                _ => $"Status: Unknown {Formatter.Emoji("black_circle")}"
-            };
 
         private static string BuildEmbedPopulationBar(int population, int totalPopulation)
         {

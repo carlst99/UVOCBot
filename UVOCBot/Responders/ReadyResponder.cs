@@ -45,12 +45,10 @@ namespace UVOCBot.Responders
 
         public async Task<Result> RespondAsync(IReady gatewayEvent, CancellationToken ct = default)
         {
-            BotConstants.UserId = gatewayEvent.User.ID;
             DiscordConstants.UserId = gatewayEvent.User.ID;
 
             if (gatewayEvent.Application.ID.HasValue)
             {
-                BotConstants.ApplicationId = gatewayEvent.Application.ID.Value;
                 DiscordConstants.ApplicationId = gatewayEvent.Application.ID.Value;
             }
 

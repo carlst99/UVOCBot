@@ -1,7 +1,6 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
-using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
 using UVOCBot.Discord.Core.Errors;
@@ -12,28 +11,25 @@ namespace UVOCBot.Discord.Core.Services
     /// <inheritdoc cref="IPermissionChecksService"/>
     public class PermissionChecksService : IPermissionChecksService
     {
-        private readonly ICommandContext _context;
         private readonly IDiscordRestChannelAPI _channelApi;
         private readonly IDiscordRestGuildAPI _guildApi;
 
         public PermissionChecksService(
-            ICommandContext context,
             IDiscordRestChannelAPI channelApi,
             IDiscordRestGuildAPI guildApi)
         {
-            _context = context;
             _channelApi = channelApi;
             _guildApi = guildApi;
         }
 
         /// <inheritdoc />
-        public async Task<IResult> CanManipulateRoles(Snowflake guildId, IEnumerable<ulong> roleIds, CancellationToken ct = default)
+        public async Task<IResult> CanManipulateRoles(Snowflake guildID, IEnumerable<ulong> roleIds, CancellationToken ct = default)
         {
-            Result<IReadOnlyList<IRole>> getGuildRoles = await _guildApi.GetGuildRolesAsync(guildId, ct).ConfigureAwait(false);
+            Result<IReadOnlyList<IRole>> getGuildRoles = await _guildApi.GetGuildRolesAsync(guildID, ct).ConfigureAwait(false);
             if (!getGuildRoles.IsSuccess)
                 return getGuildRoles;
 
-            Result<IGuildMember> getCurrentMember = await _guildApi.GetGuildMemberAsync(_context.GuildID.Value, DiscordConstants.UserId, ct).ConfigureAwait(false);
+            Result<IGuildMember> getCurrentMember = await _guildApi.GetGuildMemberAsync(guildID, DiscordConstants.UserId, ct).ConfigureAwait(false);
             if (!getCurrentMember.IsSuccess)
                 return getCurrentMember;
 

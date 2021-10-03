@@ -136,7 +136,7 @@ namespace UVOCBot.Commands
 
             return new Embed
             {
-                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
+                Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
                 Title = embedTitle,
                 Description = embedDescription,
                 Fields = embedFields

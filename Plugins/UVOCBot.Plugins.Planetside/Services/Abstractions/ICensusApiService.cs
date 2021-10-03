@@ -58,7 +58,7 @@ namespace UVOCBot.Plugins.Planetside.Services.Abstractions
         /// <param name="world">The world to retrieve events for.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns>A list of metagame events.</returns>
-        Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default);
+        Task<Result<List<CensusMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, CancellationToken ct = default);
 
         /// <summary>
         /// Gets the maps for a world.

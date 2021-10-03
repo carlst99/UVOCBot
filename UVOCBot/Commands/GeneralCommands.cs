@@ -98,7 +98,7 @@ namespace UVOCBot.Commands
                 Thumbnail = botAvatar is not null ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96) : new Optional<IEmbedThumbnail>(),
                 Author = new EmbedAuthor("Written by FalconEye#1153", IconUrl: authorAvatar),
                 Footer = new EmbedFooter($"Version {Assembly.GetEntryAssembly()?.GetName().Version}"),
-                Colour = BotConstants.DEFAULT_EMBED_COLOUR,
+                Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
                 Url = "https://github.com/carlst99/UVOCBot",
                 Fields = new List<IEmbedField>
                 {

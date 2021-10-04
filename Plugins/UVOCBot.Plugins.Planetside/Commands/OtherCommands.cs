@@ -11,7 +11,7 @@ using Remora.Results;
 using System.ComponentModel;
 using System.Text;
 using UVOCBot.Discord.Core;
-using UVOCBot.Plugins.Planetside.Objects.Census.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Commands

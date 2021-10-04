@@ -13,8 +13,9 @@ using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.Census;
-using UVOCBot.Plugins.Planetside.Objects.Census.Map;
+using UVOCBot.Plugins.Planetside.Objects.CensusCommon;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Objects.Fisu;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
@@ -208,7 +209,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
             if (Math.Round(ncPercent, 0) == 100 || Math.Round(trPercent, 0) == 100 || Math.Round(vsPercent, 0) == 100)
                 title += " " + Formatter.Emoji("lock");
 
-            object cacheKey = MetagameEvent.GetCacheKey(world, map.ZoneId.Definition);
+            object cacheKey = MetagameEvent.GetCacheKey(world, map.ZoneId);
             if (_cache.TryGetValue(cacheKey, out MetagameEvent? metagameEvent) && metagameEvent!.EventState is MetagameEventState.Started)
             {
                 TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;

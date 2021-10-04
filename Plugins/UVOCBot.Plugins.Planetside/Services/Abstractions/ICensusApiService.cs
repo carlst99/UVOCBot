@@ -1,8 +1,8 @@
 ﻿using Remora.Results;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.Census;
-using UVOCBot.Plugins.Planetside.Objects.Census.Map;
-using UVOCBot.Plugins.Planetside.Objects.Census.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
 namespace UVOCBot.Plugins.Planetside.Services.Abstractions
 {
@@ -68,5 +68,14 @@ namespace UVOCBot.Plugins.Planetside.Services.Abstractions
         /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
         /// <returns>A <see cref="Result"/> representing the <see cref="MapRegion"/>, or <c>null</c> if the facility does not exist.</returns>
         Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets the most recent metagame events for a world.
+        /// </summary>
+        /// <param name="world">The world to query events for.</param>
+        /// <param name="limit">The number of events to return.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>A <see cref="Result"/> representing the metagame events.</returns>
+        Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default);
     }
 }

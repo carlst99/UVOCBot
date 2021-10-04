@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace UVOCBot.Plugins.Planetside.Objects.Census
+namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery
 {
     public record GlobalisedString
     {

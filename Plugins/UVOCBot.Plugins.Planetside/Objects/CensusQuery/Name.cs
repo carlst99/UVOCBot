@@ -1,4 +1,4 @@
-﻿namespace UVOCBot.Plugins.Planetside.Objects.Census
+﻿namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery
 {
     public record Name
     {

@@ -1,7 +1,7 @@
 ﻿using DbgCensus.Core.Objects;
 using System.Text.Json.Serialization;
 
-namespace UVOCBot.Plugins.Planetside.Objects.Census.Map
+namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map
 {
     /// <summary>
     /// The query model for https://census.daybreakgames.com/s:WVWCeOP4oeLb/get/ps2/map?world_id=1&zone_ids=2,4,6,8

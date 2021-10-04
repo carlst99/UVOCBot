@@ -3,9 +3,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.Census;
-using UVOCBot.Plugins.Planetside.Objects.Census.Map;
-using UVOCBot.Plugins.Planetside.Objects.Census.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
 namespace UVOCBot.Plugins.Planetside.Services
 {

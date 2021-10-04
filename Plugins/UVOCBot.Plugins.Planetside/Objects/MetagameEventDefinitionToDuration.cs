@@ -1,4 +1,4 @@
-﻿using MED = UVOCBot.Plugins.Planetside.Objects.EventStream.MetagameEventDefinition;
+﻿using MED = UVOCBot.Plugins.Planetside.Objects.CensusCommon.MetagameEventDefinition;
 
 namespace UVOCBot.Plugins.Planetside.Objects
 {

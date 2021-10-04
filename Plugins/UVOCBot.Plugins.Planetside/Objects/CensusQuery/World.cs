@@ -1,6 +1,6 @@
 ﻿using DbgCensus.Core.Objects;
 
-namespace UVOCBot.Plugins.Planetside.Objects.Census
+namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery
 {
     public record World
     {

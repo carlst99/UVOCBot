@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System.Runtime.CompilerServices;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.Census;
-using UVOCBot.Plugins.Planetside.Objects.Census.Map;
-using UVOCBot.Plugins.Planetside.Objects.Census.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Services
@@ -144,6 +144,18 @@ namespace UVOCBot.Plugins.Planetside.Services
                 .WhereAll("zone_ids", SearchModifier.Equals, zones.Select(z => (int)z));
 
             return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
+        }
+
+        public async Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default)
+        {
+            IQueryBuilder query = _queryService.CreateQuery()
+                .OnCollection("world_event")
+                .Where("type", SearchModifier.Equals, "METAGAME")
+                .Where("world_id", SearchModifier.Equals, (int)world)
+                .WithLimit(limit)
+                .WithSortOrder("timestamp");
+
+            return await GetListAsync<QueryMetagameEvent>(query, ct).ConfigureAwait(false);
         }
 
         protected async Task<Result<T?>> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)

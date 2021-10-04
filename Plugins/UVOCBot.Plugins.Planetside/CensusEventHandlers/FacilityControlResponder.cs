@@ -8,8 +8,8 @@ using Remora.Results;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
-using UVOCBot.Plugins.Planetside.Objects.Census.Map;
-using UVOCBot.Plugins.Planetside.Objects.Census.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 

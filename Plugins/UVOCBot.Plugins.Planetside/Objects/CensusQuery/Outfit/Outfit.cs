@@ -1,4 +1,4 @@
-﻿namespace UVOCBot.Plugins.Planetside.Objects.Census.Outfit
+﻿namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit
 {
     public record Outfit
     {

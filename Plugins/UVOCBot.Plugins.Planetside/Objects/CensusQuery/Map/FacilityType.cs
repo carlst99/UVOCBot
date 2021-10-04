@@ -1,4 +1,4 @@
-﻿namespace UVOCBot.Plugins.Planetside.Objects.Census.Map
+﻿namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map
 {
     /// <summary>
     /// Defines the various facility types as represented in the Census API.

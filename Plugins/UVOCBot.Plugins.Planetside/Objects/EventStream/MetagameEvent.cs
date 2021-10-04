@@ -32,9 +32,9 @@ namespace UVOCBot.Plugins.Planetside.Objects.EventStream
     )
     {
         public object GetCacheKey()
-            => (typeof(MetagameEvent), (int)WorldID, ZoneID.CombinedId);
+            => (typeof(MetagameEvent), (uint)WorldID, (uint)ZoneID.Definition);
 
-        public static object GetCacheKey(WorldDefinition worldDefinition, ZoneId zoneID)
-            => (typeof(MetagameEvent), (int)worldDefinition, zoneID.CombinedId);
+        public static object GetCacheKey(WorldDefinition worldDefinition, ZoneDefinition zoneDefinition)
+            => (typeof(MetagameEvent), (uint)worldDefinition, (uint)zoneDefinition);
     }
 }

@@ -104,7 +104,7 @@ namespace UVOCBot.Plugins.Planetside.Services
         }
 
         /// <inheritdoc />
-        public async Task<Result<List<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default)
+        public virtual async Task<Result<List<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default)
         {
             // https://census.daybreakgames.com/get/ps2/outfit_member?outfit_id=37562651025751157&c:sort=member_since:-1&c:show=character_id,member_since&c:join=character%5Eshow:name.first%5Einject_at:character_name&c:limit=10
 
@@ -146,7 +146,8 @@ namespace UVOCBot.Plugins.Planetside.Services
             return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
         }
 
-        public async Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default)
+        /// <inheritdoc />
+        public virtual async Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default)
         {
             IQueryBuilder query = _queryService.CreateQuery()
                 .OnCollection("world_event")

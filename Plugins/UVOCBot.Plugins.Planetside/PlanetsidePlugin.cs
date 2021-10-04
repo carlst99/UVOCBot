@@ -65,6 +65,7 @@ namespace UVOCBot.Plugins.Planetside
             serviceCollection.AddCommandGroup<WorldCommands>();
 
             serviceCollection.AddHostedService<EventStreamWorker>();
+            serviceCollection.AddHostedService<StartupWorker>();
             serviceCollection.AddHostedService<SubscriptionWorker>();
         }
     }

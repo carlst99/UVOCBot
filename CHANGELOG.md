@@ -2,6 +2,11 @@
 
 ## Release vNext
 
+- The `status` command is now much faster and shows active alerts.
+- Made a general sweep to improve stability and error feedback.
+
+**Technical**
+
 - Completely revamped the design of the bot. Each individual component is now part of its own plugin which you can freely swap in/out to customise UVOCBot's feature-set.
 - :warning: Updated the map assets. Ensure you update them in your installation.
 - :warning: Updated the `appsettings.json` files. Ensure you update them in your installation.

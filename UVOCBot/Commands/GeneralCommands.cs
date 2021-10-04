@@ -20,7 +20,7 @@ namespace UVOCBot.Commands
 {
     public class GeneralCommands : CommandGroup
     {
-        public const string RELEASE_NOTES = "• Fixed the `status` command.\n• Improved the `online` command.";
+        public const string RELEASE_NOTES = "• The `status` command is now much faster, and shows active alerts.\n• Made a general sweep to improve stability and error feedback.";
 
         private readonly IReplyService _replyService;
         private readonly IDiscordRestUserAPI _userAPI;

@@ -143,9 +143,9 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
                 Fields = new List<EmbedField>
                 {
-                    new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
                     new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
                     new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
+                    new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
                     new EmbedField($"{Formatter.Emoji("white_circle")} NS - {population.NS}", BuildEmbedPopulationBar(population.NS, population.Total))
                 }
             };
@@ -164,6 +164,8 @@ namespace UVOCBot.Plugins.Planetside.Commands
             }
 
             List<EmbedField> embedFields = new();
+            getMapsResult.Entity.Sort((m1, m2) => m1.ZoneId.Definition.ToString().CompareTo(m2.ZoneId.Definition.ToString()));
+
             foreach (Map m in getMapsResult.Entity)
                 embedFields.Add(GetMapStatusEmbedField(m, (WorldDefinition)world));
 
@@ -193,14 +195,13 @@ namespace UVOCBot.Plugins.Planetside.Commands
             double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.TR) / regionCount) * 100;
             double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.VS) / regionCount) * 100;
 
-            // TODO: Include time left in alert here if relevant.
             string title = map.ZoneId.Definition switch
             {
-                ZoneDefinition.Amerish => Formatter.Emoji("mountain") + " Amerish",
-                ZoneDefinition.Esamir => Formatter.Emoji("snowflake") + " Esamir",
-                ZoneDefinition.Hossin => Formatter.Emoji("deciduous_tree") + " Hossin",
-                ZoneDefinition.Indar => Formatter.Emoji("desert") + " Indar",
-                ZoneDefinition.Koltyr => Formatter.Emoji("zap") + " Koltyr",
+                ZoneDefinition.Amerish => $"{Formatter.Emoji("mountain")} {ZoneDefinition.Amerish}",
+                ZoneDefinition.Esamir => $"{Formatter.Emoji("snowflake")} {ZoneDefinition.Esamir}",
+                ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
+                ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
+                ZoneDefinition.Koltyr => $"{Formatter.Emoji("zap")} {ZoneDefinition.Koltyr}",
                 _ => map.ZoneId.Definition.ToString()
             };
 
@@ -212,7 +213,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
             {
                 TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
                 TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.EventDefinition) - currentEventDuration;
-                title += $" {Formatter.Emoji("rotating_light")} {remainingTime:hh\\h mm\\m}";
+                title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
             }
 
             string popBar = ConstructPopBar(ncPercent, "blue_square");

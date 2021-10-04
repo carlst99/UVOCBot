@@ -41,10 +41,10 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
             if (censusEvent.Payload.OldFactionId == censusEvent.Payload.NewFactionId)
                 return;
 
-            IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings.AsEnumerable().Where(
-                s => s.BaseCaptureChannelId != null
-                && s.TrackedOutfits.Contains(censusEvent.Payload.OutfitId)
-            );
+            IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
+                .Where(s => s.BaseCaptureChannelId != null)
+                .AsEnumerable()
+                .Where(s => s.TrackedOutfits.Contains(censusEvent.Payload.OutfitId));
 
             if (!validPSettings.Any())
                 return;

@@ -25,7 +25,9 @@ namespace UVOCBot.Plugins.Planetside.Workers
 
         protected override async Task ExecuteAsync(CancellationToken ct)
         {
-            // Pre-cache metagame events.
+            if (_censusApi is not Services.CachingCensusApiService)
+                throw new InvalidOperationException("Expected the " + nameof(Services.CachingCensusApiService) + " to be registered with the service provider.");
+
             foreach (ValidWorldDefinition world in Enum.GetValues<ValidWorldDefinition>())
             {
                 Result<List<QueryMetagameEvent>> events = await _censusApi.GetMetagameEventsAsync(world, ct: ct).ConfigureAwait(false);
@@ -35,14 +37,20 @@ namespace UVOCBot.Plugins.Planetside.Workers
                 if (events.Entity.Count == 0)
                     continue;
 
-                // Assume events are ordered by timestamp, as we do this in the query
+                /**
+                 * Pre-cache metagame events.
+                 * Assume events are ordered by timestamp, as we do this in the query.
+                 */
                 MetagameEvent eventStreamConversion = events.Entity[0].ToEventStreamMetagameEvent();
                 object key = CacheKeyHelpers.GetMetagameEventKey(eventStreamConversion);
                 _cache.Set(key, eventStreamConversion);
-            }
 
-            // TODO: Populate mapping data from Census query
-            // Will need to convert to event stream objects
+                /**
+                 * Pre-cache maps.
+                 * Assumes that the CachingCensusApiService will perform the caching.
+                 */
+                await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), ct).ConfigureAwait(false);
+            }
         }
     }
 }

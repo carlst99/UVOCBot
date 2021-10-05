@@ -92,10 +92,7 @@ namespace UVOCBot.Plugins.Planetside.Services
             }
 
             if (toRetrieve.Count == 0)
-            {
-                _logger.LogInformation("Retrieved all from cache");
                 return maps;
-            }
 
             Result<List<Map>> getMapsResult = await base.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
 

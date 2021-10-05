@@ -22,17 +22,17 @@ namespace UVOCBot.Plugins.Planetside.Objects
 
         public static object GetFacilityMapRegionKey(MapRegion facilityRegion)
         {
-            if (facilityRegion.FacilityId is null)
-                throw new ArgumentNullException(nameof(facilityRegion.FacilityId), "Facility ID must not be null.");
+            if (facilityRegion.FacilityID is null)
+                throw new ArgumentNullException(nameof(facilityRegion.FacilityID), "Facility ID must not be null.");
 
-            return GetFacilityMapRegionKey(facilityRegion.FacilityId.Value);
+            return GetFacilityMapRegionKey(facilityRegion.FacilityID.Value);
         }
 
         public static object GetFacilityMapRegionKey(ulong facilityID)
             => (typeof(MapRegion), facilityID);
 
         public static object GetMapKey(WorldDefinition world, Map map)
-            => GetMapKey(world, map.ZoneId.Definition);
+            => GetMapKey(world, map.ZoneID.Definition);
 
         public static object GetMapKey(WorldDefinition world, ZoneDefinition zone)
             => (typeof(Map), (int)world, (int)zone);

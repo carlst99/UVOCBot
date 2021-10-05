@@ -165,7 +165,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
             }
 
             List<EmbedField> embedFields = new();
-            getMapsResult.Entity.Sort((m1, m2) => m1.ZoneId.Definition.ToString().CompareTo(m2.ZoneId.Definition.ToString()));
+            getMapsResult.Entity.Sort((m1, m2) => m1.ZoneID.Definition.ToString().CompareTo(m2.ZoneID.Definition.ToString()));
 
             foreach (Map m in getMapsResult.Entity)
                 embedFields.Add(GetMapStatusEmbedField(m, (WorldDefinition)world));
@@ -191,25 +191,25 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 return result;
             }
 
-            double regionCount = map.Regions.Row.Count(r => r.RowData.FactionId != Faction.None);
-            double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.NC) / regionCount) * 100;
-            double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.TR) / regionCount) * 100;
-            double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionId == Faction.VS) / regionCount) * 100;
+            double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != Faction.None);
+            double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == Faction.NC) / regionCount) * 100;
+            double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == Faction.TR) / regionCount) * 100;
+            double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == Faction.VS) / regionCount) * 100;
 
-            string title = map.ZoneId.Definition switch
+            string title = map.ZoneID.Definition switch
             {
                 ZoneDefinition.Amerish => $"{Formatter.Emoji("mountain")} {ZoneDefinition.Amerish}",
                 ZoneDefinition.Esamir => $"{Formatter.Emoji("snowflake")} {ZoneDefinition.Esamir}",
                 ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
                 ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
                 ZoneDefinition.Koltyr => $"{Formatter.Emoji("zap")} {ZoneDefinition.Koltyr}",
-                _ => map.ZoneId.Definition.ToString()
+                _ => map.ZoneID.Definition.ToString()
             };
 
             if (Math.Round(ncPercent, 0) == 100 || Math.Round(trPercent, 0) == 100 || Math.Round(vsPercent, 0) == 100)
                 title += " " + Formatter.Emoji("lock");
 
-            object cacheKey = CacheKeyHelpers.GetMetagameEventKey(world, map.ZoneId.Definition);
+            object cacheKey = CacheKeyHelpers.GetMetagameEventKey(world, map.ZoneID.Definition);
             if (_cache.TryGetValue(cacheKey, out MetagameEvent? metagameEvent) && metagameEvent!.EventState is MetagameEventState.Started)
             {
                 TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;

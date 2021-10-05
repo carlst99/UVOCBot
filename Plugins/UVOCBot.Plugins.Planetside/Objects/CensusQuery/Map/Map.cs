@@ -4,54 +4,30 @@ using System.Text.Json.Serialization;
 namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map
 {
     /// <summary>
-    /// The query model for https://census.daybreakgames.com/s:WVWCeOP4oeLb/get/ps2/map?world_id=1&zone_ids=2,4,6,8
+    /// Initialises a new instance of the <see cref="Map"/> record.=
     /// </summary>
+    /// <param name="ZoneID">The ID of the zone that this map represents.</param>
+    /// <param name="Regions">The region model of the map.</param>
     public record Map
-    {
-        public record RegionModel
-        {
-            public record RowModel
-            {
-                public record RowDataModel
-                {
-                    [JsonPropertyName("RegionId")]
-                    public int RegionId { get; init; }
+    (
+        [property: JsonPropertyName("ZoneId")] ZoneId ZoneID,
+        [property: JsonPropertyName("Regions")] RegionModel Regions
+    );
 
-                    [JsonPropertyName("FactionId")]
-                    public Faction FactionId { get; init; }
-                }
+    public record RegionModel
+    (
+        [property: JsonPropertyName("IsList")] bool IsList,
+        [property: JsonPropertyName("Row")] List<RowModel> Row
+    );
 
-                [JsonPropertyName("RowData")]
-                public RowDataModel RowData { get; init; }
+    public record RowModel
+    (
+        [property: JsonPropertyName("RowData")] RowDataModel RowData
+    );
 
-                public RowModel()
-                {
-                    RowData = new RowDataModel();
-                }
-            }
-
-            [JsonPropertyName("IsList")]
-            public bool IsList { get; init; }
-
-            [JsonPropertyName("Row")]
-            public List<RowModel> Row { get; init; }
-
-            public RegionModel()
-            {
-                Row = new List<RowModel>();
-            }
-        }
-
-        [JsonPropertyName("ZoneId")]
-        public ZoneId ZoneId { get; init; }
-
-        [JsonPropertyName("Regions")]
-        public RegionModel Regions { get; init; }
-
-        public Map()
-        {
-            Regions = new RegionModel();
-            ZoneId = ZoneId.Default;
-        }
-    }
+    public record RowDataModel
+    (
+        [property: JsonPropertyName("RegionId")] int RegionID,
+        [property: JsonPropertyName("FactionId")] Faction FactionID
+    );
 }

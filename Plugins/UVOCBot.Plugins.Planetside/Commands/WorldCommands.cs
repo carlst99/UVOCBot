@@ -202,7 +202,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 ZoneDefinition.Esamir => $"{Formatter.Emoji("snowflake")} {ZoneDefinition.Esamir}",
                 ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
                 ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
-                ZoneDefinition.Koltyr => $"{Formatter.Emoji("zap")} {ZoneDefinition.Koltyr}",
+                ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
                 _ => map.ZoneID.Definition.ToString()
             };
 

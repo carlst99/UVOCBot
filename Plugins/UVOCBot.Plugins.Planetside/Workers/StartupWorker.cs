@@ -37,7 +37,8 @@ namespace UVOCBot.Plugins.Planetside.Workers
 
                 // Assume events are ordered by timestamp, as we do this in the query
                 MetagameEvent eventStreamConversion = events.Entity[0].ToEventStreamMetagameEvent();
-                _cache.Set(eventStreamConversion.GetCacheKey(), eventStreamConversion);
+                object key = CacheKeyHelpers.GetMetagameEventKey(eventStreamConversion);
+                _cache.Set(key, eventStreamConversion);
             }
 
             // TODO: Populate mapping data from Census query

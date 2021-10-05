@@ -1,6 +1,7 @@
 ﻿using DbgCensus.EventStream.EventHandlers.Abstractions;
 using DbgCensus.EventStream.EventHandlers.Objects.Event;
 using Microsoft.Extensions.Caching.Memory;
+using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
@@ -16,7 +17,8 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
 
         public Task HandleAsync(ServiceMessage<MetagameEvent> censusEvent, CancellationToken ct = default)
         {
-            _cache.Set(censusEvent.Payload.GetCacheKey(), censusEvent.Payload);
+            object key = CacheKeyHelpers.GetMetagameEventKey(censusEvent.Payload);
+            _cache.Set(key, censusEvent.Payload);
 
             return Task.CompletedTask;
         }

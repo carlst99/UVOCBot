@@ -1,4 +1,5 @@
-﻿using DbgCensus.Rest.Abstractions;
+﻿using DbgCensus.Core.Objects;
+using DbgCensus.Rest.Abstractions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
@@ -31,7 +32,7 @@ namespace UVOCBot.Plugins.Planetside.Services
         /// </summary>
         public async override Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
         {
-            if (_cache.TryGetValue(GetOutfitCacheKey(id), out Outfit outfit))
+            if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit outfit))
                 return Result<Outfit?>.FromSuccess(outfit);
 
             Result<Outfit?> getOutfit = await base.GetOutfitAsync(id, ct).ConfigureAwait(false);
@@ -39,7 +40,7 @@ namespace UVOCBot.Plugins.Planetside.Services
             if (getOutfit.IsDefined())
             {
                 _cache.Set(
-                    GetOutfitCacheKey(id),
+                    CacheKeyHelpers.GetOutfitKey(getOutfit.Entity),
                     getOutfit.Entity,
                     new MemoryCacheEntryOptions
                     {
@@ -57,7 +58,7 @@ namespace UVOCBot.Plugins.Planetside.Services
         /// </summary>
         public override async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
         {
-            if (_cache.TryGetValue(GetFacilityCacheKey(facilityID), out MapRegion region))
+            if (_cache.TryGetValue(CacheKeyHelpers.GetFacilityMapRegionKey(facilityID), out MapRegion region))
                 return region;
 
             Result<MapRegion?> getMapRegionResult = await base.GetFacilityRegionAsync(facilityID, ct).ConfigureAwait(false);
@@ -65,7 +66,7 @@ namespace UVOCBot.Plugins.Planetside.Services
             if (getMapRegionResult.IsDefined())
             {
                 _cache.Set(
-                    GetFacilityCacheKey(facilityID),
+                    CacheKeyHelpers.GetFacilityMapRegionKey(getMapRegionResult.Entity),
                     getMapRegionResult.Entity,
                     new MemoryCacheEntryOptions
                     {
@@ -88,7 +89,7 @@ namespace UVOCBot.Plugins.Planetside.Services
 
             foreach (ValidZoneDefinition zone in zones)
             {
-                if (_cache.TryGetValue(GetMapCacheKey(world, zone), out Map region))
+                if (_cache.TryGetValue(CacheKeyHelpers.GetMapKey((WorldDefinition)world, (ZoneDefinition)zone), out Map region))
                     maps.Add(region);
                 else
                     toRetrieve.Add(zone);
@@ -107,7 +108,7 @@ namespace UVOCBot.Plugins.Planetside.Services
                 foreach (Map map in getMapsResult.Entity)
                 {
                     _cache.Set(
-                        GetMapCacheKey(world, (ValidZoneDefinition)map.ZoneId.Definition),
+                        CacheKeyHelpers.GetMapKey((WorldDefinition)world, map),
                         map,
                         new MemoryCacheEntryOptions
                         {
@@ -123,14 +124,5 @@ namespace UVOCBot.Plugins.Planetside.Services
 
             return getMapsResult;
         }
-
-        private static object GetOutfitCacheKey(ulong outfitId)
-            => (typeof(Outfit), outfitId);
-
-        private static object GetFacilityCacheKey(ulong facilityID)
-            => (typeof(MapRegion), facilityID);
-
-        private static object GetMapCacheKey(ValidWorldDefinition world, ValidZoneDefinition zone)
-            => (typeof(Map), (int)world, (int)zone);
     }
 }

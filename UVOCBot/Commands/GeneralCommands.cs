@@ -55,7 +55,6 @@ namespace UVOCBot.Commands
 
         [Command("http-cat")]
         [Description("Posts a cat image that represents the given HTTP error code.")]
-        [Ephemeral]
         public async Task<IResult> PostHttpCatCommandAsync([Description("The HTTP code.")] [DiscordTypeHint(TypeHint.Integer)] int httpCode)
         {
             var embed = new Embed
@@ -69,7 +68,6 @@ namespace UVOCBot.Commands
 
         [Command("info")]
         [Description("Gets information about UVOCBot")]
-        [Ephemeral]
         public async Task<IResult> InfoCommandAsync()
         {
             string? botAvatar = null;

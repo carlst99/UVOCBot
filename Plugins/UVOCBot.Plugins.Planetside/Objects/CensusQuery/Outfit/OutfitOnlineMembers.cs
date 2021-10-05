@@ -16,7 +16,7 @@ namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit
         ulong OutfitID,
         [property: JsonPropertyName("name")] string OutfitName,
         [property: JsonPropertyName("alias")] string OutfitAlias,
-        [property: JsonPropertyName("members")] IReadOnlyList<MemberModel> OnlineMembers
+        [property: JsonPropertyName("members")] IReadOnlyList<MemberModel>? OnlineMembers
     )
     {
         public record MemberModel

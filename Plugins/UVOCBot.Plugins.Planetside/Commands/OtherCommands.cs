@@ -118,15 +118,26 @@ namespace UVOCBot.Plugins.Planetside.Commands
             StringBuilder sb = new();
             List<Embed> embeds = new();
 
-            foreach (OutfitOnlineMembers oufit in outfits.Entity)
+            foreach (OutfitOnlineMembers outfit in outfits.Entity)
             {
-                foreach (OutfitOnlineMembers.MemberModel member in oufit.OnlineMembers.OrderBy(m => m.Character.Name.First))
-                    sb.AppendLine(member.Character.Name.First);
+                int onlineMemberCount = 0;
+
+                if (outfit.OnlineMembers is null || outfit.OnlineMembers.Count == 0)
+                {
+                    sb.Append(@"¯\_(ツ)_/¯");
+                }
+                else
+                {
+                    foreach (OutfitOnlineMembers.MemberModel member in outfit.OnlineMembers.OrderBy(m => m.Character.Name.First))
+                        sb.AppendLine(member.Character.Name.First);
+
+                    onlineMemberCount = outfit.OnlineMembers.Count;
+                }
 
                 embeds.Add(new()
                 {
-                    Title = $"[{ oufit.OutfitAlias }] { oufit.OutfitName } - { oufit.OnlineMembers.Count } online.",
-                    Description = oufit.OnlineMembers.Count > 0 ? sb.ToString() : @"¯\_(ツ)_/¯",
+                    Title = $"[{ outfit.OutfitAlias }] { outfit.OutfitName } - { onlineMemberCount } online.",
+                    Description = sb.ToString(),
                     Colour = DiscordConstants.DEFAULT_EMBED_COLOUR
                 });
 

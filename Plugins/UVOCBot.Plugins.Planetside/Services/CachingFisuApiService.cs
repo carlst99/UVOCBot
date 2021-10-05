@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using DbgCensus.Core.Objects;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Remora.Results;
 using System.Text.Json;
@@ -28,21 +29,19 @@ namespace UVOCBot.Plugins.Planetside.Services
         /// <inheritdoc />
         public async Task<Result<Population>> GetWorldPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default)
         {
-            if (_cache.TryGetValue(GetCacheKey(world), out Population pop))
+            if (_cache.TryGetValue(CacheKeyHelpers.GetFisuPopulationKey((WorldDefinition)world), out Population pop))
                 return pop;
 
             Result<Population> popResult = await QueryPopulationAsync(world, ct).ConfigureAwait(false);
             if (!popResult.IsSuccess)
                 return popResult;
 
-            _cache.Set(
-                GetCacheKey(world),
+            _cache.Set
+            (
+                CacheKeyHelpers.GetFisuPopulationKey(popResult.Entity),
                 popResult.Entity,
-                new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-                    Priority = CacheItemPriority.Low
-                });
+                CacheEntryHelpers.GetFisuPopulationOptions()
+            );
 
             return popResult;
         }
@@ -62,11 +61,6 @@ namespace UVOCBot.Plugins.Planetside.Services
                 return new InvalidOperationError("Population cannot be returned for that world.");
 
             return pop;
-        }
-
-        private static object GetCacheKey(ValidWorldDefinition world)
-        {
-            return (typeof(Population), (int)world);
         }
     }
 }

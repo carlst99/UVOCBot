@@ -2,6 +2,7 @@
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;
+using UVOCBot.Plugins.Planetside.Objects.Fisu;
 
 namespace UVOCBot.Plugins.Planetside.Objects
 {
@@ -35,5 +36,11 @@ namespace UVOCBot.Plugins.Planetside.Objects
 
         public static object GetMapKey(WorldDefinition world, ZoneDefinition zone)
             => (typeof(Map), (int)world, (int)zone);
+
+        public static object GetFisuPopulationKey(Population population)
+            => GetFisuPopulationKey(population.World);
+
+        public static object GetFisuPopulationKey(WorldDefinition world)
+            => (typeof(Population), (int)world);
     }
 }

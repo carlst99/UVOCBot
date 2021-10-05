@@ -39,14 +39,12 @@ namespace UVOCBot.Plugins.Planetside.Services
 
             if (getOutfit.IsDefined())
             {
-                _cache.Set(
+                _cache.Set
+                (
                     CacheKeyHelpers.GetOutfitKey(getOutfit.Entity),
                     getOutfit.Entity,
-                    new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(3),
-                        Priority = CacheItemPriority.Low
-                    });
+                    CacheEntryHelpers.GetOutfitOptions()
+                );
             }
 
             return getOutfit;
@@ -65,14 +63,12 @@ namespace UVOCBot.Plugins.Planetside.Services
 
             if (getMapRegionResult.IsDefined())
             {
-                _cache.Set(
+                _cache.Set
+                (
                     CacheKeyHelpers.GetFacilityMapRegionKey(getMapRegionResult.Entity),
                     getMapRegionResult.Entity,
-                    new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(3),
-                        Priority = CacheItemPriority.Low
-                    });
+                    CacheEntryHelpers.GetMapRegionOptions()
+                );
             }
 
             return getMapRegionResult;
@@ -107,14 +103,12 @@ namespace UVOCBot.Plugins.Planetside.Services
             {
                 foreach (Map map in getMapsResult.Entity)
                 {
-                    _cache.Set(
+                    _cache.Set
+                    (
                         CacheKeyHelpers.GetMapKey((WorldDefinition)world, map),
                         map,
-                        new MemoryCacheEntryOptions
-                        {
-                            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-                            Priority = CacheItemPriority.Low
-                        });
+                        CacheEntryHelpers.GetMapOptions()
+                    );
 
                     maps.Add(map);
                 }

@@ -7,7 +7,7 @@
         public string NameLower { get; init; }
         public string Alias { get; init; }
         public string AliasLower { get; init; }
-        public DateTimeOffset TimeCreatedDate { get; init; }
+        public DateTimeOffset TimeCreated { get; init; }
         public ulong LeaderCharacterId { get; init; }
         public uint MemberCount { get; init; }
 

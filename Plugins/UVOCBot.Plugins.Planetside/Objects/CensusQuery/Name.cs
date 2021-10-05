@@ -1,14 +1,13 @@
 ﻿namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery
 {
+    /// <summary>
+    /// Initialises a new instance of the <see cref="Name"/> record.
+    /// </summary>
+    /// <param name="First">The first name.</param>
+    /// <param name="Last">The last name.</param>
     public record Name
-    {
-        public string First { get; init; }
-        public string Last { get; init; }
-
-        public Name()
-        {
-            First = string.Empty;
-            Last = string.Empty;
-        }
-    }
+    (
+        string First,
+        string Last
+    );
 }

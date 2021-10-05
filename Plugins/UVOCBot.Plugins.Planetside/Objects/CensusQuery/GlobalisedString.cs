@@ -3,16 +3,13 @@
 namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery
 {
     public record GlobalisedString
+    (
+        [property: JsonPropertyName("en")] string English
+    )
     {
-        [JsonPropertyName("en")]
-        public string English { get; init; }
-
-        public GlobalisedString()
-        {
-            English = string.Empty;
-        }
-
         public override string ToString()
-            => English;
+        {
+            return English;
+        }
     }
 }

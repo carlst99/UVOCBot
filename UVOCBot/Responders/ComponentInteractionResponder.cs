@@ -4,12 +4,14 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Discord.Core;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders
@@ -19,15 +21,18 @@ namespace UVOCBot.Responders
         private readonly IDiscordRestInteractionAPI _interactionApi;
         private readonly IServiceProvider _services;
         private readonly ContextInjectionService _contextInjectionService;
+        private readonly FeedbackService _feedbackService;
 
         public ComponentInteractionResponder(
             IDiscordRestInteractionAPI interactionApi,
             IServiceProvider services,
-            ContextInjectionService contextInjectionService)
+            ContextInjectionService contextInjectionService,
+            FeedbackService feedbackService)
         {
             _interactionApi = interactionApi;
             _services = services;
             _contextInjectionService = contextInjectionService;
+            _feedbackService = feedbackService;
         }
 
         public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
@@ -82,7 +87,7 @@ namespace UVOCBot.Responders
                 ComponentAction.WelcomeMessageNicknameNoMatch => await welcomeMessageService.InformNicknameNoMatch(ct).ConfigureAwait(false),
                 ComponentAction.RoleMenuToggleRole => await roleMenuService.ToggleRolesAsync(ct).ConfigureAwait(false),
                 ComponentAction.RoleMenuConfirmRemoveRole => await roleMenuService.ConfirmRemoveRolesAsync(ct).ConfigureAwait(false),
-                _ => Result.FromSuccess()
+                _ => Result.FromError(await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: ct).ConfigureAwait(false))
             };
         }
     }

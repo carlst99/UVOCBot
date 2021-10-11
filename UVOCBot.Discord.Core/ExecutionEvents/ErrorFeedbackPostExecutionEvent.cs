@@ -71,7 +71,7 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
             if (actualError is PermissionError permissionError)
             {
                 string userMention = permissionError.UserID == context.User.ID ? "You don't" : Formatter.UserMention(permissionError.UserID) + " doesn't";
-                string channelMention = permissionError.ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(permissionError.ChannelID);
+                string channelMention = permissionError.ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(permissionError.ChannelID); // TODO: Null channel
                 string permissionMention = Formatter.InlineQuote(permissionError.Permission.ToString());
 
                 errorMessage = $"{ userMention } have the required { permissionMention } permission in { channelMention }.";

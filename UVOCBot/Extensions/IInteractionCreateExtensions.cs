@@ -1,9 +1,8 @@
-﻿using Remora.Discord.API.Abstractions.Gateway.Events;
-using Remora.Discord.API.Abstractions.Objects;
+﻿using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 
-namespace UVOCBot.Extensions
+namespace Remora.Discord.API.Abstractions.Gateway.Events
 {
     public static class IInteractionCreateExtensions
     {

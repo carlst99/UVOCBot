@@ -10,7 +10,6 @@ using Remora.Results;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Extensions;
 using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders
@@ -50,16 +49,16 @@ namespace UVOCBot.Responders
                 new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
             );
 
-            // Signal to Discord that we'll be handling this one asynchronously
-            // We're not awaiting this, so that the command processing begins ASAP
-            // This can cause some wacky user-side behaviour if Discord doesn't process the interaction response in time
-            Task<Result> createInteractionResponse = _interactionApi.CreateInteractionResponseAsync
+            Result createInteractionResponse = await _interactionApi.CreateInteractionResponseAsync
             (
                 gatewayEvent.ID,
                 gatewayEvent.Token,
                 response,
                 ct
-            );
+            ).ConfigureAwait(false);
+
+            if (!createInteractionResponse.IsSuccess)
+                return createInteractionResponse;
 
             // Provide the created context to any services inside this scope
             Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
@@ -83,7 +82,7 @@ namespace UVOCBot.Responders
                 ComponentAction.WelcomeMessageNicknameNoMatch => await welcomeMessageService.InformNicknameNoMatch(ct).ConfigureAwait(false),
                 ComponentAction.RoleMenuToggleRole => await roleMenuService.ToggleRolesAsync(ct).ConfigureAwait(false),
                 ComponentAction.RoleMenuConfirmRemoveRole => await roleMenuService.ConfirmRemoveRolesAsync(ct).ConfigureAwait(false),
-                _ => await createInteractionResponse.ConfigureAwait(false),
+                _ => Result.FromSuccess()
             };
         }
     }

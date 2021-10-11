@@ -109,11 +109,13 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 return await _feedbackService.SendContextualErrorAsync("You must specify between 1-10 outfit tags.", ct: CancellationToken).ConfigureAwait(false);
 
             Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
-            if (!outfits.IsSuccess)
+            if (!outfits.IsDefined())
             {
                 await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
                 return outfits;
             }
+
+            // TODO: Fails for outfits that don't exist
 
             StringBuilder sb = new();
             List<Embed> embeds = new();

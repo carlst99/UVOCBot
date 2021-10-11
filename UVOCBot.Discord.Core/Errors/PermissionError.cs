@@ -19,7 +19,7 @@ namespace UVOCBot.Discord.Core.Errors
         /// <summary>
         /// The channel in which the permission is required.
         /// </summary>
-        public Snowflake ChannelID { get; init; }
+        public Snowflake ChannelID { get; init; } // TODO: Nullify
 
         public PermissionError(DiscordPermission permission, Snowflake userID, Snowflake channelID, string? Message = null)
             : base(Message ?? string.Empty)

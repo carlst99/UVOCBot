@@ -26,8 +26,8 @@ namespace UVOCBot.Plugins.Planetside.Services
             _cache = cache;
         }
 
-        /// <summary>
         /// <inheritdoc />
+        /// <summary>
         /// This query is cached.
         /// </summary>
         public async override Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
@@ -50,8 +50,8 @@ namespace UVOCBot.Plugins.Planetside.Services
             return getOutfit;
         }
 
-        /// <summary>
         /// <inheritdoc />
+        /// <summary>
         /// This query is cached.
         /// </summary>
         public override async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
@@ -74,8 +74,8 @@ namespace UVOCBot.Plugins.Planetside.Services
             return getMapRegionResult;
         }
 
-        ///<summary>
         ///<inheritdoc />
+        ///<summary>
         /// This query is cached.
         ///</summary>
         public override async Task<Result<List<Map>>> GetMapsAsync(ValidWorldDefinition world, IEnumerable<ValidZoneDefinition> zones, CancellationToken ct = default)

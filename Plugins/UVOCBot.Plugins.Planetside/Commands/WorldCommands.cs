@@ -206,15 +206,16 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 _ => map.ZoneID.Definition.ToString()
             };
 
-            if (Math.Round(ncPercent, 0) == 100 || Math.Round(trPercent, 0) == 100 || Math.Round(vsPercent, 0) == 100)
-                title += " " + Formatter.Emoji("lock");
-
             object cacheKey = CacheKeyHelpers.GetMetagameEventKey(world, map.ZoneID.Definition);
             if (_cache.TryGetValue(cacheKey, out MetagameEvent? metagameEvent) && metagameEvent!.EventState is MetagameEventState.Started)
             {
                 TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
                 TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.EventDefinition) - currentEventDuration;
                 title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
+            }
+            else
+            {
+                title += " " + Formatter.Emoji("lock");
             }
 
             string popBar = ConstructPopBar(ncPercent, "blue_square");

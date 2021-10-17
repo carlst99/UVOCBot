@@ -9,7 +9,7 @@ namespace UVOCBot.Plugins.Planetside.Objects.EventStream
         WorldDefinition WorldId,
         Faction OldFactionId,
         Faction NewFactionId,
-        ulong OutfitId,
+        ulong? OutfitID,
         uint FacilityId,
         ulong DurationHeld,
         ZoneId ZoneId

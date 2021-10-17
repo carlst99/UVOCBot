@@ -38,21 +38,26 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
 
         public async Task HandleAsync(ServiceMessage<FacilityControl> censusEvent, CancellationToken ct = default)
         {
+            FacilityControl controlEvent = censusEvent.Payload;
+
             // Shouldn't report same-faction control events (i.e. point defenses).
-            if (censusEvent.Payload.OldFactionId == censusEvent.Payload.NewFactionId)
+            if (controlEvent.OldFactionId == controlEvent.NewFactionId)
                 return;
 
-            Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(censusEvent.Payload.OutfitId, ct).ConfigureAwait(false);
+            if (controlEvent.OutfitID is null || controlEvent.OutfitID == 0)
+                return;
+
+            Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(controlEvent.OutfitID.Value, ct).ConfigureAwait(false);
             if (!getOutfitResult.IsDefined())
                 return;
             Outfit outfit = getOutfitResult.Entity;
 
-            Result<MapRegion?> getFacilityResult = await _censusApi.GetFacilityRegionAsync(censusEvent.Payload.FacilityId, ct).ConfigureAwait(false);
+            Result<MapRegion?> getFacilityResult = await _censusApi.GetFacilityRegionAsync(controlEvent.FacilityId, ct).ConfigureAwait(false);
             if (!getFacilityResult.IsDefined())
                 return;
             MapRegion facility = getFacilityResult.Entity;
 
-            UpdateMapCache(censusEvent.Payload, facility);
+            UpdateMapCache(controlEvent, facility);
             await SendBaseCaptureMessages(outfit, facility, ct).ConfigureAwait(false);
         }
 

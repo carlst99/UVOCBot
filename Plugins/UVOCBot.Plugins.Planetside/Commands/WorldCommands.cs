@@ -151,7 +151,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 }
             };
 
-            return await _feedbackService.SendContextualEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
         }
 
         private async Task<IResult> SendWorldStatusAsync(ValidWorldDefinition world)
@@ -177,7 +177,7 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 Fields = embedFields
             };
 
-            return await _feedbackService.SendContextualEmbedAsync(embed, CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
         }
 
         private EmbedField GetMapStatusEmbedField(Map map, WorldDefinition world)

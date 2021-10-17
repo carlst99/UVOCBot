@@ -41,9 +41,16 @@ namespace UVOCBot.Commands
 
         [Command("move")]
         [Description("Moves a group from one voice channel to another")]
-        public async Task<IResult> MoveCommandAsync(
-            [Description("The voice channel to move people to")] IChannel moveTo,
-            [Description("An optional voice channel to move people from")] IChannel? moveFrom = null)
+        public async Task<IResult> MoveCommandAsync
+        (
+            [Description("The voice channel to move people to")]
+            [ChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)]
+            IChannel moveTo,
+
+            [Description("An optional voice channel to move people from")]
+            [ChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)]
+            IChannel? moveFrom = null
+        )
         {
             if (moveTo.Type != ChannelType.GuildVoice)
             {
@@ -67,10 +74,19 @@ namespace UVOCBot.Commands
 
         [Command("move-group")]
         [Description("Moves a group from one voice channel to another")]
-        public async Task<IResult> MoveGroupCommandAsync(
-            [Description("The member group to move. See the group commands for more info")][DiscordTypeHint(TypeHint.String)] string groupName,
-            [Description("The voice channel to move people to")] IChannel moveTo,
-            [Description("An optional voice channel to move people from")] IChannel? moveFrom = null)
+        public async Task<IResult> MoveGroupCommandAsync
+        (
+            [Description("The member group to move. See the group commands for more info")]
+            string groupName,
+
+            [Description("The voice channel to move people to")]
+            [ChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)]
+            IChannel moveTo,
+
+            [Description("An optional voice channel to move people from")]
+            [ChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)]
+            IChannel? moveFrom = null
+        )
         {
             if (moveTo.Type != ChannelType.GuildVoice)
             {

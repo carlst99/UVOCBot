@@ -38,7 +38,7 @@ namespace UVOCBot.Workers
                     try
                     {
                         /* Update our presence */
-                        _gatewayClient.SubmitCommandAsync(
+                        _gatewayClient.SubmitCommand(
                             new UpdatePresence(
                                 ClientStatus.Online,
                                 false,

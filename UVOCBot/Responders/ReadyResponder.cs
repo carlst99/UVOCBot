@@ -52,7 +52,7 @@ namespace UVOCBot.Responders
                 DiscordConstants.ApplicationId = gatewayEvent.Application.ID.Value;
             }
 
-            _client.SubmitCommandAsync(
+            _client.SubmitCommand(
                 new UpdatePresence(
                     ClientStatus.Online,
                     false,

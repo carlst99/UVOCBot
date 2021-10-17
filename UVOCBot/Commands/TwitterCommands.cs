@@ -214,7 +214,9 @@ namespace UVOCBot.Commands
         [Command("relay-channel")]
         [Description("Selects the channel to which tweets will be relayed")]
         [Ephemeral]
-        public async Task<IResult> RelayChannelCommand([Description("The channel to relay tweets to")] IChannel channel)
+        public async Task<IResult> RelayChannelCommand
+        ([Description("The channel to relay tweets to")][ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)] IChannel channel
+        )
         {
             Result<IDiscordPermissionSet> botPermissions = await _permissionChecksService.GetPermissionsInChannel(channel.ID, DiscordConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!botPermissions.IsSuccess)

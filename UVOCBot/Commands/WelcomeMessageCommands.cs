@@ -2,6 +2,7 @@
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Core;
 using Remora.Results;
@@ -113,7 +114,7 @@ namespace UVOCBot.Commands
 
         [Command("channel")]
         [Description("Sets the channel to post the welcome message in.")]
-        public async Task<IResult> ChannelCommand(IChannel channel)
+        public async Task<IResult> ChannelCommand([ChannelTypes(ChannelType.GuildText)] IChannel channel)
         {
             Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(channel, DiscordConstants.UserId, CancellationToken).ConfigureAwait(false);
             if (!getPermissionSet.IsSuccess)

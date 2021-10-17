@@ -24,9 +24,12 @@ namespace UVOCBot.Commands
         [Command("timestamp")]
         [Description("Generates a Discord timestamp.")]
         [Ephemeral]
-        public async Task<IResult> TimestampCommand(
+        public async Task<IResult> TimestampCommand
+        (
             [Description("The offset (in hours) from UTC that your given time is.")] double utcOffset,
-            int? year = null, int? month = null, int? day = null, int? hour = null, int? minute = null, TimestampStyle style = TimestampStyle.ShortDate)
+            int? year = null, int? month = null, int? day = null, int? hour = null, int? minute = null,
+            TimestampStyle style = TimestampStyle.ShortDate
+        )
         {
             if (utcOffset < -12 || utcOffset > 14)
                 return await _replyService.RespondWithSuccessAsync("GMT offset must be between -12 and 14.", CancellationToken).ConfigureAwait(false);
@@ -53,9 +56,11 @@ namespace UVOCBot.Commands
 
         // [Command("timestamp-format")]
         [Description("Replaces keys in a message with the given timestamps. Run without arguments to get more information.")]
-        public async Task<IResult> TimestampFormatCommand(
+        public async Task<IResult> TimestampFormatCommand
+        (
             [Description("The message to format timestamps into.")] Snowflake? messageId = null,
-            [Description("The timestamps to substitute in, concatenated with a pipe character ( | ) if multiple are required.")] string? timestamps = null)
+            [Description("The timestamps to substitute in, concatenated with a pipe character ( | ) if multiple are required.")] string? timestamps = null
+        )
         {
             if (messageId is null || timestamps is null)
             {

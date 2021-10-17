@@ -44,9 +44,11 @@ namespace UVOCBot.Commands
 
         [Command("random-from-role")]
         [Description("Randomly sorts members with a certain role into teams")]
-        public async Task<IResult> RandomFromRoleCommandAsync(
+        public async Task<IResult> RandomFromRoleCommandAsync
+        (
             [Description("Teams will be generated using members with this role")] IRole role,
-            [Description("The number of teams to generate")] int numberOfTeams)
+            [Description("The number of teams to generate")] int numberOfTeams
+        )
         {
             if (numberOfTeams < 2)
                 return await _replyService.RespondWithUserErrorAsync("At least two teams are required", CancellationToken).ConfigureAwait(false);
@@ -69,9 +71,11 @@ namespace UVOCBot.Commands
 
         [Command("random-from-group")]
         [Description("Randomly sorts members of a group into teams")]
-        public async Task<IResult> RandomFromGroupCommandAsync(
+        public async Task<IResult> RandomFromGroupCommandAsync
+        (
             [Description("Teams will be generated using members of this group")] string groupName,
-            [Description("The number of teams to generate")] int numberOfTeams)
+            [Description("The number of teams to generate")] int numberOfTeams
+        )
         {
             if (numberOfTeams < 2)
                 return await _replyService.RespondWithUserErrorAsync("At least two teams are required", CancellationToken).ConfigureAwait(false);

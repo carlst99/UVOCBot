@@ -64,7 +64,7 @@ namespace UVOCBot.Commands
 
         [Command("logging-channel")]
         [Description("Sets the channel to post admin logs to.")]
-        public async Task<IResult> SetLoggingChannelCommandAsync(IChannel channel)
+        public async Task<IResult> SetLoggingChannelCommandAsync([ChannelTypes(ChannelType.GuildText)] IChannel channel)
         {
             GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 

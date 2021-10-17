@@ -1,6 +1,7 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
@@ -94,8 +95,12 @@ namespace UVOCBot.Plugins.Planetside.Commands
         [Description("Sets the channel to post base capture notifications in for any tracked outfits.")]
         [RequireContext(ChannelContext.Guild)]
         [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
-        public async Task<IResult> SetBaseCaptureChannelCommandAsync(
-            [Description("The channel. Leave empty to disable base capture notifications.")] IChannel? channel = null)
+        public async Task<IResult> SetBaseCaptureChannelCommandAsync
+        (
+            [Description("The channel. Leave empty to disable base capture notifications.")]
+            [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)]
+            IChannel? channel = null
+        )
         {
             PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
             settings.BaseCaptureChannelId = null;

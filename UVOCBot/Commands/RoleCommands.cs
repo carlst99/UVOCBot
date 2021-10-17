@@ -53,11 +53,13 @@ namespace UVOCBot.Commands
 
         [Command("add-by-reaction")]
         [Description("Adds a role to all users who have reacted to a message")]
-        public async Task<IResult> AddByReactionCommandAsync(
-            [Description("The channel that the message was sent in")][DiscordTypeHint(TypeHint.Channel)] IChannel channel,
+        public async Task<IResult> AddByReactionCommandAsync
+        (
+            [Description("The channel that the message was sent in")] IChannel channel,
             [Description("The numeric ID of the message")] string messageID,
-            [Description("The reaction emoji")][DiscordTypeHint(TypeHint.String)] string emoji,
-            [Description("The role that should be assigned to each user")][DiscordTypeHint(TypeHint.Role)] IRole role)
+            [Description("The reaction emoji")] string emoji,
+            [Description("The role that should be assigned to each user")] IRole role
+        )
         {
             Result<IMessage> messageResult = await GetMessage(channel.ID, messageID).ConfigureAwait(false);
             if (!messageResult.IsSuccess)

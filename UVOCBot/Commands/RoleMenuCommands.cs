@@ -51,7 +51,7 @@ namespace UVOCBot.Commands
         [Description("Creates a new role menu.")]
         [Ephemeral]
         public async Task<IResult> CreateCommand(
-            [Description("The channel to post the role menu in.")] IChannel channel,
+            [Description("The channel to post the role menu in.")][ChannelTypes(ChannelType.GuildText)] IChannel channel,
             [Description("The title of the role menu.")] string title,
             [Description("The description of the role menu.")] string? description = null)
         {

@@ -89,9 +89,11 @@ namespace UVOCBot.Commands
 
         [Command("create")]
         [Description("Creates a new group from the given members")]
-        public async Task<IResult> CreateGroupCommandAsync(
+        public async Task<IResult> CreateGroupCommandAsync
+        (
             [Description("The name of the group")] string groupName,
-            [Description("The members to include in the group")] string members)
+            [Description("The members to include in the group")] string members
+        )
         {
             if (string.IsNullOrEmpty(groupName) || groupName.Length < 3)
                 return await _replyService.RespondWithUserErrorAsync("The group name must be at least three characters in length.", CancellationToken).ConfigureAwait(false);

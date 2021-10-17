@@ -1,12 +1,15 @@
 # Changelog
 
-## Release v0.5.0
+## Release v0.5.2
 
 - The `status` command is now much faster and shows active alerts.
+- Added channel selection restrictions to relevant commands. E.g. you no longer have to filter through text channels when trying to use the `move` command between voice channels.
 - Made a general sweep to improve stability and error feedback.
+- Added the `Tutorial2` map.
 
 **Technical**
 
+- :warning: Updated to .NET 6.0
 - Began revamped the design of the bot. Individual components will, going forward, be placed into plugins which can be freely swapped in/out to customise UVOCBot's feature-set.
     - The Planetside components are the first part of the bot to be plugin-ified.
 - :warning: Updated the map assets. Ensure you update them in your installation.

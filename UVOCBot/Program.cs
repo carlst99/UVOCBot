@@ -27,6 +27,7 @@ using UVOCBot.Config;
 using UVOCBot.Core;
 using UVOCBot.Discord.Core.Extensions;
 using UVOCBot.Plugins.Planetside;
+using UVOCBot.Plugins.Planetside.Extensions;
 using UVOCBot.Responders;
 using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
@@ -167,8 +168,8 @@ namespace UVOCBot
                             .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                             .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
-                    // Add plugins. TODO: Use proper loading mechanism here.
-                    new PlanetsidePlugin().ConfigureServices(services);
+                    // Plugin registration
+                    services.AddPlanetsidePlugin(c.Configuration);
 
                     services.AddHostedService<GenericWorker>()
                             .AddHostedService<DbCleanupWorker>()

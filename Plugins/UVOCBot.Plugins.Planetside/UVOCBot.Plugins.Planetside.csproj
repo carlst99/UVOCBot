@@ -14,7 +14,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0-rc.2.21480.5" />
-    <PackageReference Include="Remora.Plugins.Abstractions" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>

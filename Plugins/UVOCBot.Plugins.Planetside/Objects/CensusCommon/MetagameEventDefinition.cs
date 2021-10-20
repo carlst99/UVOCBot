@@ -43,6 +43,7 @@
         ConquestAmerish = 211,
         ConquestEsamir = 212,
         ConquestHossin = 213,
-        ConquestIndar = 214
+        ConquestIndar = 214,
+        ConquestKoltyr = 215
     }
 }

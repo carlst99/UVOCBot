@@ -1,9 +1,8 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Core;
-using System.Collections.Generic;
-using UVOCBot.Services.Abstractions;
+using UVOCBot.Discord.Core.Services.Abstractions;
 
-namespace UVOCBot.Services
+namespace UVOCBot.Discord.Core.Services
 {
     /// <summary>
     /// A cache for <see cref="IVoiceState"/> objects, keyed by the value of <see cref="IVoiceState.UserID"/>

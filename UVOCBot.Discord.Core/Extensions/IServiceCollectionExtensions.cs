@@ -13,6 +13,7 @@ namespace UVOCBot.Discord.Core.Extensions
         public static IServiceCollection AddCoreDiscordServices(this IServiceCollection services)
         {
             services.AddSingleton<IPermissionChecksService, PermissionChecksService>();
+            services.AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>();
 
             services.AddCondition<RequireContextCondition>();
             services.AddCondition<RequireGuildPermissionCondition>();

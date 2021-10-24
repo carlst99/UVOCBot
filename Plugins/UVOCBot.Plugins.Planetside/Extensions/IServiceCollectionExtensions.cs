@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
+using UVOCBot.Plugins.Planetside;
 using UVOCBot.Plugins.Planetside.CensusEventHandlers;
 using UVOCBot.Plugins.Planetside.Commands;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;
@@ -13,7 +14,7 @@ using UVOCBot.Plugins.Planetside.Services;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 using UVOCBot.Plugins.Planetside.Workers;
 
-namespace UVOCBot.Plugins.Planetside.Extensions
+namespace UVOCBot.Plugins
 {
     public static class IServiceCollectionExtensions
     {

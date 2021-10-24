@@ -15,6 +15,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Discord.Core", "UVO
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{9A010CFF-90E5-4CCD-9B13-D4782016A02D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Plugins.Music", "Plugins\UVOCBot.Plugins.Music\UVOCBot.Plugins.Music.csproj", "{1C59A4CC-D320-43BB-A925-EF82555B2B70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,12 +65,21 @@ Global
 		{7AC89E0B-0413-4428-A240-2C7ED2038E71}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7AC89E0B-0413-4428-A240-2C7ED2038E71}.Release|x64.ActiveCfg = Release|x64
 		{7AC89E0B-0413-4428-A240-2C7ED2038E71}.Release|x64.Build.0 = Release|x64
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Debug|x64.ActiveCfg = Debug|x64
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Debug|x64.Build.0 = Debug|x64
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Release|x64.ActiveCfg = Release|x64
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{98B484AF-197E-4A4F-8BA8-994771E96E8B} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
+		{1C59A4CC-D320-43BB-A925-EF82555B2B70} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3298591-9482-4E35-A1C5-B0B88D4C57A9}

@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
+using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Discord.Core.Services.Abstractions;
@@ -25,6 +26,7 @@ namespace UVOCBot.Plugins.Music.Commands
         private readonly IVoiceStateCacheService _voiceStateCache;
         private readonly IYouTubeService _youTubeService;
         private readonly IMusicService _musicService;
+        private readonly IPermissionChecksService _permissionChecksService;
         private readonly FeedbackService _feedbackService;
 
         public MusicCommands
@@ -33,6 +35,7 @@ namespace UVOCBot.Plugins.Music.Commands
             IVoiceStateCacheService voiceStateCache,
             IYouTubeService youTubeService,
             IMusicService musicService,
+            IPermissionChecksService permissionChecksService,
             FeedbackService feedbackService
         )
         {
@@ -40,12 +43,13 @@ namespace UVOCBot.Plugins.Music.Commands
             _voiceStateCache = voiceStateCache;
             _youTubeService = youTubeService;
             _musicService = musicService;
+            _permissionChecksService = permissionChecksService;
             _feedbackService = feedbackService;
         }
 
         [Command("play")]
         [Description("Plays audio from a YouTube video in the channel you are currently connected to.")]
-        public async Task<IResult> PlayCommandAsync
+        public async Task<Result> PlayCommandAsync
         (
             [Description("The URL/title of the YouTube video to play.")] string query
         )
@@ -53,33 +57,44 @@ namespace UVOCBot.Plugins.Music.Commands
             try
             {
                 Optional<IVoiceState> userVoiceState = _voiceStateCache.GetUserVoiceState(_context.User.ID);
-                if (!userVoiceState.IsDefined() || !userVoiceState.Value.ChannelID.HasValue) // TODO: Check in same guild
-                {
-                    return await _feedbackService.SendContextualErrorAsync
-                    (
-                        "You must be in a voice channel to use this command.",
-                        ct: CancellationToken
-                    ).ConfigureAwait(false);
-                }
+                if (!userVoiceState.IsDefined() || !userVoiceState.Value.ChannelID.HasValue)
+                    return new GenericCommandError("You must be in a voice channel to use this command.");
 
-                // TODO: Verify perms to channel
+                if (!userVoiceState.Value.GuildID.HasValue || userVoiceState.Value.GuildID.Value != _context.GuildID.Value)
+                    return new GenericCommandError("The voice channel you are in must be within the same guild that you called this command in.");
+
+                Result<IDiscordPermissionSet> channelPermissions = await _permissionChecksService.GetPermissionsInChannel
+                (
+                    userVoiceState.Value.ChannelID.Value,
+                    DiscordConstants.UserId,
+                    CancellationToken
+                ).ConfigureAwait(false);
+
+                if (!channelPermissions.IsDefined())
+                    return Result.FromError(channelPermissions);
+
+                if (!channelPermissions.Entity.HasAdminOrPermission(DiscordPermission.Connect))
+                    return new PermissionError(DiscordPermission.Connect, DiscordConstants.UserId, userVoiceState.Value.ChannelID.Value);
+
+                if (!channelPermissions.Entity.HasAdminOrPermission(DiscordPermission.Speak))
+                    return new PermissionError(DiscordPermission.Speak, DiscordConstants.UserId, userVoiceState.Value.ChannelID.Value);
 
                 Result<Video> getVideo = await _youTubeService.GetVideoInfoAsync(query, CancellationToken).ConfigureAwait(false);
                 if (!getVideo.IsSuccess)
                 {
                     if (getVideo.Error is YouTubeUserError yue)
-                        return Result.FromError(new GenericCommandError(yue.Message));
+                        return new GenericCommandError(yue.Message);
 
-                    return getVideo;
+                    return Result.FromError(getVideo);
                 }
 
                 Result<Stream> getStream = await _youTubeService.GetStreamAsync(getVideo.Entity, CancellationToken).ConfigureAwait(false);
                 if (!getStream.IsSuccess)
                 {
                     if (getStream.Error is YouTubeUserError yue)
-                        return Result.FromError(new GenericCommandError(yue.Message));
+                        return new GenericCommandError(yue.Message);
 
-                    return getStream;
+                    return Result.FromError(getStream);
                 }
 
                 // TODO: This will need to rely on the audio worker's cancellation token
@@ -97,7 +112,11 @@ namespace UVOCBot.Plugins.Music.Commands
                     CancellationToken
                 ).ConfigureAwait(false);
 
-                return await _feedbackService.SendContextualSuccessAsync("Finished playing!", ct: CancellationToken).ConfigureAwait(false);
+                var sendResult = await _feedbackService.SendContextualSuccessAsync("Finished playing!", ct: CancellationToken).ConfigureAwait(false);
+
+                return !sendResult.IsSuccess
+                    ? Result.FromError(sendResult)
+                    : Result.FromSuccess();
             }
             catch (Exception ex)
             {

@@ -1,8 +1,10 @@
 ﻿using Remora.Discord.Core;
 using Remora.Results;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Plugins.Music.Objects;
 
 namespace UVOCBot.Plugins.Music.Abstractions.Services
 {
@@ -12,21 +14,59 @@ namespace UVOCBot.Plugins.Music.Abstractions.Services
     public interface IMusicService
     {
         /// <summary>
-        /// Converts an audio stream to PCM-16, using ffmpeg.
+        /// Runs the service. This method does not return until cancelled.
         /// </summary>
-        /// <param name="input">The audio stream to convert.</param>
-        /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the underlying ffmpeg conversion.</param>
-        /// <returns>The stream of audio. It will not be complete when this method returns.</returns>
-        Stream ConvertToPcmInBackground(Stream input, CancellationToken ct = default);
+        /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+        /// <returns>A result representing the outcome of the operation.</returns>
+        Task<Result> RunAsync(CancellationToken ct = default);
 
         /// <summary>
-        /// Plays an audio stream.
+        /// Checks to see if the bot has the permissions it requires to play audio in the given channel.
         /// </summary>
-        /// <param name="guildID">The guild to connect to.</param>
-        /// <param name="channelID">The channel to play the audio in.</param>
-        /// <param name="pcmAudio">The stream of PCM-16 audio to play.</param>
+        /// <param name="channelID">The channel.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
         /// <returns>A result representing the outcome of the operation.</returns>
-        Task<Result> PlayAsync(Snowflake guildID, Snowflake channelID, Stream pcmAudio, CancellationToken ct = default);
+        Task<Result> HasMusicPermissionsAsync(Snowflake channelID, CancellationToken ct = default);
+
+        /// <summary>
+        /// Enqueues a music request.
+        /// </summary>
+        /// <param name="request"></param>
+        void Enqueue(MusicRequest request);
+
+        /// <summary>
+        /// Skips a number of tracks in a particular guild's queue.
+        /// </summary>
+        /// <param name="guildID">The ID of the guild.</param>
+        /// <param name="amount">The number of tracks to skip.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+        Task SkipAsync(Snowflake guildID, int amount = 1, CancellationToken ct = default);
+
+        /// <summary>
+        /// Clears the play queue for a particular guild.
+        /// </summary>
+        /// <param name="guildID">The ID of the guild.</param>
+        void ClearQueue(Snowflake guildID);
+
+        /// <summary>
+        /// Gets the music queue for a particular guild.
+        /// </summary>
+        /// <param name="guildID">The ID of the guild.</param>
+        /// <returns>The items in the queue.</returns>
+        IReadOnlyList<MusicRequest> GetQueue(Snowflake guildID);
+
+        /// <summary>
+        /// Gets the currently playing music for a particular guild.
+        /// </summary>
+        /// <param name="guildID">The ID of the guild.</param>
+        /// <returns>The currently playing track, or <c>null</c> if there is none.</returns>
+        MusicRequest? GetCurrentlyPlaying(Snowflake guildID);
+
+        /// <summary>
+        /// Forces disconnecting from a voice channel.
+        /// </summary>
+        /// <param name="guildID">The guild to disconnect from.</param>
+        /// <returns>A result representing the outcome of the operation.</returns>
+        Task<Result> ForceDisconnectAsync(Snowflake guildID, CancellationToken ct = default);
     }
 }

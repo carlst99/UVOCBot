@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Remora.Commands.Extensions;
+using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Commands.Extensions;
+using Remora.Discord.Gateway;
 using UVOCBot.Discord.Core.Commands.Conditions;
 using UVOCBot.Discord.Core.ExecutionEvents;
 using UVOCBot.Discord.Core.Services;
@@ -12,6 +14,11 @@ namespace UVOCBot.Discord.Core.Extensions
     {
         public static IServiceCollection AddCoreDiscordServices(this IServiceCollection services)
         {
+            services.Configure<DiscordGatewayClientOptions>
+            (
+                o => o.Intents |= GatewayIntents.GuildVoiceStates
+            );
+
             services.AddSingleton<IPermissionChecksService, PermissionChecksService>();
             services.AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>();
 

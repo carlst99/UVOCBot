@@ -1,13 +1,14 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Core;
+using Remora.Discord.Voice;
 using Remora.Results;
-using System;
 using System.ComponentModel;
-using System.IO;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
@@ -15,6 +16,7 @@ using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Plugins.Music.Abstractions.Services;
 using UVOCBot.Plugins.Music.Errors;
+using UVOCBot.Plugins.Music.Objects;
 using YoutubeExplode.Videos;
 
 namespace UVOCBot.Plugins.Music.Commands
@@ -23,27 +25,27 @@ namespace UVOCBot.Plugins.Music.Commands
     public sealed class MusicCommands : CommandGroup
     {
         private readonly ICommandContext _context;
+        private readonly DiscordVoiceClientFactory _voiceClientFactory;
         private readonly IVoiceStateCacheService _voiceStateCache;
         private readonly IYouTubeService _youTubeService;
         private readonly IMusicService _musicService;
-        private readonly IPermissionChecksService _permissionChecksService;
         private readonly FeedbackService _feedbackService;
 
         public MusicCommands
         (
             ICommandContext context,
+            DiscordVoiceClientFactory voiceClientFactory,
             IVoiceStateCacheService voiceStateCache,
             IYouTubeService youTubeService,
             IMusicService musicService,
-            IPermissionChecksService permissionChecksService,
             FeedbackService feedbackService
         )
         {
             _context = context;
+            _voiceClientFactory = voiceClientFactory;
             _voiceStateCache = voiceStateCache;
             _youTubeService = youTubeService;
             _musicService = musicService;
-            _permissionChecksService = permissionChecksService;
             _feedbackService = feedbackService;
         }
 
@@ -54,76 +56,140 @@ namespace UVOCBot.Plugins.Music.Commands
             [Description("The URL/title of the YouTube video to play.")] string query
         )
         {
-            try
+            Optional<IVoiceState> userVoiceState = _voiceStateCache.GetUserVoiceState(_context.User.ID);
+            if (!userVoiceState.IsDefined() || !userVoiceState.Value.ChannelID.HasValue)
+                return new GenericCommandError("You must be in a voice channel to use this command.");
+
+            if (!userVoiceState.Value.GuildID.HasValue || userVoiceState.Value.GuildID.Value != _context.GuildID.Value)
+                return new GenericCommandError("The voice channel you are in must be within the same guild that you called this command in.");
+
+            if (_musicService.GetCurrentlyPlaying(_context.GuildID.Value) is not null)
             {
-                Optional<IVoiceState> userVoiceState = _voiceStateCache.GetUserVoiceState(_context.User.ID);
-                if (!userVoiceState.IsDefined() || !userVoiceState.Value.ChannelID.HasValue)
-                    return new GenericCommandError("You must be in a voice channel to use this command.");
-
-                if (!userVoiceState.Value.GuildID.HasValue || userVoiceState.Value.GuildID.Value != _context.GuildID.Value)
-                    return new GenericCommandError("The voice channel you are in must be within the same guild that you called this command in.");
-
-                Result<IDiscordPermissionSet> channelPermissions = await _permissionChecksService.GetPermissionsInChannel
+                return new GenericCommandError
                 (
-                    userVoiceState.Value.ChannelID.Value,
-                    DiscordConstants.UserId,
-                    CancellationToken
-                ).ConfigureAwait(false);
+                    "Music is already being played in another channel." +
+                    "You cannot queue music up in your channel while this is happening."
+                );
+            }
 
-                if (!channelPermissions.IsDefined())
-                    return Result.FromError(channelPermissions);
+            Result checkPermissions = await _musicService.HasMusicPermissionsAsync
+            (
+                userVoiceState.Value.ChannelID.Value,
+                CancellationToken
+            ).ConfigureAwait(false);
 
-                if (!channelPermissions.Entity.HasAdminOrPermission(DiscordPermission.Connect))
-                    return new PermissionError(DiscordPermission.Connect, DiscordConstants.UserId, userVoiceState.Value.ChannelID.Value);
+            if (!checkPermissions.IsSuccess)
+                return checkPermissions;
 
-                if (!channelPermissions.Entity.HasAdminOrPermission(DiscordPermission.Speak))
-                    return new PermissionError(DiscordPermission.Speak, DiscordConstants.UserId, userVoiceState.Value.ChannelID.Value);
+            Result<Video> getVideo = await _youTubeService.GetVideoInfoAsync(query, CancellationToken).ConfigureAwait(false);
+            if (!getVideo.IsSuccess)
+            {
+                if (getVideo.Error is YouTubeUserError yue)
+                    return new GenericCommandError(yue.Message);
 
-                Result<Video> getVideo = await _youTubeService.GetVideoInfoAsync(query, CancellationToken).ConfigureAwait(false);
-                if (!getVideo.IsSuccess)
-                {
-                    if (getVideo.Error is YouTubeUserError yue)
-                        return new GenericCommandError(yue.Message);
+                return Result.FromError(getVideo);
+            }
 
-                    return Result.FromError(getVideo);
-                }
-
-                Result<Stream> getStream = await _youTubeService.GetStreamAsync(getVideo.Entity, CancellationToken).ConfigureAwait(false);
-                if (!getStream.IsSuccess)
-                {
-                    if (getStream.Error is YouTubeUserError yue)
-                        return new GenericCommandError(yue.Message);
-
-                    return Result.FromError(getStream);
-                }
-
-                // TODO: This will need to rely on the audio worker's cancellation token
-                // For stop commands
-                Stream pcmAudioStream = _musicService.ConvertToPcmInBackground(getStream.Entity, CancellationToken);
-
-                // Give ffmpeg some time to start processing
-                await Task.Delay(200, CancellationToken).ConfigureAwait(false);
-
-                Result playResult = await _musicService.PlayAsync
+            _musicService.Enqueue
+            (
+                new MusicRequest
                 (
                     _context.GuildID.Value,
                     userVoiceState.Value.ChannelID.Value,
-                    pcmAudioStream,
-                    CancellationToken
-                ).ConfigureAwait(false);
+                    _context.ChannelID,
+                    getVideo.Entity
+                )
+            );
 
-                var sendResult = await _feedbackService.SendContextualSuccessAsync("Finished playing!", ct: CancellationToken).ConfigureAwait(false);
+            Embed responseEmbed = new
+            (
+                $"Queued {Formatter.Bold(getVideo.Entity.Title)} ({getVideo.Entity.Duration:mm\\:ss})",
+                Description: getVideo.Entity.Author.Title + "\n" + getVideo.Entity.Url,
+                Thumbnail: new EmbedThumbnail(getVideo.Entity.Thumbnails[0].Url),
+                Colour: DiscordConstants.DEFAULT_EMBED_COLOUR
+            );
 
-                return !sendResult.IsSuccess
-                    ? Result.FromError(sendResult)
-                    : Result.FromSuccess();
-            }
-            catch (Exception ex)
-            {
-                // TODO: Proper logging and error message
-                await _feedbackService.SendContextualErrorAsync(ex.ToString(), ct: CancellationToken).ConfigureAwait(false);
-                return Result.FromError(new ExceptionError(ex));
-            }
+            var sendResult = await _feedbackService.SendContextualEmbedAsync(responseEmbed, ct: CancellationToken).ConfigureAwait(false);
+
+            return !sendResult.IsSuccess
+                ? Result.FromError(sendResult.Error!)
+                : Result.FromSuccess();
+        }
+
+        [Command("skip")]
+        [Description("Skips songs in the play queue.")]
+        public async Task<Result> SkipCommandAsync(int amount = 1)
+        {
+            await _musicService.SkipAsync(_context.GuildID.Value, amount, CancellationToken).ConfigureAwait(false);
+
+            var sendResult = await _feedbackService.SendContextualSuccessAsync
+            (
+                $"Skipped {amount} songs.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+
+            return !sendResult.IsSuccess
+                ? Result.FromError(sendResult)
+                : Result.FromSuccess();
+        }
+
+        [Command("clear")]
+        [Description("Clears the play queue.")]
+        public async Task<Result> ClearQueueCommandAsync()
+        {
+            _musicService.ClearQueue(_context.GuildID.Value);
+
+            var sendResult = await _feedbackService.SendContextualSuccessAsync
+            (
+                "The play queue has been cleared.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+
+            return !sendResult.IsSuccess
+                ? Result.FromError(sendResult)
+                : Result.FromSuccess();
+        }
+
+        [Command("leave")]
+        [Description("Leaves the voice channel.")]
+        public async Task<Result> LeaveCommandAsync()
+        {
+            _musicService.ClearQueue(_context.GuildID.Value);
+
+            Result disconnectResult = await _musicService.ForceDisconnectAsync(_context.GuildID.Value, CancellationToken).ConfigureAwait(false);
+            if (!disconnectResult.IsSuccess)
+                return new GenericCommandError("Failed to leave the voice channel!");
+
+            var sendResult = await _feedbackService.SendContextualSuccessAsync
+            (
+                "Goodbye!",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+
+            return !sendResult.IsSuccess
+                ? Result.FromError(sendResult)
+                : Result.FromSuccess();
+        }
+
+        [Command("show-queue")]
+        [Description("Shows the current music queue.")]
+        [Ephemeral]
+        public async Task<Result> ShowQueueCommandAsync()
+        {
+            var queue = _musicService.GetQueue(_context.GuildID.Value);
+            string description = string.Empty;
+
+            for (int i = 1; i <= queue.Count; i++)
+                description += $"{i}. {queue[i].Video.Title}\n";
+
+            if (queue.Count == 0)
+                description = "The queue is empty!";
+
+            var sendResult = await _feedbackService.SendContextualInfoAsync(description, ct: CancellationToken).ConfigureAwait(false);
+
+            return !sendResult.IsSuccess
+                ? Result.FromError(sendResult)
+                : Result.FromSuccess();
         }
     }
 }

@@ -47,6 +47,14 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
             if (controlEvent.OutfitID is null || controlEvent.OutfitID == 0)
                 return;
 
+            IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
+                .Where(s => s.BaseCaptureChannelId != null)
+                .AsEnumerable()
+                .Where(s => s.TrackedOutfits.Contains(censusEvent.Payload.OutfitID!.Value));
+
+            if (!validPSettings.Any())
+                return;
+
             Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(controlEvent.OutfitID.Value, ct).ConfigureAwait(false);
             if (!getOutfitResult.IsDefined())
                 return;
@@ -58,28 +66,28 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
             MapRegion facility = getFacilityResult.Entity;
 
             UpdateMapCache(controlEvent, facility);
-            await SendBaseCaptureMessages(outfit, facility, ct).ConfigureAwait(false);
+            await SendBaseCaptureMessages(validPSettings, outfit, facility, ct).ConfigureAwait(false);
         }
 
-        private async Task SendBaseCaptureMessages(Outfit outfit, MapRegion facility, CancellationToken ct = default)
+        private async Task SendBaseCaptureMessages
+        (
+            IEnumerable<PlanetsideSettings> planetSideSettings,
+            Outfit outfit,
+            MapRegion facility,
+            CancellationToken ct = default
+        )
         {
-            IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
-                .Where(s => s.BaseCaptureChannelId != null)
-                .AsEnumerable()
-                .Where(s => s.TrackedOutfits.Contains(outfit.OutfitId));
-
-            if (!validPSettings.Any())
-                return;
-
-            foreach (PlanetsideSettings pSettings in validPSettings)
+            foreach (PlanetsideSettings pSettings in planetSideSettings)
             {
-                Embed embed = new(
+                Embed embed = new
+                (
                     "Base Captured",
                     Description: $"{ Formatter.Bold($"[{ outfit.Alias }]") } has captured { Formatter.Italic(facility.FacilityName) }",
                     Colour: DiscordConstants.DEFAULT_EMBED_COLOUR
                 );
 
-                await _channelApi.CreateMessageAsync(
+                await _channelApi.CreateMessageAsync
+                (
                     new Snowflake(pSettings.BaseCaptureChannelId!.Value),
                     embeds: new IEmbed[] { embed },
                     ct: ct

@@ -203,8 +203,7 @@ namespace UVOCBot
         {
             LoggerConfiguration logConfig = new LoggerConfiguration()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                .MinimumLevel.Override("System.Net.Http.HttpClient.Discord", LogEventLevel.Warning)
-                .MinimumLevel.Override("System.Net.Http.HttpClient.CensusRestClient", LogEventLevel.Warning)
+                .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 #if DEBUG
@@ -256,7 +255,6 @@ namespace UVOCBot
                     o.Intents |= GatewayIntents.DirectMessages
                         | GatewayIntents.GuildMessages
                         | GatewayIntents.Guilds
-                        | GatewayIntents.GuildVoiceStates
                         | GatewayIntents.GuildMembers;
                 });
 

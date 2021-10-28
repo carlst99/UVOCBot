@@ -15,14 +15,14 @@ namespace UVOCBot.Plugins
         {
             services.AddDiscordVoice();
 
-            //services.AddCommandGroup<MusicCommands>();
+            services.AddCommandGroup<MusicCommands>();
             services.AddCommandGroup<TestCommands>();
 
-            //services.AddSingleton<YoutubeClient>();
-            //services.AddSingleton<IYouTubeService, YouTubeService>();
-            //services.AddSingleton<IMusicService, MusicService>();
+            services.AddSingleton<YoutubeClient>();
+            services.AddSingleton<IYouTubeService, YouTubeService>();
+            services.AddSingleton<IMusicService, MusicService>();
 
-            //services.AddHostedService<MusicWorker>();
+            services.AddHostedService<MusicWorker>();
 
             return services;
         }

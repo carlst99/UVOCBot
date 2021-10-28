@@ -1,7 +1,6 @@
 ﻿using Remora.Discord.Core;
 using Remora.Results;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Music.Objects;

@@ -29,7 +29,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0-rc.2.21480.5" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
     <PackageReference Include="Remora.Discord" Version="3.0.72" />
     <PackageReference Include="Remora.Discord.Caching" Version="14.0.7" />
     <PackageReference Include="RestSharp" Version="106.12.0" />

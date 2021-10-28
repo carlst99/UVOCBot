@@ -6,7 +6,6 @@ using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Core;
-using Remora.Discord.Voice;
 using Remora.Results;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -25,7 +24,6 @@ namespace UVOCBot.Plugins.Music.Commands
     public sealed class MusicCommands : CommandGroup
     {
         private readonly ICommandContext _context;
-        private readonly DiscordVoiceClientFactory _voiceClientFactory;
         private readonly IVoiceStateCacheService _voiceStateCache;
         private readonly IYouTubeService _youTubeService;
         private readonly IMusicService _musicService;
@@ -34,7 +32,6 @@ namespace UVOCBot.Plugins.Music.Commands
         public MusicCommands
         (
             ICommandContext context,
-            DiscordVoiceClientFactory voiceClientFactory,
             IVoiceStateCacheService voiceStateCache,
             IYouTubeService youTubeService,
             IMusicService musicService,
@@ -42,7 +39,6 @@ namespace UVOCBot.Plugins.Music.Commands
         )
         {
             _context = context;
-            _voiceClientFactory = voiceClientFactory;
             _voiceStateCache = voiceStateCache;
             _youTubeService = youTubeService;
             _musicService = musicService;

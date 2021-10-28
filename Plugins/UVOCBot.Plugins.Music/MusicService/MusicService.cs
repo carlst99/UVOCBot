@@ -142,9 +142,11 @@ namespace UVOCBot.Plugins.Music.MusicService
                         ).ConfigureAwait(false);
                     }
 
+                    // TODO: Stop old clients
+
                     await Task.Delay(100, ct).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not TaskCanceledException)
                 {
                     _logger.LogWarning(ex, "The music service encountered an error.");
                 }
@@ -306,7 +308,7 @@ namespace UVOCBot.Plugins.Music.MusicService
 
                 return Result.FromSuccess();
             }
-            catch (Exception ex) when (ex is not TaskCanceledException)
+            catch (Exception ex)
             {
                 return ex;
             }

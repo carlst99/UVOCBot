@@ -165,7 +165,7 @@ namespace UVOCBot.Plugins.Planetside.Services
             {
                 return await _queryService.GetAsync<T>(query, ct).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not TaskCanceledException)
             {
                 _logger.LogError(ex, "Census query failed for query {query}.", callerName);
                 return ex;
@@ -183,7 +183,7 @@ namespace UVOCBot.Plugins.Planetside.Services
                 else
                     return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not TaskCanceledException)
             {
                 _logger.LogError(ex, "Census query failed for query {query}.", callerName);
                 return ex;

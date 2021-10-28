@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Linq;
+using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
 using UVOCBot.Commands;
@@ -54,7 +55,7 @@ namespace UVOCBot
 
     public static class Program
     {
-        public static int Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             try
             {
@@ -86,7 +87,7 @@ namespace UVOCBot
 #endif
                 }
 
-                host.Run();
+                await host.RunAsync().ConfigureAwait(false);
                 return 0;
             }
             catch (Exception ex)

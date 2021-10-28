@@ -1,7 +1,6 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Voice;
 using Remora.Results;
 using System.Threading.Tasks;
@@ -15,20 +14,17 @@ namespace UVOCBot.Plugins.Music.Commands
         private readonly ICommandContext _context;
         private readonly DiscordVoiceClientFactory _voiceClientFactory;
         private readonly IVoiceStateCacheService _voiceStateCache;
-        private readonly FeedbackService _feedbackService;
 
         public TestCommands
         (
             ICommandContext context,
             DiscordVoiceClientFactory voiceClientFactory,
-            IVoiceStateCacheService voiceStateCache,
-            FeedbackService feedbackService
+            IVoiceStateCacheService voiceStateCache
         )
         {
             _context = context;
             _voiceClientFactory = voiceClientFactory;
             _voiceStateCache = voiceStateCache;
-            _feedbackService = feedbackService;
         }
 
         [Command("test")]
@@ -47,7 +43,7 @@ namespace UVOCBot.Plugins.Music.Commands
                     userVoiceState.Value.ChannelID.Value,
                     _context.GuildID.Value,
                     false,
-                    false,
+                    true,
                     CancellationToken
                 ).ConfigureAwait(false);
 

@@ -1,11 +1,9 @@
 ﻿using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
-using System.Threading;
-using System.Threading.Tasks;
 using UVOCBot.Discord.Core.Services.Abstractions;
 
-namespace UVOCBot.Responders
+namespace UVOCBot.Discord.Core.Responders
 {
     public class VoiceStateUpdateResponder : IResponder<IVoiceStateUpdate>
     {

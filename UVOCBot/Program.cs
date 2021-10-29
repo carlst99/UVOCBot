@@ -265,8 +265,7 @@ namespace UVOCBot
             services.AddResponder<ComponentInteractionResponder>()
                     .AddResponder<GuildCreateResponder>()
                     .AddResponder<GuildMemberResponder>()
-                    .AddResponder<ReadyResponder>()
-                    .AddResponder<VoiceStateUpdateResponder>();
+                    .AddResponder<ReadyResponder>();
 
             services.AddCommandGroup<AdminCommands>()
                     .AddCommandGroup<GeneralCommands>()

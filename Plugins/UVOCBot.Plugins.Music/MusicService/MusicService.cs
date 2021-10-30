@@ -279,8 +279,8 @@ namespace UVOCBot.Plugins.Music.MusicService
                 {
                     Result runResult = await client.RunAsync
                     (
-                        request.ChannelID,
                         request.GuildID,
+                        request.ChannelID,
                         false,
                         true,
                         ct

@@ -16,7 +16,6 @@ namespace UVOCBot.Plugins
             services.AddDiscordVoice();
 
             services.AddCommandGroup<MusicCommands>();
-            services.AddCommandGroup<TestCommands>();
 
             services.AddSingleton<YoutubeClient>();
             services.AddSingleton<IYouTubeService, YouTubeService>();

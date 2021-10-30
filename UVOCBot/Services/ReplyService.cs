@@ -1,4 +1,5 @@
-﻿using Remora.Discord.API.Abstractions.Objects;
+﻿using OneOf;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
@@ -70,7 +71,13 @@ namespace UVOCBot.Services
             => await RespondWithEmbedAsync(GetErrorEmbed(content), ct, default, allowedMentions).ConfigureAwait(false);
 
         /// <inheritdoc />
-        public async Task<Result<IMessage>> RespondToInteractionAsync(CancellationToken ct, Optional<string> content = default, Optional<FileData> file = default, Optional<IReadOnlyList<IEmbed>> embeds = default, Optional<IAllowedMentions> allowedMentions = default)
+        public async Task<Result<IMessage>> RespondToInteractionAsync
+        (
+            CancellationToken ct,
+            Optional<string> content = default,
+            Optional<FileData> file = default,
+            Optional<IReadOnlyList<IEmbed>> embeds = default,
+            Optional<IAllowedMentions> allowedMentions = default)
         {
             if (_context is not InteractionContext ictx)
                 return new InvalidOperationError("Cannot respond to a non-interaction context with an interaction response.");
@@ -79,9 +86,11 @@ namespace UVOCBot.Services
                 ictx.ApplicationID,
                 ictx.Token,
                 content,
-                file: file,
                 embeds: embeds,
                 allowedMentions: allowedMentions,
+                attachments: file.HasValue
+                    ? new[] { OneOf<FileData, IPartialAttachment>.FromT0(file.Value) }
+                    : new Optional<IReadOnlyList<OneOf<FileData, IPartialAttachment>>>(),
                 ct: ct).ConfigureAwait(false);
         }
 
@@ -93,12 +102,14 @@ namespace UVOCBot.Services
                 content,
                 nonce,
                 isTTS,
-                file,
                 embed,
                 allowedMentions,
                 messageReference,
                 components,
-                stickerIds: default,
+                default,
+                file.HasValue
+                    ? new[] { OneOf<FileData, IPartialAttachment>.FromT0(file.Value) }
+                    : new Optional<IReadOnlyList<OneOf<FileData, IPartialAttachment>>>(),
                 ct).ConfigureAwait(false);
         }
 

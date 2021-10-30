@@ -1,4 +1,5 @@
-﻿using Remora.Commands.Attributes;
+﻿using OneOf;
+using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -83,16 +84,16 @@ namespace UVOCBot.Plugins.Planetside.Commands
                 return await _interactionApi.CreateFollowupMessageAsync(
                     ictx.ApplicationID,
                     ictx.Token,
-                    file: new FileData(mapFileName, File.OpenRead(mapFilePath)),
                     embeds: new IEmbed[] { embed },
+                    attachments: new[] { OneOf<FileData, IPartialAttachment>.FromT0(new FileData(mapFileName, File.OpenRead(mapFilePath))) },
                     ct: CancellationToken).ConfigureAwait(false);
             }
             else
             {
                 return await _channelApi.CreateMessageAsync(
                     _context.ChannelID,
-                    file: new FileData(mapFileName, File.OpenRead(mapFilePath)),
                     embeds: new IEmbed[] { embed },
+                    attachments: new[] { OneOf<FileData, IPartialAttachment>.FromT0(new FileData(mapFileName, File.OpenRead(mapFilePath))) },
                     ct: CancellationToken).ConfigureAwait(false);
             }
         }

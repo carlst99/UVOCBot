@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Remora.Discord.Commands" Version="11.0.4" />
+    <PackageReference Include="Remora.Discord.Commands" Version="12.0.0" />
+    <PackageReference Include="Remora.Discord.Core" Version="3.2.2" />
   </ItemGroup>
 
   <ItemGroup>

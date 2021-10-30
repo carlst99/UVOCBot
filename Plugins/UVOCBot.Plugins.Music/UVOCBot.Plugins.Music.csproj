@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="FFMpegCore" Version="4.5.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0-rc.2.21480.5" />
-    <PackageReference Include="Remora.Discord.Voice" Version="0.0.1-alpha.12" />
+    <PackageReference Include="Remora.Discord.Voice" Version="0.0.1-alpha.13" />
     <PackageReference Include="System.IO.Pipelines" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="YoutubeExplode" Version="6.0.5" />
   </ItemGroup>

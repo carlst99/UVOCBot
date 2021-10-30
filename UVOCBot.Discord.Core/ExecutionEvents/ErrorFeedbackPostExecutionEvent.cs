@@ -58,6 +58,7 @@ namespace UVOCBot.Discord.Core.ExecutionEvents
                             InteractionCallbackType.DeferredChannelMessageWithSource,
                             new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
                         ),
+                        default,
                         ct
                     ).ConfigureAwait(false);
                 }

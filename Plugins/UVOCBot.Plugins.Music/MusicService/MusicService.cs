@@ -57,6 +57,7 @@ namespace UVOCBot.Plugins.Music.MusicService
         private readonly ILogger<MusicService> _logger;
         private readonly ConcurrentDictionary<Snowflake, ConcurrentQueue<MusicRequest>> _playQueues;
         private readonly ConcurrentDictionary<Snowflake, PlaybackState> _currentlyPlaying;
+        private readonly ConcurrentDictionary<Snowflake, DateTimeOffset> _activeClients;
 
         protected readonly DiscordVoiceClientFactory _voiceClientFactory;
         protected readonly IPermissionChecksService _permissionChecksService;
@@ -80,6 +81,7 @@ namespace UVOCBot.Plugins.Music.MusicService
 
             _playQueues = new ConcurrentDictionary<Snowflake, ConcurrentQueue<MusicRequest>>();
             _currentlyPlaying = new ConcurrentDictionary<Snowflake, PlaybackState>();
+            _activeClients = new ConcurrentDictionary<Snowflake, DateTimeOffset>();
         }
 
         /// <inheritdoc />
@@ -89,16 +91,13 @@ namespace UVOCBot.Plugins.Music.MusicService
             {
                 try
                 {
+                    await CancelCurrentlyPlayingStates(true).ConfigureAwait(false);
+                    await StopActiveClients(true).ConfigureAwait(false);
+
                     foreach (Snowflake guildID in _playQueues.Keys)
                     {
-                        if (_currentlyPlaying.TryGetValue(guildID, out PlaybackState? state))
-                        {
-                            if (!state.TransmissionTask.IsCompleted)
-                                continue;
-
-                            await CancelStateAsync(state).ConfigureAwait(false);
-                            _currentlyPlaying.TryRemove(guildID, out _);
-                        }
+                        if (_currentlyPlaying.ContainsKey(guildID))
+                            continue;
 
                         if (!_playQueues.TryGetValue(guildID, out ConcurrentQueue<MusicRequest>? queue))
                             continue;
@@ -128,7 +127,7 @@ namespace UVOCBot.Plugins.Music.MusicService
 
                         Embed responseEmbed = new
                         (
-                            $"Queued {Formatter.Bold(request.Video.Title)} ({request.Video.Duration:mm\\:ss})",
+                            $"Playing {Formatter.Bold(request.Video.Title)} ({request.Video.Duration:mm\\:ss})",
                             Description: request.Video.Author.Title + "\n" + request.Video.Url,
                             Thumbnail: new EmbedThumbnail(request.Video.Thumbnails[0].Url),
                             Colour: DiscordConstants.DEFAULT_EMBED_COLOUR
@@ -142,8 +141,6 @@ namespace UVOCBot.Plugins.Music.MusicService
                         ).ConfigureAwait(false);
                     }
 
-                    // TODO: Stop old clients
-
                     await Task.Delay(100, ct).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (ex is not TaskCanceledException)
@@ -151,6 +148,9 @@ namespace UVOCBot.Plugins.Music.MusicService
                     _logger.LogWarning(ex, "The music service encountered an error.");
                 }
             }
+
+            await CancelCurrentlyPlayingStates(false).ConfigureAwait(false);
+            await StopActiveClients(false).ConfigureAwait(false);
 
             return Result.FromSuccess();
         }
@@ -264,6 +264,52 @@ namespace UVOCBot.Plugins.Music.MusicService
         }
 
         /// <summary>
+        /// Cancels playback states held in <see cref="_currentlyPlaying"/>.
+        /// </summary>
+        /// <param name="onlyFinished">A value indicating if the states should only be canceled if they are finished.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        protected async Task CancelCurrentlyPlayingStates(bool onlyFinished)
+        {
+            foreach (Snowflake guildID in _currentlyPlaying.Keys)
+            {
+                if (!_currentlyPlaying.TryGetValue(guildID, out PlaybackState? state))
+                    continue;
+
+                if (!state.TransmissionTask.IsCompleted && onlyFinished)
+                    continue;
+
+                await CancelStateAsync(state).ConfigureAwait(false);
+                _currentlyPlaying.TryRemove(guildID, out _);
+                _activeClients[guildID] = DateTimeOffset.UtcNow;
+            }
+        }
+
+        /// <summary>
+        /// Stops active voice clients.
+        /// </summary>
+        /// <param name="onlyOld">A value indicating whether to only stop clients that have not been used in the last 2m.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        protected async Task StopActiveClients(bool onlyOld)
+        {
+            foreach (Snowflake guildID in _activeClients.Keys)
+            {
+                if (!_activeClients.TryGetValue(guildID, out DateTimeOffset lastAction))
+                    continue;
+
+                DiscordVoiceClient client = _voiceClientFactory.Get(guildID);
+
+                if (lastAction.AddMinutes(2) > DateTimeOffset.UtcNow && onlyOld && client.IsTransmitting)
+                    continue;
+
+                Result stopResult = await client.StopAsync().ConfigureAwait(false);
+                if (!stopResult.IsSuccess)
+                    _logger.LogWarning("Failed to stop a voice client: {error}", stopResult.Error);
+
+                _activeClients.TryRemove(guildID, out _);
+            }
+        }
+
+        /// <summary>
         /// Plays a video.
         /// </summary>
         /// <param name="request">The request to play.</param>
@@ -288,6 +334,8 @@ namespace UVOCBot.Plugins.Music.MusicService
 
                     if (!runResult.IsSuccess)
                         return runResult;
+
+                    _activeClients.TryAdd(request.GuildID, DateTimeOffset.UtcNow);
                 }
 
                 Result<Stream> ytStream = await _youTubeService.GetStreamAsync(request.Video, ct).ConfigureAwait(false);
@@ -296,7 +344,13 @@ namespace UVOCBot.Plugins.Music.MusicService
 
                 CancellationTokenSource cts = new();
                 (Stream Stream, Task Task) pcmStream = ConvertToPcmInBackground(ytStream.Entity, cts.Token);
-                Task<Result> transmitTask = client.TransmitAudioAsync(pcmStream.Stream, ct: ct);
+
+                while (pcmStream.Task.Status != TaskStatus.Running)
+                    await Task.Delay(10, ct).ConfigureAwait(false);
+
+                // Give the converter some time to start pushing data
+                await Task.Delay(200, ct).ConfigureAwait(false);
+                Task<Result> transmitTask = client.TransmitAudioAsync(pcmStream.Stream, ct: cts.Token);
 
                 PlaybackState state = new(request, transmitTask, pcmStream.Task, cts);
                 _currentlyPlaying.AddOrUpdate
@@ -320,23 +374,39 @@ namespace UVOCBot.Plugins.Music.MusicService
         /// <param name="input">The audio stream to convert.</param>
         /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the underlying ffmpeg conversion.</param>
         /// <returns>The stream of audio. It will not be complete when this method returns.</returns>
-        protected static (Stream, Task) ConvertToPcmInBackground(Stream input, CancellationToken ct = default)
+        protected (Stream, Task) ConvertToPcmInBackground(Stream input, CancellationToken ct = default)
         {
             Pipe p = new();
 
-            Task convertTask = FFMpegArguments.FromPipeInput(new StreamPipeSource(input))
-                .OutputToPipe(new StreamPipeSink(p.Writer.AsStream()), options =>
+            Task convertTask = new
+            (
+                () =>
                 {
-                    options.ForceFormat("s16le");
-                    options.WithAudioSamplingRate(VoiceConstants.DiscordSampleRate);
-                })
-                .CancellableThrough(ct)
-                .ProcessAsynchronously()
-                .ContinueWith
-                (
-                    _ => p.Writer.Complete(),
-                    ct
-                );
+                    try
+                    {
+                        FFMpegArguments.FromPipeInput(new StreamPipeSource(input))
+                            .OutputToPipe(new StreamPipeSink(p.Writer.AsStream()), options =>
+                            {
+                                options.ForceFormat("s16le");
+                                options.WithAudioSamplingRate(VoiceConstants.DiscordSampleRate);
+                            })
+                            .CancellableThrough(ct)
+                            .ProcessSynchronously();
+                    }
+                    catch (Exception ex) when (ex is not TaskCanceledException)
+                    {
+                        _logger.LogError(ex, "Failed to convert youtube stream.");
+                    }
+                    finally
+                    {
+                        p.Writer.Complete();
+                    }
+                },
+                ct,
+                TaskCreationOptions.LongRunning
+            );
+
+            convertTask.Start();
 
             return (p.Reader.AsStream(), convertTask);
         }

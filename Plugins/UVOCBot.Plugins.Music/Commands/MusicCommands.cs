@@ -59,7 +59,8 @@ namespace UVOCBot.Plugins.Music.Commands
             if (!userVoiceState.Value.GuildID.HasValue || userVoiceState.Value.GuildID.Value != _context.GuildID.Value)
                 return new GenericCommandError("The voice channel you are in must be within the same guild that you called this command in.");
 
-            if (_musicService.GetCurrentlyPlaying(_context.GuildID.Value) is not null)
+            MusicRequest? currentlyPlaying = _musicService.GetCurrentlyPlaying(_context.GuildID.Value);
+            if (currentlyPlaying is not null && currentlyPlaying.ChannelID != userVoiceState.Value.ChannelID.Value)
             {
                 return new GenericCommandError
                 (

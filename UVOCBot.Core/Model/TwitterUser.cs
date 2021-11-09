@@ -49,7 +49,11 @@ namespace UVOCBot.Core.Model
             };
 
             foreach (ulong id in dto.Guilds)
-                user.Guilds.Add(await context.FindAsync<GuildTwitterSettings>(id).ConfigureAwait(false));
+            {
+                GuildTwitterSettings? tSettings = await context.FindAsync<GuildTwitterSettings>(id).ConfigureAwait(false);
+                if (tSettings is not null)
+                    user.Guilds.Add(tSettings);
+            }
 
             return user;
         }

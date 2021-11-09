@@ -15,7 +15,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Discord.Core", "UVO
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{9A010CFF-90E5-4CCD-9B13-D4782016A02D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Plugins.Music", "Plugins\UVOCBot.Plugins.Music\UVOCBot.Plugins.Music.csproj", "{1C59A4CC-D320-43BB-A925-EF82555B2B70}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Music", "Plugins\UVOCBot.Plugins.Music\UVOCBot.Plugins.Music.csproj", "{1C59A4CC-D320-43BB-A925-EF82555B2B70}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A1C310B-7CA7-4777-AE0C-2CE2342833C1}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

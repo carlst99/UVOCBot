@@ -21,11 +21,11 @@ namespace UVOCBot.Api.Controllers
         [HttpPost]
         public async Task<ActionResult> CreateLink(ulong guildTwitterSettingsId, long twitterUserId)
         {
-            GuildTwitterSettings settings = await _context.FindAsync<GuildTwitterSettings>(guildTwitterSettingsId).ConfigureAwait(false);
+            GuildTwitterSettings? settings = await _context.FindAsync<GuildTwitterSettings>(guildTwitterSettingsId).ConfigureAwait(false);
             if (settings is null)
                 return BadRequest();
 
-            TwitterUser user = await _context.FindAsync<TwitterUser>(twitterUserId).ConfigureAwait(false);
+            TwitterUser? user = await _context.FindAsync<TwitterUser>(twitterUserId).ConfigureAwait(false);
             if (user is null)
                 return BadRequest();
 
@@ -41,11 +41,11 @@ namespace UVOCBot.Api.Controllers
         [HttpDelete]
         public async Task<IActionResult> DeleteLink(ulong guildTwitterSettingsId, long twitterUserId)
         {
-            GuildTwitterSettings settings = await _context.GuildTwitterSettings.Include(e => e.TwitterUsers).FirstOrDefaultAsync(e => e.GuildId == guildTwitterSettingsId).ConfigureAwait(false);
+            GuildTwitterSettings? settings = await _context.GuildTwitterSettings.Include(e => e.TwitterUsers).FirstOrDefaultAsync(e => e.GuildId == guildTwitterSettingsId).ConfigureAwait(false);
             if (settings == default)
                 return BadRequest();
 
-            TwitterUser user = await _context.FindAsync<TwitterUser>(twitterUserId).ConfigureAwait(false);
+            TwitterUser? user = await _context.FindAsync<TwitterUser>(twitterUserId).ConfigureAwait(false);
             if (user is null)
                 return BadRequest();
 

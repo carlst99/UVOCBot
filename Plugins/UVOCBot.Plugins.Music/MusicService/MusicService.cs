@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
@@ -33,6 +34,8 @@ namespace UVOCBot.Plugins.Music.MusicService
             public Task<Result> TransmissionTask { get; }
             public Task ConversionTask { get; }
             public CancellationTokenSource CancellationToken { get; }
+
+            public bool IsCompleted => TransmissionTask.IsCompleted && ConversionTask.IsCompleted;
 
             public PlaybackState
             (
@@ -254,12 +257,17 @@ namespace UVOCBot.Plugins.Music.MusicService
         /// </summary>
         /// <param name="state">The state.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        protected static async Task CancelStateAsync(PlaybackState state)
+        protected async Task CancelStateAsync(PlaybackState state, [CallerMemberName] string? caller = null)
         {
             if (!state.CancellationToken.IsCancellationRequested)
                 state.CancellationToken.Cancel();
 
-            await state.TransmissionTask.ConfigureAwait(false);
+            Console.WriteLine("===== Cancelling: " + caller); // TODO: Remove caller
+
+            Result transmitResult = await state.TransmissionTask.ConfigureAwait(false);
+            if (!transmitResult.IsSuccess)
+                _logger.LogWarning("A transmission task failed: {error}", transmitResult.Error);
+
             state.Dispose();
         }
 
@@ -275,7 +283,7 @@ namespace UVOCBot.Plugins.Music.MusicService
                 if (!_currentlyPlaying.TryGetValue(guildID, out PlaybackState? state))
                     continue;
 
-                if (!state.TransmissionTask.IsCompleted && onlyFinished)
+                if (!state.IsCompleted && onlyFinished)
                     continue;
 
                 await CancelStateAsync(state).ConfigureAwait(false);
@@ -303,7 +311,7 @@ namespace UVOCBot.Plugins.Music.MusicService
 
                 Result stopResult = await client.StopAsync().ConfigureAwait(false);
                 if (!stopResult.IsSuccess)
-                    _logger.LogWarning("Failed to stop a voice client: {error}", stopResult.Error);
+                    _logger.LogWarning("A voice client failed to stop: {error}", stopResult.Error);
 
                 _activeClients.TryRemove(guildID, out _);
             }

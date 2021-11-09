@@ -7,23 +7,22 @@ using UVOCBot.Plugins.Music.MusicService;
 using UVOCBot.Plugins.Music.Workers;
 using YoutubeExplode;
 
-namespace UVOCBot.Plugins
+namespace UVOCBot.Plugins;
+
+public static class IServiceCollectionExtensions
 {
-    public static class IServiceCollectionExtensions
+    public static IServiceCollection AddMusicPlugin(this IServiceCollection services)
     {
-        public static IServiceCollection AddMusicPlugin(this IServiceCollection services)
-        {
-            services.AddDiscordVoice();
+        services.AddDiscordVoice();
 
-            services.AddCommandGroup<MusicCommands>();
+        services.AddCommandGroup<MusicCommands>();
 
-            services.AddSingleton<YoutubeClient>();
-            services.AddSingleton<IYouTubeService, YouTubeService>();
-            services.AddSingleton<IMusicService, MusicService>();
+        services.AddSingleton<YoutubeClient>();
+        services.AddSingleton<IYouTubeService, YouTubeService>();
+        services.AddSingleton<IMusicService, MusicService>();
 
-            services.AddHostedService<MusicWorker>();
+        services.AddHostedService<MusicWorker>();
 
-            return services;
-        }
+        return services;
     }
 }

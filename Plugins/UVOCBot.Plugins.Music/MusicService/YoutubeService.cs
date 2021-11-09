@@ -12,79 +12,78 @@ using YoutubeExplode.Search;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 
-namespace UVOCBot.Plugins.Music.MusicService
+namespace UVOCBot.Plugins.Music.MusicService;
+
+/// <inheritdoc cref="IYouTubeService"/>
+public class YouTubeService : IYouTubeService
 {
-    /// <inheritdoc cref="IYouTubeService"/>
-    public class YouTubeService : IYouTubeService
+    private readonly YoutubeClient _youtubeClient;
+
+    public YouTubeService(YoutubeClient youtubeClient)
     {
-        private readonly YoutubeClient _youtubeClient;
+        _youtubeClient = youtubeClient;
+    }
 
-        public YouTubeService(YoutubeClient youtubeClient)
+    /// <inheritdoc />
+    public async Task<Result<Video>> GetVideoInfoAsync(string query, CancellationToken ct = default)
+    {
+        try
         {
-            _youtubeClient = youtubeClient;
-        }
+            Video? video = null;
 
-        /// <inheritdoc />
-        public async Task<Result<Video>> GetVideoInfoAsync(string query, CancellationToken ct = default)
-        {
-            try
+            if (Uri.TryCreate(query, UriKind.Absolute, out Uri? parsedUri))
             {
-                Video? video = null;
+                // TODO: Verify parsed URI
 
-                if (Uri.TryCreate(query, UriKind.Absolute, out Uri? parsedUri))
+                try
                 {
-                    // TODO: Verify parsed URI
-
-                    try
-                    {
-                        video = await _youtubeClient.Videos.GetAsync(query, ct).ConfigureAwait(false);
-                    }
-                    catch (ArgumentException)
-                    {
-                        return new YouTubeUserError("That's an invalid video URL.");
-                    }
+                    video = await _youtubeClient.Videos.GetAsync(query, ct).ConfigureAwait(false);
                 }
-                else
+                catch (ArgumentException)
                 {
-                    // Naively take the first result. Could be improved?
-                    await foreach (VideoSearchResult searchResult in _youtubeClient.Search.GetVideosAsync(query, ct))
-                    {
-                        video = await _youtubeClient.Videos.GetAsync(searchResult.Url, ct).ConfigureAwait(false);
-                        break;
-                    }
-
-                    if (video is null)
-                        return new YouTubeUserError("No videos matched your query.");
+                    return new YouTubeUserError("That's an invalid video URL.");
+                }
+            }
+            else
+            {
+                // Naively take the first result. Could be improved?
+                await foreach (VideoSearchResult searchResult in _youtubeClient.Search.GetVideosAsync(query, ct))
+                {
+                    video = await _youtubeClient.Videos.GetAsync(searchResult.Url, ct).ConfigureAwait(false);
+                    break;
                 }
 
-                return video;
+                if (video is null)
+                    return new YouTubeUserError("No videos matched your query.");
             }
-            catch (Exception ex)
-            {
-                return ex;
-            }
+
+            return video;
         }
-
-        /// <inheritdoc />
-        public async Task<Result<Stream>> GetStreamAsync(Video video, CancellationToken ct = default)
+        catch (Exception ex)
         {
-            try
-            {
-                StreamManifest manifest = await _youtubeClient.Videos.Streams.GetManifestAsync(video.Id, ct).ConfigureAwait(false);
+            return ex;
+        }
+    }
 
-                IAudioStreamInfo? audioStreamDetails = manifest
-                    .GetAudioStreams()
-                    .FirstOrDefault(s => s.Bitrate.BitsPerSecond <= VoiceConstants.DiscordMaxBitrate);
+    /// <inheritdoc />
+    public async Task<Result<Stream>> GetStreamAsync(Video video, CancellationToken ct = default)
+    {
+        try
+        {
+            StreamManifest manifest = await _youtubeClient.Videos.Streams.GetManifestAsync(video.Id, ct).ConfigureAwait(false);
 
-                if (audioStreamDetails is null)
-                    return new YouTubeUserError("Failed to retrieve a valid audio stream for that video. Are you sure it has sound?");
+            IAudioStreamInfo? audioStreamDetails = manifest
+                .GetAudioStreams()
+                .FirstOrDefault(s => s.Bitrate.BitsPerSecond <= VoiceConstants.DiscordMaxBitrate);
 
-                return await _youtubeClient.Videos.Streams.GetAsync(audioStreamDetails, ct).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
+            if (audioStreamDetails is null)
+                return new YouTubeUserError("Failed to retrieve a valid audio stream for that video. Are you sure it has sound?");
+
+            return await _youtubeClient.Videos.Streams.GetAsync(audioStreamDetails, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return ex;
         }
     }
 }

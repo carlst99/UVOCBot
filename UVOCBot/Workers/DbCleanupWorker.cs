@@ -6,33 +6,32 @@ using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 
-namespace UVOCBot.Workers
+namespace UVOCBot.Workers;
+
+public class DbCleanupWorker : BackgroundService
 {
-    public class DbCleanupWorker : BackgroundService
+    private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
+
+    public DbCleanupWorker(IDbContextFactory<DiscordContext> dbContextFactory)
     {
-        private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
+        _dbContextFactory = dbContextFactory;
+    }
 
-        public DbCleanupWorker(IDbContextFactory<DiscordContext> dbContextFactory)
+    protected override async Task ExecuteAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
         {
-            _dbContextFactory = dbContextFactory;
-        }
+            using DiscordContext dbContext = _dbContextFactory.CreateDbContext();
 
-        protected override async Task ExecuteAsync(CancellationToken ct)
-        {
-            while (!ct.IsCancellationRequested)
+            foreach (MemberGroup group in dbContext.MemberGroups)
             {
-                using DiscordContext dbContext = _dbContextFactory.CreateDbContext();
-
-                foreach (MemberGroup group in dbContext.MemberGroups)
-                {
-                    if (group.CreatedAt.AddHours(MemberGroup.MAX_LIFETIME_HOURS) < DateTimeOffset.UtcNow)
-                        dbContext.MemberGroups.Remove(group);
-                }
-
-                await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-
-                await Task.Delay(900000, ct).ConfigureAwait(false); // Work every 15min
+                if (group.CreatedAt.AddHours(MemberGroup.MAX_LIFETIME_HOURS) < DateTimeOffset.UtcNow)
+                    dbContext.MemberGroups.Remove(group);
             }
+
+            await dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            await Task.Delay(900000, ct).ConfigureAwait(false); // Work every 15min
         }
     }
 }

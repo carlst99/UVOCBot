@@ -1,9 +1,8 @@
-﻿namespace UVOCBot.Model
+﻿namespace UVOCBot.Model;
+
+public enum NoDeploymentType
 {
-    public enum NoDeploymentType
-    {
-        None,
-        Sunderer,
-        ANT
-    }
+    None,
+    Sunderer,
+    ANT
 }

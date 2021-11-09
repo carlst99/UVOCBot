@@ -1,11 +1,10 @@
-﻿namespace UVOCBot.Plugins.Planetside.Objects
+﻿namespace UVOCBot.Plugins.Planetside.Objects;
+
+public enum ValidZoneDefinition
 {
-    public enum ValidZoneDefinition
-    {
-        Indar = 2,
-        Hossin = 4,
-        Amerish = 6,
-        Esamir = 8,
-        Koltyr = 14,
-    }
+    Indar = 2,
+    Hossin = 4,
+    Amerish = 6,
+    Esamir = 8,
+    Koltyr = 14,
 }

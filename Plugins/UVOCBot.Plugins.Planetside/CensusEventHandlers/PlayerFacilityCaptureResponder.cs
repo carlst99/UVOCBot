@@ -2,13 +2,12 @@
 using DbgCensus.EventStream.EventHandlers.Objects.Event;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;
 
-namespace UVOCBot.Plugins.Planetside.CensusEventHandlers
+namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
+
+internal sealed class PlayerFacilityCaptureResponder : ICensusEventHandler<ServiceMessage<PlayerFacilityCapture>>
 {
-    internal sealed class PlayerFacilityCaptureResponder : ICensusEventHandler<ServiceMessage<PlayerFacilityCapture>>
+    public Task HandleAsync(ServiceMessage<PlayerFacilityCapture> censusEvent, CancellationToken ct = default)
     {
-        public Task HandleAsync(ServiceMessage<PlayerFacilityCapture> censusEvent, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
+        throw new NotImplementedException();
     }
 }

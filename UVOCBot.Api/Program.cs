@@ -8,36 +8,36 @@ using Serilog.Core;
 using Serilog.Events;
 #endif
 
-namespace UVOCBot.Api
+namespace UVOCBot.Api;
+
+public static class Program
 {
-    public static class Program
+    public static int Main(string[] args)
     {
-        public static int Main(string[] args)
+        try
         {
-            try
-            {
-                Log.Information("Starting web host");
-                CreateHostBuilder(args).Build().Run();
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Host terminated unexpectedly");
-                return 1;
-            }
-            finally
-            {
-                Log.CloseAndFlush();
-            }
+            Log.Information("Starting web host");
+            CreateHostBuilder(args).Build().Run();
+            return 0;
         }
-
-        public static IHostBuilder CreateHostBuilder(string[] args)
+        catch (Exception ex)
         {
-            ILogger? logger = null;
+            Log.Fatal(ex, "Host terminated unexpectedly");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
 
-            return Host.CreateDefaultBuilder(args)
-                .ConfigureServices((c, _) =>
-                {
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        ILogger? logger = null;
+
+        return Host.CreateDefaultBuilder(args)
+            .ConfigureServices((c, _) =>
+            {
 #if DEBUG
                     logger = SetupLogging();
 #else
@@ -46,22 +46,22 @@ namespace UVOCBot.Api
                     logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
 #endif
                 })
-                .UseSerilog(logger)
-                .UseSystemd()
-                .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>());
-        }
+            .UseSerilog(logger)
+            .UseSystemd()
+            .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>());
+    }
 
 #if DEBUG
-        private static ILogger SetupLogging()
+    private static ILogger SetupLogging()
 #else
         private static ILogger SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
 #endif
-        {
-            LoggerConfiguration logConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
+    {
+        LoggerConfiguration logConfig = new LoggerConfiguration()
+            .Enrich.FromLogContext()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 #if DEBUG
-            logConfig.MinimumLevel.Verbose();
+        logConfig.MinimumLevel.Verbose();
 #else
             logConfig.MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
 
@@ -79,29 +79,28 @@ namespace UVOCBot.Api
             }
 #endif
 
-            Log.Logger = logConfig.CreateLogger();
-            Log.Information("Appdata stored at {path}", GetAppdataFilePath(null));
+        Log.Logger = logConfig.CreateLogger();
+        Log.Information("Appdata stored at {path}", GetAppdataFilePath(null));
 
-            return Log.Logger;
-        }
+        return Log.Logger;
+    }
 
-        /// <summary>
-        /// Gets the path to the specified file, assuming that it is in our appdata store.
-        /// </summary>
-        /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
-        /// <remarks>Data is stored in the local appdata.</remarks>
-        public static string GetAppdataFilePath(string? fileName)
-        {
-            string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            directory = Path.Combine(directory, "UVOCBot.Api");
+    /// <summary>
+    /// Gets the path to the specified file, assuming that it is in our appdata store.
+    /// </summary>
+    /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
+    /// <remarks>Data is stored in the local appdata.</remarks>
+    public static string GetAppdataFilePath(string? fileName)
+    {
+        string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        directory = Path.Combine(directory, "UVOCBot.Api");
 
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+        if (!Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
 
-            if (fileName is not null)
-                return Path.Combine(directory, fileName);
-            else
-                return directory;
-        }
+        if (fileName is not null)
+            return Path.Combine(directory, fileName);
+        else
+            return directory;
     }
 }

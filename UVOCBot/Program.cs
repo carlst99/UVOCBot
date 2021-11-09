@@ -36,179 +36,179 @@ using UVOCBot.Workers;
 using Serilog.Core;
 #endif
 
-namespace UVOCBot
+namespace UVOCBot;
+
+// Permissions integer: 2570144848
+// - Manage Roles
+// - Manage Channels
+// - Manage Nicknames
+// - View Channels
+// - Send Messages
+// - Embed Links
+// - Read Message History
+// - Add Reactions
+// - Use Slash Commands
+// - Connect
+// - Speak
+// - Move Members
+// OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands
+
+public static class Program
 {
-    // Permissions integer: 2570144848
-    // - Manage Roles
-    // - Manage Channels
-    // - Manage Nicknames
-    // - View Channels
-    // - Send Messages
-    // - Embed Links
-    // - Read Message History
-    // - Add Reactions
-    // - Use Slash Commands
-    // - Connect
-    // - Speak
-    // - Move Members
-    // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands
-
-    public static class Program
+    public static async Task<int> Main(string[] args)
     {
-        public static async Task<int> Main(string[] args)
+        try
         {
-            try
+            IHost host = CreateHostBuilder(args).Build();
+
+            IOptions<GeneralOptions> options = host.Services.GetRequiredService<IOptions<GeneralOptions>>();
+            SlashService slashService = host.Services.GetRequiredService<SlashService>();
+
+            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
+            Result slashCommandsSupported = slashService.SupportsSlashCommands();
+
+            if (!slashCommandsSupported.IsSuccess)
             {
-                IHost host = CreateHostBuilder(args).Build();
-
-                IOptions<GeneralOptions> options = host.Services.GetRequiredService<IOptions<GeneralOptions>>();
-                SlashService slashService = host.Services.GetRequiredService<SlashService>();
-
-                IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
-                Result slashCommandsSupported = slashService.SupportsSlashCommands();
-
-                if (!slashCommandsSupported.IsSuccess)
-                {
-                    Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
-                }
-                else
-                {
+                Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
+            }
+            else
+            {
 #if DEBUG
-                    foreach (Snowflake guild in debugServerSnowflakes)
-                    {
-                        Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
-                        if (!updateSlashCommandsResult.IsSuccess)
-                            Log.Warning("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
-                    }
+                foreach (Snowflake guild in debugServerSnowflakes)
+                {
+                    Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
+                    if (!updateSlashCommandsResult.IsSuccess)
+                        Log.Warning("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
+                }
 #else
                     Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
                     if (!updateSlashCommandsResult.IsSuccess)
                         Log.Warning("Could not update global application commands");
 #endif
-                }
+            }
 
-                await host.RunAsync().ConfigureAwait(false);
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Host terminated unexpectedly");
-                return 1;
-            }
-            finally
-            {
-                Log.CloseAndFlush();
-            }
+            await host.RunAsync().ConfigureAwait(false);
+            return 0;
         }
-
-        public static IHostBuilder CreateHostBuilder(string[] args)
+        catch (Exception ex)
         {
-            IFileSystem fileSystem = new FileSystem();
-            ILogger? logger = null;
+            Log.Fatal(ex, "Host terminated unexpectedly");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
 
-            return Host.CreateDefaultBuilder(args)
-                .UseDefaultServiceProvider(s => s.ValidateScopes = true)
-                .ConfigureServices((c, _) =>
-                {
-                    string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
-                    string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        IFileSystem fileSystem = new FileSystem();
+        ILogger? logger = null;
+
+        return Host.CreateDefaultBuilder(args)
+            .UseDefaultServiceProvider(s => s.ValidateScopes = true)
+            .ConfigureServices((c, _) =>
+            {
+                string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
+                string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
 #if DEBUG
                     logger = SetupLogging(fileSystem);
 #else
                     logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
 #endif
                 })
-                .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-                .UseSerilog(logger)
-                .UseSystemd()
-                .ConfigureServices((c, services) =>
-                {
+            .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
+            .UseSerilog(logger)
+            .UseSystemd()
+            .ConfigureServices((c, services) =>
+            {
                     // Setup configuration bindings
                     IConfigurationSection dbConfigSection = c.Configuration.GetSection(nameof(DatabaseOptions));
-                    DatabaseOptions dbOptions = new();
-                    dbConfigSection.Bind(dbOptions);
+                DatabaseOptions dbOptions = new();
+                dbConfigSection.Bind(dbOptions);
 
-                    services.Configure<DatabaseOptions>(dbConfigSection)
-                            .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
-                            .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
+                services.Configure<DatabaseOptions>(dbConfigSection)
+                        .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
+                        .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
 
-                    services.AddDbContext<DiscordContext>
-                    (
-                        options =>
-                        {
-                            options.UseMySql(
-                                dbOptions.ConnectionString,
-                                new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion))
-                            )
+                services.AddDbContext<DiscordContext>
+                (
+                    options =>
+                    {
+                        options.UseMySql(
+                            dbOptions.ConnectionString,
+                            new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion))
+                        )
 #if DEBUG
                             .EnableSensitiveDataLogging()
-                            .EnableDetailedErrors()
+                        .EnableDetailedErrors()
 #endif
                             ;
-                        },
-                        optionsLifetime: ServiceLifetime.Singleton
-                    );
+                    },
+                    optionsLifetime: ServiceLifetime.Singleton
+                );
 
-                    services.AddDbContextFactory<DiscordContext>();
+                services.AddDbContextFactory<DiscordContext>();
 
                     //Setup API services
                     services.AddSingleton<IDbApiService, DbApiService>();
 
                     // Setup other services
                     services.AddSingleton(fileSystem)
-                            .AddTransient(TwitterClientFactory);
+                        .AddTransient(TwitterClientFactory);
 
                     // Add Discord-related services
                     services.AddRemoraServices()
-                            .AddCoreDiscordServices()
-                            .AddScoped<IAdminLogService, AdminLogService>()
-                            .AddScoped<IReplyService, ReplyService>()
-                            .AddScoped<IRoleMenuService, RoleMenuService>()
-                            .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
-                            .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
+                        .AddCoreDiscordServices()
+                        .AddScoped<IAdminLogService, AdminLogService>()
+                        .AddScoped<IReplyService, ReplyService>()
+                        .AddScoped<IRoleMenuService, RoleMenuService>()
+                        .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
+                        .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
                     // Plugin registration
                     services.AddPlanetsidePlugin(c.Configuration);
-                    services.AddMusicPlugin();
+                services.AddMusicPlugin();
 
-                    services.AddHostedService<GenericWorker>()
-                            .AddHostedService<DbCleanupWorker>()
-                            .AddHostedService<TwitterWorker>();
-                });
-        }
+                services.AddHostedService<GenericWorker>()
+                        .AddHostedService<DbCleanupWorker>()
+                        .AddHostedService<TwitterWorker>();
+            });
+    }
 
-        /// <summary>
-        /// Gets the path to the specified file, assuming that it is in our appdata store.
-        /// </summary>
-        /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
-        /// <remarks>Data is stored in the local appdata.</remarks>
-        public static string GetAppdataFilePath(IFileSystem fileSystem, string? fileName)
-        {
-            string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            directory = fileSystem.Path.Combine(directory, "UVOCBot");
+    /// <summary>
+    /// Gets the path to the specified file, assuming that it is in our appdata store.
+    /// </summary>
+    /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
+    /// <remarks>Data is stored in the local appdata.</remarks>
+    public static string GetAppdataFilePath(IFileSystem fileSystem, string? fileName)
+    {
+        string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        directory = fileSystem.Path.Combine(directory, "UVOCBot");
 
-            if (!fileSystem.Directory.Exists(directory))
-                fileSystem.Directory.CreateDirectory(directory);
+        if (!fileSystem.Directory.Exists(directory))
+            fileSystem.Directory.CreateDirectory(directory);
 
-            if (fileName is not null)
-                return fileSystem.Path.Combine(directory, fileName);
-            else
-                return directory;
-        }
+        if (fileName is not null)
+            return fileSystem.Path.Combine(directory, fileName);
+        else
+            return directory;
+    }
 
 #if DEBUG
-        private static ILogger SetupLogging(IFileSystem fileSystem)
+    private static ILogger SetupLogging(IFileSystem fileSystem)
 #else
         private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
 #endif
-        {
-            LoggerConfiguration logConfig = new LoggerConfiguration()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
-                .Enrich.FromLogContext()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
+    {
+        LoggerConfiguration logConfig = new LoggerConfiguration()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 #if DEBUG
-            logConfig.MinimumLevel.Debug();
+        logConfig.MinimumLevel.Debug();
 #else
             logConfig.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
 
@@ -230,55 +230,54 @@ namespace UVOCBot
             }
 #endif
 
-            Log.Logger = logConfig.CreateLogger();
-            Log.Information("Appdata stored at {path}", GetAppdataFilePath(fileSystem, null));
+        Log.Logger = logConfig.CreateLogger();
+        Log.Information("Appdata stored at {path}", GetAppdataFilePath(fileSystem, null));
 
-            return Log.Logger;
-        }
+        return Log.Logger;
+    }
 
-        private static ITwitterClient TwitterClientFactory(IServiceProvider services)
+    private static ITwitterClient TwitterClientFactory(IServiceProvider services)
+    {
+        TwitterOptions options = services.GetRequiredService<IOptions<TwitterOptions>>().Value;
+
+        return new TwitterClient(new ConsumerOnlyCredentials
         {
-            TwitterOptions options = services.GetRequiredService<IOptions<TwitterOptions>>().Value;
+            ConsumerKey = options.Key,
+            ConsumerSecret = options.Secret,
+            BearerToken = options.BearerToken
+        });
+    }
 
-            return new TwitterClient(new ConsumerOnlyCredentials
+    private static IServiceCollection AddRemoraServices(this IServiceCollection services)
+    {
+        services.Configure<DiscordGatewayClientOptions>(
+            o =>
             {
-                ConsumerKey = options.Key,
-                ConsumerSecret = options.Secret,
-                BearerToken = options.BearerToken
+                o.Intents |= GatewayIntents.DirectMessages
+                    | GatewayIntents.GuildMessages
+                    | GatewayIntents.Guilds
+                    | GatewayIntents.GuildMembers;
             });
-        }
 
-        private static IServiceCollection AddRemoraServices(this IServiceCollection services)
-        {
-            services.Configure<DiscordGatewayClientOptions>(
-                o =>
-                {
-                    o.Intents |= GatewayIntents.DirectMessages
-                        | GatewayIntents.GuildMessages
-                        | GatewayIntents.Guilds
-                        | GatewayIntents.GuildMembers;
-                });
+        services.AddDiscordCommands(true)
+                .AddDiscordCaching();
 
-            services.AddDiscordCommands(true)
-                    .AddDiscordCaching();
+        services.AddResponder<ComponentInteractionResponder>()
+                .AddResponder<GuildCreateResponder>()
+                .AddResponder<GuildMemberResponder>()
+                .AddResponder<ReadyResponder>();
 
-            services.AddResponder<ComponentInteractionResponder>()
-                    .AddResponder<GuildCreateResponder>()
-                    .AddResponder<GuildMemberResponder>()
-                    .AddResponder<ReadyResponder>();
+        services.AddCommandGroup<AdminCommands>()
+                .AddCommandGroup<GeneralCommands>()
+                .AddCommandGroup<GroupCommands>()
+                .AddCommandGroup<MovementCommands>()
+                .AddCommandGroup<RoleCommands>()
+                .AddCommandGroup<RoleMenuCommands>()
+                .AddCommandGroup<TeamGenerationCommands>()
+                .AddCommandGroup<TimeCommands>()
+                .AddCommandGroup<TwitterCommands>()
+                .AddCommandGroup<WelcomeMessageCommands>();
 
-            services.AddCommandGroup<AdminCommands>()
-                    .AddCommandGroup<GeneralCommands>()
-                    .AddCommandGroup<GroupCommands>()
-                    .AddCommandGroup<MovementCommands>()
-                    .AddCommandGroup<RoleCommands>()
-                    .AddCommandGroup<RoleMenuCommands>()
-                    .AddCommandGroup<TeamGenerationCommands>()
-                    .AddCommandGroup<TimeCommands>()
-                    .AddCommandGroup<TwitterCommands>()
-                    .AddCommandGroup<WelcomeMessageCommands>();
-
-            return services;
-        }
+        return services;
     }
 }

@@ -9,51 +9,50 @@ using System.Threading.Tasks;
 using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Services.Abstractions;
 
-namespace UVOCBot.Responders
+namespace UVOCBot.Responders;
+
+public class GuildCreateResponder : IResponder<IGuildCreate>
 {
-    public class GuildCreateResponder : IResponder<IGuildCreate>
+    private readonly IVoiceStateCacheService _cache;
+    private readonly IDbApiService _dbApi;
+
+    public GuildCreateResponder(IVoiceStateCacheService cache, IDbApiService dbApi)
     {
-        private readonly IVoiceStateCacheService _cache;
-        private readonly IDbApiService _dbApi;
+        _cache = cache;
+        _dbApi = dbApi;
+    }
 
-        public GuildCreateResponder(IVoiceStateCacheService cache, IDbApiService dbApi)
+    public async Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
+    {
+        if (gatewayEvent.VoiceStates.HasValue)
         {
-            _cache = cache;
-            _dbApi = dbApi;
+            foreach (IPartialVoiceState voiceState in gatewayEvent.VoiceStates.Value.Where(v => v.ChannelID.HasValue))
+            {
+                VoiceState trueState = new(
+                    gatewayEvent.ID,
+                    voiceState.ChannelID.Value,
+                    voiceState.UserID.Value,
+                    voiceState.Member,
+                    voiceState.SessionID.Value,
+                    voiceState.IsDeafened.Value,
+                    voiceState.IsMuted.Value,
+                    voiceState.IsSelfDeafened.Value,
+                    voiceState.IsSelfMuted.Value,
+                    voiceState.IsStreaming,
+                    voiceState.IsVideoEnabled.Value,
+                    voiceState.IsSuppressed.Value,
+                    null);
+
+                _cache.Set(trueState);
+            }
         }
 
-        public async Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
+        Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(new ulong[] { gatewayEvent.ID.Value }, ct).ConfigureAwait(false);
+        if (!dbScaffoldResult.IsSuccess)
         {
-            if (gatewayEvent.VoiceStates.HasValue)
-            {
-                foreach (IPartialVoiceState voiceState in gatewayEvent.VoiceStates.Value.Where(v => v.ChannelID.HasValue))
-                {
-                    VoiceState trueState = new(
-                        gatewayEvent.ID,
-                        voiceState.ChannelID.Value,
-                        voiceState.UserID.Value,
-                        voiceState.Member,
-                        voiceState.SessionID.Value,
-                        voiceState.IsDeafened.Value,
-                        voiceState.IsMuted.Value,
-                        voiceState.IsSelfDeafened.Value,
-                        voiceState.IsSelfMuted.Value,
-                        voiceState.IsStreaming,
-                        voiceState.IsVideoEnabled.Value,
-                        voiceState.IsSuppressed.Value,
-                        null);
-
-                    _cache.Set(trueState);
-                }
-            }
-
-            Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(new ulong[] { gatewayEvent.ID.Value }, ct).ConfigureAwait(false);
-            if (!dbScaffoldResult.IsSuccess)
-            {
-                // TODO: Proper handling here
-            }
-
-            return dbScaffoldResult;
+            // TODO: Proper handling here
         }
+
+        return dbScaffoldResult;
     }
 }

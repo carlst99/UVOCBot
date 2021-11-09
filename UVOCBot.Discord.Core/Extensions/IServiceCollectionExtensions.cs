@@ -10,28 +10,27 @@ using UVOCBot.Discord.Core.Responders;
 using UVOCBot.Discord.Core.Services;
 using UVOCBot.Discord.Core.Services.Abstractions;
 
-namespace UVOCBot.Discord.Core.Extensions
+namespace UVOCBot.Discord.Core.Extensions;
+
+public static class IServiceCollectionExtensions
 {
-    public static class IServiceCollectionExtensions
+    public static IServiceCollection AddCoreDiscordServices(this IServiceCollection services)
     {
-        public static IServiceCollection AddCoreDiscordServices(this IServiceCollection services)
-        {
-            services.Configure<DiscordGatewayClientOptions>
-            (
-                o => o.Intents |= GatewayIntents.GuildVoiceStates
-            );
+        services.Configure<DiscordGatewayClientOptions>
+        (
+            o => o.Intents |= GatewayIntents.GuildVoiceStates
+        );
 
-            services.AddSingleton<IPermissionChecksService, PermissionChecksService>();
-            services.AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>();
+        services.AddSingleton<IPermissionChecksService, PermissionChecksService>();
+        services.AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>();
 
-            services.AddCondition<RequireContextCondition>();
-            services.AddCondition<RequireGuildPermissionCondition>();
+        services.AddCondition<RequireContextCondition>();
+        services.AddCondition<RequireGuildPermissionCondition>();
 
-            services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();
+        services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();
 
-            services.AddResponder<VoiceStateUpdateResponder>();
+        services.AddResponder<VoiceStateUpdateResponder>();
 
-            return services;
-        }
+        return services;
     }
 }

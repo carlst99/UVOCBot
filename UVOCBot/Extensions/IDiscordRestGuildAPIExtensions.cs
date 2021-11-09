@@ -8,66 +8,66 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Remora.Discord.API.Abstractions.Rest
+namespace Remora.Discord.API.Abstractions.Rest;
+
+public static class IDiscordRestGuildAPIExtensions
 {
-    public static class IDiscordRestGuildAPIExtensions
+    private const int MAX_MEMBER_PAGE_SIZE = 1000;
+
+    /// <summary>
+    /// Gets all the members of a guild.
+    /// </summary>
+    /// <param name="guildApi"></param>
+    /// <param name="guildID">The guild to list the members of.</param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(
+        this IDiscordRestGuildAPI guildApi,
+        Snowflake guildID,
+        [EnumeratorCancellation] CancellationToken ct = default)
     {
-        private const int MAX_MEMBER_PAGE_SIZE = 1000;
+        await foreach (Result<IReadOnlyList<IGuildMember>> element in GetAllMembersAsync(guildApi, guildID, (_) => true, ct).ConfigureAwait(false))
+            yield return element;
+    }
 
-        /// <summary>
-        /// Gets all the members of a guild.
-        /// </summary>
-        /// <param name="guildApi"></param>
-        /// <param name="guildID">The guild to list the members of.</param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(
-            this IDiscordRestGuildAPI guildApi,
-            Snowflake guildID,
-            [EnumeratorCancellation] CancellationToken ct = default)
+    /// <summary>
+    /// Gets all the members of a guild.
+    /// </summary>
+    /// <param name="guildApi"></param>
+    /// <param name="guildID">The guild to list the members of.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(
+        this IDiscordRestGuildAPI guildApi,
+        Snowflake guildID,
+        Func<IGuildMember, bool> predicate,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        Result<IReadOnlyList<IGuildMember>> members;
+        Snowflake afterID = new(0);
+
+        do
         {
-            await foreach (Result<IReadOnlyList<IGuildMember>> element in GetAllMembersAsync(guildApi, guildID, (_) => true, ct).ConfigureAwait(false))
-                yield return element;
-        }
+            members = await guildApi.ListGuildMembersAsync(guildID, MAX_MEMBER_PAGE_SIZE, afterID, ct).ConfigureAwait(false);
 
-        /// <summary>
-        /// Gets all the members of a guild.
-        /// </summary>
-        /// <param name="guildApi"></param>
-        /// <param name="guildID">The guild to list the members of.</param>
-        /// <param name="predicate">A function to test each element for a condition.</param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(
-            this IDiscordRestGuildAPI guildApi,
-            Snowflake guildID,
-            Func<IGuildMember, bool> predicate,
-            [EnumeratorCancellation] CancellationToken ct = default)
-        {
-            Result<IReadOnlyList<IGuildMember>> members;
-            Snowflake afterID = new(0);
-
-            do
+            if (!members.IsSuccess)
             {
-                members = await guildApi.ListGuildMembersAsync(guildID, MAX_MEMBER_PAGE_SIZE, afterID, ct).ConfigureAwait(false);
+                yield return members;
+                yield break;
+            }
+            else
+            {
+                yield return members.Entity.Where(predicate).ToList().AsReadOnly();
+            }
 
-                if (!members.IsSuccess)
-                {
-                    yield return members;
-                    yield break;
-                } else
-                {
-                    yield return members.Entity.Where(predicate).ToList().AsReadOnly();
-                }
-
-                afterID = members.Entity.Max(u =>
-                {
-                    if (u.User.HasValue)
-                        return u.User.Value.ID;
-                    else
-                        return new Snowflake(0);
-                });
-            } while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
-        }
+            afterID = members.Entity.Max(u =>
+            {
+                if (u.User.HasValue)
+                    return u.User.Value.ID;
+                else
+                    return new Snowflake(0);
+            });
+        } while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
     }
 }

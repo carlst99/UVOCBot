@@ -1,22 +1,21 @@
 ﻿using Remora.Results;
 
-namespace UVOCBot.Discord.Core.Errors
+namespace UVOCBot.Discord.Core.Errors;
+
+public record GenericCommandError : ResultError
 {
-    public record GenericCommandError : ResultError
+    public GenericCommandError()
+        : base(DiscordConstants.GENERIC_ERROR_MESSAGE)
     {
-        public GenericCommandError()
-            : base(DiscordConstants.GENERIC_ERROR_MESSAGE)
-        {
-        }
+    }
 
-        public GenericCommandError(string Message)
-            : base(Message)
-        {
-        }
+    public GenericCommandError(string Message)
+        : base(Message)
+    {
+    }
 
-        public GenericCommandError(ResultError original)
-            : base(original)
-        {
-        }
+    public GenericCommandError(ResultError original)
+        : base(original)
+    {
     }
 }

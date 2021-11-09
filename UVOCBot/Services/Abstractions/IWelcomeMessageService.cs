@@ -3,13 +3,12 @@ using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Services.Abstractions
+namespace UVOCBot.Services.Abstractions;
+
+public interface IWelcomeMessageService
 {
-    public interface IWelcomeMessageService
-    {
-        Task<Result> SendWelcomeMessage(IGuildMemberAdd gatewayEvent, CancellationToken ct = default);
-        Task<Result> SetAlternateRoles(CancellationToken ct = default);
-        Task<Result> SetNicknameFromGuess(CancellationToken ct = default);
-        Task<Result> InformNicknameNoMatch(CancellationToken ct = default);
-    }
+    Task<Result> SendWelcomeMessage(IGuildMemberAdd gatewayEvent, CancellationToken ct = default);
+    Task<Result> SetAlternateRoles(CancellationToken ct = default);
+    Task<Result> SetNicknameFromGuess(CancellationToken ct = default);
+    Task<Result> InformNicknameNoMatch(CancellationToken ct = default);
 }

@@ -1,33 +1,32 @@
 ﻿using DbgCensus.EventStream.Commands;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
-namespace UVOCBot.Plugins.Planetside.Services
+namespace UVOCBot.Plugins.Planetside.Services;
+
+/// <inheritdoc cref="ISubscriptionBuilderService"/>
+public class SubscriptionBuilderService : ISubscriptionBuilderService
 {
-    /// <inheritdoc cref="ISubscriptionBuilderService"/>
-    public class SubscriptionBuilderService : ISubscriptionBuilderService
+    /// <inheritdoc />
+    public virtual Task<SubscribeCommand> BuildAsync(CancellationToken ct = default)
     {
-        /// <inheritdoc />
-        public virtual Task<SubscribeCommand> BuildAsync(CancellationToken ct = default)
-        {
-            return Task.FromResult
+        return Task.FromResult
+        (
+            new SubscribeCommand
             (
-                new SubscribeCommand
-                (
-                    new string[] { "all" },
-                    new string[]
-                    {
+                new string[] { "all" },
+                new string[]
+                {
                         EventStreamConstants.FACILITY_CONTROL_EVENT,
                         EventStreamConstants.METAGAME_EVENT_EVENT
-                    },
-                    worlds: new string[] { "all" }
-                )
-            );
-        }
+                },
+                worlds: new string[] { "all" }
+            )
+        );
+    }
 
-        /// <inheritdoc />
-        public Task RefreshAsync(CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
+    /// <inheritdoc />
+    public Task RefreshAsync(CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -17,78 +17,77 @@ using UVOCBot.Discord.Core;
 using UVOCBot.Model;
 using UVOCBot.Services.Abstractions;
 
-namespace UVOCBot.Services
+namespace UVOCBot.Services;
+
+public class AdminLogService : IAdminLogService
 {
-    public class AdminLogService : IAdminLogService
+    private readonly DiscordContext _dbContext;
+    private readonly IDiscordRestChannelAPI _channelApi;
+
+    public AdminLogService(DiscordContext dbContext, IDiscordRestChannelAPI channelApi)
     {
-        private readonly DiscordContext _dbContext;
-        private readonly IDiscordRestChannelAPI _channelApi;
+        _dbContext = dbContext;
+        _channelApi = channelApi;
+    }
 
-        public AdminLogService(DiscordContext dbContext, IDiscordRestChannelAPI channelApi)
-        {
-            _dbContext = dbContext;
-            _channelApi = channelApi;
-        }
-
-        public async Task<Result> LogMemberJoin(IGuildMemberAdd member, CancellationToken ct = default)
-        {
-            if (!member.User.HasValue || member.User.Value is null)
-                return Result.FromSuccess();
-            IUser user = member.User.Value;
-
-            Result<Snowflake> canLogToChannel = await CheckCanLog(member.GuildID, AdminLogTypes.MemberJoin, ct).ConfigureAwait(false);
-            if (!canLogToChannel.IsSuccess)
-                return Result.FromSuccess();
-
-            Embed e = new()
-            {
-                Title = Formatter.Bold("A member has joined: ") + user.Username,
-                Colour = Color.Green,
-                Timestamp = DateTimeOffset.UtcNow
-            };
-
-            Result<Uri> userAvatar = CDN.GetUserAvatarUrl(user);
-            if (userAvatar.IsSuccess)
-                e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri, Height: 64, Width: 64) };
-
-            _ = _channelApi.CreateMessageAsync(canLogToChannel.Entity, embeds: new List<IEmbed> { e }, ct: ct);
-
+    public async Task<Result> LogMemberJoin(IGuildMemberAdd member, CancellationToken ct = default)
+    {
+        if (!member.User.HasValue || member.User.Value is null)
             return Result.FromSuccess();
-        }
+        IUser user = member.User.Value;
 
-        public async Task<Result> LogMemberLeave(IGuildMemberRemove user, CancellationToken ct = default)
-        {
-            Result<Snowflake> canLogToChannel = await CheckCanLog(user.GuildID, AdminLogTypes.MemberLeave, ct).ConfigureAwait(false);
-            if (!canLogToChannel.IsSuccess)
-                return Result.FromSuccess();
-
-            Embed e = new()
-            {
-                Title = Formatter.Bold("A member has left: ") + user.User.Username,
-                Colour = Color.Red,
-                Timestamp = DateTimeOffset.UtcNow
-            };
-
-            Result<Uri> userAvatar = CDN.GetUserAvatarUrl(user.User);
-            if (userAvatar.IsSuccess)
-                e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri, Height: 64, Width: 64) };
-
-            _ = _channelApi.CreateMessageAsync(canLogToChannel.Entity, embeds: new List<IEmbed> { e }, ct: ct);
-
+        Result<Snowflake> canLogToChannel = await CheckCanLog(member.GuildID, AdminLogTypes.MemberJoin, ct).ConfigureAwait(false);
+        if (!canLogToChannel.IsSuccess)
             return Result.FromSuccess();
-        }
 
-        private async Task<Result<Snowflake>> CheckCanLog(Snowflake guildId, AdminLogTypes logType, CancellationToken ct = default)
+        Embed e = new()
         {
-            GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(guildId.Value, ct).ConfigureAwait(false);
+            Title = Formatter.Bold("A member has joined: ") + user.Username,
+            Colour = Color.Green,
+            Timestamp = DateTimeOffset.UtcNow
+        };
 
-            if (settings.LoggingChannelId is null)
-                return new Exception("No logging channel has been set.");
+        Result<Uri> userAvatar = CDN.GetUserAvatarUrl(user);
+        if (userAvatar.IsSuccess)
+            e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri, Height: 64, Width: 64) };
 
-            if ((settings.LogTypes & (ulong)logType) != 0 || logType == AdminLogTypes.None) // Allow none through for non log-event logging
-                return new Snowflake(settings.LoggingChannelId.Value);
-            else
-                return new Exception("That logging type hasn't been enabled for the given guild.");
-        }
+        _ = _channelApi.CreateMessageAsync(canLogToChannel.Entity, embeds: new List<IEmbed> { e }, ct: ct);
+
+        return Result.FromSuccess();
+    }
+
+    public async Task<Result> LogMemberLeave(IGuildMemberRemove user, CancellationToken ct = default)
+    {
+        Result<Snowflake> canLogToChannel = await CheckCanLog(user.GuildID, AdminLogTypes.MemberLeave, ct).ConfigureAwait(false);
+        if (!canLogToChannel.IsSuccess)
+            return Result.FromSuccess();
+
+        Embed e = new()
+        {
+            Title = Formatter.Bold("A member has left: ") + user.User.Username,
+            Colour = Color.Red,
+            Timestamp = DateTimeOffset.UtcNow
+        };
+
+        Result<Uri> userAvatar = CDN.GetUserAvatarUrl(user.User);
+        if (userAvatar.IsSuccess)
+            e = e with { Thumbnail = new EmbedThumbnail(userAvatar.Entity.AbsoluteUri, Height: 64, Width: 64) };
+
+        _ = _channelApi.CreateMessageAsync(canLogToChannel.Entity, embeds: new List<IEmbed> { e }, ct: ct);
+
+        return Result.FromSuccess();
+    }
+
+    private async Task<Result<Snowflake>> CheckCanLog(Snowflake guildId, AdminLogTypes logType, CancellationToken ct = default)
+    {
+        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(guildId.Value, ct).ConfigureAwait(false);
+
+        if (settings.LoggingChannelId is null)
+            return new Exception("No logging channel has been set.");
+
+        if ((settings.LogTypes & (ulong)logType) != 0 || logType == AdminLogTypes.None) // Allow none through for non log-event logging
+            return new Snowflake(settings.LoggingChannelId.Value);
+        else
+            return new Exception("That logging type hasn't been enabled for the given guild.");
     }
 }

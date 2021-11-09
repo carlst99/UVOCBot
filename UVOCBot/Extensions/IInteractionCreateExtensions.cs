@@ -2,46 +2,45 @@
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
 
-namespace Remora.Discord.API.Abstractions.Gateway.Events
+namespace Remora.Discord.API.Abstractions.Gateway.Events;
+
+public static class IInteractionCreateExtensions
 {
-    public static class IInteractionCreateExtensions
+    public static Result<InteractionContext> ToInteractionContext(this IInteractionCreate gatewayEvent)
     {
-        public static Result<InteractionContext> ToInteractionContext(this IInteractionCreate gatewayEvent)
-        {
-            IUser? user = gatewayEvent.User.HasValue
-                ? gatewayEvent.User.Value
-                : gatewayEvent.Member.HasValue
-                    ? gatewayEvent.Member.Value.User.HasValue
-                        ? gatewayEvent.Member.Value.User.Value
-                        : null
-                    : null;
+        IUser? user = gatewayEvent.User.HasValue
+            ? gatewayEvent.User.Value
+            : gatewayEvent.Member.HasValue
+                ? gatewayEvent.Member.Value.User.HasValue
+                    ? gatewayEvent.Member.Value.User.Value
+                    : null
+                : null;
 
-            if (user is null)
-                return Result<InteractionContext>.FromError(Result.FromSuccess()); // Lazy man's way of getting around no generic error class and having to work with this silly Results infrastructure
+        if (user is null)
+            return Result<InteractionContext>.FromError(Result.FromSuccess()); // Lazy man's way of getting around no generic error class and having to work with this silly Results infrastructure
 
-            IInteractionData interactionData = gatewayEvent.Data.Value!;
-            InteractionContext context = new
-            (
-                gatewayEvent.GuildID,
-                gatewayEvent.ChannelID.Value,
-                user,
-                gatewayEvent.Member,
-                gatewayEvent.Token,
-                gatewayEvent.ID,
-                gatewayEvent.ApplicationID,
-                interactionData
-            );
+        IInteractionData interactionData = gatewayEvent.Data.Value!;
+        InteractionContext context = new
+        (
+            gatewayEvent.GuildID,
+            gatewayEvent.ChannelID.Value,
+            user,
+            gatewayEvent.Member,
+            gatewayEvent.Token,
+            gatewayEvent.ID,
+            gatewayEvent.ApplicationID,
+            interactionData
+        );
 
-            return Result<InteractionContext>.FromSuccess(context);
-        }
-
-        public static IUser? GetUser(this IInteractionCreate gatewayEvent)
-            => gatewayEvent.User.HasValue
-                ? gatewayEvent.User.Value
-                : gatewayEvent.Member.HasValue
-                    ? gatewayEvent.Member.Value.User.HasValue
-                        ? gatewayEvent.Member.Value.User.Value
-                        : null
-                    : null;
+        return Result<InteractionContext>.FromSuccess(context);
     }
+
+    public static IUser? GetUser(this IInteractionCreate gatewayEvent)
+        => gatewayEvent.User.HasValue
+            ? gatewayEvent.User.Value
+            : gatewayEvent.Member.HasValue
+                ? gatewayEvent.Member.Value.User.HasValue
+                    ? gatewayEvent.Member.Value.User.Value
+                    : null
+                : null;
 }

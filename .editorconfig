@@ -128,7 +128,7 @@ dotnet_style_qualification_for_method = false:suggestion
 #prefer properties not to be prefaced with this. or Me. in Visual Basic
 dotnet_style_qualification_for_property = false:suggestion
 insert_final_newline=true
-csharp_style_namespace_declarations=block_scoped:warning
+csharp_style_namespace_declarations=file_scoped:warning
 
 [*.{cs,vb}]
 end_of_line=crlf

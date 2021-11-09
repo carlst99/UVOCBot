@@ -14,82 +14,81 @@ using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Services.Abstractions;
 
-namespace UVOCBot.Responders
+namespace UVOCBot.Responders;
+
+public class ComponentInteractionResponder : IResponder<IInteractionCreate>
 {
-    public class ComponentInteractionResponder : IResponder<IInteractionCreate>
+    private readonly IDiscordRestInteractionAPI _interactionApi;
+    private readonly IServiceProvider _services;
+    private readonly ContextInjectionService _contextInjectionService;
+    private readonly FeedbackService _feedbackService;
+
+    public ComponentInteractionResponder(
+        IDiscordRestInteractionAPI interactionApi,
+        IServiceProvider services,
+        ContextInjectionService contextInjectionService,
+        FeedbackService feedbackService)
     {
-        private readonly IDiscordRestInteractionAPI _interactionApi;
-        private readonly IServiceProvider _services;
-        private readonly ContextInjectionService _contextInjectionService;
-        private readonly FeedbackService _feedbackService;
+        _interactionApi = interactionApi;
+        _services = services;
+        _contextInjectionService = contextInjectionService;
+        _feedbackService = feedbackService;
+    }
 
-        public ComponentInteractionResponder(
-            IDiscordRestInteractionAPI interactionApi,
-            IServiceProvider services,
-            ContextInjectionService contextInjectionService,
-            FeedbackService feedbackService)
+    public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
+    {
+        if (gatewayEvent.Type != InteractionType.MessageComponent)
+            return Result.FromSuccess();
+
+        if (gatewayEvent.Data.Value is null)
+            return Result.FromSuccess();
+
+        // Get the user who initiated the interaction
+        IUser? user = gatewayEvent.GetUser();
+        if (user is null)
+            return Result.FromSuccess();
+
+        var response = new InteractionResponse
+        (
+            InteractionCallbackType.DeferredChannelMessageWithSource,
+            new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
+        );
+
+        Result createInteractionResponse = await _interactionApi.CreateInteractionResponseAsync
+        (
+            gatewayEvent.ID,
+            gatewayEvent.Token,
+            response,
+            default,
+            ct
+        ).ConfigureAwait(false);
+
+        if (!createInteractionResponse.IsSuccess)
+            return createInteractionResponse;
+
+        // Provide the created context to any services inside this scope
+        Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
+        if (!context.IsSuccess)
+            return Result.FromError(context);
+        _contextInjectionService.Context = context.Entity;
+
+        if (gatewayEvent.Data.Value.CustomID.Value is null)
+            return Result.FromSuccess();
+
+        ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out ComponentAction action, out string _);
+
+        // Resolve the service here so that our interaction context is properly injected
+        IWelcomeMessageService welcomeMessageService = _services.GetRequiredService<IWelcomeMessageService>();
+        IRoleMenuService roleMenuService = _services.GetRequiredService<IRoleMenuService>();
+
+        return action switch
         {
-            _interactionApi = interactionApi;
-            _services = services;
-            _contextInjectionService = contextInjectionService;
-            _feedbackService = feedbackService;
-        }
-
-        public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
-        {
-            if (gatewayEvent.Type != InteractionType.MessageComponent)
-                return Result.FromSuccess();
-
-            if (gatewayEvent.Data.Value is null)
-                return Result.FromSuccess();
-
-            // Get the user who initiated the interaction
-            IUser? user = gatewayEvent.GetUser();
-            if (user is null)
-                return Result.FromSuccess();
-
-            var response = new InteractionResponse
-            (
-                InteractionCallbackType.DeferredChannelMessageWithSource,
-                new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
-            );
-
-            Result createInteractionResponse = await _interactionApi.CreateInteractionResponseAsync
-            (
-                gatewayEvent.ID,
-                gatewayEvent.Token,
-                response,
-                default,
-                ct
-            ).ConfigureAwait(false);
-
-            if (!createInteractionResponse.IsSuccess)
-                return createInteractionResponse;
-
-            // Provide the created context to any services inside this scope
-            Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
-            if (!context.IsSuccess)
-                return Result.FromError(context);
-            _contextInjectionService.Context = context.Entity;
-
-            if (gatewayEvent.Data.Value.CustomID.Value is null)
-                return Result.FromSuccess();
-
-            ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out ComponentAction action, out string _);
-
-            // Resolve the service here so that our interaction context is properly injected
-            IWelcomeMessageService welcomeMessageService = _services.GetRequiredService<IWelcomeMessageService>();
-            IRoleMenuService roleMenuService = _services.GetRequiredService<IRoleMenuService>();
-
-            return action switch
-            {
-                ComponentAction.WelcomeMessageSetAlternate => await welcomeMessageService.SetAlternateRoles(ct).ConfigureAwait(false),
-                ComponentAction.WelcomeMessageNicknameGuess => await welcomeMessageService.SetNicknameFromGuess(ct).ConfigureAwait(false),
-                ComponentAction.WelcomeMessageNicknameNoMatch => await welcomeMessageService.InformNicknameNoMatch(ct).ConfigureAwait(false),
-                ComponentAction.RoleMenuToggleRole => await roleMenuService.ToggleRolesAsync(ct).ConfigureAwait(false),
-                ComponentAction.RoleMenuConfirmRemoveRole => await roleMenuService.ConfirmRemoveRolesAsync(ct).ConfigureAwait(false),
-                _ => Result.FromError(await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: ct).ConfigureAwait(false))
-            };
-        }
+            ComponentAction.WelcomeMessageSetAlternate => await welcomeMessageService.SetAlternateRoles(ct).ConfigureAwait(false),
+            ComponentAction.WelcomeMessageNicknameGuess => await welcomeMessageService.SetNicknameFromGuess(ct).ConfigureAwait(false),
+            ComponentAction.WelcomeMessageNicknameNoMatch => await welcomeMessageService.InformNicknameNoMatch(ct).ConfigureAwait(false),
+            ComponentAction.RoleMenuToggleRole => await roleMenuService.ToggleRolesAsync(ct).ConfigureAwait(false),
+            ComponentAction.RoleMenuConfirmRemoveRole => await roleMenuService.ConfirmRemoveRolesAsync(ct).ConfigureAwait(false),
+            _ => Result.FromError(await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: ct).ConfigureAwait(false))
+        };
     }
 }

@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using System;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 using UVOCBot.Plugins.Planetside.Objects.EventStream;

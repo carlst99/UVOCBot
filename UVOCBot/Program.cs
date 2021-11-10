@@ -169,7 +169,7 @@ public static class Program
 
                     // Plugin registration
                     services.AddPlanetsidePlugin(c.Configuration);
-                services.AddMusicPlugin();
+                    services.AddMusicPlugin();
 
                 services.AddHostedService<GenericWorker>()
                         .AddHostedService<DbCleanupWorker>()

@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using static UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map.Map;
 

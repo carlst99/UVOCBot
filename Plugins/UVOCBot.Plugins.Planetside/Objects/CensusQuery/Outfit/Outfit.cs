@@ -1,4 +1,6 @@
-﻿namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+﻿using System;
+
+namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
 /// <summary>
 /// Initialises a new instance of the <see cref="Outfit"/> record.

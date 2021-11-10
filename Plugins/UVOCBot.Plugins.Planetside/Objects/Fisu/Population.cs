@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using System.Collections.Generic;
 
 namespace UVOCBot.Plugins.Planetside.Objects.Fisu;
 

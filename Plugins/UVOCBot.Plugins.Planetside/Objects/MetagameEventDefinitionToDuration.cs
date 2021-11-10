@@ -1,12 +1,12 @@
-﻿using MED = UVOCBot.Plugins.Planetside.Objects.CensusCommon.MetagameEventDefinition;
+﻿using System;
+using MED = UVOCBot.Plugins.Planetside.Objects.CensusCommon.MetagameEventDefinition;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
 public static class MetagameEventDefinitionToDuration
 {
     public static TimeSpan GetDuration(MED definition)
-    {
-        return definition switch
+        => definition switch
         {
             MED.NCMeltdownAmerish or MED.TRMeltdownAmerish or MED.VSMeltdownAmerish => TimeSpan.FromMinutes(90),
             MED.NCMeltdownEsamir or MED.TRMeltdownEsamir or MED.VSMeltdownEsamir => TimeSpan.FromMinutes(90),
@@ -21,5 +21,4 @@ public static class MetagameEventDefinitionToDuration
             MED.ConquestKoltyr => TimeSpan.FromMinutes(45),
             _ => TimeSpan.FromMinutes(45)
         };
-    }
 }

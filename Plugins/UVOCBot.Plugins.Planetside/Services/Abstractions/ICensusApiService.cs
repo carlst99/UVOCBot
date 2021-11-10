@@ -1,4 +1,7 @@
 ﻿using Remora.Results;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;

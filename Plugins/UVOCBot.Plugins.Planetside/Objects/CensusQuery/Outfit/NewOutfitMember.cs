@@ -1,4 +1,5 @@
-﻿using static UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit.NewOutfitMember;
+﻿using System;
+using static UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit.NewOutfitMember;
 
 namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 

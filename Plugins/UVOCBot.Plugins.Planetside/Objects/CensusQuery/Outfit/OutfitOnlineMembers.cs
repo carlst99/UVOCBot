@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using static UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit.OutfitOnlineMembers;
 
 namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;

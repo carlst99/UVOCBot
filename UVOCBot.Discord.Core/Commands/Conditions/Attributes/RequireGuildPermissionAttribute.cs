@@ -1,5 +1,6 @@
 ﻿using Remora.Commands.Conditions;
 using Remora.Discord.API.Abstractions.Objects;
+using System;
 
 namespace UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 

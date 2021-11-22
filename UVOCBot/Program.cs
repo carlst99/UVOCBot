@@ -123,8 +123,8 @@ public static class Program
             .UseSystemd()
             .ConfigureServices((c, services) =>
             {
-                    // Setup configuration bindings
-                    IConfigurationSection dbConfigSection = c.Configuration.GetSection(nameof(DatabaseOptions));
+                // Setup configuration bindings
+                IConfigurationSection dbConfigSection = c.Configuration.GetSection(nameof(DatabaseOptions));
                 DatabaseOptions dbOptions = new();
                 dbConfigSection.Bind(dbOptions);
 
@@ -142,7 +142,7 @@ public static class Program
                         )
 #if DEBUG
                             .EnableSensitiveDataLogging()
-                        .EnableDetailedErrors()
+                            .EnableDetailedErrors()
 #endif
                             ;
                     },

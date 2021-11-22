@@ -6,7 +6,7 @@ using static UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map.Map;
 namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 
 /// <summary>
-/// Initialises a new instance of the <see cref="Map"/> record.=
+/// Initialises a new instance of the <see cref="Map"/> record.
 /// </summary>
 /// <param name="ZoneID">The ID of the zone that this map represents.</param>
 /// <param name="Regions">The region model of the map.</param>

@@ -12,7 +12,7 @@ namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 /// <param name="Regions">The region model of the map.</param>
 public record Map
 (
-    [property: JsonPropertyName("ZoneId")] ZoneId ZoneID,
+    [property: JsonPropertyName("ZoneId")] ZoneID ZoneID,
     [property: JsonPropertyName("Regions")] RegionModel Regions
 )
 {
@@ -30,6 +30,6 @@ public record Map
     public record RowDataModel
     (
         [property: JsonPropertyName("RegionId")] int RegionID,
-        [property: JsonPropertyName("FactionId")] Faction FactionID
+        [property: JsonPropertyName("FactionId")] FactionDefinition FactionID
     );
 }

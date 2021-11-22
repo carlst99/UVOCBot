@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using DbgCensus.EventStream.Objects.Events.Worlds;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
 using Remora.Results;
 using System;
@@ -7,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
-using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Workers;

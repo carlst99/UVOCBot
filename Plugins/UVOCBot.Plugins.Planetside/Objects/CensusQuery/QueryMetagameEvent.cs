@@ -1,7 +1,6 @@
 ﻿using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Objects.Events.Worlds;
 using System;
-using UVOCBot.Plugins.Planetside.Objects.CensusCommon;
-using UVOCBot.Plugins.Planetside.Objects.EventStream;
 
 namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 
@@ -39,19 +38,17 @@ public record QueryMetagameEvent
 )
 {
     public MetagameEvent ToEventStreamMetagameEvent()
-    {
-        return new MetagameEvent
+        => new
         (
-            EventType,
-            Timestamp,
-            WorldID,
             ExperienceBonus,
+            EventType,
             FactionNC,
             FactionTR,
             FactionVS,
             MetagameEventID,
             MetagameEventState,
-            new ZoneId(ZoneID, InstanceID)
+            Timestamp,
+            WorldID,
+            new ZoneID(ZoneID, InstanceID)
         );
-    }
 }

@@ -1,5 +1,5 @@
 ﻿using DbgCensus.EventStream.Abstractions;
-using DbgCensus.EventStream.Commands;
+using DbgCensus.EventStream.Abstractions.Objects.Commands;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -36,7 +36,7 @@ public class SubscriptionWorker : BackgroundService
 
                 if (client.IsRunning)
                 {
-                    SubscribeCommand subscription = await _subscriptionBuilder.BuildAsync(ct).ConfigureAwait(false);
+                    ISubscribe subscription = await _subscriptionBuilder.BuildAsync(ct).ConfigureAwait(false);
                     await client.SendCommandAsync(subscription, ct).ConfigureAwait(false);
                 }
             }

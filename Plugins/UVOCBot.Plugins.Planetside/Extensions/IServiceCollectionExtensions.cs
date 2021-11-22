@@ -9,7 +9,6 @@ using Remora.Commands.Extensions;
 using UVOCBot.Plugins.Planetside;
 using UVOCBot.Plugins.Planetside.CensusEventHandlers;
 using UVOCBot.Plugins.Planetside.Commands;
-using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Services;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 using UVOCBot.Plugins.Planetside.Workers;
@@ -45,9 +44,9 @@ public static class IServiceCollectionExtensions
 
         services.AddCensusEventHandlingServices();
         services.AddSingleton<ISubscriptionBuilderService, SubscriptionBuilderService>();
-        services.AddEventHandler<ConnectionStateChangedResponder>();
-        services.AddEventHandler<FacilityControlResponder, FacilityControl>(EventStreamConstants.FACILITY_CONTROL_EVENT);
-        services.AddEventHandler<MetagameEventResponder, MetagameEvent>(EventStreamConstants.METAGAME_EVENT_EVENT);
+        services.AddPayloadHandler<ConnectionStateChangedResponder>();
+        services.AddPayloadHandler<FacilityControlResponder>();
+        services.AddPayloadHandler<MetagameEventResponder>();
 
         services.AddCommandGroup<OtherCommands>();
         services.AddCommandGroup<OutfitTrackingCommands>();

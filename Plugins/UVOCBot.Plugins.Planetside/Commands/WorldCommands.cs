@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
 using Microsoft.Extensions.Caching.Memory;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
@@ -17,10 +18,7 @@ using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.CensusCommon;
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
-using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Objects.Fisu;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
@@ -195,10 +193,10 @@ public class WorldCommands : CommandGroup
             return result;
         }
 
-        double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != Faction.None);
-        double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == Faction.NC) / regionCount) * 100;
-        double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == Faction.TR) / regionCount) * 100;
-        double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == Faction.VS) / regionCount) * 100;
+        double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != FactionDefinition.None);
+        double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.NC) / regionCount) * 100;
+        double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.TR) / regionCount) * 100;
+        double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.VS) / regionCount) * 100;
 
         string title = map.ZoneID.Definition switch
         {
@@ -211,10 +209,10 @@ public class WorldCommands : CommandGroup
         };
 
         object cacheKey = CacheKeyHelpers.GetMetagameEventKey(world, map.ZoneID.Definition);
-        if (_cache.TryGetValue(cacheKey, out MetagameEvent? metagameEvent) && metagameEvent!.EventState is MetagameEventState.Started)
+        if (_cache.TryGetValue(cacheKey, out IMetagameEvent? metagameEvent) && metagameEvent!.MetagameEventState is MetagameEventState.Started)
         {
             TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
-            TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.EventDefinition) - currentEventDuration;
+            TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.MetagameEventID) - currentEventDuration;
             title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
         }
         else

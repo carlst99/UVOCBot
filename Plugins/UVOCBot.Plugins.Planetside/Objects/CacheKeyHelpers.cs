@@ -1,19 +1,19 @@
 ﻿using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
 using System;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Objects.Fisu;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
 public static class CacheKeyHelpers
 {
-    public static object GetMetagameEventKey(MetagameEvent metagameEvent)
+    public static object GetMetagameEventKey(IMetagameEvent metagameEvent)
         => GetMetagameEventKey(metagameEvent.WorldID, metagameEvent.ZoneID.Definition);
 
     public static object GetMetagameEventKey(WorldDefinition worldDefinition, ZoneDefinition zoneDefinition)
-        => (typeof(MetagameEvent), (uint)worldDefinition, (uint)zoneDefinition);
+        => (typeof(IMetagameEvent), (uint)worldDefinition, (uint)zoneDefinition);
 
     public static object GetOutfitKey(Outfit outfit)
         => GetOutfitKey(outfit.OutfitId);

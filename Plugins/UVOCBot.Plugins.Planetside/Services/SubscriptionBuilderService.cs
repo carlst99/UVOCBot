@@ -1,4 +1,6 @@
-﻿using DbgCensus.EventStream.Commands;
+﻿using DbgCensus.EventStream.Abstractions.Objects.Commands;
+using DbgCensus.EventStream.Abstractions.Objects.Events;
+using DbgCensus.EventStream.Objects.Commands;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,22 +12,20 @@ namespace UVOCBot.Plugins.Planetside.Services;
 public class SubscriptionBuilderService : ISubscriptionBuilderService
 {
     /// <inheritdoc />
-    public virtual Task<SubscribeCommand> BuildAsync(CancellationToken ct = default)
-    {
-        return Task.FromResult
+    public virtual Task<ISubscribe> BuildAsync(CancellationToken ct = default)
+        => Task.FromResult
         (
-            new SubscribeCommand
+            (ISubscribe)new Subscribe
             (
                 new string[] { "all" },
                 new string[]
                 {
-                        EventStreamConstants.FACILITY_CONTROL_EVENT,
-                        EventStreamConstants.METAGAME_EVENT_EVENT
+                        EventNames.FacilityControl,
+                        EventNames.MetagameEvent
                 },
-                worlds: new string[] { "all" }
+                Worlds: new string[] { "all" }
             )
         );
-    }
 
     /// <inheritdoc />
     public Task RefreshAsync(CancellationToken ct = default)

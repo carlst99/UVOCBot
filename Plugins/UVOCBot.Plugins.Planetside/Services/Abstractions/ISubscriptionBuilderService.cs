@@ -1,4 +1,4 @@
-﻿using DbgCensus.EventStream.Commands;
+﻿using DbgCensus.EventStream.Abstractions.Objects.Commands;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,7 +14,7 @@ public interface ISubscriptionBuilderService
     /// </summary>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task<SubscribeCommand> BuildAsync(CancellationToken ct = default);
+    Task<ISubscribe> BuildAsync(CancellationToken ct = default);
 
     /// <summary>
     /// Forces the subscription to be refreshed.

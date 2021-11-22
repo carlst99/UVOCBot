@@ -1,5 +1,5 @@
 ﻿using System;
-using MED = UVOCBot.Plugins.Planetside.Objects.CensusCommon.MetagameEventDefinition;
+using MED = DbgCensus.Core.Objects.MetagameEventDefinition;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 

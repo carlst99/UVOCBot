@@ -19,7 +19,7 @@ namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 public record MapRegion
 (
     uint MapRegionID,
-    ZoneId ZoneID,
+    ZoneID ZoneID,
     uint? FacilityID,
     string FacilityName,
     FacilityType? FacilityTypeID,

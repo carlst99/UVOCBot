@@ -1,5 +1,5 @@
-﻿using DbgCensus.EventStream.EventHandlers.Abstractions;
-using DbgCensus.EventStream.EventHandlers.Objects.Event;
+﻿using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
+using DbgCensus.EventStream.EventHandlers.Abstractions;
 using Microsoft.Extensions.Caching.Memory;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -16,12 +16,11 @@ using UVOCBot.Discord.Core;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.EventStream;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
 
-internal sealed class FacilityControlResponder : ICensusEventHandler<ServiceMessage<FacilityControl>>
+internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityControl>
 {
     private readonly DiscordContext _dbContext;
     private readonly IMemoryCache _cache;
@@ -40,36 +39,34 @@ internal sealed class FacilityControlResponder : ICensusEventHandler<ServiceMess
         _channelApi = channelApi;
     }
 
-    public async Task HandleAsync(ServiceMessage<FacilityControl> censusEvent, CancellationToken ct = default)
+    public async Task HandleAsync(IFacilityControl censusEvent, CancellationToken ct = default)
     {
-        FacilityControl controlEvent = censusEvent.Payload;
-
         // Shouldn't report same-faction control events (i.e. point defenses).
-        if (controlEvent.OldFactionId == controlEvent.NewFactionId)
+        if (censusEvent.OldFactionID == censusEvent.NewFactionID)
             return;
 
-        if (controlEvent.OutfitID is null || controlEvent.OutfitID == 0)
+        if (censusEvent.OutfitID == 0)
             return;
 
         IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
             .Where(s => s.BaseCaptureChannelId != null)
             .AsEnumerable()
-            .Where(s => s.TrackedOutfits.Contains(censusEvent.Payload.OutfitID!.Value));
+            .Where(s => s.TrackedOutfits.Contains(censusEvent.OutfitID));
 
         if (!validPSettings.Any())
             return;
 
-        Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(controlEvent.OutfitID.Value, ct).ConfigureAwait(false);
+        Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(censusEvent.OutfitID, ct).ConfigureAwait(false);
         if (!getOutfitResult.IsDefined())
             return;
         Outfit outfit = getOutfitResult.Entity;
 
-        Result<MapRegion?> getFacilityResult = await _censusApi.GetFacilityRegionAsync(controlEvent.FacilityId, ct).ConfigureAwait(false);
+        Result<MapRegion?> getFacilityResult = await _censusApi.GetFacilityRegionAsync(censusEvent.FacilityID, ct).ConfigureAwait(false);
         if (!getFacilityResult.IsDefined())
             return;
         MapRegion facility = getFacilityResult.Entity;
 
-        UpdateMapCache(controlEvent, facility);
+        UpdateMapCache(censusEvent, facility);
         await SendBaseCaptureMessages(validPSettings, outfit, facility, ct).ConfigureAwait(false);
     }
 
@@ -99,9 +96,9 @@ internal sealed class FacilityControlResponder : ICensusEventHandler<ServiceMess
         }
     }
 
-    private void UpdateMapCache(FacilityControl controlEvent, MapRegion facility)
+    private void UpdateMapCache(IFacilityControl controlEvent, MapRegion facility)
     {
-        if (!_cache.TryGetValue(CacheKeyHelpers.GetMapKey(controlEvent.WorldId, controlEvent.ZoneId.Definition), out Map map))
+        if (!_cache.TryGetValue(CacheKeyHelpers.GetMapKey(controlEvent.WorldID, controlEvent.ZoneID.Definition), out Map map))
             return;
 
         int index = map.Regions.Row.FindIndex(r => r.RowData.RegionID == facility.MapRegionID);
@@ -111,12 +108,12 @@ internal sealed class FacilityControlResponder : ICensusEventHandler<ServiceMess
         Map.RowModel mapRow = map.Regions.Row[index];
         map.Regions.Row.RemoveAt(index);
 
-        mapRow = mapRow with { RowData = mapRow.RowData with { FactionID = controlEvent.NewFactionId } };
+        mapRow = mapRow with { RowData = mapRow.RowData with { FactionID = controlEvent.NewFactionID } };
         map.Regions.Row.Add(mapRow);
 
         _cache.Set
         (
-            CacheKeyHelpers.GetMapKey(controlEvent.WorldId, map),
+            CacheKeyHelpers.GetMapKey(controlEvent.WorldID, map),
             map,
             CacheEntryHelpers.GetMapOptions()
         );

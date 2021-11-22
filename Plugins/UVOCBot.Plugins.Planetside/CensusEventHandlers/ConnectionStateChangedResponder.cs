@@ -1,32 +1,40 @@
 ﻿using DbgCensus.EventStream.Abstractions;
-using DbgCensus.EventStream.Commands;
+using DbgCensus.EventStream.Abstractions.Objects.Commands;
+using DbgCensus.EventStream.Abstractions.Objects.Control;
 using DbgCensus.EventStream.EventHandlers.Abstractions;
-using DbgCensus.EventStream.EventHandlers.Objects.Push;
+using DbgCensus.EventStream.EventHandlers.Abstractions.Objects;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
 
-internal sealed class ConnectionStateChangedResponder : ICensusEventHandler<ConnectionStateChanged>
+internal sealed class ConnectionStateChangedResponder : IPayloadHandler<IConnectionStateChanged>
 {
     private readonly IEventStreamClientFactory _clientFactory;
     private readonly ISubscriptionBuilderService _subscriptionBuilder;
+    private readonly IPayloadContext _context;
 
-    public ConnectionStateChangedResponder(IEventStreamClientFactory clientFactory, ISubscriptionBuilderService subscriptionBuilder)
+    public ConnectionStateChangedResponder
+    (
+        IEventStreamClientFactory clientFactory,
+        ISubscriptionBuilderService subscriptionBuilder,
+        IPayloadContext context
+    )
     {
         _clientFactory = clientFactory;
         _subscriptionBuilder = subscriptionBuilder;
+        _context = context;
     }
 
-    public async Task HandleAsync(ConnectionStateChanged censusEvent, CancellationToken ct = default)
+    public async Task HandleAsync(IConnectionStateChanged censusEvent, CancellationToken ct = default)
     {
         if (!censusEvent.Connected)
             return;
 
-        IEventStreamClient client = _clientFactory.GetClient(censusEvent.DispatchingClientName);
+        IEventStreamClient client = _clientFactory.GetClient(_context.DispatchingClientName);
 
-        SubscribeCommand subscription = await _subscriptionBuilder.BuildAsync(ct).ConfigureAwait(false);
+        ISubscribe subscription = await _subscriptionBuilder.BuildAsync(ct).ConfigureAwait(false);
         await client.SendCommandAsync(subscription, ct).ConfigureAwait(false);
     }
 }

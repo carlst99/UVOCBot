@@ -81,7 +81,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Music\UVOCBot.Plugins.Music.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Planetside\UVOCBot.Plugins.Planetside.csproj" />
     <ProjectReference Include="..\UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj" />
   </ItemGroup>

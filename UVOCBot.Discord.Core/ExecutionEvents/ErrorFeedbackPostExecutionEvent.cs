@@ -69,32 +69,30 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
         if (actualError is null)
             return Result.FromSuccess();
 
-        string errorMessage = DiscordConstants.GENERIC_ERROR_MESSAGE;
+        string LogUnknownError()
+        {
+            _logger.LogError("A command failed to execute: {error}", actualError!.ToString());
+            return DiscordConstants.GENERIC_ERROR_MESSAGE;
+        }
 
-        if (actualError is PermissionError permissionError)
+        string GetPermissionErrorMessage(PermissionError pe)
         {
-            string userMention = permissionError.UserID == context.User.ID ? "You don't" : Formatter.UserMention(permissionError.UserID) + " doesn't";
-            string channelMention = permissionError.ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(permissionError.ChannelID); // TODO: Null channel
-            string permissionMention = Formatter.InlineQuote(permissionError.Permission.ToString());
+            string userMention = pe.UserID == context.User.ID ? "You don't" : Formatter.UserMention(pe.UserID) + " doesn't";
+            string channelMention = pe.ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(pe.ChannelID); // TODO: Null channel
+            string permissionMention = Formatter.InlineQuote(pe.Permission.ToString());
 
-            errorMessage = $"{ userMention } have the required { permissionMention } permission in { channelMention }.";
+            return $"{ userMention } have the required { permissionMention } permission in { channelMention }.";
         }
-        else if (actualError is ContextError contextError)
+
+        string errorMessage = actualError switch
         {
-            errorMessage = $"This command must be executed in a { Formatter.InlineQuote(contextError.RequiredContext.ToString()) }.";
-        }
-        else if (actualError is RoleManipulationError roleManipulationError)
-        {
-            errorMessage = "Failed to modify roles: " + roleManipulationError.Message;
-        }
-        else if (actualError is GenericCommandError || actualError is ConditionNotSatisfiedError)
-        {
-            errorMessage = actualError.Message;
-        }
-        else
-        {
-            _logger.LogError("A command failed to execute: {error}", actualError.ToString());
-        }
+            PermissionError pe => GetPermissionErrorMessage(pe),
+            CommandNotFoundError => "That command doesn't exist.",
+            ContextError ce => $"This command must be executed in a { Formatter.InlineQuote(ce.RequiredContext.ToString()) }.",
+            RoleManipulationError rme => "Failed to modify roles: " + rme.Message,
+            GenericCommandError or ConditionNotSatisfiedError => actualError.Message,
+            _ => LogUnknownError()
+        };
 
         IResult sendErrorMessageResult = await _feedbackService.SendContextualErrorAsync(errorMessage, ct: ct).ConfigureAwait(false);
 

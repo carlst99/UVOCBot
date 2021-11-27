@@ -48,7 +48,7 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         if (user is null)
             return Result.FromSuccess();
 
-        var response = new InteractionResponse
+        InteractionResponse response = new
         (
             InteractionCallbackType.DeferredChannelMessageWithSource,
             new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)

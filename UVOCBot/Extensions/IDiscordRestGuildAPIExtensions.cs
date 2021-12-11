@@ -40,11 +40,13 @@ public static class IDiscordRestGuildAPIExtensions
     /// <param name="predicate">A function to test each element for a condition.</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(
+    public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync
+    (
         this IDiscordRestGuildAPI guildApi,
         Snowflake guildID,
         Func<IGuildMember, bool> predicate,
-        [EnumeratorCancellation] CancellationToken ct = default)
+        [EnumeratorCancellation] CancellationToken ct = default
+    )
     {
         Result<IReadOnlyList<IGuildMember>> members;
         Snowflake afterID = new(0);
@@ -70,6 +72,7 @@ public static class IDiscordRestGuildAPIExtensions
                 else
                     return new Snowflake(0, Constants.DiscordEpoch);
             });
-        } while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
+        }
+        while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
     }
 }

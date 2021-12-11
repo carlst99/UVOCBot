@@ -28,7 +28,8 @@ public class GuildCreateResponder : IResponder<IGuildCreate>
         {
             foreach (IPartialVoiceState voiceState in gatewayEvent.VoiceStates.Value.Where(v => v.ChannelID.HasValue))
             {
-                VoiceState trueState = new(
+                VoiceState trueState = new
+                (
                     gatewayEvent.ID,
                     voiceState.ChannelID.Value,
                     voiceState.UserID.Value,
@@ -41,18 +42,15 @@ public class GuildCreateResponder : IResponder<IGuildCreate>
                     voiceState.IsStreaming,
                     voiceState.IsVideoEnabled.Value,
                     voiceState.IsSuppressed.Value,
-                    null);
+                    null
+                );
 
                 _cache.Set(trueState);
             }
         }
 
-        Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(new ulong[] { gatewayEvent.ID.Value }, ct).ConfigureAwait(false);
-        if (!dbScaffoldResult.IsSuccess)
-        {
-            // TODO: Proper handling here
-        }
+        await _dbApi.ScaffoldDbEntries(new ulong[] { gatewayEvent.ID.Value }, ct).ConfigureAwait(false);
 
-        return dbScaffoldResult;
+        return Result.FromSuccess();
     }
 }

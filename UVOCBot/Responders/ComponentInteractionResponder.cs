@@ -23,11 +23,13 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
     private readonly ContextInjectionService _contextInjectionService;
     private readonly FeedbackService _feedbackService;
 
-    public ComponentInteractionResponder(
+    public ComponentInteractionResponder
+    (
         IDiscordRestInteractionAPI interactionApi,
         IServiceProvider services,
         ContextInjectionService contextInjectionService,
-        FeedbackService feedbackService)
+        FeedbackService feedbackService
+    )
     {
         _interactionApi = interactionApi;
         _services = services;

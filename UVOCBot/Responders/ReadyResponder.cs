@@ -29,12 +29,14 @@ public class ReadyResponder : IResponder<IReady>
     private readonly IDbApiService _dbApi;
     private readonly IHostApplicationLifetime _appLifetime;
 
-    public ReadyResponder(
+    public ReadyResponder
+    (
         ILogger<ReadyResponder> logger,
         IOptions<GeneralOptions> options,
         DiscordGatewayClient client,
         IDbApiService dbApi,
-        IHostApplicationLifetime appLifetime)
+        IHostApplicationLifetime appLifetime
+    )
     {
         _logger = logger;
         _options = options.Value;
@@ -52,8 +54,10 @@ public class ReadyResponder : IResponder<IReady>
             DiscordConstants.ApplicationId = gatewayEvent.Application.ID.Value;
         }
 
-        _client.SubmitCommand(
-            new UpdatePresence(
+        _client.SubmitCommand
+        (
+            new UpdatePresence
+            (
                 ClientStatus.Online,
                 false,
                 null,
@@ -62,8 +66,8 @@ public class ReadyResponder : IResponder<IReady>
         );
 
         await PrepareDatabase(gatewayEvent.Guilds, ct).ConfigureAwait(false);
-
         _logger.LogInformation("Ready!");
+
         return Result.FromSuccess();
     }
 
@@ -71,6 +75,9 @@ public class ReadyResponder : IResponder<IReady>
     {
         Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(guilds.Select(g => g.GuildID.Value), ct).ConfigureAwait(false);
         if (!dbScaffoldResult.IsSuccess)
+        {
+            _logger.LogCritical("Failed to scaffold database: {error}", dbScaffoldResult.Error);
             _appLifetime.StopApplication();
+        }
     }
 }

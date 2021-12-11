@@ -2,8 +2,6 @@
 
 public static class IListExtensions
 {
-    private readonly static Random _rng = new Random();
-
     /// <summary>
     /// Shuffles a list using the Fisher-Yates shuffle
     /// </summary>
@@ -15,7 +13,7 @@ public static class IListExtensions
         while (n > 1)
         {
             n--;
-            int k = _rng.Next(n + 1);
+            int k = Random.Shared.Next(n + 1);
             T value = list[k];
             list[k] = list[n];
             list[n] = value;

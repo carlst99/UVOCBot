@@ -17,7 +17,7 @@ public static class IInteractionCreateExtensions
                 : null;
 
         if (user is null)
-            return Result<InteractionContext>.FromError(Result.FromSuccess()); // Lazy man's way of getting around no generic error class and having to work with this silly Results infrastructure
+            return Result<InteractionContext>.FromError(new InvalidOperationError("The interaction was not made by a user."));
 
         IInteractionData interactionData = gatewayEvent.Data.Value!;
         InteractionContext context = new

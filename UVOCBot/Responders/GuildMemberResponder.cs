@@ -21,11 +21,13 @@ public class GuildMemberResponder : IResponder<IGuildMemberAdd>, IResponder<IGui
     private readonly IAdminLogService _adminLogService;
     private readonly ContextInjectionService _contextInjectionService;
 
-    public GuildMemberResponder(
+    public GuildMemberResponder
+    (
         ILogger<GuildMemberResponder> logger,
         IServiceProvider services,
         IAdminLogService adminLogService,
-        ContextInjectionService contextInjectionService)
+        ContextInjectionService contextInjectionService
+    )
     {
         _logger = logger;
         _services = services;
@@ -43,7 +45,8 @@ public class GuildMemberResponder : IResponder<IGuildMemberAdd>, IResponder<IGui
         // Yep, this is a bit naughty
         // The welcome message service is scoped, and expects a context
         // So we make a fake one.
-        _contextInjectionService.Context = new InteractionContext(
+        _contextInjectionService.Context = new InteractionContext
+        (
             gatewayEvent.GuildID,
             new Snowflake(),
             gatewayEvent.User.Value,
@@ -51,7 +54,8 @@ public class GuildMemberResponder : IResponder<IGuildMemberAdd>, IResponder<IGui
             string.Empty,
             new Snowflake(),
             new Snowflake(),
-            new InteractionData(default, default, default));
+            new InteractionData(default, default, default)
+        );
 
         // Resolve the welcome message service here so that the context is properly injected
         return await _services.GetRequiredService<IWelcomeMessageService>().SendWelcomeMessage(gatewayEvent, ct).ConfigureAwait(false);

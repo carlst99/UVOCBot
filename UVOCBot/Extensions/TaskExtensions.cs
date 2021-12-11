@@ -1,5 +1,5 @@
 ﻿namespace System.Threading.Tasks;
-#nullable disable
+
 public static class TaskExtensions
 {
     public static async Task WithCancellation(this Task task, CancellationToken cancellationToken = default)
@@ -8,7 +8,7 @@ public static class TaskExtensions
             await task.ConfigureAwait(false);
 
         TaskCompletionSource<bool> tcs = new();
-        using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
+        using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s!).TrySetResult(true), tcs))
         {
             if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
                 throw new OperationCanceledException(cancellationToken);
@@ -21,7 +21,7 @@ public static class TaskExtensions
             return await task.ConfigureAwait(false);
 
         TaskCompletionSource<bool> tcs = new();
-        using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
+        using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s!).TrySetResult(true), tcs))
         {
             if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
                 throw new OperationCanceledException(cancellationToken);

@@ -1,5 +1,6 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Core;
+using Remora.Discord.API.Abstractions.Rest;
+using Remora.Rest.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Threading;

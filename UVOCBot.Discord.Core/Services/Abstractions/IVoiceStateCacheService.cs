@@ -1,5 +1,5 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using System.Collections.Generic;
 
 namespace UVOCBot.Discord.Core.Services.Abstractions;

@@ -1,5 +1,5 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,12 +21,14 @@ public static class IDiscordRestChannelAPIExtensions
     /// <param name="emoji">The emoji to count reactions for</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static async IAsyncEnumerable<Result<IReadOnlyList<IUser>>> GetAllReactorsAsync(
+    public static async IAsyncEnumerable<Result<IReadOnlyList<IUser>>> GetAllReactorsAsync
+    (
         this IDiscordRestChannelAPI channelAPI,
         Snowflake channelID,
         Snowflake messageID,
         string emoji,
-        [EnumeratorCancellation] CancellationToken ct = default)
+        [EnumeratorCancellation] CancellationToken ct = default
+    )
     {
         Result<IReadOnlyList<IUser>> reactions;
         Snowflake afterID = new(0);
@@ -40,6 +42,7 @@ public static class IDiscordRestChannelAPIExtensions
                 yield break;
 
             afterID = reactions.Entity.Max(u => u.ID);
-        } while (reactions.Entity.Count == MAX_REACTION_PAGE_SIZE);
+        }
+        while (reactions.Entity.Count == MAX_REACTION_PAGE_SIZE);
     }
 }

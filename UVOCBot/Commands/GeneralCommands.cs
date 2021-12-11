@@ -5,7 +5,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -57,7 +57,7 @@ public class GeneralCommands : CommandGroup
     [Description("Posts a cat image that represents the given HTTP error code.")]
     public async Task<IResult> PostHttpCatCommandAsync([Description("The HTTP code.")][DiscordTypeHint(TypeHint.Integer)] int httpCode)
     {
-        var embed = new Embed
+        Embed embed = new()
         {
             Image = new EmbedImage($"https://http.cat/{httpCode}"),
             Footer = new EmbedFooter("Image from http.cat")
@@ -81,7 +81,12 @@ public class GeneralCommands : CommandGroup
                 botAvatar = botAvatarURI.Entity.AbsoluteUri;
         }
 
-        Result<IUser> authorUser = await _userAPI.GetUserAsync(new Snowflake(165629177221873664), CancellationToken).ConfigureAwait(false);
+        Result<IUser> authorUser = await _userAPI.GetUserAsync
+        (
+            new Snowflake(165629177221873664, Constants.DiscordEpoch),
+            CancellationToken
+        ).ConfigureAwait(false);
+
         if (authorUser.IsSuccess)
         {
             Result<Uri> authorAvatarURI = CDN.GetUserAvatarUrl(authorUser.Entity, CDNImageFormat.PNG);

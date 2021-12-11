@@ -3,7 +3,7 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.ComponentModel;
@@ -49,7 +49,8 @@ public class AdminCommands : CommandGroup
             if (settings.LoggingChannelId is null)
                 return await _replyService.RespondWithUserErrorAsync("You must set a logging channel to enable admin logging.", CancellationToken).ConfigureAwait(false);
 
-            Result canLogToChannel = await CheckLoggingChannelPermissions(new Snowflake(settings.LoggingChannelId.Value)).ConfigureAwait(false);
+            Snowflake channelSnowflake = new(settings.LoggingChannelId.Value, Remora.Discord.API.Constants.DiscordEpoch);
+            Result canLogToChannel = await CheckLoggingChannelPermissions(channelSnowflake).ConfigureAwait(false);
             if (!canLogToChannel.IsSuccess)
                 return Result.FromSuccess();
         }

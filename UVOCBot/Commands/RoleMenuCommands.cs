@@ -6,7 +6,7 @@ using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -122,11 +122,13 @@ public class RoleMenuCommands : CommandGroup
         if (menu is null)
             return await _replyService.RespondWithUserErrorAsync("That role menu doesn't exist.", CancellationToken).ConfigureAwait(false);
 
-        Result deleteMenuResult = await _channelApi.DeleteMessageAsync(
-            new Snowflake(menu.ChannelId),
-            new Snowflake(menu.MessageId),
+        Result deleteMenuResult = await _channelApi.DeleteMessageAsync
+        (
+            new Snowflake(menu.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
+            new Snowflake(menu.MessageId, Remora.Discord.API.Constants.DiscordEpoch),
             "Role menu deletion requested by " + _context.User.Username,
-            CancellationToken).ConfigureAwait(false);
+            CancellationToken
+        ).ConfigureAwait(false);
 
         if (!deleteMenuResult.IsSuccess)
         {
@@ -213,12 +215,14 @@ public class RoleMenuCommands : CommandGroup
 
     private async Task<IResult> ModifyRoleMenu(GuildRoleMenu menu)
     {
-        Result<IMessage> menuModificationResult = await _channelApi.EditMessageAsync(
-            new Snowflake(menu.ChannelId),
-            new Snowflake(menu.MessageId),
+        Result<IMessage> menuModificationResult = await _channelApi.EditMessageAsync
+        (
+            new Snowflake(menu.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
+            new Snowflake(menu.MessageId, Remora.Discord.API.Constants.DiscordEpoch),
             embeds: new IEmbed[] { CreateRoleMenuEmbed(menu) },
             components: menu.Roles.Count > 0 ? CreateRoleMenuMessageComponents(menu) : new Optional<IReadOnlyList<IMessageComponent>>(),
-            ct: CancellationToken).ConfigureAwait(false);
+            ct: CancellationToken
+        ).ConfigureAwait(false);
 
         if (!menuModificationResult.IsSuccess)
         {
@@ -233,13 +237,13 @@ public class RoleMenuCommands : CommandGroup
     }
 
     private static IEmbed CreateRoleMenuEmbed(GuildRoleMenu menu)
-    {
-        return new Embed(
+        => new Embed
+        (
             menu.Title,
             Description: menu.Description,
             Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Footer: new EmbedFooter("If you can't deselect a role, refresh your client by pressing Ctrl+R."));
-    }
+            Footer: new EmbedFooter("If you can't deselect a role, refresh your client by pressing Ctrl+R.")
+        );
 
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
     {
@@ -263,7 +267,12 @@ public class RoleMenuCommands : CommandGroup
 
     private async Task<IResult> CheckRoleMenuExists(GuildRoleMenu menu)
     {
-        Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync(new Snowflake(menu.ChannelId), new Snowflake(menu.MessageId), CancellationToken).ConfigureAwait(false);
+        Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync
+        (
+            new Snowflake(menu.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
+            new Snowflake(menu.MessageId, Remora.Discord.API.Constants.DiscordEpoch),
+            CancellationToken
+        ).ConfigureAwait(false);
 
         if (!getMessageResult.IsSuccess)
         {

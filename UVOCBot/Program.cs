@@ -9,10 +9,10 @@ using Remora.Discord.Caching.Extensions;
 using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Commands.Responders;
 using Remora.Discord.Commands.Services;
-using Remora.Discord.Core;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
 using Remora.Discord.Hosting.Extensions;
+using Remora.Rest.Core;
 using Remora.Results;
 using Serilog;
 using Serilog.Events;
@@ -64,7 +64,10 @@ public static class Program
             IOptions<GeneralOptions> options = host.Services.GetRequiredService<IOptions<GeneralOptions>>();
             SlashService slashService = host.Services.GetRequiredService<SlashService>();
 
-            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(l => new Snowflake(l));
+            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select
+            (
+                l => new Snowflake(l, Remora.Discord.API.Constants.DiscordEpoch)
+            );
             Result slashCommandsSupported = slashService.SupportsSlashCommands();
 
             if (!slashCommandsSupported.IsSuccess)

@@ -1,5 +1,5 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -21,10 +21,12 @@ public static class IDiscordRestGuildAPIExtensions
     /// <param name="guildID">The guild to list the members of.</param>
     /// <param name="ct"></param>
     /// <returns></returns>
-    public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync(
+    public static async IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> GetAllMembersAsync
+    (
         this IDiscordRestGuildAPI guildApi,
         Snowflake guildID,
-        [EnumeratorCancellation] CancellationToken ct = default)
+        [EnumeratorCancellation] CancellationToken ct = default
+    )
     {
         await foreach (Result<IReadOnlyList<IGuildMember>> element in GetAllMembersAsync(guildApi, guildID, (_) => true, ct).ConfigureAwait(false))
             yield return element;
@@ -66,7 +68,7 @@ public static class IDiscordRestGuildAPIExtensions
                 if (u.User.HasValue)
                     return u.User.Value.ID;
                 else
-                    return new Snowflake(0);
+                    return new Snowflake(0, Constants.DiscordEpoch);
             });
         } while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
     }

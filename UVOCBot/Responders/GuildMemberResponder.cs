@@ -4,11 +4,10 @@ using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Services;
-using Remora.Discord.Core;
 using Remora.Discord.Gateway.Responders;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Services.Abstractions;
@@ -62,7 +61,7 @@ public class GuildMemberResponder : IResponder<IGuildMemberAdd>, IResponder<IGui
     {
         Result res = await _adminLogService.LogMemberLeave(gatewayEvent, ct).ConfigureAwait(false);
         if (!res.IsSuccess)
-            _logger.LogError("Failed to admin-log a member remove event: {0}", res.Error);
+            _logger.LogError("Failed to admin-log a member remove event: {error}", res.Error);
 
         return res;
     }

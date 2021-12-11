@@ -1,5 +1,5 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using System.Collections.Generic;
 using UVOCBot.Discord.Core.Services.Abstractions;
 
@@ -82,9 +82,7 @@ public sealed class VoiceStateCacheService : IVoiceStateCacheService
 
     private void RemoveChannelUser(IVoiceState state)
     {
-#pragma warning disable CS8629 // Nullable value type may be null.
-        Snowflake channelID = state.ChannelID.Value;
-#pragma warning restore CS8629 // Nullable value type may be null.
+        Snowflake channelID = state.ChannelID!.Value;
 
         _channelUsers[channelID].Remove(state.UserID);
         if (_channelUsers[channelID].Count == 0)

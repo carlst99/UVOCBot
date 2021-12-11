@@ -3,14 +3,13 @@ using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Commands;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
@@ -86,7 +85,7 @@ public class AdminLogService : IAdminLogService
             return new Exception("No logging channel has been set.");
 
         if ((settings.LogTypes & (ulong)logType) != 0 || logType == AdminLogTypes.None) // Allow none through for non log-event logging
-            return new Snowflake(settings.LoggingChannelId.Value);
+            return new Snowflake(settings.LoggingChannelId.Value, Constants.DiscordEpoch);
         else
             return new Exception("That logging type hasn't been enabled for the given guild.");
     }

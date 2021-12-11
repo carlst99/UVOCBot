@@ -1,5 +1,5 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 
 namespace UVOCBot.Discord.Core;
 
@@ -29,8 +29,7 @@ public static class Formatter
     public static string Underline(string content) => $"__{content}__";
 
     private static char TimestampStyleToCode(TimestampStyle style)
-    {
-        return style switch
+        => style switch
         {
             TimestampStyle.ShortTime => 't',
             TimestampStyle.LongTime => 'T',
@@ -41,5 +40,4 @@ public static class Formatter
             TimestampStyle.RelativeTime => 'R',
             _ => TimestampStyleToCode(TimestampStyle.ShortDate)
         };
-    }
 }

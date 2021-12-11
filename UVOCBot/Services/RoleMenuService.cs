@@ -1,16 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Commands;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
@@ -59,7 +57,7 @@ public class RoleMenuService : IRoleMenuService
 
         foreach (string option in _context.Data.Values.Value)
         {
-            Snowflake roleId = new(ulong.Parse(option));
+            Snowflake roleId = new(ulong.Parse(option), Remora.Discord.API.Constants.DiscordEpoch);
 
             if (_context.Member.Value.Roles.Contains(roleId))
             {

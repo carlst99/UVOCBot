@@ -5,7 +5,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -151,6 +151,9 @@ public class MovementCommands : CommandGroup
             return new NotFoundError();
         }
 
-        return group.UserIds.ConvertAll(i => new Snowflake(i)).AsReadOnly();
+        return group.UserIds.ConvertAll
+        (
+            i => new Snowflake(i, Remora.Discord.API.Constants.DiscordEpoch)
+        ).AsReadOnly();
     }
 }

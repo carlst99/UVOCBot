@@ -5,7 +5,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -75,12 +75,14 @@ public class WelcomeMessageService : IWelcomeMessageService
         string messageContent = SubstituteMessageVariables(welcomeMessage.Message, gatewayEvent.User.Value.ID);
 
         // Send the welcome message
-        Result<IMessage> sendWelcomeMessageResult = await _channelApi.CreateMessageAsync(
-            new Snowflake(welcomeMessage.ChannelId),
+        Result<IMessage> sendWelcomeMessageResult = await _channelApi.CreateMessageAsync
+        (
+            new Snowflake(welcomeMessage.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
             messageContent,
             allowedMentions: new AllowedMentions(new List<MentionType>() { MentionType.Users }),
             components: new List<IMessageComponent>() { new ActionRowComponent(messageButtons) },
-            ct: ct).ConfigureAwait(false);
+            ct: ct
+        ).ConfigureAwait(false);
 
         // Assign default roles
         await ModifyRoles(
@@ -129,9 +131,7 @@ public class WelcomeMessageService : IWelcomeMessageService
     }
 
     private static string SubstituteMessageVariables(string welcomeMessage, Snowflake userId)
-    {
-        return welcomeMessage.Replace("<name>", Formatter.UserMention(userId));
-    }
+        => welcomeMessage.Replace("<name>", Formatter.UserMention(userId));
 
     #endregion
 
@@ -226,7 +226,6 @@ public class WelcomeMessageService : IWelcomeMessageService
     /// <summary>
     /// Assigns the alternate roles of the <see cref="GuildWelcomeMessageDto"/> to the member, and removes the default roles.
     /// </summary>
-    /// <param name="gatewayEvent">The interaction event to perform this operation on.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Result"/> indicating if the operation was successful.</returns>
     public async Task<Result> SetAlternateRoles(CancellationToken ct = default)
@@ -287,7 +286,15 @@ public class WelcomeMessageService : IWelcomeMessageService
     /// <param name="rolesToAdd">The roles to remove.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Result"/> indicating if the operation was successful.</returns>
-    private async Task<Result> ModifyRoles(Snowflake guildId, Snowflake userId, List<Snowflake>? currentRoles, IEnumerable<ulong>? rolesToAdd = null, IEnumerable<ulong>? rolesToRemove = null, CancellationToken ct = default)
+    private async Task<Result> ModifyRoles
+    (
+        Snowflake guildId,
+        Snowflake userId,
+        List<Snowflake>? currentRoles,
+        IEnumerable<ulong>? rolesToAdd = null,
+        IEnumerable<ulong>? rolesToRemove = null,
+        CancellationToken ct = default
+    )
     {
         if (currentRoles is null)
         {

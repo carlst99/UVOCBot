@@ -160,7 +160,11 @@ public sealed class TwitterWorker : BackgroundService
         if (tweets.Count == 0)
             return;
 
-        Result<IGuild> guild = await _discordGuildClient.GetGuildAsync(new Remora.Discord.Core.Snowflake(settings.GuildId), ct: ct).ConfigureAwait(false);
+        Result<IGuild> guild = await _discordGuildClient.GetGuildAsync
+        (
+            new Remora.Rest.Core.Snowflake(settings.GuildId, Remora.Discord.API.Constants.DiscordEpoch),
+            ct: ct
+        ).ConfigureAwait(false);
         if (!guild.IsSuccess)
         {
             // TODO: Do something if the guild was not found
@@ -171,12 +175,18 @@ public sealed class TwitterWorker : BackgroundService
 
         if (settings.RelayChannelId is null)
             return;
-        Remora.Discord.Core.Snowflake channelSnowflake = new((ulong)settings.RelayChannelId);
+
+        Remora.Rest.Core.Snowflake channelSnowflake = new((ulong)settings.RelayChannelId, Remora.Discord.API.Constants.DiscordEpoch);
 
         Result<IChannel> channel = await _discordChannelClient.GetChannelAsync(channelSnowflake, ct).ConfigureAwait(false);
         if (!channel.IsSuccess)
         {
-            Result<IReadOnlyList<IChannel>> channels = await _discordGuildClient.GetGuildChannelsAsync(new Remora.Discord.Core.Snowflake(settings.GuildId), ct).ConfigureAwait(false);
+            Result<IReadOnlyList<IChannel>> channels = await _discordGuildClient.GetGuildChannelsAsync
+            (
+                new Remora.Rest.Core.Snowflake(settings.GuildId, Remora.Discord.API.Constants.DiscordEpoch),
+                ct
+            ).ConfigureAwait(false);
+
             if (!channels.IsSuccess)
                 return;
 

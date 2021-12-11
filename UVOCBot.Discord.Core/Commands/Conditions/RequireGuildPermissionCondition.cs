@@ -1,7 +1,7 @@
 ﻿using Remora.Commands.Conditions;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Core;
+using Remora.Rest.Core;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;

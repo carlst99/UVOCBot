@@ -174,7 +174,6 @@ public static class Program
                     services.AddPlanetsidePlugin(c.Configuration);
 
                 services.AddHostedService<GenericWorker>()
-                        .AddHostedService<DbCleanupWorker>()
                         .AddHostedService<TwitterWorker>();
             });
     }
@@ -271,12 +270,10 @@ public static class Program
 
         services.AddCommandGroup<AdminCommands>()
                 .AddCommandGroup<GeneralCommands>()
-                .AddCommandGroup<GroupCommands>()
                 .AddCommandGroup<MovementCommands>()
                 .AddCommandGroup<RoleCommands>()
                 .AddCommandGroup<RoleMenuCommands>()
                 .AddCommandGroup<TeamGenerationCommands>()
-                .AddCommandGroup<TimeCommands>()
                 .AddCommandGroup<TwitterCommands>()
                 .AddCommandGroup<WelcomeMessageCommands>();
 

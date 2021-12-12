@@ -1,10 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Remora.Commands.Attributes;
+﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Messages;
+using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -12,11 +13,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UVOCBot.Core;
-using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
-using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Commands;
 
@@ -26,19 +24,18 @@ namespace UVOCBot.Commands;
 public class TeamGenerationCommands : CommandGroup
 {
     private readonly ICommandContext _context;
-    private readonly DiscordContext _dbContext;
-    private readonly IReplyService _replyService;
     private readonly IDiscordRestGuildAPI _guildAPI;
+    private readonly FeedbackService _feedbackService;
 
-    public TeamGenerationCommands(
+    public TeamGenerationCommands
+    (
         ICommandContext context,
-        DiscordContext dbContext,
-        IReplyService replyService,
-        IDiscordRestGuildAPI guildAPI)
+        IDiscordRestGuildAPI guildAPI,
+        FeedbackService feedbackService
+    )
     {
         _context = context;
-        _dbContext = dbContext;
-        _replyService = replyService;
+        _feedbackService = feedbackService;
         _guildAPI = guildAPI;
     }
 
@@ -51,17 +48,14 @@ public class TeamGenerationCommands : CommandGroup
     )
     {
         if (numberOfTeams < 2)
-            return await _replyService.RespondWithUserErrorAsync("At least two teams are required", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("At least two teams are required", ct: CancellationToken).ConfigureAwait(false);
 
         List<ulong> roleMembers = new();
 
         await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildAPI.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
         {
             if (!users.IsSuccess || users.Entity is null)
-            {
-                await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-                return Result.FromError(users);
-            }
+                return users;
 
             roleMembers.AddRange(users.Entity.Select(m => m.User.Value.ID.Value));
         }
@@ -69,56 +63,44 @@ public class TeamGenerationCommands : CommandGroup
         return await SendRandomTeams(roleMembers, numberOfTeams, $"Build from the role { Formatter.RoleMention(role.ID)  }").ConfigureAwait(false);
     }
 
-    [Command("random-from-group")]
-    [Description("Randomly sorts members of a group into teams")]
-    public async Task<IResult> RandomFromGroupCommandAsync
-    (
-        [Description("Teams will be generated using members of this group")] string groupName,
-        [Description("The number of teams to generate")] int numberOfTeams
-    )
-    {
-        if (numberOfTeams < 2)
-            return await _replyService.RespondWithUserErrorAsync("At least two teams are required", CancellationToken).ConfigureAwait(false);
-
-        Result<MemberGroup> group = await GetGroupAsync(groupName).ConfigureAwait(false);
-        if (!group.IsSuccess)
-            return Result.FromSuccess();
-
-        return await SendRandomTeams(group.Entity.UserIds, numberOfTeams, $"Built from the group {Formatter.InlineQuote(group.Entity.GroupName)}").ConfigureAwait(false);
-    }
-
     private async Task<IResult> SendRandomTeams(IList<ulong> memberPool, int teamCount, string embedDescription)
     {
         if (memberPool.Count < teamCount)
-            return await _replyService.RespondWithUserErrorAsync("There cannot be more teams than team members", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("There cannot be more teams than team members", ct: CancellationToken).ConfigureAwait(false);
 
         List<List<ulong>> teams = await CreateRandomTeams(memberPool, teamCount).ConfigureAwait(false);
 
-        return await _replyService.RespondWithEmbedAsync(
+        return await _feedbackService.SendContextualEmbedAsync
+        (
             BuildTeamsEmbed(teams, "Random Teams", embedDescription),
-            CancellationToken,
-            allowedMentions: new AllowedMentions()).ConfigureAwait(false);
+            options: new FeedbackMessageOptions(AllowedMentions: new AllowedMentions()),
+            ct: CancellationToken
+        ).ConfigureAwait(false);
     }
 
     private async Task<List<List<ulong>>> CreateRandomTeams(IList<ulong> memberPool, int teamCount)
     {
         List<List<ulong>> teams = new(teamCount);
 
-        await Task.Run(() =>
-        {
-            memberPool.Shuffle();
-
-            for (int i = 0; i < teamCount; i++)
-                teams.Add(new List<ulong>());
-
-            int teamPos = 0;
-            for (int i = 0; i < memberPool.Count; i++)
+        await Task.Run
+        (
+            () =>
             {
-                teams[teamPos++].Add(memberPool[i]);
-                if (teamPos == teamCount)
-                    teamPos = 0;
-            }
-        }, CancellationToken).ConfigureAwait(false);
+                memberPool.Shuffle();
+
+                for (int i = 0; i < teamCount; i++)
+                    teams.Add(new List<ulong>());
+
+                int teamPos = 0;
+                for (int i = 0; i < memberPool.Count; i++)
+                {
+                    teams[teamPos++].Add(memberPool[i]);
+                    if (teamPos == teamCount)
+                        teamPos = 0;
+                }
+            },
+            CancellationToken
+        ).ConfigureAwait(false);
 
         return teams;
     }
@@ -145,18 +127,5 @@ public class TeamGenerationCommands : CommandGroup
             Description = embedDescription,
             Fields = embedFields
         };
-    }
-
-    private async Task<Result<MemberGroup>> GetGroupAsync(string groupName)
-    {
-        MemberGroup? group = await _dbContext.MemberGroups.FirstAsync(g => g.GuildId == _context.GuildID.Value.Value && g.GroupName == groupName, CancellationToken).ConfigureAwait(false);
-
-        if (group is null)
-        {
-            await _replyService.RespondWithUserErrorAsync("A group with that name does not exist.", CancellationToken).ConfigureAwait(false);
-            return new NotFoundError();
-        }
-
-        return group;
     }
 }

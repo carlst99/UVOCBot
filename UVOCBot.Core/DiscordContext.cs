@@ -14,7 +14,6 @@ public sealed class DiscordContext : DbContext
     public DbSet<GuildWelcomeMessage> GuildWelcomeMessages { get; set; }
     public DbSet<TwitterUser> TwitterUsers { get; set; }
     public DbSet<PlanetsideSettings> PlanetsideSettings { get; set; }
-    public DbSet<MemberGroup> MemberGroups { get; set; }
     public DbSet<GuildRoleMenu> RoleMenus { get; set; }
     public DbSet<GuildAdminSettings> GuildAdminSettings { get; set; }
 
@@ -43,13 +42,6 @@ public sealed class DiscordContext : DbContext
 
         modelBuilder.Entity<GuildWelcomeMessage>()
                     .Property(p => p.DefaultRoles)
-                    .HasConversion(
-                        v => IdListToBytes(v),
-                        v => BytesToIdList(v),
-                        idListComparer);
-
-        modelBuilder.Entity<MemberGroup>()
-                    .Property(p => p.UserIds)
                     .HasConversion(
                         v => IdListToBytes(v),
                         v => BytesToIdList(v),

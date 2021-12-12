@@ -76,13 +76,18 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         if (gatewayEvent.Data.Value.CustomID.Value is null)
             return Result.FromSuccess();
 
-        ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out string key, out string payload);
+        ComponentIdFormatter.Parse
+        (
+            gatewayEvent.Data.Value!.CustomID.Value,
+            out string key,
+            out string payload
+        );
 
         // Naively run sequentially, this could be improved
         foreach (Type responderType in _componentRepository.GetResponders(key))
         {
             IComponentResponder responder = (IComponentResponder)_services.GetRequiredService(responderType);
-            Result responderResult = await responder.RespondAsync(payload, ct).ConfigureAwait(false);
+            Result responderResult = await responder.RespondAsync(key, payload, ct).ConfigureAwait(false);
 
             if (!responderResult.IsSuccess)
                 return responderResult;

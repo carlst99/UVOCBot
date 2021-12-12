@@ -38,7 +38,7 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         _feedbackService = feedbackService;
     }
 
-    public async Task<Result> RespondAsync(string? dataFragment, CancellationToken ct = default)
+    public async Task<Result> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
     {
         if (!_context.GuildID.HasValue || !_context.Member.HasValue || _context.Member.Value is null || !_context.Data.Values.HasValue || dataFragment is null)
             return Result.FromSuccess();

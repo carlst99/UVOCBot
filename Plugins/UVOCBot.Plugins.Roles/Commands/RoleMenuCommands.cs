@@ -6,6 +6,7 @@ using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System.Collections.Generic;
@@ -16,10 +17,10 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Discord.Core.Services.Abstractions;
-using UVOCBot.Services.Abstractions;
 
-namespace UVOCBot.Commands;
+namespace UVOCBot.Plugins.Roles.Commands;
 
 [Group("rolemenu")]
 [Description("Commands to create and edit role menus.")]
@@ -31,42 +32,49 @@ public class RoleMenuCommands : CommandGroup
     private readonly DiscordContext _dbContext;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IPermissionChecksService _permissionChecksService;
-    private readonly IReplyService _replyService;
+    private readonly FeedbackService _feedbackService;
 
-    public RoleMenuCommands(
+    public RoleMenuCommands
+    (
         ICommandContext context,
         DiscordContext dbContext,
         IDiscordRestChannelAPI channelApi,
         IPermissionChecksService permissionChecksService,
-        IReplyService replyService)
+        FeedbackService replyService
+    )
     {
         _context = context;
         _dbContext = dbContext;
         _channelApi = channelApi;
         _permissionChecksService = permissionChecksService;
-        _replyService = replyService;
+        _feedbackService = replyService;
     }
 
     [Command("create")]
     [Description("Creates a new role menu.")]
     [Ephemeral]
-    public async Task<IResult> CreateCommand(
+    public async Task<Result> CreateCommand
+    (
         [Description("The channel to post the role menu in.")][ChannelTypes(ChannelType.GuildText)] IChannel channel,
         [Description("The title of the role menu.")] string title,
-        [Description("The description of the role menu.")] string? description = null)
+        [Description("The description of the role menu.")] string? description = null
+    )
     {
-        Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel(channel.ID, DiscordConstants.UserId, CancellationToken).ConfigureAwait(false);
+        Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel
+        (
+            channel.ID,
+            DiscordConstants.UserId,
+            CancellationToken
+        ).ConfigureAwait(false);
+
         if (!permissionsResult.IsSuccess)
-        {
-            await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-            return permissionsResult;
-        }
+            return Result.FromError(permissionsResult);
 
         if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.ManageRoles))
-            return await _replyService.RespondWithUserErrorAsync("I don't have permission to manipulate roles in that channel!", CancellationToken).ConfigureAwait(false);
+            return new PermissionError(DiscordPermission.ManageRoles, DiscordConstants.UserId, channel.ID);
 
         if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
-            return await _replyService.RespondWithUserErrorAsync("I don't have permission to send messages in that channel!", CancellationToken).ConfigureAwait(false);
+            return new PermissionError(DiscordPermission.SendMessages, DiscordConstants.UserId, channel.ID);
 
         GuildRoleMenu menu = new(_context.GuildID.Value.Value, 0, channel.ID.Value, _context.User.ID.Value, title)
         {
@@ -77,30 +85,32 @@ public class RoleMenuCommands : CommandGroup
 
         Result<IMessage> menuCreationResult = await _channelApi.CreateMessageAsync(channel.ID, embeds: new IEmbed[] { e }, ct: CancellationToken).ConfigureAwait(false);
         if (!menuCreationResult.IsSuccess)
-        {
-            await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
-            return menuCreationResult;
-        }
+            return Result.FromError(menuCreationResult);
 
         menu.MessageId = menuCreationResult.Entity.ID.Value;
 
         _dbContext.Add(menu);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-        return await _replyService.RespondWithSuccessAsync("Menu created! ", CancellationToken).ConfigureAwait(false);
+        IResult sendResult = await _feedbackService.SendContextualSuccessAsync("Menu created! ", ct: CancellationToken).ConfigureAwait(false);
+        return sendResult.IsSuccess
+            ? Result.FromSuccess()
+            : Result.FromError(sendResult.Error!);
     }
 
     [Command("edit")]
     [Description("Edits a role menu.")]
     [Ephemeral]
-    public async Task<IResult> EditCommand(
+    public async Task<IResult> EditCommand
+    (
         [Description("The ID of the role menu message.")] Snowflake messageId,
         [Description("The title of the role menu.")] string newTitle,
-        [Description("The description of the role menu.")] string? newDescription = null)
+        [Description("The description of the role menu.")] string? newDescription = null
+    )
     {
         GuildRoleMenu? menu = GetGuildRoleMenu(messageId.Value);
         if (menu is null)
-            return await _replyService.RespondWithUserErrorAsync("That role menu doesn't exist.", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
         menu.Title = newTitle;
         menu.Description = newDescription ?? string.Empty;
@@ -109,18 +119,20 @@ public class RoleMenuCommands : CommandGroup
         if (!modifyMenuResult.IsSuccess)
             return modifyMenuResult;
 
-        return await _replyService.RespondWithSuccessAsync("Menu updated!", CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync("Menu updated!", ct: CancellationToken).ConfigureAwait(false);
     }
 
     [Command("delete")]
     [Description("Deletes a role menu.")]
     [Ephemeral]
-    public async Task<IResult> DeleteCommand(
-        [Description("The ID of the role menu message.")] Snowflake messageId)
+    public async Task<IResult> DeleteCommand
+    (
+        [Description("The ID of the role menu message.")] Snowflake messageId
+    )
     {
         GuildRoleMenu? menu = GetGuildRoleMenu(messageId.Value);
         if (menu is null)
-            return await _replyService.RespondWithUserErrorAsync("That role menu doesn't exist.", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
         Result deleteMenuResult = await _channelApi.DeleteMessageAsync
         (
@@ -131,36 +143,37 @@ public class RoleMenuCommands : CommandGroup
         ).ConfigureAwait(false);
 
         if (!deleteMenuResult.IsSuccess)
-        {
-            await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
             return deleteMenuResult;
-        }
 
-        return await _replyService.RespondWithSuccessAsync("Menu deleted!", CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync("Menu deleted!", ct: CancellationToken).ConfigureAwait(false);
     }
 
     [Command("add-role")]
     [Description("Adds a role selection item to a role menu.")]
     [Ephemeral]
-    public async Task<IResult> AddRole(
+    public async Task<IResult> AddRole
+    (
         [Description("The ID of the role menu message.")] Snowflake messageId,
         [Description("The role to add.")] IRole roleToAdd,
         [Description("The description of the role selection item.")] string? roleItemDescription = null,
-        [Description("The label of the role selection item. Leave empty to use the name of the role as the label.")] string? roleItemLabel = null)
+        [Description("The label of the role selection item. Leave empty to use the name of the role as the label.")] string? roleItemLabel = null
+    )
     {
         GuildRoleMenu? menu = GetGuildRoleMenu(messageId.Value);
         if (menu is null)
-            return await _replyService.RespondWithUserErrorAsync("That role menu doesn't exist.", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
         int index = menu.Roles.FindIndex(r => r.RoleId == roleToAdd.ID.Value);
         if (index != -1)
-            return await _replyService.RespondWithUserErrorAsync("This role already exists on this menu!", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("This role already exists on this menu!", ct: CancellationToken).ConfigureAwait(false);
 
         if (menu.Roles.Count == 25)
         {
-            return await _replyService.RespondWithUserErrorAsync(
+            return await _feedbackService.SendContextualErrorAsync
+            (
                 "A role menu can only hold a maximum of 25 roles at a time. Either remove some roles from this menu, or create a new one.",
-                CancellationToken).ConfigureAwait(false);
+                ct: CancellationToken
+            ).ConfigureAwait(false);
         }
 
         GuildRoleMenuRole role = new(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name)
@@ -177,26 +190,34 @@ public class RoleMenuCommands : CommandGroup
         if (!modifyMenuResult.IsSuccess)
             return modifyMenuResult;
 
-        return await _replyService.RespondWithSuccessAsync("That role has been added.", CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync("That role has been added.", ct: CancellationToken).ConfigureAwait(false);
     }
 
     [Command("remove-role")]
     [Description("Removes a role selection item from a role menu.")]
     [Ephemeral]
-    public async Task<IResult> RemoveRole(
-        [Description("The ID of the role menue message.")] Snowflake messageId,
-        [Description("The role to remove.")] IRole roleToRemove)
+    public async Task<IResult> RemoveRole
+    (
+        [Description("The ID of the role menu message.")] Snowflake messageId,
+        [Description("The role to remove.")] IRole roleToRemove
+    )
     {
         GuildRoleMenu? menu = GetGuildRoleMenu(messageId.Value);
         if (menu is null)
-            return await _replyService.RespondWithUserErrorAsync("That role menu doesn't exist.", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
         if (menu.Roles.Count <= 1)
-            return await _replyService.RespondWithUserErrorAsync("You cannot remove the last role. Either add some more roles first, or delete the menu.", CancellationToken).ConfigureAwait(false);
+        {
+            return await _feedbackService.SendContextualErrorAsync
+            (
+                "You cannot remove the last role. Either add some more roles first, or delete the menu.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
 
         int index = menu.Roles.FindIndex(r => r.RoleId == roleToRemove.ID.Value);
         if (index == -1)
-            return await _replyService.RespondWithUserErrorAsync("That role does not exist on the given menu.", CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("That role does not exist on the given menu.", ct: CancellationToken).ConfigureAwait(false);
 
         menu.Roles.RemoveAt(index);
 
@@ -207,7 +228,7 @@ public class RoleMenuCommands : CommandGroup
         if (!modifyMenuResult.IsSuccess)
             return modifyMenuResult;
 
-        return await _replyService.RespondWithSuccessAsync("That role has been removed.", CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync("That role has been removed.", ct: CancellationToken).ConfigureAwait(false);
     }
 
     private GuildRoleMenu? GetGuildRoleMenu(ulong messageId)
@@ -228,9 +249,7 @@ public class RoleMenuCommands : CommandGroup
         {
             IResult res = await CheckRoleMenuExists(menu).ConfigureAwait(false);
             if (!res.IsSuccess)
-                return res;
-
-            await _replyService.RespondWithErrorAsync(CancellationToken).ConfigureAwait(false);
+                return Result.FromSuccess();
         }
 
         return menuModificationResult;
@@ -247,19 +266,27 @@ public class RoleMenuCommands : CommandGroup
 
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
     {
-        List<SelectOption> selectOptions = menu.Roles.ConvertAll(r => new SelectOption(
-            r.Label,
-            r.RoleId.ToString(),
-            r.Description ?? "",
-            default,
-            false));
-        SelectMenuComponent selectMenu = new(
-            ComponentIdFormatter.GetId(ComponentAction.RoleMenuToggleRole, menu.MessageId.ToString()),
+        List<SelectOption> selectOptions = menu.Roles.ConvertAll
+        (
+            r => new SelectOption
+            (
+                r.Label,
+                r.RoleId.ToString(),
+                r.Description ?? "",
+                default,
+                false
+            )
+        );
+
+        SelectMenuComponent selectMenu = new
+        (
+            ComponentIdFormatter.GetId(RoleComponentKeys.ToggleRole, menu.MessageId.ToString()),
             selectOptions,
             "Toggle roles...",
             1,
             menu.Roles.Count,
-            false);
+            false
+        );
 
         ActionRowComponent actionRow = new(new List<IMessageComponent> { selectMenu });
         return new List<IMessageComponent> { actionRow };
@@ -276,7 +303,11 @@ public class RoleMenuCommands : CommandGroup
 
         if (!getMessageResult.IsSuccess)
         {
-            await _replyService.RespondWithUserErrorAsync("That role menu appears to have been deleted! Please create a new one.", CancellationToken).ConfigureAwait(false);
+            await _feedbackService.SendContextualErrorAsync
+            (
+                "That role menu appears to have been deleted! Please create a new one.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
 
             _dbContext.Remove(menu);
             await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);

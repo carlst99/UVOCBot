@@ -18,7 +18,7 @@ using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Services.Abstractions;
 
-namespace UVOCBot.Commands;
+namespace UVOCBot.Plugins.Roles.Commands;
 
 [Group("role")]
 [Description("Commands that help with role management")]
@@ -54,7 +54,6 @@ public class RoleCommands : CommandGroup
         _feedbackService = feedbackService;
     }
 
-    // TODO: Message command
     [Command("add-by-reaction")]
     [Description("Adds a role to all users who have reacted to a message")]
     public async Task<IResult> AddByReactionCommandAsync

@@ -1,40 +1,39 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Discord.Core;
-using UVOCBot.Services.Abstractions;
+using UVOCBot.Discord.Core.Components;
 
-namespace UVOCBot.Responders;
+namespace UVOCBot.Discord.Core.Responders;
 
-public class ComponentInteractionResponder : IResponder<IInteractionCreate>
+internal sealed class ComponentInteractionResponder : IResponder<IInteractionCreate>
 {
     private readonly IDiscordRestInteractionAPI _interactionApi;
+    private readonly ComponentResponderRepository _componentRepository;
     private readonly IServiceProvider _services;
     private readonly ContextInjectionService _contextInjectionService;
-    private readonly FeedbackService _feedbackService;
 
     public ComponentInteractionResponder
     (
         IDiscordRestInteractionAPI interactionApi,
+        IOptions<ComponentResponderRepository> componentRepository,
         IServiceProvider services,
-        ContextInjectionService contextInjectionService,
-        FeedbackService feedbackService
+        ContextInjectionService contextInjectionService
     )
     {
         _interactionApi = interactionApi;
+        _componentRepository = componentRepository.Value;
         _services = services;
         _contextInjectionService = contextInjectionService;
-        _feedbackService = feedbackService;
     }
 
     public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
@@ -77,17 +76,18 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         if (gatewayEvent.Data.Value.CustomID.Value is null)
             return Result.FromSuccess();
 
-        ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out ComponentAction action, out string _);
+        ComponentIdFormatter.Parse(gatewayEvent.Data.Value!.CustomID.Value, out string key, out string payload);
 
-        // Resolve the service here so that our interaction context is properly injected
-        IWelcomeMessageService welcomeMessageService = _services.GetRequiredService<IWelcomeMessageService>();
-
-        return action switch
+        // Naively run sequentially, this could be improved
+        foreach (Type responderType in _componentRepository.GetResponders(key))
         {
-            ComponentAction.WelcomeMessageSetAlternate => await welcomeMessageService.SetAlternateRoles(ct).ConfigureAwait(false),
-            ComponentAction.WelcomeMessageNicknameGuess => await welcomeMessageService.SetNicknameFromGuess(ct).ConfigureAwait(false),
-            ComponentAction.WelcomeMessageNicknameNoMatch => await welcomeMessageService.InformNicknameNoMatch(ct).ConfigureAwait(false),
-            _ => Result.FromError(await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: ct).ConfigureAwait(false))
-        };
+            IComponentResponder responder = (IComponentResponder)_services.GetRequiredService(responderType);
+            Result responderResult = await responder.RespondAsync(payload, ct).ConfigureAwait(false);
+
+            if (!responderResult.IsSuccess)
+                return responderResult;
+        }
+
+        return Result.FromSuccess();
     }
 }

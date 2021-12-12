@@ -154,24 +154,24 @@ public static class Program
 
                 services.AddDbContextFactory<DiscordContext>();
 
-                    //Setup API services
-                    services.AddSingleton<IDbApiService, DbApiService>();
+                //Setup API services
+                services.AddSingleton<IDbApiService, DbApiService>();
 
-                    // Setup other services
-                    services.AddSingleton(fileSystem)
-                        .AddTransient(TwitterClientFactory);
+                // Setup other services
+                services.AddSingleton(fileSystem)
+                    .AddTransient(TwitterClientFactory);
 
-                    // Add Discord-related services
-                    services.AddRemoraServices()
-                        .AddCoreDiscordServices()
-                        .AddScoped<IAdminLogService, AdminLogService>()
-                        .AddScoped<IReplyService, ReplyService>()
-                        .AddScoped<IRoleMenuService, RoleMenuService>()
-                        .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
-                        .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
+                // Add Discord-related services
+                services.AddRemoraServices()
+                    .AddCoreDiscordServices()
+                    .AddScoped<IAdminLogService, AdminLogService>()
+                    .AddScoped<IReplyService, ReplyService>()
+                    .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
+                    .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
-                    // Plugin registration
-                    services.AddPlanetsidePlugin(c.Configuration);
+                // Plugin registration
+                services.AddPlanetsidePlugin(c.Configuration);
+                services.AddRolesPlugin();
 
                 services.AddHostedService<GenericWorker>()
                         .AddHostedService<TwitterWorker>();
@@ -263,16 +263,14 @@ public static class Program
         services.AddDiscordCommands(true)
                 .AddDiscordCaching();
 
-        services.AddResponder<ComponentInteractionResponder>()
-                .AddResponder<GuildCreateResponder>()
+        // services.AddResponder<ComponentInteractionResponder>();
+        services.AddResponder<GuildCreateResponder>()
                 .AddResponder<GuildMemberResponder>()
                 .AddResponder<ReadyResponder>();
 
         services.AddCommandGroup<AdminCommands>()
                 .AddCommandGroup<GeneralCommands>()
                 .AddCommandGroup<MovementCommands>()
-                .AddCommandGroup<RoleCommands>()
-                .AddCommandGroup<RoleMenuCommands>()
                 .AddCommandGroup<TeamGenerationCommands>()
                 .AddCommandGroup<TwitterCommands>()
                 .AddCommandGroup<WelcomeMessageCommands>();

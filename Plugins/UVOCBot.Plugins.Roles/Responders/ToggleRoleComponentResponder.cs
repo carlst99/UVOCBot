@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Messages;
+using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
@@ -12,44 +13,50 @@ using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
-using UVOCBot.Services.Abstractions;
+using UVOCBot.Discord.Core.Components;
 
-namespace UVOCBot.Services;
+namespace UVOCBot.Plugins.Roles.Responders;
 
-public class RoleMenuService : IRoleMenuService
+internal sealed class ToggleRoleComponentResponder : IComponentResponder
 {
     private readonly DiscordContext _dbContext;
     private readonly InteractionContext _context;
     private readonly IDiscordRestGuildAPI _guildApi;
-    private readonly IReplyService _replyService;
+    private readonly FeedbackService _feedbackService;
 
-    public RoleMenuService(
+    public ToggleRoleComponentResponder
+    (
         DiscordContext dbContext,
         InteractionContext context,
         IDiscordRestGuildAPI guildApi,
-        IReplyService replyService)
+        FeedbackService feedbackService
+    )
     {
         _dbContext = dbContext;
         _context = context;
         _guildApi = guildApi;
-        _replyService = replyService;
+        _feedbackService = feedbackService;
     }
 
-    public async Task<Result> ToggleRolesAsync(CancellationToken ct = default)
+    public async Task<Result> RespondAsync(string? dataFragment, CancellationToken ct = default)
     {
-        if (!_context.GuildID.HasValue || !_context.Member.HasValue || _context.Member.Value is null || !_context.Data.Values.HasValue)
+        if (!_context.GuildID.HasValue || !_context.Member.HasValue || _context.Member.Value is null || !_context.Data.Values.HasValue || dataFragment is null)
             return Result.FromSuccess();
 
-        ComponentIdFormatter.Parse(_context.Data.CustomID.Value, out _, out string messageIdString);
-        ulong messageId = ulong.Parse(messageIdString);
+        ulong messageId = ulong.Parse(dataFragment);
 
         GuildRoleMenu? menu = GetGuildRoleMenu(messageId);
         if (menu is null)
         {
-            Result<IMessage> sendErrorResult = await _replyService.RespondWithErrorAsync(ct).ConfigureAwait(false);
+            IResult sendErrorResult = await _feedbackService.SendContextualErrorAsync
+            (
+                DiscordConstants.GENERIC_ERROR_MESSAGE,
+                ct: ct
+            ).ConfigureAwait(false);
+
             return sendErrorResult.IsSuccess
                 ? Result.FromSuccess()
-                : Result.FromError(sendErrorResult);
+                : Result.FromError(sendErrorResult.Error!);
         }
 
         string addedRoles = string.Empty;
@@ -61,13 +68,29 @@ public class RoleMenuService : IRoleMenuService
 
             if (_context.Member.Value.Roles.Contains(roleId))
             {
-                Result removeRoleResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, _context.User.ID, roleId, "User self-removed via role menu", ct).ConfigureAwait(false);
+                Result removeRoleResult = await _guildApi.RemoveGuildMemberRoleAsync
+                (
+                    _context.GuildID.Value,
+                    _context.User.ID,
+                    roleId,
+                    "User self-removed via role menu",
+                    ct
+                ).ConfigureAwait(false);
+
                 if (removeRoleResult.IsSuccess)
                     removedRoles += Formatter.RoleMention(roleId) + " ";
             }
             else
             {
-                Result addRoleResult = await _guildApi.AddGuildMemberRoleAsync(_context.GuildID.Value, _context.User.ID, roleId, "User self-added via role menu", ct).ConfigureAwait(false);
+                Result addRoleResult = await _guildApi.AddGuildMemberRoleAsync
+                (
+                    _context.GuildID.Value,
+                    _context.User.ID,
+                    roleId,
+                    "User self-added via role menu",
+                    ct
+                ).ConfigureAwait(false);
+
                 if (addRoleResult.IsSuccess)
                     addedRoles += Formatter.RoleMention(roleId) + " ";
             }
@@ -86,15 +109,16 @@ public class RoleMenuService : IRoleMenuService
                 "\n" + removedRoles;
         }
 
-        Result<IMessage> res = await _replyService.RespondWithSuccessAsync(response, ct, new AllowedMentions()).ConfigureAwait(false);
+        IResult res = await _feedbackService.SendContextualSuccessAsync
+        (
+            response,
+            options: new FeedbackMessageOptions(AllowedMentions: new AllowedMentions()),
+            ct: ct
+        ).ConfigureAwait(false);
+
         return res.IsSuccess
             ? Result.FromSuccess()
-            : Result.FromError(res);
-    }
-
-    public async Task<Result> ConfirmRemoveRolesAsync(CancellationToken ct = default)
-    {
-        return Result.FromSuccess();
+            : Result.FromError(res.Error!);
     }
 
     private GuildRoleMenu? GetGuildRoleMenu(ulong messageId)

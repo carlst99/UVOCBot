@@ -83,7 +83,13 @@ public class RoleMenuCommands : CommandGroup
 
         IEmbed e = CreateRoleMenuEmbed(menu);
 
-        Result<IMessage> menuCreationResult = await _channelApi.CreateMessageAsync(channel.ID, embeds: new IEmbed[] { e }, ct: CancellationToken).ConfigureAwait(false);
+        Result<IMessage> menuCreationResult = await _channelApi.CreateMessageAsync
+        (
+            channel.ID,
+            embeds: new IEmbed[] { e },
+            ct: CancellationToken
+        ).ConfigureAwait(false);
+
         if (!menuCreationResult.IsSuccess)
             return Result.FromError(menuCreationResult);
 
@@ -136,8 +142,8 @@ public class RoleMenuCommands : CommandGroup
 
         Result deleteMenuResult = await _channelApi.DeleteMessageAsync
         (
-            new Snowflake(menu.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
-            new Snowflake(menu.MessageId, Remora.Discord.API.Constants.DiscordEpoch),
+            DiscordSnowflake.New(menu.ChannelId),
+            DiscordSnowflake.New(menu.MessageId),
             "Role menu deletion requested by " + _context.User.Username,
             CancellationToken
         ).ConfigureAwait(false);
@@ -238,8 +244,8 @@ public class RoleMenuCommands : CommandGroup
     {
         Result<IMessage> menuModificationResult = await _channelApi.EditMessageAsync
         (
-            new Snowflake(menu.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
-            new Snowflake(menu.MessageId, Remora.Discord.API.Constants.DiscordEpoch),
+            DiscordSnowflake.New(menu.ChannelId),
+            DiscordSnowflake.New(menu.MessageId),
             embeds: new IEmbed[] { CreateRoleMenuEmbed(menu) },
             components: menu.Roles.Count > 0 ? CreateRoleMenuMessageComponents(menu) : new Optional<IReadOnlyList<IMessageComponent>>(),
             ct: CancellationToken

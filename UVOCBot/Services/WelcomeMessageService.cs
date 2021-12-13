@@ -115,16 +115,20 @@ public class WelcomeMessageService : IWelcomeMessageService
         {
             foreach (string nickname in nicknameGuesses)
             {
-                messageButtons.Add(new ButtonComponent(
+                messageButtons.Add(new ButtonComponent
+                (
                     ButtonComponentStyle.Primary,
                     "My PS2 name is: " + nickname,
-                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, userId.ToString() + '@' + nickname)));
+                    CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameGuess, userId.ToString() + '@' + nickname))
+                );
             }
 
-            messageButtons.Add(new ButtonComponent(
+            messageButtons.Add(new ButtonComponent
+            (
                 ButtonComponentStyle.Secondary,
                 "My PS2 name is none of these!",
-                CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameNoMatch, userId.ToString())));
+                CustomID: ComponentIdFormatter.GetId(ComponentAction.WelcomeMessageNicknameNoMatch, userId.ToString()))
+            );
         }
 
         return messageButtons;

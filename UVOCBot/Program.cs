@@ -66,7 +66,7 @@ public static class Program
 
             IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select
             (
-                l => new Snowflake(l, Remora.Discord.API.Constants.DiscordEpoch)
+                l => DiscordSnowflake.New(l)
             );
             Result slashCommandsSupported = slashService.SupportsSlashCommands();
 
@@ -79,12 +79,12 @@ public static class Program
 #if DEBUG
                 foreach (Snowflake guild in debugServerSnowflakes)
                 {
-                    Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync(guild).Result;
+                    Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync(guild).ConfigureAwait(false);
                     if (!updateSlashCommandsResult.IsSuccess)
                         Log.Warning("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
                 }
 #else
-                    Result updateSlashCommandsResult = slashService.UpdateSlashCommandsAsync().Result;
+                    Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync().ConfigureAwait(false);
                     if (!updateSlashCommandsResult.IsSuccess)
                         Log.Warning("Could not update global application commands");
 #endif

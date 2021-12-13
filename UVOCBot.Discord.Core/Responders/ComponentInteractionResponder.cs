@@ -21,19 +21,22 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
     private readonly ComponentResponderRepository _componentRepository;
     private readonly IServiceProvider _services;
     private readonly ContextInjectionService _contextInjectionService;
+    private readonly ExecutionEventCollectorService _eventCollector;
 
     public ComponentInteractionResponder
     (
         IDiscordRestInteractionAPI interactionApi,
         IOptions<ComponentResponderRepository> componentRepository,
         IServiceProvider services,
-        ContextInjectionService contextInjectionService
+        ContextInjectionService contextInjectionService,
+        ExecutionEventCollectorService eventCollector
     )
     {
         _interactionApi = interactionApi;
         _componentRepository = componentRepository.Value;
         _services = services;
         _contextInjectionService = contextInjectionService;
+        _eventCollector = eventCollector;
     }
 
     public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
@@ -76,6 +79,17 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         if (gatewayEvent.Data.Value.CustomID.Value is null)
             return Result.FromSuccess();
 
+        // Run any user-provided pre-execution events
+        Result preExecution = await _eventCollector.RunPreExecutionEvents
+        (
+            _services,
+            context.Entity,
+            ct
+        ).ConfigureAwait(false);
+
+        if (!preExecution.IsSuccess)
+            return preExecution;
+
         ComponentIdFormatter.Parse
         (
             gatewayEvent.Data.Value!.CustomID.Value,
@@ -89,8 +103,13 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
             IComponentResponder responder = (IComponentResponder)_services.GetRequiredService(responderType);
             Result responderResult = await responder.RespondAsync(key, payload, ct).ConfigureAwait(false);
 
-            if (!responderResult.IsSuccess)
-                return responderResult;
+            await _eventCollector.RunPostExecutionEvents
+            (
+                _services,
+                context.Entity,
+                responderResult,
+                ct
+            ).ConfigureAwait(false);
         }
 
         return Result.FromSuccess();

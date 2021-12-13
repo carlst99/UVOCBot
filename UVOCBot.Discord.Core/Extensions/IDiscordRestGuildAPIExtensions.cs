@@ -75,4 +75,64 @@ public static class IDiscordRestGuildAPIExtensions
         }
         while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
     }
+
+    /// <summary>
+    /// Modifies the roles of a guild member.
+    /// </summary>
+    /// <param name="guildApi">The guild API.</param>
+    /// <param name="guildId">The guild that the member is part of.</param>
+    /// <param name="userId">The user to assign the roles to.</param>
+    /// <param name="currentRoles">The user's existing roles. Optional.</param>
+    /// <param name="rolesToAdd">The roles to add.</param>
+    /// <param name="rolesToAdd">The roles to remove.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation.</returns>
+    public static async Task<Result> ModifyRoles
+    (
+        this IDiscordRestGuildAPI guildApi,
+        Snowflake guildId,
+        Snowflake userId,
+        IReadOnlyList<Snowflake>? currentRoles,
+        IEnumerable<ulong>? rolesToAdd = null,
+        IEnumerable<ulong>? rolesToRemove = null,
+        CancellationToken ct = default
+    )
+    {
+        List<Snowflake>? newRoles;
+
+        if (currentRoles is null)
+        {
+            Result<IGuildMember> memberResult = await guildApi.GetGuildMemberAsync(guildId, userId, ct).ConfigureAwait(false);
+            if (!memberResult.IsDefined(out IGuildMember? member))
+                return Result.FromError(memberResult);
+
+            newRoles = new List<Snowflake>(member.Roles);
+        }
+        else
+        {
+            newRoles = new List<Snowflake>(currentRoles);
+        }
+
+        if (rolesToAdd is not null)
+        {
+            foreach (ulong roleId in rolesToAdd)
+            {
+                Snowflake snowflake = new(roleId);
+                if (!newRoles.Contains(snowflake))
+                    newRoles.Add(snowflake);
+            }
+        }
+
+        if (rolesToRemove is not null)
+        {
+            foreach (ulong roleId in rolesToRemove)
+            {
+                Snowflake snowflake = new(roleId);
+                if (newRoles.Contains(snowflake))
+                    newRoles.Remove(snowflake);
+            }
+        }
+
+        return await guildApi.ModifyGuildMemberAsync(guildId, userId, roles: newRoles, ct: ct).ConfigureAwait(false);
+    }
 }

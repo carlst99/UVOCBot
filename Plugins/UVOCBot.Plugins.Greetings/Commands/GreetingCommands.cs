@@ -19,10 +19,10 @@ using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 using UVOCBot.Plugins.Planetside.Services.Abstractions;
 using UVOCBot.Services.Abstractions;
 
-namespace UVOCBot.Commands;
+namespace UVOCBot.Plugins.Greetings.Commands;
 
-[Group("welcome-message")]
-[Description("Commands that allow the welcome message feature to be setup")]
+[Group("greetings")]
+[Description("Commands that allow the greetings feature to be setup")]
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
 public class WelcomeMessageCommands : CommandGroup
@@ -35,14 +35,16 @@ public class WelcomeMessageCommands : CommandGroup
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly IReplyService _replyService;
 
-    public WelcomeMessageCommands(
+    public WelcomeMessageCommands
+    (
         ICommandContext context,
         DiscordContext dbContext,
         ICensusApiService censusApi,
         IDiscordRestChannelAPI channelApi,
         IDiscordRestGuildAPI guildApi,
         IPermissionChecksService permissionChecksService,
-        IReplyService responder)
+        IReplyService responder
+    )
     {
         _context = context;
         _dbContext = dbContext;

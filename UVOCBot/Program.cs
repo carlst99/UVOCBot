@@ -166,10 +166,10 @@ public static class Program
                     .AddCoreDiscordServices()
                     .AddScoped<IAdminLogService, AdminLogService>()
                     .AddScoped<IReplyService, ReplyService>()
-                    .AddScoped<IWelcomeMessageService, WelcomeMessageService>()
                     .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
                 // Plugin registration
+                services.AddGreetingsPlugin();
                 services.AddPlanetsidePlugin(c.Configuration);
                 services.AddRolesPlugin();
 
@@ -263,7 +263,6 @@ public static class Program
         services.AddDiscordCommands(true)
                 .AddDiscordCaching();
 
-        // services.AddResponder<ComponentInteractionResponder>();
         services.AddResponder<GuildCreateResponder>()
                 .AddResponder<GuildMemberResponder>()
                 .AddResponder<ReadyResponder>();
@@ -272,8 +271,7 @@ public static class Program
                 .AddCommandGroup<GeneralCommands>()
                 .AddCommandGroup<MovementCommands>()
                 .AddCommandGroup<TeamGenerationCommands>()
-                .AddCommandGroup<TwitterCommands>()
-                .AddCommandGroup<WelcomeMessageCommands>();
+                .AddCommandGroup<TwitterCommands>();
 
         return services;
     }

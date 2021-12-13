@@ -109,26 +109,6 @@ public class CensusApiService : ICensusApiService
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default)
-    {
-        // https://census.daybreakgames.com/get/ps2/outfit_member?outfit_id=37562651025751157&c:sort=member_since:-1&c:show=character_id,member_since&c:join=character%5Eshow:name.first%5Einject_at:character_name&c:limit=10
-
-        IQueryBuilder query = _queryService.CreateQuery()
-            .OnCollection("outfit_member")
-            .Where("outfit_id", SearchModifier.Equals, outfitId)
-            .WithSortOrder("member_since", SortOrder.Descending)
-            .ShowFields("character_id", "member_since")
-            .WithLimit(limit)
-            .AddJoin("character", (j) =>
-            {
-                j.ShowFields("name.first")
-                    .InjectAt("character_name");
-            });
-
-        return await GetListAsync<NewOutfitMember>(query, ct).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
     public virtual async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
         IQueryBuilder query = _queryService.CreateQuery()

@@ -25,7 +25,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0" />
@@ -81,6 +80,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Greetings\UVOCBot.Plugins.Greetings.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Planetside\UVOCBot.Plugins.Planetside.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Roles\UVOCBot.Plugins.Roles.csproj" />
     <ProjectReference Include="..\UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj" />

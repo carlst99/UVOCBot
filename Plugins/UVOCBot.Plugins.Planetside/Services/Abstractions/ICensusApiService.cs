@@ -47,15 +47,6 @@ public interface ICensusApiService
     Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default);
 
     /// <summary>
-    /// Gets new members of an outfit.
-    /// </summary>
-    /// <param name="outfitId">The ID of the outfit.</param>
-    /// <param name="limit">The number of new members to get.</param>
-    /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
-    /// <returns>A list of the new outfit members.</returns>
-    Task<Result<List<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default);
-
-    /// <summary>
     /// Gets the maps for a world.
     /// </summary>
     /// <param name="world">The world to retrieve the maps for.</param>

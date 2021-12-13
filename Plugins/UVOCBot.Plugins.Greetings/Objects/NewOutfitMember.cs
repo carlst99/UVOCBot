@@ -1,7 +1,7 @@
 ﻿using System;
-using static UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit.NewOutfitMember;
+using static UVOCBot.Plugins.Greetings.Objects.NewOutfitMember;
 
-namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+namespace UVOCBot.Plugins.Greetings.Objects;
 
 /// <summary>
 /// Initialises a new instance of the <see cref="NewOutfitMember"/> record.
@@ -20,5 +20,11 @@ public record NewOutfitMember
     public record CharacterNameModel
     (
         Name Name
+    );
+
+    public record Name
+    (
+        string First,
+        string Last
     );
 }

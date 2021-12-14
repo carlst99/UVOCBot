@@ -1,8 +1,11 @@
-﻿using Remora.Discord.API.Abstractions.Rest;
+﻿using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
@@ -33,14 +36,13 @@ internal sealed class GreetingComponentResponder : IComponentResponder
     }
 
     public async Task<Result> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
-    {
-        return key switch
+        => key switch
         {
             GreetingComponentKeys.NoNicknameMatches => await NoNicknameMatches(ct).ConfigureAwait(false),
+            GreetingComponentKeys.SetAlternateRoles => await SetAlternateRoles(dataFragment, ct).ConfigureAwait(false),
             GreetingComponentKeys.SetGuessedNickname => await SetGuessedNickname(dataFragment, ct).ConfigureAwait(false),
             _ => Result.FromSuccess()
         };
-    }
 
     private async Task<Result> NoNicknameMatches(CancellationToken ct = default)
     {
@@ -73,11 +75,13 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         // Check that the user who clicked the button is the focus of the welcome message
         if (_context.User.ID.Value != userId)
         {
-            await _feedbackService.SendContextualInfoAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
+            await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
             return Result.FromSuccess();
         }
 
-        await _guildApi.ModifyGuildMemberAsync(guildID, _context.User.ID, fragmentComponents[1], ct: ct).ConfigureAwait(false);
+        Result setNickResult = await _guildApi.ModifyGuildMemberAsync(guildID, _context.User.ID, fragmentComponents[1], ct: ct).ConfigureAwait(false);
+        if (!setNickResult.IsSuccess)
+            return setNickResult;
 
         IResult alertResponse = await _feedbackService.SendContextualSuccessAsync
         (
@@ -90,53 +94,48 @@ internal sealed class GreetingComponentResponder : IComponentResponder
             : Result.FromError(alertResponse.Error!);
     }
 
-    private async Task<Result> SetAlternateRoles(CancellationToken ct = default)
+    private async Task<Result> SetAlternateRoles
+    (
+        string? dataFragment,
+        CancellationToken ct = default
+    )
     {
-        if (!_context.GuildID.HasValue)
+        if (dataFragment is null)
             return Result.FromSuccess();
 
-        if (_context.Data.CustomID.Value is null)
+        if (!_context.GuildID.IsDefined(out Snowflake guildID))
             return Result.FromSuccess();
 
-        // Get the welcome message settings
-        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, ct).ConfigureAwait(false);
+        if (!_context.Member.IsDefined(out IGuildMember? member))
+            return Result.FromSuccess();
 
-        ComponentIdFormatter.Parse(_context.Data.CustomID.Value, out ComponentAction _, out string payload);
-        ulong userId = ulong.Parse(payload);
+        if (!member.User.IsDefined())
+            return Result.FromSuccess();
 
         // Check that the user who clicked the button is the focus of the welcome message
+        ulong userId = ulong.Parse(dataFragment);
         if (_context.User.ID.Value != userId)
         {
-            await _replyService.RespondWithUserErrorAsync("Hold it, bud. You can't do that!", ct).ConfigureAwait(false);
+            await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
             return Result.FromSuccess();
         }
 
         // Remove the default roles and add the alternate roles
-        Result roleChangeResult = await _guildApi.ModifyRoles
-        (
-            _context.GuildID.Value,
-            _context.User.ID,
-            _context.Member.Value?.Roles.ToList(),
-            welcomeMessage.AlternateRoles,
-            welcomeMessage.DefaultRoles,
-            ct
-        ).ConfigureAwait(false);
+        Result<IReadOnlyList<ulong>> roleChangeResult = await _greetingService.SetAlternateRoles(guildID, member, ct).ConfigureAwait(false);
 
-        if (!roleChangeResult.IsSuccess)
-        {
-            _logger.LogError("Failed to modify member roles: {error}", roleChangeResult.Error);
-            return roleChangeResult;
-        }
+        if (!roleChangeResult.IsDefined(out IReadOnlyList<ulong>? newRoles))
+            return Result.FromError(roleChangeResult);
 
         // Inform the user of their role change
-        string rolesStringList = string.Join(' ', welcomeMessage.AlternateRoles.Select(r => Formatter.RoleMention(r)));
-        Result<IMessage> alertResponse = await _replyService.RespondWithSuccessAsync(
+        string rolesStringList = string.Join(' ', newRoles.Select(r => Formatter.RoleMention(r)));
+        IResult alertResponse = await _feedbackService.SendContextualSuccessAsync
+        (
             $"You've been given the following roles: { rolesStringList }",
-            ct,
-            new AllowedMentions()).ConfigureAwait(false);
+            ct: ct
+        ).ConfigureAwait(false);
 
         return alertResponse.IsSuccess
             ? Result.FromSuccess()
-            : Result.FromError(alertResponse);
+            : Result.FromError(alertResponse.Error!);
     }
 }

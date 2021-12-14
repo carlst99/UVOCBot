@@ -19,4 +19,12 @@ public interface ICensusQueryService
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A list of the new outfit members.</returns>
     Task<Result<IReadOnlyList<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets an outfit.
+    /// </summary>
+    /// <param name="tag">The outfit tag.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
+    /// <returns>A <see cref="Result"/> representing the <see cref="Outfit"/>, or <c>null</c> if the outfit does not exist.</returns>
+    Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default);
 }

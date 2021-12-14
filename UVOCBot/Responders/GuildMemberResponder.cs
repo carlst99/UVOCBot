@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Remora.Discord.API.Abstractions.Gateway.Events;
-using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Services.Abstractions;
@@ -18,15 +16,11 @@ public class GuildMemberResponder : IResponder<IGuildMemberAdd>, IResponder<IGui
     public GuildMemberResponder
     (
         ILogger<GuildMemberResponder> logger,
-        IServiceProvider services,
-        IAdminLogService adminLogService,
-        ContextInjectionService contextInjectionService
+        IAdminLogService adminLogService
     )
     {
         _logger = logger;
-        _services = services;
         _adminLogService = adminLogService;
-        _contextInjectionService = contextInjectionService;
     }
 
     public async Task<Result> RespondAsync(IGuildMemberAdd gatewayEvent, CancellationToken ct = default)

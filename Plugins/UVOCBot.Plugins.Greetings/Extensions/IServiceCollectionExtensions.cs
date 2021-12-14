@@ -24,7 +24,7 @@ public static class IServiceCollectionExtensions
         services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.SetAlternateRoles);
         services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.SetGuessedNickname);
 
-        services.AddCommandGroup<WelcomeMessageCommands>();
+        services.AddCommandGroup<GreetingCommands>();
 
         return services;
     }

@@ -15,6 +15,7 @@ public interface IGreetingService
     /// <summary>
     /// Sends a greeting to the given member.
     /// </summary>
+    /// <param name="guildID">The ID of the guild in which to send the greeting.</param>
     /// <param name="member">The guild member.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>The greeting message, if one was sent.</returns>
@@ -36,6 +37,20 @@ public interface IGreetingService
     (
         string username,
         ulong outfitId,
-        CancellationToken ct
+        CancellationToken ct = default
+    );
+
+    /// <summary>
+    /// Grants the alternate role set to a guild member.
+    /// </summary>
+    /// <param name="guildID">The ID of the guild in which the request originated.</param>
+    /// <param name="member">The member to apply the alternate role set to.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A list of the role IDs that were applied.</returns>
+    Task<Result<IReadOnlyList<ulong>>> SetAlternateRoles
+    (
+        Snowflake guildID,
+        IGuildMember member,
+        CancellationToken ct = default
     );
 }

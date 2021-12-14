@@ -54,6 +54,29 @@ public class CensusQueryService : ICensusQueryService
         return await GetListAsync<NewOutfitMember>(query, ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public virtual async Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default)
+    {
+        IQueryBuilder query = _queryService.CreateQuery()
+            .OnCollection("outfit")
+            .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
+
+        return await GetAsync<Outfit?>(query, ct).ConfigureAwait(false);
+    }
+
+    protected async Task<Result<T?>> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
+    {
+        try
+        {
+            return await _queryService.GetAsync<T>(query, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not TaskCanceledException)
+        {
+            _logger.LogError(ex, "Census query failed for query {query}.", callerName);
+            return ex;
+        }
+    }
+
     protected async Task<Result<IReadOnlyList<T>>> GetListAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
     {
         try

@@ -2,7 +2,6 @@
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
@@ -25,22 +24,19 @@ public class GreetingService : IGreetingService
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IDiscordRestGuildAPI _guildApi;
     private readonly DiscordContext _dbContext;
-    private readonly FeedbackService _feedbackService;
 
     public GreetingService
     (
         ICensusQueryService censusService,
         IDiscordRestChannelAPI channelApi,
         IDiscordRestGuildAPI guildApi,
-        DiscordContext dbContext,
-        FeedbackService feedbackService
+        DiscordContext dbContext
     )
     {
         _censusService = censusService;
         _channelApi = channelApi;
         _guildApi = guildApi;
         _dbContext = dbContext;
-        _feedbackService = feedbackService;
     }
 
     /// <inheritdoc />
@@ -52,7 +48,7 @@ public class GreetingService : IGreetingService
     )
     {
         if (!member.User.IsDefined(out IUser? user))
-            return Result<IMessage?>.FromSuccess(null);
+            return new ArgumentNullError(nameof(user));
 
         // Get the welcome message settings
         GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct).ConfigureAwait(false);
@@ -134,6 +130,35 @@ public class GreetingService : IGreetingService
             nicknameGuesses.AddRange(newMembers.Take(maxGuesses - nicknameGuesses.Count).Select(m => new Tuple<string, int>(m.CharacterName.Name.First, 0)));
 
         return Result<IEnumerable<string>>.FromSuccess(nicknameGuesses.Select(g => g.Item1));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<IReadOnlyList<ulong>>> SetAlternateRoles
+    (
+        Snowflake guildID,
+        IGuildMember member,
+        CancellationToken ct = default
+    )
+    {
+        if (!member.User.IsDefined(out IUser? user))
+            return new ArgumentNullError(nameof(user));
+
+        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct).ConfigureAwait(false);
+
+        // Remove the default roles and add the alternate roles
+        Result roleChangeResult = await _guildApi.ModifyRoles
+        (
+            guildID,
+            user.ID,
+            member.Roles,
+            welcomeMessage.AlternateRoles,
+            welcomeMessage.DefaultRoles,
+            ct
+        ).ConfigureAwait(false);
+
+        return !roleChangeResult.IsSuccess
+            ? Result<IReadOnlyList<ulong>>.FromError(roleChangeResult)
+            : Result<IReadOnlyList<ulong>>.FromSuccess(welcomeMessage.AlternateRoles.AsReadOnly());
     }
 
     private static List<ButtonComponent> CreateWelcomeMessageButtons

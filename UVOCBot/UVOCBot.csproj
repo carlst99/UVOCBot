@@ -2,9 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <Version>0.5.2</Version>
+    <Version>0.6.0</Version>
     <UserSecretsId>dotnet-UVOCBot-BCEF48FF-ADA7-4525-8513-6E65E0B7D897</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <Nullable>enable</Nullable>
     <Platforms>x64;AnyCPU</Platforms>
     <Authors>Carl Stephens</Authors>

@@ -20,7 +20,10 @@ namespace UVOCBot.Commands;
 
 public class GeneralCommands : CommandGroup
 {
-    public const string RELEASE_NOTES = "• The `status` command is now much faster, and shows active alerts. Reliability is yet to be determined :stuck_out_tongue:.\n• Made a general sweep to improve stability and error feedback.";
+    public const string RELEASE_NOTES =
+        @"• The `status` command is now much faster, and shows active alerts. Reliability is yet to be determined :stuck_out_tongue:.
+        • Role menus now use buttons.
+        • Large internal refactor to help improve stability, performance and error feedback.";
 
     private readonly IDiscordRestUserAPI _userAPI;
     private readonly FeedbackService _feedbackService;

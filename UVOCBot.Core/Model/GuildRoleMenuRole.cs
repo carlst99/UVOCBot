@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace UVOCBot.Core.Model;
 
+[Index(nameof(RoleId))]
 public class GuildRoleMenuRole
 {
     /// <summary>

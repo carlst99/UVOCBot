@@ -48,17 +48,19 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         GuildRoleMenu? menu = GetGuildRoleMenu(messageId);
         if (menu is null)
         {
-            IResult sendErrorResult = await _feedbackService.SendContextualErrorAsync
+            IResult sendDeletedResponseResult = await _feedbackService.SendContextualErrorAsync
             (
-                DiscordConstants.GENERIC_ERROR_MESSAGE,
+                "This role menu has been deleted by an administrator. You can no longer use it.",
                 ct: ct
             ).ConfigureAwait(false);
 
-            return sendErrorResult.IsSuccess
-                ? Result.FromSuccess()
-                : Result.FromError(sendErrorResult.Error!);
+            return !sendDeletedResponseResult.IsSuccess
+                ? Result.FromError(sendDeletedResponseResult.Error!)
+                : Result.FromSuccess();
         }
 
+        // TODO: Verify the role is actually present in the menu. Otherwise we run into issues
+        // Of people being able to inject a role themselves.
         string addedRoles = string.Empty;
         string removedRoles = string.Empty;
 

@@ -140,6 +140,9 @@ public class RoleMenuCommands : CommandGroup
         if (menu is null)
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
+        _dbContext.Remove(menu);
+        await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
         Result deleteMenuResult = await _channelApi.DeleteMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
@@ -149,9 +152,19 @@ public class RoleMenuCommands : CommandGroup
         ).ConfigureAwait(false);
 
         if (!deleteMenuResult.IsSuccess)
-            return deleteMenuResult;
+        {
+            return await _feedbackService.SendContextualWarningAsync
+            (
+                "The role menu has successfully been deleted but I couldn't remove the corresponding message. Please delete that now, as well.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
 
-        return await _feedbackService.SendContextualSuccessAsync("Menu deleted!", ct: CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync
+        (
+            "The role menu has been successfully removed.",
+            ct: CancellationToken
+        ).ConfigureAwait(false);
     }
 
     [Command("add-role")]
@@ -169,27 +182,36 @@ public class RoleMenuCommands : CommandGroup
         if (menu is null)
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
-        int index = menu.Roles.FindIndex(r => r.RoleId == roleToAdd.ID.Value);
-        if (index != -1)
-            return await _feedbackService.SendContextualErrorAsync("This role already exists on this menu!", ct: CancellationToken).ConfigureAwait(false);
-
         if (menu.Roles.Count == 25)
         {
             return await _feedbackService.SendContextualErrorAsync
             (
-                "A role menu can only hold a maximum of 25 roles at a time. Either remove some roles from this menu, or create a new one.",
+                "A role menu can hold a maximum of 25 roles at a time. Either remove some roles from this menu, or create a new one.",
                 ct: CancellationToken
             ).ConfigureAwait(false);
         }
 
-        GuildRoleMenuRole role = new(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name)
-        {
-            Description = roleItemDescription,
-            Emoji = null
-        };
-        menu.Roles.Add(role);
+        GuildRoleMenuRole? dbRole = menu.Roles.Find(r => r.RoleId == roleToAdd.ID.Value);
 
-        _dbContext.Update(menu);
+        if (dbRole is null)
+        {
+            dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name)
+            {
+                Description = roleItemDescription,
+                Emoji = null
+            };
+
+            menu.Roles.Add(dbRole);
+            _dbContext.Update(menu);
+        }
+        else
+        {
+            dbRole.Label = roleItemLabel ?? roleToAdd.Name;
+            dbRole.Description = roleItemDescription;
+
+            _dbContext.Update(dbRole);
+        }
+
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
         IResult modifyMenuResult = await ModifyRoleMenu(menu).ConfigureAwait(false);
@@ -221,13 +243,13 @@ public class RoleMenuCommands : CommandGroup
             ).ConfigureAwait(false);
         }
 
-        int index = menu.Roles.FindIndex(r => r.RoleId == roleToRemove.ID.Value);
-        if (index == -1)
+        GuildRoleMenuRole? dbRole = menu.Roles.Find(r => r.RoleId == roleToRemove.ID.Value);
+        if (dbRole is null)
             return await _feedbackService.SendContextualErrorAsync("That role does not exist on the given menu.", ct: CancellationToken).ConfigureAwait(false);
 
-        menu.Roles.RemoveAt(index);
-
+        menu.Roles.Remove(dbRole);
         _dbContext.Update(menu);
+        _dbContext.Remove(dbRole);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
         IResult modifyMenuResult = await ModifyRoleMenu(menu).ConfigureAwait(false);

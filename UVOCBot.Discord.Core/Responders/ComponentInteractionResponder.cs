@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
@@ -9,6 +10,7 @@ using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core.Components;
@@ -17,6 +19,7 @@ namespace UVOCBot.Discord.Core.Responders;
 
 internal sealed class ComponentInteractionResponder : IResponder<IInteractionCreate>
 {
+    private readonly ILogger<ComponentInteractionResponder> _logger;
     private readonly IDiscordRestInteractionAPI _interactionApi;
     private readonly ComponentResponderRepository _componentRepository;
     private readonly IServiceProvider _services;
@@ -25,6 +28,7 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
 
     public ComponentInteractionResponder
     (
+        ILogger<ComponentInteractionResponder> logger,
         IDiscordRestInteractionAPI interactionApi,
         IOptions<ComponentResponderRepository> componentRepository,
         IServiceProvider services,
@@ -32,6 +36,7 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         ExecutionEventCollectorService eventCollector
     )
     {
+        _logger = logger;
         _interactionApi = interactionApi;
         _componentRepository = componentRepository.Value;
         _services = services;
@@ -90,18 +95,25 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         if (!preExecution.IsSuccess)
             return preExecution;
 
-        ComponentIdFormatter.Parse
+        ComponentIDFormatter.Parse
         (
             gatewayEvent.Data.Value!.CustomID.Value,
             out string key,
             out string payload
         );
 
+        IReadOnlyList<Type> responderList = _componentRepository.GetResponders(key);
+        if (responderList.Count == 0)
+        {
+            _logger.LogWarning("A component interaction with the key {key} was received, but no responders have been registered for this key.", key);
+            return Result.FromSuccess();
+        }
+
         // Naively run sequentially, this could be improved
-        foreach (Type responderType in _componentRepository.GetResponders(key))
+        foreach (Type responderType in responderList)
         {
             IComponentResponder responder = (IComponentResponder)_services.GetRequiredService(responderType);
-            Result responderResult = await responder.RespondAsync(key, payload, ct).ConfigureAwait(false);
+            IResult responderResult = await responder.RespondAsync(key, payload, ct).ConfigureAwait(false);
 
             await _eventCollector.RunPostExecutionEvents
             (

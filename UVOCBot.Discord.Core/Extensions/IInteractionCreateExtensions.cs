@@ -19,7 +19,6 @@ public static class IInteractionCreateExtensions
         if (user is null)
             return Result<InteractionContext>.FromError(new InvalidOperationError("The interaction was not made by a user."));
 
-        IInteractionData interactionData = gatewayEvent.Data.Value!;
         InteractionContext context = new
         (
             gatewayEvent.GuildID,
@@ -29,7 +28,8 @@ public static class IInteractionCreateExtensions
             gatewayEvent.Token,
             gatewayEvent.ID,
             gatewayEvent.ApplicationID,
-            interactionData
+            gatewayEvent.Data.Value!, // We can assume this is non-null for the time being
+            gatewayEvent.Message
         );
 
         return Result<InteractionContext>.FromSuccess(context);

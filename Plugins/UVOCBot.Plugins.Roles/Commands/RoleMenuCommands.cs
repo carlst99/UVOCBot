@@ -6,6 +6,7 @@ using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
@@ -133,36 +134,27 @@ public class RoleMenuCommands : CommandGroup
     [Ephemeral]
     public async Task<IResult> DeleteCommand
     (
-        [Description("The ID of the role menu message.")] Snowflake messageId
+        [Description("The ID of the role menu message.")] Snowflake messageID
     )
     {
-        GuildRoleMenu? menu = GetGuildRoleMenu(messageId.Value);
+        GuildRoleMenu? menu = GetGuildRoleMenu(messageID.Value);
         if (menu is null)
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
-        _dbContext.Remove(menu);
-        await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
-
-        Result deleteMenuResult = await _channelApi.DeleteMessageAsync
+        ButtonComponent confirmationComponent = new
         (
-            DiscordSnowflake.New(menu.ChannelId),
-            DiscordSnowflake.New(menu.MessageId),
-            "Role menu deletion requested by " + _context.User.Username,
-            CancellationToken
-        ).ConfigureAwait(false);
+            ButtonComponentStyle.Danger,
+            "Proceed with deletion",
+            CustomID: ComponentIDFormatter.GetId(RoleComponentKeys.ConfirmDeletion, messageID.Value.ToString())
+        );
 
-        if (!deleteMenuResult.IsSuccess)
-        {
-            return await _feedbackService.SendContextualWarningAsync
+        return await _feedbackService.SendContextualWarningAsync
+        (
+            "Are you sure that you want to delete this role menu?",
+            options: new FeedbackMessageOptions
             (
-                "The role menu has successfully been deleted but I couldn't remove the corresponding message. Please delete that now, as well.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
-
-        return await _feedbackService.SendContextualSuccessAsync
-        (
-            "The role menu has been successfully removed.",
+                MessageComponents: new[] { new ActionRowComponent(new[] { confirmationComponent }) }
+            ),
             ct: CancellationToken
         ).ConfigureAwait(false);
     }
@@ -174,7 +166,6 @@ public class RoleMenuCommands : CommandGroup
     (
         [Description("The ID of the role menu message.")] Snowflake messageId,
         [Description("The role to add.")] IRole roleToAdd,
-        [Description("The description of the role selection item.")] string? roleItemDescription = null,
         [Description("The label of the role selection item. Leave empty to use the name of the role as the label.")] string? roleItemLabel = null
     )
     {
@@ -195,11 +186,7 @@ public class RoleMenuCommands : CommandGroup
 
         if (dbRole is null)
         {
-            dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name)
-            {
-                Description = roleItemDescription,
-                Emoji = null
-            };
+            dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name);
 
             menu.Roles.Add(dbRole);
             _dbContext.Update(menu);
@@ -207,7 +194,6 @@ public class RoleMenuCommands : CommandGroup
         else
         {
             dbRole.Label = roleItemLabel ?? roleToAdd.Name;
-            dbRole.Description = roleItemDescription;
 
             _dbContext.Update(dbRole);
         }
@@ -259,6 +245,25 @@ public class RoleMenuCommands : CommandGroup
         return await _feedbackService.SendContextualSuccessAsync("That role has been removed.", ct: CancellationToken).ConfigureAwait(false);
     }
 
+    [Command("update")]
+    [Description("Forces an update on a role menu message. This should seldom be needed.")]
+    [Ephemeral]
+    public async Task<IResult> UpdateMenuCommandAsync
+    (
+        [Description("The ID of the role menu message.")] Snowflake messageId
+    )
+    {
+        GuildRoleMenu? menu = GetGuildRoleMenu(messageId.Value);
+        if (menu is null)
+            return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
+
+        IResult modifyMenuResult = await ModifyRoleMenu(menu).ConfigureAwait(false);
+        if (!modifyMenuResult.IsSuccess)
+            return modifyMenuResult;
+
+        return await _feedbackService.SendContextualSuccessAsync(Formatter.Emoji("white_check_mark"), ct: CancellationToken).ConfigureAwait(false);
+    }
+
     private GuildRoleMenu? GetGuildRoleMenu(ulong messageId)
         => _dbContext.RoleMenus.Include(r => r.Roles).FirstOrDefault(r => r.GuildId == _context.GuildID.Value.Value && r.MessageId == messageId);
 
@@ -288,44 +293,30 @@ public class RoleMenuCommands : CommandGroup
         (
             menu.Title,
             Description: menu.Description,
-            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Footer: new EmbedFooter("If you can't deselect a role, refresh your client by pressing Ctrl+R.")
+            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR
         );
 
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
     {
-        List<SelectOption> selectOptions = menu.Roles.ConvertAll
+        List<ButtonComponent> buttons = menu.Roles.ConvertAll
         (
-            r => new SelectOption
+            r => new ButtonComponent
             (
+                ButtonComponentStyle.Secondary,
                 r.Label,
-                r.RoleId.ToString(),
-                r.Description ?? "",
-                default,
-                false
+                CustomID: ComponentIDFormatter.GetId(RoleComponentKeys.ToggleRole, r.RoleId.ToString())
             )
         );
 
-        SelectMenuComponent selectMenu = new
-        (
-            ComponentIdFormatter.GetId(RoleComponentKeys.ToggleRole, menu.MessageId.ToString()),
-            selectOptions,
-            "Toggle roles...",
-            1,
-            menu.Roles.Count,
-            false
-        );
-
-        ActionRowComponent actionRow = new(new List<IMessageComponent> { selectMenu });
-        return new List<IMessageComponent> { actionRow };
+        return new List<IMessageComponent>(buttons.Chunk(5).Select(bl => new ActionRowComponent(bl)));
     }
 
     private async Task<IResult> CheckRoleMenuExists(GuildRoleMenu menu)
     {
         Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync
         (
-            new Snowflake(menu.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
-            new Snowflake(menu.MessageId, Remora.Discord.API.Constants.DiscordEpoch),
+            DiscordSnowflake.New(menu.ChannelId),
+            DiscordSnowflake.New(menu.MessageId),
             CancellationToken
         ).ConfigureAwait(false);
 

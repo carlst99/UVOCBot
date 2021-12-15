@@ -11,6 +11,7 @@ public static class IServiceCollectionExtensions
 {
     public static IServiceCollection AddRolesPlugin(this IServiceCollection services)
     {
+        services.AddComponentResponder<ToggleRoleComponentResponder>(RoleComponentKeys.ConfirmDeletion);
         services.AddComponentResponder<ToggleRoleComponentResponder>(RoleComponentKeys.ToggleRole);
 
         services.AddCommandGroup<RoleCommands>();

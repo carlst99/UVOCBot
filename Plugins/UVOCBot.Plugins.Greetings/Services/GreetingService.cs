@@ -175,7 +175,7 @@ public class GreetingService : IGreetingService
             messageButtons.Add(new ButtonComponent(
                 ButtonComponentStyle.Danger,
                 welcomeMessage.AlternateRoleLabel,
-                CustomID: ComponentIdFormatter.GetId(GreetingComponentKeys.SetAlternateRoles, userId.ToString())));
+                CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.SetAlternateRoles, userId.ToString())));
         }
 
         if (nicknameGuesses is not null)
@@ -186,7 +186,7 @@ public class GreetingService : IGreetingService
                 (
                     ButtonComponentStyle.Primary,
                     "My PS2 name is: " + nickname,
-                    CustomID: ComponentIdFormatter.GetId(GreetingComponentKeys.SetGuessedNickname, userId.ToString() + '@' + nickname))
+                    CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.SetGuessedNickname, userId.ToString() + '@' + nickname))
                 );
             }
 
@@ -194,7 +194,7 @@ public class GreetingService : IGreetingService
             (
                 ButtonComponentStyle.Secondary,
                 "My PS2 name is none of these!",
-                CustomID: ComponentIdFormatter.GetId(GreetingComponentKeys.NoNicknameMatches, userId.ToString()))
+                CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.NoNicknameMatches, userId.ToString()))
             );
         }
 

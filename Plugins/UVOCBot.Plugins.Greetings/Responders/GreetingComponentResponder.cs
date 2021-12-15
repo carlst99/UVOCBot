@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Components;
+using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Greetings.Abstractions.Services;
 
 namespace UVOCBot.Plugins.Greetings.Responders;
@@ -35,13 +36,13 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         _feedbackService = feedbackService;
     }
 
-    public async Task<Result> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
+    public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
         => key switch
         {
             GreetingComponentKeys.NoNicknameMatches => await NoNicknameMatches(ct).ConfigureAwait(false),
             GreetingComponentKeys.SetAlternateRoles => await SetAlternateRoles(dataFragment, ct).ConfigureAwait(false),
             GreetingComponentKeys.SetGuessedNickname => await SetGuessedNickname(dataFragment, ct).ConfigureAwait(false),
-            _ => Result.FromSuccess()
+            _ => Result.FromError(new GenericCommandError())
         };
 
     private async Task<Result> NoNicknameMatches(CancellationToken ct = default)

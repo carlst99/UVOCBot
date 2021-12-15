@@ -85,12 +85,14 @@ public class OtherCommands : CommandGroup
 
         if (_context is InteractionContext ictx)
         {
-            return await _interactionApi.CreateFollowupMessageAsync(
+            return await _interactionApi.CreateFollowupMessageAsync
+            (
                 ictx.ApplicationID,
                 ictx.Token,
                 embeds: new IEmbed[] { embed },
-                attachments: new[] { OneOf<FileData, IPartialAttachment>.FromT0(new FileData(mapFileName, File.OpenRead(mapFilePath))) },
-                ct: CancellationToken).ConfigureAwait(false);
+                attachments: new OneOf<FileData, IPartialAttachment>[] { new FileData(mapFileName, File.OpenRead(mapFilePath)) },
+                ct: CancellationToken
+            ).ConfigureAwait(false);
         }
         else
         {

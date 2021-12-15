@@ -2,7 +2,7 @@
 
 namespace UVOCBot.Discord.Core;
 
-public static class ComponentIdFormatter
+public static class ComponentIDFormatter
 {
     public const char SEPARATOR = ':';
 

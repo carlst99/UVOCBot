@@ -16,5 +16,5 @@ public interface IComponentResponder
     /// <param name="dataFragment">The optional data included in the component interaction.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation.</returns>
-    Task<Result> RespondAsync(string key, string? dataFragment, CancellationToken ct = default);
+    Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default);
 }

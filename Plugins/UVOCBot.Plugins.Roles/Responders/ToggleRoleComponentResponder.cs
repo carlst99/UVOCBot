@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
@@ -14,38 +15,60 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Components;
+using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Plugins.Roles.Responders;
 
 internal sealed class ToggleRoleComponentResponder : IComponentResponder
 {
+    private readonly IDiscordRestChannelAPI _channelApi;
+    private readonly IDiscordRestGuildAPI _guildApi;
     private readonly DiscordContext _dbContext;
     private readonly InteractionContext _context;
-    private readonly IDiscordRestGuildAPI _guildApi;
     private readonly FeedbackService _feedbackService;
 
     public ToggleRoleComponentResponder
     (
+        IDiscordRestChannelAPI channelApi,
+        IDiscordRestGuildAPI guildApi,
         DiscordContext dbContext,
         InteractionContext context,
-        IDiscordRestGuildAPI guildApi,
         FeedbackService feedbackService
     )
     {
+        _channelApi = channelApi;
+        _guildApi = guildApi;
         _dbContext = dbContext;
         _context = context;
-        _guildApi = guildApi;
         _feedbackService = feedbackService;
     }
 
-    public async Task<Result> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
+    public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
+        => key switch
+        {
+            RoleComponentKeys.ConfirmDeletion => await DeleteMenuAsync(dataFragment, ct).ConfigureAwait(false),
+            RoleComponentKeys.ToggleRole => await ToggleRoleAsync(dataFragment, ct).ConfigureAwait(false),
+            _ => Result.FromError(new GenericCommandError())
+        };
+
+    private async Task<Result> ToggleRoleAsync(string? dataFragment, CancellationToken ct = default)
     {
-        if (!_context.GuildID.HasValue || !_context.Member.HasValue || _context.Member.Value is null || !_context.Data.Values.HasValue || dataFragment is null)
+        if (!_context.GuildID.IsDefined(out Snowflake guildID))
             return Result.FromSuccess();
 
-        ulong messageId = ulong.Parse(dataFragment);
+        if (!_context.Member.IsDefined(out IGuildMember? member))
+            return Result.FromSuccess();
 
-        GuildRoleMenu? menu = GetGuildRoleMenu(messageId);
+        if (!_context.Message.IsDefined(out IMessage? message))
+            return Result.FromSuccess();
+
+        if (dataFragment is null)
+            return Result.FromSuccess();
+
+        if (!DiscordSnowflake.TryParse(dataFragment, out Snowflake? roleID))
+            return Result.FromSuccess();
+
+        GuildRoleMenu? menu = GetGuildRoleMenu(message.ID.Value);
         if (menu is null)
         {
             IResult sendDeletedResponseResult = await _feedbackService.SendContextualErrorAsync
@@ -59,57 +82,39 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
                 : Result.FromSuccess();
         }
 
-        // TODO: Verify the role is actually present in the menu. Otherwise we run into issues
-        // Of people being able to inject a role themselves.
+        if (!menu.Roles.Any(r => r.RoleId == roleID.Value.Value))
+            return new GenericCommandError(); // If this happens something sus is going on. Give no more info.
+
         string addedRoles = string.Empty;
         string removedRoles = string.Empty;
 
-        foreach (string option in _context.Data.Values.Value)
+        bool shouldRemove = member.Roles.Contains(roleID.Value);
+        Result roleManipulationResult;
+
+        if (shouldRemove)
         {
-            Snowflake roleId = new(ulong.Parse(option), Remora.Discord.API.Constants.DiscordEpoch);
-
-            if (_context.Member.Value.Roles.Contains(roleId))
-            {
-                Result removeRoleResult = await _guildApi.RemoveGuildMemberRoleAsync
-                (
-                    _context.GuildID.Value,
-                    _context.User.ID,
-                    roleId,
-                    "User self-removed via role menu",
-                    ct
-                ).ConfigureAwait(false);
-
-                if (removeRoleResult.IsSuccess)
-                    removedRoles += Formatter.RoleMention(roleId) + " ";
-            }
-            else
-            {
-                Result addRoleResult = await _guildApi.AddGuildMemberRoleAsync
-                (
-                    _context.GuildID.Value,
-                    _context.User.ID,
-                    roleId,
-                    "User self-added via role menu",
-                    ct
-                ).ConfigureAwait(false);
-
-                if (addRoleResult.IsSuccess)
-                    addedRoles += Formatter.RoleMention(roleId) + " ";
-            }
+            roleManipulationResult = await _guildApi.RemoveGuildMemberRoleAsync
+            (
+                _context.GuildID.Value,
+                _context.User.ID,
+                roleID.Value,
+                "User self-removed via role menu",
+                ct
+            ).ConfigureAwait(false);
+        }
+        else
+        {
+            roleManipulationResult = await _guildApi.AddGuildMemberRoleAsync
+            (
+                _context.GuildID.Value,
+                _context.User.ID,
+                roleID.Value,
+                "User self-added via role menu",
+                ct
+            ).ConfigureAwait(false);
         }
 
-        string response = string.Empty;
-        if (addedRoles != string.Empty)
-        {
-            response += "Sweet! I've given you the following roles:" +
-                "\n" + addedRoles + "\n\n";
-        }
-
-        if (removedRoles != string.Empty)
-        {
-            response += "I removed the following roles, because you already had them:" +
-                "\n" + removedRoles;
-        }
+        string response = $"Sweet! You've been {(shouldRemove ? "relieved of" : "given")} the {Formatter.RoleMention(roleID.Value)} role.";
 
         IResult res = await _feedbackService.SendContextualSuccessAsync
         (
@@ -121,6 +126,45 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         return res.IsSuccess
             ? Result.FromSuccess()
             : Result.FromError(res.Error!);
+    }
+
+    private async Task<IResult> DeleteMenuAsync(string? dataFragment, CancellationToken ct = default)
+    {
+        if (dataFragment is null)
+            return Result.FromError(new GenericCommandError());
+
+        if (!DiscordSnowflake.TryParse(dataFragment, out Snowflake? menuID))
+            return Result.FromSuccess();
+
+        GuildRoleMenu? menu = GetGuildRoleMenu(menuID.Value.Value);
+        if (menu is null)
+            return Result.FromError(new GenericCommandError());
+
+        _dbContext.Remove(menu);
+        await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        Result deleteMenuResult = await _channelApi.DeleteMessageAsync
+        (
+            DiscordSnowflake.New(menu.ChannelId),
+            DiscordSnowflake.New(menu.MessageId),
+            "Role menu deletion requested by " + _context.User.Username,
+            ct
+        ).ConfigureAwait(false);
+
+        if (!deleteMenuResult.IsSuccess)
+        {
+            return await _feedbackService.SendContextualWarningAsync
+            (
+                "The role menu has successfully been deleted but I couldn't remove the corresponding message. Please delete that now, as well.",
+                ct: ct
+            ).ConfigureAwait(false);
+        }
+
+        return await _feedbackService.SendContextualSuccessAsync
+        (
+            "The role menu has been successfully removed.",
+            ct: ct
+        ).ConfigureAwait(false);
     }
 
     private GuildRoleMenu? GetGuildRoleMenu(ulong messageId)

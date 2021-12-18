@@ -141,7 +141,10 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
             return Result.FromError(new GenericCommandError());
 
         _dbContext.Remove(menu);
-        await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+        int deletedCount = await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        if (deletedCount < 1)
+            return Result.FromError(new GenericCommandError());
 
         Result deleteMenuResult = await _channelApi.DeleteMessageAsync
         (

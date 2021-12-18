@@ -27,6 +27,7 @@ namespace UVOCBot.Plugins.Roles.Commands;
 [Description("Commands to create and edit role menus.")]
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageRoles)]
+[Ephemeral]
 public class RoleMenuCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -53,12 +54,11 @@ public class RoleMenuCommands : CommandGroup
 
     [Command("create")]
     [Description("Creates a new role menu.")]
-    [Ephemeral]
     public async Task<Result> CreateCommand
     (
         [Description("The channel to post the role menu in.")][ChannelTypes(ChannelType.GuildText)] IChannel channel,
         [Description("The title of the role menu.")] string title,
-        [Description("The description of the role menu.")] string? description = null
+        [Description("The description of the role menu. '\\n' Will be replaced with a line break.")] string? description = null
     )
     {
         Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel
@@ -76,6 +76,9 @@ public class RoleMenuCommands : CommandGroup
 
         if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
             return new PermissionError(DiscordPermission.SendMessages, DiscordConstants.UserId, channel.ID);
+
+        if (description is not null)
+            description = description.Replace("\\n", "\n");
 
         GuildRoleMenu menu = new(_context.GuildID.Value.Value, 0, channel.ID.Value, _context.User.ID.Value, title)
         {
@@ -97,7 +100,10 @@ public class RoleMenuCommands : CommandGroup
         menu.MessageId = menuCreationResult.Entity.ID.Value;
 
         _dbContext.Add(menu);
-        await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+        int addedCount = await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+        if (addedCount < 1)
+            return new GenericCommandError();
 
         IResult sendResult = await _feedbackService.SendContextualSuccessAsync("Menu created! ", ct: CancellationToken).ConfigureAwait(false);
         return sendResult.IsSuccess
@@ -107,31 +113,44 @@ public class RoleMenuCommands : CommandGroup
 
     [Command("edit")]
     [Description("Edits a role menu.")]
-    [Ephemeral]
     public async Task<IResult> EditCommand
     (
         [Description("The ID of the role menu message.")] Snowflake messageId,
         [Description("The title of the role menu.")] string newTitle,
-        [Description("The description of the role menu.")] string? newDescription = null
+        [Description("The description of the role menu. '\\n' will be replaced with a linebreak.")] string? newDescription = null
     )
     {
         GuildRoleMenu? menu = GetGuildRoleMenu(messageId.Value);
         if (menu is null)
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
 
+        if (newDescription is not null)
+            newDescription = newDescription.Replace("\\n", "\n");
+
         menu.Title = newTitle;
         menu.Description = newDescription ?? string.Empty;
 
+        _dbContext.Update(menu);
+        int updateCount = await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+        if (updateCount < 1)
+            return Result.FromError(new GenericCommandError());
+
         IResult modifyMenuResult = await ModifyRoleMenu(menu).ConfigureAwait(false);
         if (!modifyMenuResult.IsSuccess)
-            return modifyMenuResult;
+        {
+            return await _feedbackService.SendContextualWarningAsync
+            (
+                $"The menu was updated internally, but I couldn't update the corresponding message. Please use the {Formatter.InlineQuote("rolemenu update")} command.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
 
         return await _feedbackService.SendContextualSuccessAsync("Menu updated!", ct: CancellationToken).ConfigureAwait(false);
     }
 
     [Command("delete")]
     [Description("Deletes a role menu.")]
-    [Ephemeral]
     public async Task<IResult> DeleteCommand
     (
         [Description("The ID of the role menu message.")] Snowflake messageID
@@ -160,8 +179,7 @@ public class RoleMenuCommands : CommandGroup
     }
 
     [Command("add-role")]
-    [Description("Adds a role selection item to a role menu.")]
-    [Ephemeral]
+    [Description("Adds a role to a menu. If the role already exists on the message it will be updated.")]
     public async Task<IResult> AddRole
     (
         [Description("The ID of the role menu message.")] Snowflake messageId,
@@ -189,6 +207,7 @@ public class RoleMenuCommands : CommandGroup
             dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name);
 
             menu.Roles.Add(dbRole);
+            menu.Roles.Sort((r1, r2) => r1.Label.CompareTo(r2.Label));
             _dbContext.Update(menu);
         }
         else
@@ -198,18 +217,31 @@ public class RoleMenuCommands : CommandGroup
             _dbContext.Update(dbRole);
         }
 
-        await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+        int updateCount = await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+        if (updateCount < 1)
+            return Result.FromError(new GenericCommandError());
 
         IResult modifyMenuResult = await ModifyRoleMenu(menu).ConfigureAwait(false);
         if (!modifyMenuResult.IsSuccess)
-            return modifyMenuResult;
+        {
+            return await _feedbackService.SendContextualWarningAsync
+            (
+                $"The menu was updated internally, but I couldn't update the corresponding message. Please use the {Formatter.InlineQuote("rolemenu update")} command.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
 
-        return await _feedbackService.SendContextualSuccessAsync("That role has been added.", ct: CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync
+        (
+            $"The {Formatter.RoleMention(roleToAdd)} role has been added.",
+            options: new FeedbackMessageOptions(AllowedMentions: new AllowedMentions()),
+            ct: CancellationToken
+        ).ConfigureAwait(false);
     }
 
     [Command("remove-role")]
-    [Description("Removes a role selection item from a role menu.")]
-    [Ephemeral]
+    [Description("Removes a role from a menu.")]
     public async Task<IResult> RemoveRole
     (
         [Description("The ID of the role menu message.")] Snowflake messageId,
@@ -236,18 +268,31 @@ public class RoleMenuCommands : CommandGroup
         menu.Roles.Remove(dbRole);
         _dbContext.Update(menu);
         _dbContext.Remove(dbRole);
-        await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+        int updateCount = await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+
+        if (updateCount < 1)
+            return Result.FromError(new GenericCommandError());
 
         IResult modifyMenuResult = await ModifyRoleMenu(menu).ConfigureAwait(false);
         if (!modifyMenuResult.IsSuccess)
-            return modifyMenuResult;
+        {
+            return await _feedbackService.SendContextualWarningAsync
+            (
+                $"The menu was updated internally, but I couldn't update the corresponding message. Please use the {Formatter.InlineQuote("rolemenu update")} command.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
 
-        return await _feedbackService.SendContextualSuccessAsync("That role has been removed.", ct: CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync
+        (
+            $"The {Formatter.RoleMention(roleToRemove)} role has been removed.",
+            options: new FeedbackMessageOptions(AllowedMentions: new AllowedMentions()),
+            ct: CancellationToken
+        ).ConfigureAwait(false);
     }
 
     [Command("update")]
     [Description("Forces an update on a role menu message. This should seldom be needed.")]
-    [Ephemeral]
     public async Task<IResult> UpdateMenuCommandAsync
     (
         [Description("The ID of the role menu message.")] Snowflake messageId

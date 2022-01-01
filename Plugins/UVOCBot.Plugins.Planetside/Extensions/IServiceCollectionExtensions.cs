@@ -54,7 +54,6 @@ public static class IServiceCollectionExtensions
 
         services.AddHostedService<EventStreamWorker>();
         services.AddHostedService<StartupWorker>();
-        services.AddHostedService<SubscriptionWorker>();
 
         return services;
     }

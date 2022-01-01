@@ -33,7 +33,7 @@ public class CachingCensusApiService : CensusApiService
     /// <summary>
     /// This query is cached.
     /// </summary>
-    public async override Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
+    public override async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
     {
         if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit outfit))
             return Result<Outfit?>.FromSuccess(outfit);

@@ -36,10 +36,6 @@ internal sealed class EventStreamWorker : BackgroundService
             {
                 _logger.LogError(ex, "An error occured in the event stream client");
             }
-            finally
-            {
-                _client.Dispose();
-            }
 
             await Task.Delay(15000, stoppingToken).ConfigureAwait(false);
         }

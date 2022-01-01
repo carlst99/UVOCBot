@@ -32,7 +32,7 @@ public static class CacheEntryHelpers
     public static MemoryCacheEntryOptions GetMapOptions()
         => new()
         {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7),
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
             Priority = CacheItemPriority.Normal,
             Size = 2
         };

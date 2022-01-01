@@ -1,4 +1,5 @@
-﻿using DbgCensus.EventStream.Abstractions.Objects.Commands;
+﻿using DbgCensus.EventStream.Abstractions.Objects;
+using DbgCensus.EventStream.Abstractions.Objects.Commands;
 using DbgCensus.EventStream.Abstractions.Objects.Events;
 using DbgCensus.EventStream.Objects.Commands;
 using System;
@@ -17,13 +18,13 @@ public class SubscriptionBuilderService : ISubscriptionBuilderService
         (
             (ISubscribe)new Subscribe
             (
-                new string[] { "all" },
+                new All(),
                 new string[]
                 {
                         EventNames.FacilityControl,
                         EventNames.MetagameEvent
                 },
-                Worlds: new string[] { "all" }
+                Worlds: new All()
             )
         );
 

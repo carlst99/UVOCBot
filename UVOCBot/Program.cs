@@ -120,7 +120,7 @@ public static class Program
 #else
                     logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
 #endif
-                })
+            })
             .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
             .UseSerilog(logger)
             .UseSystemd()
@@ -200,7 +200,7 @@ public static class Program
 #if DEBUG
     private static ILogger SetupLogging(IFileSystem fileSystem)
 #else
-        private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
+    private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
 #endif
     {
         LoggerConfiguration logConfig = new LoggerConfiguration()
@@ -211,24 +211,24 @@ public static class Program
 #if DEBUG
         logConfig.MinimumLevel.Debug();
 #else
-            logConfig.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
+        logConfig.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
 
-            if (seqIngestionEndpoint is not null)
-            {
-                LoggingLevelSwitch levelSwitch = new();
+        if (seqIngestionEndpoint is not null)
+        {
+            LoggingLevelSwitch levelSwitch = new();
 
-                logConfig.MinimumLevel.ControlledBy(levelSwitch)
-                     .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
-            }
-            else
-            {
-                logConfig.MinimumLevel.Information()
-                    .WriteTo.File(
-                        GetAppdataFilePath(fileSystem, "log.log"),
-                        LogEventLevel.Warning,
-                        "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
-                        rollingInterval: RollingInterval.Day);
-            }
+            logConfig.MinimumLevel.ControlledBy(levelSwitch)
+                    .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
+        }
+        else
+        {
+            logConfig.MinimumLevel.Information()
+                .WriteTo.File(
+                    GetAppdataFilePath(fileSystem, "log.log"),
+                    LogEventLevel.Warning,
+                    "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+                    rollingInterval: RollingInterval.Day);
+        }
 #endif
 
         Log.Logger = logConfig.CreateLogger();

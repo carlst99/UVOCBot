@@ -215,7 +215,7 @@ public class WorldCommands : CommandGroup
             TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.MetagameEventID) - currentEventDuration;
             title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
         }
-        else
+        else if (ncPercent == 100 || trPercent == 100 || vsPercent == 100)
         {
             title += " " + Formatter.Emoji("lock");
         }

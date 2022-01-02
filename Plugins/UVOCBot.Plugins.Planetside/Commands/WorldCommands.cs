@@ -129,13 +129,7 @@ public class WorldCommands : CommandGroup
         Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
 
         if (!populationResult.IsSuccess)
-        {
-            await _feedbackService.SendContextualErrorAsync(
-                $"Could not get population statistics - the query to { Formatter.InlineQuote("fisu") } failed. Please try again.",
-                ct: CancellationToken).ConfigureAwait(false);
-
             return populationResult;
-        }
 
         IPopulation population = populationResult.Entity;
 

@@ -156,7 +156,7 @@ public class WorldCommands : CommandGroup
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Title = world.ToString() + " - " + population.Total.ToString(),
-            Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
+            Footer = new EmbedFooter("Data from Varunda's wt.honu.pw"),
             Fields = embedFields
         };
 

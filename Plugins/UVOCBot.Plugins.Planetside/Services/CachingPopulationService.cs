@@ -1,6 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,16 +12,10 @@ namespace UVOCBot.Plugins.Planetside.Services;
 /// <inheritdoc cref="IPopulationService" />
 public abstract class CachingPopulationService : IPopulationService
 {
-    protected readonly PlanetsidePluginOptions _options;
     protected readonly IMemoryCache _cache;
 
-    protected CachingPopulationService
-    (
-        IOptions<PlanetsidePluginOptions> options,
-        IMemoryCache cache
-    )
+    protected CachingPopulationService(IMemoryCache cache)
     {
-        _options = options.Value;
         _cache = cache;
     }
 

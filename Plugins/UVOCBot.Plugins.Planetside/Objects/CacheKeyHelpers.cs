@@ -39,7 +39,7 @@ public static class CacheKeyHelpers
         => (typeof(Map), (int)world, (int)zone);
 
     public static object GetPopulationKey(IPopulation population)
-        => GetPopulationKey(population.World);
+        => GetPopulationKey(population.WorldID);
 
     public static object GetPopulationKey(WorldDefinition world)
         => (typeof(IPopulation), (int)world);

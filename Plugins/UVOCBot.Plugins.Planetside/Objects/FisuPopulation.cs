@@ -21,7 +21,7 @@ public record FisuPopulation
     );
 
     /// <inheritdoc />
-    public WorldDefinition World => Result[0].WorldID;
+    public WorldDefinition WorldID => Result[0].WorldID;
 
     /// <inheritdoc />
     public int NC => Result[0].NC;

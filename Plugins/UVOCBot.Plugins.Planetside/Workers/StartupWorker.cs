@@ -48,12 +48,6 @@ public class StartupWorker : BackgroundService
             MetagameEvent eventStreamConversion = events.Entity[0].ToEventStreamMetagameEvent();
             object key = CacheKeyHelpers.GetMetagameEventKey(eventStreamConversion);
             _cache.Set(key, eventStreamConversion);
-
-            /**
-             * Pre-cache maps.
-             * Assumes that the CachingCensusApiService will perform the caching.
-             */
-            await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), ct).ConfigureAwait(false);
         }
     }
 }

@@ -20,8 +20,4 @@
     <ProjectReference Include="..\..\UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Services\Abstractions\" />
-  </ItemGroup>
-
 </Project>

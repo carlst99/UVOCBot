@@ -10,7 +10,7 @@ public interface IPopulation
     /// <summary>
     /// Gets the world that this population measure is for.
     /// </summary>
-    WorldDefinition World { get; }
+    WorldDefinition WorldID { get; }
 
     /// <summary>
     /// Gets the NC player count.

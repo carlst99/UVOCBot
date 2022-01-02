@@ -7,10 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using UVOCBot.Plugins.Planetside;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.CensusEventHandlers;
 using UVOCBot.Plugins.Planetside.Commands;
 using UVOCBot.Plugins.Planetside.Services;
-using UVOCBot.Plugins.Planetside.Services.Abstractions;
 using UVOCBot.Plugins.Planetside.Workers;
 
 namespace UVOCBot.Plugins;
@@ -37,7 +37,7 @@ public static class IServiceCollectionExtensions
         services.AddSingleton(Options.Create(esOptions));
 
         services.AddHttpClient();
-        services.AddSingleton<IFisuApiService, CachingFisuApiService>();
+        services.AddSingleton<IPopulationService, CachingFisuApiService>();
 
         services.AddCensusRestServices();
         services.AddSingleton<ICensusApiService, CachingCensusApiService>();

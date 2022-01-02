@@ -17,10 +17,10 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Plugins.Planetside.Abstractions.Objects;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
-using UVOCBot.Plugins.Planetside.Objects.Fisu;
-using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 
@@ -28,7 +28,7 @@ public class WorldCommands : CommandGroup
 {
     private readonly ICommandContext _context;
     private readonly ICensusApiService _censusApi;
-    private readonly IFisuApiService _fisuApi;
+    private readonly IPopulationService _populationApi;
     private readonly IMemoryCache _cache;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
@@ -36,14 +36,14 @@ public class WorldCommands : CommandGroup
     public WorldCommands(
         ICommandContext context,
         ICensusApiService censusApi,
-        IFisuApiService fisuApi,
+        IPopulationService fisuApi,
         IMemoryCache cache,
         DiscordContext dbContext,
         FeedbackService feedbackService)
     {
         _context = context;
         _censusApi = censusApi;
-        _fisuApi = fisuApi;
+        _populationApi = fisuApi;
         _cache = cache;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
@@ -126,7 +126,7 @@ public class WorldCommands : CommandGroup
 
     private async Task<IResult> SendWorldPopulationAsync(ValidWorldDefinition world)
     {
-        Result<Population> populationResult = await _fisuApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
+        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
 
         if (!populationResult.IsSuccess)
         {
@@ -137,20 +137,27 @@ public class WorldCommands : CommandGroup
             return populationResult;
         }
 
-        Population population = populationResult.Entity;
+        IPopulation population = populationResult.Entity;
+
+        List<EmbedField> embedFields = new()
+        {
+            new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
+            new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
+            new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total))
+        };
+
+        if (population.NS is not null)
+        {
+            EmbedField nsField = new($"{Formatter.Emoji("white_circle")} NS - {population.NS}", BuildEmbedPopulationBar((int)population.NS, population.Total));
+            embedFields.Add(nsField);
+        }
 
         Embed embed = new()
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Title = world.ToString() + " - " + population.Total.ToString(),
             Footer = new EmbedFooter("Data gratefully taken from ps2.fisu.pw"),
-            Fields = new List<EmbedField>
-                {
-                    new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
-                    new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
-                    new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
-                    new EmbedField($"{Formatter.Emoji("white_circle")} NS - {population.NS}", BuildEmbedPopulationBar(population.NS, population.Total))
-                }
+            Fields = embedFields
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);

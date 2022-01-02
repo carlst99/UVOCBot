@@ -37,7 +37,7 @@ public static class CacheEntryHelpers
             Size = 2
         };
 
-    public static MemoryCacheEntryOptions GetFisuPopulationOptions()
+    public static MemoryCacheEntryOptions GetPopulationOptions()
         => new()
         {
             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(3),

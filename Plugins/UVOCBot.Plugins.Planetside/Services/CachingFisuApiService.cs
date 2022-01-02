@@ -1,55 +1,35 @@
-﻿using DbgCensus.Core.Objects;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Remora.Results;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Plugins.Planetside.Abstractions.Objects;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.Fisu;
-using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
-/// <inheritdoc cref="IFisuApiService"/>
-public class CachingFisuApiService : IFisuApiService
+/// <summary>
+/// <inheritdoc cref="IPopulationService"/>
+/// Data is collected from fisu.
+/// </summary>
+public class CachingFisuApiService : CachingPopulationService
 {
-    private readonly PlanetsidePluginOptions _options;
-    private readonly IMemoryCache _cache;
     private readonly HttpClient _httpClient;
 
-    public CachingFisuApiService(
+    public CachingFisuApiService
+    (
         IOptions<PlanetsidePluginOptions> options,
         IMemoryCache cache,
-        HttpClient httpClient)
+        HttpClient httpClient
+    ) : base(options, cache)
     {
-        _options = options.Value;
-        _cache = cache;
         _httpClient = httpClient;
     }
 
-    /// <inheritdoc />
-    public async Task<Result<Population>> GetWorldPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default)
-    {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetFisuPopulationKey((WorldDefinition)world), out Population pop))
-            return pop;
-
-        Result<Population> popResult = await QueryPopulationAsync(world, ct).ConfigureAwait(false);
-        if (!popResult.IsSuccess)
-            return popResult;
-
-        _cache.Set
-        (
-            CacheKeyHelpers.GetFisuPopulationKey(popResult.Entity),
-            popResult.Entity,
-            CacheEntryHelpers.GetFisuPopulationOptions()
-        );
-
-        return popResult;
-    }
-
-    private async Task<Result<Population>> QueryPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default)
+    protected override async Task<Result<IPopulation>> QueryPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default)
     {
         string queryUrl = $"{ _options.FisuApiEndpoint }/population?world={ (int)world }";
 
@@ -58,7 +38,7 @@ public class CachingFisuApiService : IFisuApiService
             return new HttpRequestException(response.ReasonPhrase ?? "No reason provided.", null, response.StatusCode);
 
         string jsonString = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        Population? pop = JsonSerializer.Deserialize<Population>(jsonString, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        FisuPopulation? pop = JsonSerializer.Deserialize<FisuPopulation>(jsonString, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         if (pop is null)
             return new InvalidOperationError("Population cannot be returned for that world.");

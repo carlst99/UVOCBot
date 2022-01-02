@@ -5,7 +5,7 @@ using DbgCensus.EventStream.EventHandlers.Abstractions;
 using DbgCensus.EventStream.EventHandlers.Abstractions.Objects;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Plugins.Planetside.Services.Abstractions;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
 

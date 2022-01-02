@@ -1,9 +1,9 @@
 ﻿using DbgCensus.Core.Objects;
 using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
 using System;
+using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.Fisu;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
@@ -38,9 +38,9 @@ public static class CacheKeyHelpers
     public static object GetMapKey(WorldDefinition world, ZoneDefinition zone)
         => (typeof(Map), (int)world, (int)zone);
 
-    public static object GetFisuPopulationKey(Population population)
-        => GetFisuPopulationKey(population.World);
+    public static object GetPopulationKey(IPopulation population)
+        => GetPopulationKey(population.World);
 
-    public static object GetFisuPopulationKey(WorldDefinition world)
-        => (typeof(Population), (int)world);
+    public static object GetPopulationKey(WorldDefinition world)
+        => (typeof(IPopulation), (int)world);
 }

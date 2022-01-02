@@ -7,7 +7,7 @@ using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
-namespace UVOCBot.Plugins.Planetside.Services.Abstractions;
+namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 
 /// <summary>
 /// Provides methods to retrieve data from the Census query API.

@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Plugins.Planetside.Services.Abstractions;
+namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 
 /// <summary>
 /// Defines functions to build a subscription for the Census Event Stream.

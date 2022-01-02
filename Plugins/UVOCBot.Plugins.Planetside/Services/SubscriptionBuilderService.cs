@@ -5,7 +5,7 @@ using DbgCensus.EventStream.Objects.Commands;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Plugins.Planetside.Services.Abstractions;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -30,7 +30,5 @@ public class SubscriptionBuilderService : ISubscriptionBuilderService
 
     /// <inheritdoc />
     public Task RefreshAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
+        => throw new NotImplementedException();
 }

@@ -16,8 +16,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 

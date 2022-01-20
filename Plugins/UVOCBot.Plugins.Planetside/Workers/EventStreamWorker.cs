@@ -26,7 +26,7 @@ internal sealed class EventStreamWorker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            _client = _clientFactory.GetClient(EventStreamConstants.CENSUS_EVENTSTREAM_CLIENT_NAME);
+            _client = _clientFactory.GetClient();
 
             try
             {

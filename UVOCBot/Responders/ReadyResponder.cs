@@ -73,7 +73,7 @@ public class ReadyResponder : IResponder<IReady>
 
     private async Task PrepareDatabase(IReadOnlyList<IUnavailableGuild> guilds, CancellationToken ct = default)
     {
-        Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(guilds.Select(g => g.GuildID.Value), ct).ConfigureAwait(false);
+        Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(guilds.Select(g => g.ID.Value), ct).ConfigureAwait(false);
         if (!dbScaffoldResult.IsSuccess)
         {
             _logger.LogCritical("Failed to scaffold database: {error}", dbScaffoldResult.Error);

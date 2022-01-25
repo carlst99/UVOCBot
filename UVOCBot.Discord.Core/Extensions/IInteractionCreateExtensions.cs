@@ -29,7 +29,8 @@ public static class IInteractionCreateExtensions
             gatewayEvent.ID,
             gatewayEvent.ApplicationID,
             gatewayEvent.Data.Value!, // We can assume this is non-null for the time being
-            gatewayEvent.Message
+            gatewayEvent.Message,
+            gatewayEvent.Locale
         );
 
         return Result<InteractionContext>.FromSuccess(context);

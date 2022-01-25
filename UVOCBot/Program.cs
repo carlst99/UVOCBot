@@ -267,11 +267,13 @@ public static class Program
                 .AddResponder<GuildMemberResponder>()
                 .AddResponder<ReadyResponder>();
 
-        services.AddCommandGroup<AdminCommands>()
-                .AddCommandGroup<GeneralCommands>()
-                .AddCommandGroup<MovementCommands>()
-                .AddCommandGroup<TeamGenerationCommands>()
-                .AddCommandGroup<TwitterCommands>();
+        services.AddCommandTree()
+                .WithCommandGroup<AdminCommands>()
+                .WithCommandGroup<GeneralCommands>()
+                .WithCommandGroup<MovementCommands>()
+                .WithCommandGroup<TeamGenerationCommands>()
+                .WithCommandGroup<TwitterCommands>()
+                .Finish();
 
         return services;
     }

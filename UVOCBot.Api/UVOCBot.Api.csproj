@@ -1,16 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <Version>0.3.1</Version>
     <UserSecretsId>a7e2c9df-62af-4ea8-b2c3-6b068433d368</UserSecretsId>
-    <Nullable>enable</Nullable>
-    <Platforms>x64;AnyCPU</Platforms>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="uvocbotapi.service" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.0" NoWarn="NU1605" />

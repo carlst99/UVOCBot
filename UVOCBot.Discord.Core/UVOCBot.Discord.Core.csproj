@@ -1,12 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Platforms>x64;AnyCPU</Platforms>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Remora.Discord.Commands" Version="14.0.5" />
   </ItemGroup>

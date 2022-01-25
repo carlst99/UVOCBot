@@ -25,6 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Roles", "Pl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Greetings", "Plugins\UVOCBot.Plugins.Greetings\UVOCBot.Plugins.Greetings.csproj", "{1D4A65CD-0201-4711-A53A-99ABCEC767CA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Plugins.Feeds", "Plugins\UVOCBot.Plugins.Feeds\UVOCBot.Plugins.Feeds.csproj", "{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{1D4A65CD-0201-4711-A53A-99ABCEC767CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1D4A65CD-0201-4711-A53A-99ABCEC767CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1D4A65CD-0201-4711-A53A-99ABCEC767CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -67,6 +73,7 @@ Global
 		{98B484AF-197E-4A4F-8BA8-994771E96E8B} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 		{791A00E3-37BB-4AE2-826D-F3B5FB13358A} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 		{1D4A65CD-0201-4711-A53A-99ABCEC767CA} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
+		{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3298591-9482-4E35-A1C5-B0B88D4C57A9}

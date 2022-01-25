@@ -48,9 +48,11 @@ public static class IServiceCollectionExtensions
         services.AddPayloadHandler<FacilityControlResponder>();
         services.AddPayloadHandler<MetagameEventResponder>();
 
-        services.AddCommandGroup<OtherCommands>();
-        services.AddCommandGroup<OutfitTrackingCommands>();
-        services.AddCommandGroup<WorldCommands>();
+        services.AddCommandTree()
+                .WithCommandGroup<OtherCommands>()
+                .WithCommandGroup<OutfitTrackingCommands>()
+                .WithCommandGroup<WorldCommands>()
+                .Finish();
 
         services.AddHostedService<EventStreamWorker>();
         services.AddHostedService<StartupWorker>();

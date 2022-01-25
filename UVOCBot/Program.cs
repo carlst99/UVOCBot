@@ -159,19 +159,20 @@ public static class Program
 
                 // Setup other services
                 services.AddSingleton(fileSystem)
-                    .AddTransient(TwitterClientFactory);
+                        .AddTransient(TwitterClientFactory);
 
                 // Add Discord-related services
                 services.AddRemoraServices()
-                    .AddCoreDiscordServices()
-                    .AddScoped<IAdminLogService, AdminLogService>()
-                    .AddScoped<IReplyService, ReplyService>()
-                    .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
+                        .AddCoreDiscordServices()
+                        .AddScoped<IAdminLogService, AdminLogService>()
+                        .AddScoped<IReplyService, ReplyService>()
+                        .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
                 // Plugin registration
-                services.AddGreetingsPlugin();
-                services.AddPlanetsidePlugin(c.Configuration);
-                services.AddRolesPlugin();
+                services.AddFeedsPlugin()
+                        .AddGreetingsPlugin()
+                        .AddPlanetsidePlugin(c.Configuration)
+                        .AddRolesPlugin();
 
                 services.AddHostedService<GenericWorker>()
                         .AddHostedService<TwitterWorker>();

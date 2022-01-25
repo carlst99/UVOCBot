@@ -14,8 +14,10 @@ public static class IServiceCollectionExtensions
         services.AddComponentResponder<ToggleRoleComponentResponder>(RoleComponentKeys.ConfirmDeletion);
         services.AddComponentResponder<ToggleRoleComponentResponder>(RoleComponentKeys.ToggleRole);
 
-        services.AddCommandGroup<RoleCommands>();
-        services.AddCommandGroup<RoleMenuCommands>();
+        services.AddCommandTree()
+                .WithCommandGroup<RoleCommands>()
+                .WithCommandGroup<RoleMenuCommands>()
+                .Finish();
 
         return services;
     }

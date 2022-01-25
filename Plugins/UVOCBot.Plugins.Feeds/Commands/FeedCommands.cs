@@ -14,117 +14,119 @@ using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Discord.Core.Services.Abstractions;
-using UVOCBot.Model;
 
-namespace UVOCBot.Commands;
+namespace UVOCBot.Plugins.Feeds.Commands;
 
-[Group("admin")]
-[Description("Administorial commands.")]
+[Group("feed")]
+[Description("Commands that manage external feeds")]
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
-[Ephemeral]
-public class AdminCommands : CommandGroup
+public class FeedCommands : CommandGroup
 {
     private readonly ICommandContext _context;
-    private readonly DiscordContext _dbContext;
     private readonly IPermissionChecksService _permissionChecksService;
+    private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
-    public AdminCommands
+    public FeedCommands
     (
         ICommandContext context,
+        IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
-        IPermissionChecksService permissionsCheckService,
         FeedbackService feedbackService
     )
     {
         _context = context;
+        _permissionChecksService = permissionChecksService;
         _dbContext = dbContext;
-        _permissionChecksService = permissionsCheckService;
         _feedbackService = feedbackService;
     }
 
-    [Command("enable-logging")]
-    [Description("Enables or disables admin logging.")]
-    public async Task<IResult> EnabledCommand(bool isEnabled)
+    [Command("global-toggle")]
+    [Description("Enables or disables all feeds.")]
+    public async Task<IResult> EnabledCommandAsync(bool isEnabled)
     {
-        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
         if (isEnabled)
         {
-            if (settings.LoggingChannelId is null)
+            if (settings.FeedChannelID is null)
             {
                 return await _feedbackService.SendContextualErrorAsync
                 (
-                    "You must set a logging channel to enable admin logging.",
+                    "You must set a feed channel to enable this feature.",
                     ct: CancellationToken
                 ).ConfigureAwait(false);
             }
 
-            Snowflake channelSnowflake = DiscordSnowflake.New(settings.LoggingChannelId.Value);
-            Result canLogToChannel = await CheckLoggingChannelPermissions(channelSnowflake).ConfigureAwait(false);
+            Snowflake channelSnowflake = DiscordSnowflake.New(settings.FeedChannelID.Value);
+            Result canLogToChannel = await CheckFeedChannelPermissions(channelSnowflake).ConfigureAwait(false);
 
             if (!canLogToChannel.IsSuccess)
                 return canLogToChannel;
         }
 
-        settings.IsLoggingEnabled = isEnabled;
+        settings.IsEnabled = isEnabled;
 
         _dbContext.Update(settings);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
         return await _feedbackService.SendContextualSuccessAsync
         (
-            "Admin logs have been " + Formatter.Bold(isEnabled ? "enabled." : "disabled."),
+            "Feeds have been " + Formatter.Bold(isEnabled ? "enabled." : "disabled."),
             ct: CancellationToken
         ).ConfigureAwait(false);
     }
 
-    [Command("logging-channel")]
-    [Description("Sets the channel to post admin logs to.")]
-    public async Task<IResult> SetLoggingChannelCommandAsync([ChannelTypes(ChannelType.GuildText)] IChannel channel)
+    [Command("channel")]
+    [Description("Selects the channel to which feeds will be relayed")]
+    public async Task<IResult> SetFeedChannelCommandAsync
+    (
+        [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)] IChannel channel
+    )
     {
-        Result canLogToChannel = await CheckLoggingChannelPermissions(channel.ID).ConfigureAwait(false);
-        if (!canLogToChannel.IsSuccess)
-            return canLogToChannel;
+        Result canPostToChannel = await CheckFeedChannelPermissions(channel.ID).ConfigureAwait(false);
+        if (!canPostToChannel.IsSuccess)
+            return canPostToChannel;
 
-        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-        settings.LoggingChannelId = channel.ID.Value;
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        settings.FeedChannelID = channel.ID.Value; _dbContext.Update(settings);
 
-        _dbContext.Update(settings);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
         return await _feedbackService.SendContextualSuccessAsync
         (
-            "I will now post admin logs to " + Formatter.ChannelMention(channel.ID),
+            "I will now post feeds to " + Formatter.ChannelMention(channel.ID),
             ct: CancellationToken
         ).ConfigureAwait(false);
     }
 
-    [Command("toggle-log")]
-    [Description("Enables or disables a particular log.")]
-    public async Task<IResult> ToggleLog(
-        [Description("The type of log to toggle.")] AdminLogTypes logType,
-        [Description("Enables or disabled this log.")] bool isEnabled)
+    [Command("toggle")]
+    [Description("Enables or disables a particular feed.")]
+    public async Task<IResult> ToggleFeedCommandAsync
+    (
+        [Description("The feed to toggle.")] Feed feed,
+        [Description("Whether to enable or disable this feed.")] bool isEnabled
+    )
     {
-        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
         if (isEnabled)
-            settings.LogTypes |= (ulong)logType;
+            settings.Feeds |= (ulong)feed;
         else
-            settings.LogTypes &= ~(ulong)logType;
+            settings.Feeds &= ~(ulong)feed;
 
         _dbContext.Update(settings);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
         return await _feedbackService.SendContextualSuccessAsync
         (
-            $"Logging for the {logType} event has been " + (isEnabled ? "enabled" : "disabled"),
+            $"Logging for the {feed} event has been " + (isEnabled ? "enabled" : "disabled"),
             ct: CancellationToken
         ).ConfigureAwait(false);
     }
 
-    private async Task<Result> CheckLoggingChannelPermissions(Snowflake channelId)
+    private async Task<Result> CheckFeedChannelPermissions(Snowflake channelId)
     {
         Result<IDiscordPermissionSet> permissions = await _permissionChecksService.GetPermissionsInChannel
         (

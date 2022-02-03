@@ -3,11 +3,10 @@ using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Services.Abstractions
+namespace UVOCBot.Services.Abstractions;
+
+public interface IAdminLogService
 {
-    public interface IAdminLogService
-    {
-        Task<Result> LogMemberJoin(IGuildMemberAdd member, CancellationToken ct = default);
-        Task<Result> LogMemberLeave(IGuildMemberRemove user, CancellationToken ct = default);
-    }
+    Task<Result> LogMemberJoin(IGuildMemberAdd member, CancellationToken ct = default);
+    Task<Result> LogMemberLeave(IGuildMemberRemove user, CancellationToken ct = default);
 }

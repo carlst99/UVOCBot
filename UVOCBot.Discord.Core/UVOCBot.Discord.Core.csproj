@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Remora.Discord.Commands" Version="19.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UVOCBot.Core\UVOCBot.Core.csproj" />
+  </ItemGroup>
+
+</Project>

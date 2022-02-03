@@ -144,14 +144,6 @@ public class FeedCommands : CommandGroup
         if (!validChannel.IsSuccess)
             return validChannel;
 
-        //if (isEnabled)
-        //    settings.Feeds |= (ulong)feed;
-        //else
-        //    settings.Feeds &= ~(ulong)feed;
-
-        //_dbContext.Update(settings);
-        //await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
-
         Feed[] feedValues = Enum.GetValues<Feed>();
         List<SelectOption> selectOptions = feedValues.Select
             (
@@ -172,7 +164,7 @@ public class FeedCommands : CommandGroup
             MaxValues: feedValues.Length
         );
 
-        return await _feedbackService.SendContextualNeutralAsync
+        return await _feedbackService.SendContextualInfoAsync
         (
             "Select feeds to toggle",
             options: new FeedbackMessageOptions

@@ -1,15 +1,14 @@
-﻿namespace UVOCBot.Model
+﻿namespace UVOCBot.Model;
+
+public enum TileMap
 {
-    public enum TileMap
-    {
-        Amerish,
-        Desolation,
-        Esamir,
-        Hossin,
-        Indar,
-        Koltyr,
-        Sanctuary,
-        Tutorial,
-        VR
-    }
+    Amerish,
+    Desolation,
+    Esamir,
+    Hossin,
+    Indar,
+    Koltyr,
+    Sanctuary,
+    Tutorial,
+    VR
 }

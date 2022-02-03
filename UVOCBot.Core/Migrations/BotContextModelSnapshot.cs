@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UVOCBot.Core;
 
+#nullable disable
+
 namespace UVOCBot.Core.Migrations
 {
     [DbContext(typeof(DiscordContext))]
@@ -14,8 +16,8 @@ namespace UVOCBot.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.7");
+                .HasAnnotation("ProductVersion", "6.0.1")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("GuildTwitterSettingsTwitterUser", b =>
                 {
@@ -50,6 +52,26 @@ namespace UVOCBot.Core.Migrations
                     b.HasKey("GuildId");
 
                     b.ToTable("GuildAdminSettings");
+                });
+
+            modelBuilder.Entity("UVOCBot.Core.Model.GuildFeedsSettings", b =>
+                {
+                    b.Property<ulong>("GuildId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong?>("FeedChannelID")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("Feeds")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("GuildId");
+
+                    b.ToTable("GuildFeedsSettings");
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildRoleMenu", b =>
@@ -111,6 +133,8 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasIndex("GuildRoleMenuId");
 
+                    b.HasIndex("RoleId");
+
                     b.ToTable("GuildRoleMenuRole");
                 });
 
@@ -171,36 +195,6 @@ namespace UVOCBot.Core.Migrations
                     b.HasKey("GuildId");
 
                     b.ToTable("GuildWelcomeMessages");
-                });
-
-            modelBuilder.Entity("UVOCBot.Core.Model.MemberGroup", b =>
-                {
-                    b.Property<ulong>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<ulong>("CreatorId")
-                        .HasColumnType("bigint unsigned");
-
-                    b.Property<string>("GroupName")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
-
-                    b.Property<byte[]>("UserIds")
-                        .IsRequired()
-                        .HasColumnType("longblob");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GroupName");
-
-                    b.ToTable("MemberGroups");
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.PlanetsideSettings", b =>

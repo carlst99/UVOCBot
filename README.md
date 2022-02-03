@@ -32,7 +32,7 @@ Before continuing, you should note that UVOCBot is designed with a Linux host in
 
 # Building and Developing
 
-1. Install the [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0).
+1. Install the [.NET 6 SDK](https://dotnet.microsoft.com/download/dotnet/6.0).
 2. Install [MariaDB](https://mariadb.org/) and create a database.
 3. Modify the requisite `appsettings.json` files to include your API keys and database connection string
 4. Update the database to the latest migration. If you are using the .NET Core CLI, run the command:
@@ -49,10 +49,12 @@ Before continuing, you should note that UVOCBot is designed with a Linux host in
 
 ### Project Structure
 
-UVOCBot has three components:
-- The bot itself, `UVOCBot`. This is a .NET 5 Worker project, based on the `Microsoft.Extensions.Hosting` framework.
-- A shared library, `UVOCBot.Core`, which contains the database models.
-- A RESTful API that abstracts the database, `UVOCBot.Api`. An `ASP.NET Core 5` project utilising `Entity Framework Core`. This is by and large a data abstraction layer; very little data manipulation occurs here, except for where it would be inefficient for the client to perform non-user-dependent actions. Note that I am slowly migrating away from this API in favour of directly using EF core in the bot.
+UVOCBot is composed of multiple components
+- `UVOCBot.Core`: A library containing the database models.
+- `UVOCBot.Discord.Core`: A library containing shared Discord components.
+- `UVOCBot`: The bot itself. A console app making use of the Generic Host that drives the connection to the Discord API and registers plugins.
+- Plugins. Class libraries used to help separate the logic within the bot.
+- `UVOCBot.Api`: An ASP.NET Core API that abstracts the database. This component is obsolete and is slowly being phased out.
 
 # Acknowledgements
 

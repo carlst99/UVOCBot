@@ -1,10 +1,9 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace UVOCBot.Model
+namespace UVOCBot.Model;
+
+public interface ISettings
 {
-    public interface ISettings
-    {
-        [JsonIgnore]
-        ISettings Default { get; }
-    }
+    [JsonIgnore]
+    ISettings Default { get; }
 }

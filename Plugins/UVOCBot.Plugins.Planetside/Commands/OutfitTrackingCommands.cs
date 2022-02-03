@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
-using UVOCBot.Discord.Core.Services.Abstractions;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 

@@ -5,9 +5,9 @@ using Remora.Rest.Core;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
-using UVOCBot.Discord.Core.Services.Abstractions;
 
 namespace UVOCBot.Discord.Core.Commands.Conditions;
 

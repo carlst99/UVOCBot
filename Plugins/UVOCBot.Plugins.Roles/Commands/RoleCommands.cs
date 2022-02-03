@@ -15,8 +15,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
-using UVOCBot.Discord.Core.Services.Abstractions;
 
 namespace UVOCBot.Plugins.Roles.Commands;
 

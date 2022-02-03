@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Discord.Core.Services.Abstractions;
+namespace UVOCBot.Discord.Core.Abstractions.Services;
 
 public interface IPermissionChecksService
 {

@@ -11,8 +11,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
-using UVOCBot.Discord.Core.Services.Abstractions;
 
 namespace UVOCBot.Commands;
 

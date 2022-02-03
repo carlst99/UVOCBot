@@ -6,7 +6,7 @@ using Remora.Results;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Discord.Core.Services.Abstractions;
+using UVOCBot.Discord.Core.Abstractions.Services;
 
 namespace UVOCBot.Responders;
 

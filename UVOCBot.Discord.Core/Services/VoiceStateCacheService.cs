@@ -1,7 +1,7 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
 using Remora.Rest.Core;
 using System.Collections.Generic;
-using UVOCBot.Discord.Core.Services.Abstractions;
+using UVOCBot.Discord.Core.Abstractions.Services;
 
 namespace UVOCBot.Discord.Core.Services;
 
@@ -24,38 +24,34 @@ public sealed class VoiceStateCacheService : IVoiceStateCacheService
     {
         List<IVoiceState> states = new();
 
-        if (_channelUsers.ContainsKey(channelID))
-        {
-            foreach (Snowflake user in _channelUsers[channelID])
-                states.Add(_userVoiceStates[user]);
-
-            return states.AsReadOnly();
-        }
-        else
-        {
+        if (!_channelUsers.ContainsKey(channelID))
             return new Optional<IReadOnlyList<IVoiceState>>();
-        }
+
+        foreach (Snowflake user in _channelUsers[channelID])
+            states.Add(_userVoiceStates[user]);
+
+        return states.AsReadOnly();
     }
 
     /// <inheritdoc/>
     public Optional<IVoiceState> GetUserVoiceState(Snowflake userID)
     {
-        if (_userVoiceStates.ContainsKey(userID))
-            return new Optional<IVoiceState>(_userVoiceStates[userID]);
-        else
+        if (!_userVoiceStates.ContainsKey(userID))
             return new Optional<IVoiceState>();
+
+        return new Optional<IVoiceState>(_userVoiceStates[userID]);
     }
 
     /// <inheritdoc/>
     public void Remove(Snowflake userID)
     {
-        if (_userVoiceStates.ContainsKey(userID))
-        {
-            IVoiceState state = _userVoiceStates[userID];
-            _userVoiceStates.Remove(userID);
+        if (!_userVoiceStates.ContainsKey(userID))
+            return;
 
-            RemoveChannelUser(state);
-        }
+        IVoiceState state = _userVoiceStates[userID];
+        _userVoiceStates.Remove(userID);
+
+        RemoveChannelUser(state);
     }
 
     /// <inheritdoc/>

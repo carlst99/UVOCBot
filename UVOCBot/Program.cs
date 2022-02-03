@@ -161,7 +161,6 @@ public static class Program
                 services.AddRemoraServices()
                         .AddCoreDiscordServices()
                         .AddScoped<IAdminLogService, AdminLogService>()
-                        .AddScoped<IReplyService, ReplyService>()
                         .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
                 // Plugin registration

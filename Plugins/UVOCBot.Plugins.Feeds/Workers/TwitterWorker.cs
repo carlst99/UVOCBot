@@ -61,8 +61,6 @@ public sealed class TwitterWorker : BackgroundService
 
         while (!ct.IsCancellationRequested)
         {
-            _logger.LogInformation("Getting tweets...");
-
             Dictionary<Feed, List<ITweet>> unseenTweets = new();
             foreach (Feed feed in UserFeeds.Keys)
                 unseenTweets[feed] = await GetUnseenUserTweetsAsync(UserFeeds[feed], ct);

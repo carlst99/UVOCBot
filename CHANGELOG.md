@@ -1,5 +1,13 @@
 # Changelog
 
+## Release vNext - 
+
+**Breaking Changes**
+
+- Tweet relaying has been completely revamped into `feeds`. Feed relaying will need to be reconfigured.
+- A database migration is required.
+- The `TwitterOptions` config section has been renamed to `FeedsPluginOptions`, and the properties appended with `Twitter`.
+
 ## Release v0.5.2
 
 - The `status` command is now much faster and shows active alerts.

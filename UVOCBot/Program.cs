@@ -21,8 +21,6 @@ using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
-using Tweetinvi;
-using Tweetinvi.Models;
 using UVOCBot.Commands;
 using UVOCBot.Config;
 using UVOCBot.Core;
@@ -132,8 +130,7 @@ public static class Program
                 dbConfigSection.Bind(dbOptions);
 
                 services.Configure<DatabaseOptions>(dbConfigSection)
-                        .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)))
-                        .Configure<TwitterOptions>(c.Configuration.GetSection(nameof(TwitterOptions)));
+                        .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
 
                 services.AddDbContext<DiscordContext>
                 (
@@ -158,8 +155,7 @@ public static class Program
                 services.AddSingleton<IDbApiService, DbApiService>();
 
                 // Setup other services
-                services.AddSingleton(fileSystem)
-                        .AddTransient(TwitterClientFactory);
+                services.AddSingleton(fileSystem);
 
                 // Add Discord-related services
                 services.AddRemoraServices()
@@ -169,13 +165,12 @@ public static class Program
                         .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
 
                 // Plugin registration
-                services.AddFeedsPlugin()
+                services.AddFeedsPlugin(c.Configuration)
                         .AddGreetingsPlugin()
                         .AddPlanetsidePlugin(c.Configuration)
                         .AddRolesPlugin();
 
-                services.AddHostedService<GenericWorker>()
-                        .AddHostedService<TwitterWorker>();
+                services.AddHostedService<GenericWorker>();
             });
     }
 
@@ -238,18 +233,6 @@ public static class Program
         return Log.Logger;
     }
 
-    private static ITwitterClient TwitterClientFactory(IServiceProvider services)
-    {
-        TwitterOptions options = services.GetRequiredService<IOptions<TwitterOptions>>().Value;
-
-        return new TwitterClient(new ConsumerOnlyCredentials
-        {
-            ConsumerKey = options.Key,
-            ConsumerSecret = options.Secret,
-            BearerToken = options.BearerToken
-        });
-    }
-
     private static IServiceCollection AddRemoraServices(this IServiceCollection services)
     {
         services.Configure<DiscordGatewayClientOptions>(
@@ -273,7 +256,6 @@ public static class Program
                 .WithCommandGroup<GeneralCommands>()
                 .WithCommandGroup<MovementCommands>()
                 .WithCommandGroup<TeamGenerationCommands>()
-                .WithCommandGroup<TwitterCommands>()
                 .Finish();
 
         return services;

@@ -1,17 +1,13 @@
-﻿using OneOf;
-using Remora.Commands.Attributes;
+﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
-using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,26 +16,6 @@ using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
-
-public enum TileMap
-{
-    Amerish,
-    Desolation,
-    Esamir,
-    Hossin,
-    Indar,
-    Koltyr,
-    Sanctuary,
-    Tutorial,
-    VR
-}
-
-public enum NoDeploymentType
-{
-    None,
-    Sunderer,
-    ANT
-}
 
 public class OtherCommands : CommandGroup
 {
@@ -61,47 +37,6 @@ public class OtherCommands : CommandGroup
         _channelApi = channelApi;
         _interactionApi = interactionApi;
         _feedbackService = feedbackService;
-    }
-
-    [Command("map")]
-    [Description("Gets a PlanetSide 2 continent map.")]
-    [Ephemeral]
-    public async Task<IResult> MapCommandAsync(TileMap map, NoDeploymentType noDeployType = NoDeploymentType.None) // TODO: Complete
-    {
-        string mapFileName = map.ToString() + ".jpg";
-        string mapFilePath = Path.Combine("Assets", "PS2Maps", mapFileName);
-
-        DateTime mapLastUpdated = File.GetCreationTimeUtc(mapFilePath);
-
-        Embed embed = new()
-        {
-            Title = map.ToString(),
-            Author = new EmbedAuthor("Full-res maps here", "https://github.com/cooltrain7/Planetside-2-API-Tracker/tree/master/Maps"),
-            Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Footer = new EmbedFooter("Map last updated " + mapLastUpdated.ToShortDateString()),
-            Image = new EmbedImage("attachment://" + mapFileName),
-            Type = EmbedType.Image,
-        };
-
-        if (_context is InteractionContext ictx)
-        {
-            return await _interactionApi.CreateFollowupMessageAsync
-            (
-                ictx.ApplicationID,
-                ictx.Token,
-                embeds: new IEmbed[] { embed },
-                attachments: new OneOf<FileData, IPartialAttachment>[] { new FileData(mapFileName, File.OpenRead(mapFilePath)) },
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
-        else
-        {
-            return await _channelApi.CreateMessageAsync(
-                _context.ChannelID,
-                embeds: new IEmbed[] { embed },
-                attachments: new[] { OneOf<FileData, IPartialAttachment>.FromT0(new FileData(mapFileName, File.OpenRead(mapFilePath))) },
-                ct: CancellationToken).ConfigureAwait(false);
-        }
     }
 
     [Command("online")]

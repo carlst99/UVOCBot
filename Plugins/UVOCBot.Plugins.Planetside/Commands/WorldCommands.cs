@@ -206,6 +206,7 @@ public class WorldCommands : CommandGroup
             ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
             ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
             ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
+            ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} { ZoneDefinition.Oshur}",
             _ => map.ZoneID.Definition.ToString()
         };
 

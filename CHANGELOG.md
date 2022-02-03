@@ -1,6 +1,6 @@
 # Changelog
 
-## Release vNext - 
+## Release v1.0.0 - 04/02/2022
 
 **Breaking Changes**
 

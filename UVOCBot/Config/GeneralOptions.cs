@@ -10,11 +10,6 @@ public record GeneralOptions
     public string BotToken { get; init; }
 
     /// <summary>
-    /// Gets or sets the endpoint at which the data layer API can be found.
-    /// </summary>
-    public string ApiEndpoint { get; init; }
-
-    /// <summary>
     /// Gets or sets the default command prefix.
     /// </summary>
     public string CommandPrefix { get; init; }
@@ -31,7 +26,6 @@ public record GeneralOptions
 
     public GeneralOptions()
     {
-        ApiEndpoint = string.Empty;
         BotToken = string.Empty;
         CommandPrefix = "<>"; // No prefix, most commands use the slash infrastructure
         DebugGuildIds = new List<ulong>();

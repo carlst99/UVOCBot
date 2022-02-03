@@ -48,7 +48,7 @@ public class FeedCommands : CommandGroup
     }
 
     [Command("global-toggle")]
-    [Description("Enables or disables all feeds.")]
+    [Description("Enables or disables the feed functionality.")]
     public async Task<IResult> EnabledCommandAsync(bool isEnabled)
     {
         GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
@@ -104,6 +104,23 @@ public class FeedCommands : CommandGroup
             "I will now post feeds to " + Formatter.ChannelMention(channel.ID),
             ct: CancellationToken
         ).ConfigureAwait(false);
+    }
+
+    [Command("list")]
+    [Description("Lists the available feeds, and their enabled status.")]
+    public async Task<IResult> ListFeedsCommandAsync()
+    {
+        Feed[] values = Enum.GetValues<Feed>();
+
+        string feedList = Formatter.Bold("Feeds:");
+        foreach (Feed f in values)
+            feedList += "\n- " + FeedDescriptions.Get[f] + " :ballot_box_with_check:";
+
+        return await _feedbackService.SendContextualInfoAsync
+        (
+            feedList,
+            ct: CancellationToken
+        );
     }
 
     [Command("toggle")]

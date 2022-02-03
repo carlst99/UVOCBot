@@ -18,7 +18,7 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.IO.Abstractions;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Commands;
@@ -104,7 +104,6 @@ public static class Program
 
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
-        IFileSystem fileSystem = new FileSystem();
         ILogger? logger = null;
 
         return Host.CreateDefaultBuilder(args)
@@ -114,9 +113,9 @@ public static class Program
                 string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
                 string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
 #if DEBUG
-                    logger = SetupLogging(fileSystem);
+                    logger = SetupLogging();
 #else
-                    logger = SetupLogging(fileSystem, seqIngestionEndpoint, seqApiKey);
+                    logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
 #endif
             })
             .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
@@ -151,9 +150,6 @@ public static class Program
 
                 services.AddDbContextFactory<DiscordContext>();
 
-                // Setup other services
-                services.AddSingleton(fileSystem);
-
                 // Add Discord-related services
                 services.AddRemoraServices()
                         .AddCoreDiscordServices()
@@ -175,24 +171,24 @@ public static class Program
     /// </summary>
     /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
     /// <remarks>Data is stored in the local appdata.</remarks>
-    public static string GetAppdataFilePath(IFileSystem fileSystem, string? fileName)
+    public static string GetAppdataFilePath(string? fileName)
     {
         string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        directory = fileSystem.Path.Combine(directory, "UVOCBot");
+        directory = Path.Combine(directory, "UVOCBot");
 
-        if (!fileSystem.Directory.Exists(directory))
-            fileSystem.Directory.CreateDirectory(directory);
+        if (!Directory.Exists(directory))
+            Directory.CreateDirectory(directory);
 
         if (fileName is not null)
-            return fileSystem.Path.Combine(directory, fileName);
+            return Path.Combine(directory, fileName);
         else
             return directory;
     }
 
 #if DEBUG
-    private static ILogger SetupLogging(IFileSystem fileSystem)
+    private static ILogger SetupLogging()
 #else
-    private static ILogger SetupLogging(IFileSystem fileSystem, string? seqIngestionEndpoint, string? seqApiKey)
+    private static ILogger SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
 #endif
     {
         LoggerConfiguration logConfig = new LoggerConfiguration()
@@ -216,7 +212,7 @@ public static class Program
         {
             logConfig.MinimumLevel.Information()
                 .WriteTo.File(
-                    GetAppdataFilePath(fileSystem, "log.log"),
+                    GetAppdataFilePath("log.log"),
                     LogEventLevel.Warning,
                     "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
                     rollingInterval: RollingInterval.Day);
@@ -224,7 +220,7 @@ public static class Program
 #endif
 
         Log.Logger = logConfig.CreateLogger();
-        Log.Information("Appdata stored at {path}", GetAppdataFilePath(fileSystem, null));
+        Log.Information("Appdata stored at {path}", GetAppdataFilePath(null));
 
         return Log.Logger;
     }

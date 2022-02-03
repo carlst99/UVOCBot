@@ -99,7 +99,7 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         (
             gatewayEvent.Data.Value!.CustomID.Value,
             out string key,
-            out string payload
+            out string? payload
         );
 
         IReadOnlyList<Type> responderList = _componentRepository.GetResponders(key);

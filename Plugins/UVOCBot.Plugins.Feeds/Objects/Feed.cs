@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace UVOCBot.Plugins.Feeds;
 
@@ -8,7 +9,6 @@ namespace UVOCBot.Plugins.Feeds;
 [Flags]
 public enum Feed : ulong
 {
-    None = 0,
     ForumAnnouncement = 1 << 0,
     ForumPatchNotes = 1 << 1,
     ForumPTSAnnouncement = 1 << 2,
@@ -16,4 +16,18 @@ public enum Feed : ulong
     TwitterPlanetside = 1 << 4,
     TwitterWrel = 1 << 5,
     TwitterRPG = 1 << 6
+}
+
+public static class FeedDescriptions
+{
+    public static IReadOnlyDictionary<Feed, string> Get => new Dictionary<Feed, string>
+    {
+        { Feed.ForumAnnouncement, "📢 Forum Announcements" },
+        { Feed.ForumPatchNotes, "🩹 Forum Patch Notes" },
+        { Feed.ForumPTSAnnouncement, "📢 Forum PTS Announcements" },
+        { Feed.ForumPTSPatchNotes, "🩹 Forum PTS Patch Notes" },
+        { Feed.TwitterPlanetside, "🐦 Official PlanetSide Twitter" },
+        { Feed.TwitterWrel, "🐦 Wrel's Twitter" },
+        { Feed.TwitterRPG, "🐦 Rogue Planet Game's Twitter" }
+    };
 }

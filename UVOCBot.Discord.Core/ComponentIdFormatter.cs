@@ -14,10 +14,14 @@ public static class ComponentIDFormatter
         return $"{key}{SEPARATOR}{payload}";
     }
 
-    public static void Parse(string id, out string key, out string payload)
+    public static void Parse(string id, out string key, out string? payload)
     {
         string[] parts = id.Split(SEPARATOR);
+
         key = parts[0];
-        payload = parts[1];
+        payload = null;
+
+        if (parts.Length > 1)
+            payload = parts[1];
     }
 }

@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31717.71
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Api", "UVOCBot.Api\UVOCBot.Api.csproj", "{A5D298FC-CB6F-412F-82F9-EF972E54946F}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Core", "UVOCBot.Core\UVOCBot.Core.csproj", "{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot", "UVOCBot\UVOCBot.csproj", "{B59EA60A-0958-4536-BEC3-A220FB6D71CC}"
@@ -25,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Roles", "Pl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Greetings", "Plugins\UVOCBot.Plugins.Greetings\UVOCBot.Plugins.Greetings.csproj", "{1D4A65CD-0201-4711-A53A-99ABCEC767CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Plugins.Feeds", "Plugins\UVOCBot.Plugins.Feeds\UVOCBot.Plugins.Feeds.csproj", "{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Feeds", "Plugins\UVOCBot.Plugins.Feeds\UVOCBot.Plugins.Feeds.csproj", "{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,10 +31,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A5D298FC-CB6F-412F-82F9-EF972E54946F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20B1E0C7-3679-4E3F-BC35-0D3107A80B46}.Release|Any CPU.ActiveCfg = Release|Any CPU

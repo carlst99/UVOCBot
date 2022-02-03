@@ -9,12 +9,10 @@ using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Config;
 using UVOCBot.Discord.Core;
-using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders;
 
@@ -26,7 +24,6 @@ public class ReadyResponder : IResponder<IReady>
     private readonly ILogger<ReadyResponder> _logger;
     private readonly GeneralOptions _options;
     private readonly DiscordGatewayClient _client;
-    private readonly IDbApiService _dbApi;
     private readonly IHostApplicationLifetime _appLifetime;
 
     public ReadyResponder
@@ -34,14 +31,12 @@ public class ReadyResponder : IResponder<IReady>
         ILogger<ReadyResponder> logger,
         IOptions<GeneralOptions> options,
         DiscordGatewayClient client,
-        IDbApiService dbApi,
         IHostApplicationLifetime appLifetime
     )
     {
         _logger = logger;
         _options = options.Value;
         _client = client;
-        _dbApi = dbApi;
         _appLifetime = appLifetime;
     }
 
@@ -73,11 +68,6 @@ public class ReadyResponder : IResponder<IReady>
 
     private async Task PrepareDatabase(IReadOnlyList<IUnavailableGuild> guilds, CancellationToken ct = default)
     {
-        Result dbScaffoldResult = await _dbApi.ScaffoldDbEntries(guilds.Select(g => g.ID.Value), ct).ConfigureAwait(false);
-        if (!dbScaffoldResult.IsSuccess)
-        {
-            _logger.LogCritical("Failed to scaffold database: {error}", dbScaffoldResult.Error);
-            _appLifetime.StopApplication();
-        }
+        // TODO: Do we need to do any DB scaffolding here?
     }
 }

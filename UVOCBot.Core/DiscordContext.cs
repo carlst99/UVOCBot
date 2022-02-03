@@ -12,11 +12,9 @@ public sealed class DiscordContext : DbContext
 {
     public DbSet<GuildAdminSettings> GuildAdminSettings { get; set; }
     public DbSet<GuildFeedsSettings> GuildFeedsSettings { get; set; }
-    public DbSet<GuildTwitterSettings> GuildTwitterSettings { get; set; }
     public DbSet<GuildWelcomeMessage> GuildWelcomeMessages { get; set; }
     public DbSet<PlanetsideSettings> PlanetsideSettings { get; set; }
     public DbSet<GuildRoleMenu> RoleMenus { get; set; }
-    public DbSet<TwitterUser> TwitterUsers { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 

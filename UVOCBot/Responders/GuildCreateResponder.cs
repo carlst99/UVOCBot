@@ -14,15 +14,13 @@ namespace UVOCBot.Responders;
 public class GuildCreateResponder : IResponder<IGuildCreate>
 {
     private readonly IVoiceStateCacheService _cache;
-    private readonly IDbApiService _dbApi;
 
-    public GuildCreateResponder(IVoiceStateCacheService cache, IDbApiService dbApi)
+    public GuildCreateResponder(IVoiceStateCacheService cache)
     {
         _cache = cache;
-        _dbApi = dbApi;
     }
 
-    public async Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
+    public Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
     {
         if (gatewayEvent.VoiceStates.HasValue)
         {
@@ -49,8 +47,8 @@ public class GuildCreateResponder : IResponder<IGuildCreate>
             }
         }
 
-        await _dbApi.ScaffoldDbEntries(new ulong[] { gatewayEvent.ID.Value }, ct).ConfigureAwait(false);
+        // TODO: Do we need to do any DB scaffolding here?
 
-        return Result.FromSuccess();
+        return Task.FromResult(Result.FromSuccess());
     }
 }

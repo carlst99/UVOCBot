@@ -151,9 +151,6 @@ public static class Program
 
                 services.AddDbContextFactory<DiscordContext>();
 
-                //Setup API services
-                services.AddSingleton<IDbApiService, DbApiService>();
-
                 // Setup other services
                 services.AddSingleton(fileSystem);
 

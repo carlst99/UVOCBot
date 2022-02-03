@@ -30,9 +30,6 @@ using UVOCBot.Responders;
 using UVOCBot.Services;
 using UVOCBot.Services.Abstractions;
 using UVOCBot.Workers;
-#if RELEASE
-using Serilog.Core;
-#endif
 
 namespace UVOCBot;
 
@@ -66,33 +63,45 @@ public static class Program
             (
                 l => DiscordSnowflake.New(l)
             );
-            Result slashCommandsSupported = slashService.SupportsSlashCommands();
 
+            Result slashCommandsSupported = slashService.SupportsSlashCommands();
             if (!slashCommandsSupported.IsSuccess)
             {
-                Log.Error("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
+                Log.Fatal("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
+                return 2;
             }
-            else
-            {
+
 #if DEBUG
-                foreach (Snowflake guild in debugServerSnowflakes)
+            foreach (Snowflake guild in debugServerSnowflakes)
+            {
+                Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync(guild).ConfigureAwait(false);
+                if (!updateSlashCommandsResult.IsSuccess)
                 {
-                    Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync(guild).ConfigureAwait(false);
-                    if (!updateSlashCommandsResult.IsSuccess)
-                        Log.Warning("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
+                    Log.Fatal("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
+                    return 2;
                 }
-#else
-                    Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync().ConfigureAwait(false);
-                    if (!updateSlashCommandsResult.IsSuccess)
-                        Log.Warning("Could not update global application commands");
-#endif
             }
+#else
+            //IResult removeOldResult = await RemoveExistingGlobalCommandsAsync(host.Services);
+            //if (!removeOldResult.IsSuccess)
+            //    return 3;
+
+            Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync().ConfigureAwait(false);
+            if (!updateSlashCommandsResult.IsSuccess)
+            {
+                Log.Fatal("Could not update global application commands: {error}", updateSlashCommandsResult.Error);
+                return 2;
+            }
+#endif
 
             await host.RunAsync().ConfigureAwait(false);
             return 0;
         }
         catch (Exception ex)
         {
+            Console.WriteLine("Host terminated unexpectedly:");
+            Console.WriteLine(ex);
+
             Log.Fatal(ex, "Host terminated unexpectedly");
             return 1;
         }
@@ -112,11 +121,7 @@ public static class Program
             {
                 string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
                 string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
-#if DEBUG
-                    logger = SetupLogging();
-#else
-                    logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
-#endif
+                logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
             })
             .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
             .UseSerilog(logger)
@@ -185,25 +190,23 @@ public static class Program
             return directory;
     }
 
-#if DEBUG
-    private static ILogger SetupLogging()
-#else
+#pragma warning disable RCS1163 // Unused parameter.
     private static ILogger SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
-#endif
+#pragma warning restore RCS1163 // Unused parameter.
     {
         LoggerConfiguration logConfig = new LoggerConfiguration()
+            .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
-#if DEBUG
-        logConfig.MinimumLevel.Debug();
-#else
+
+#if !DEBUG
         logConfig.MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning);
 
-        if (seqIngestionEndpoint is not null)
+        if (!string.IsNullOrEmpty(seqIngestionEndpoint) && !string.IsNullOrEmpty(seqApiKey))
         {
-            LoggingLevelSwitch levelSwitch = new();
+            Serilog.Core.LoggingLevelSwitch levelSwitch = new();
 
             logConfig.MinimumLevel.ControlledBy(levelSwitch)
                     .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
@@ -211,11 +214,13 @@ public static class Program
         else
         {
             logConfig.MinimumLevel.Information()
-                .WriteTo.File(
+                .WriteTo.File
+                (
                     GetAppdataFilePath("log.log"),
                     LogEventLevel.Warning,
                     "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
-                    rollingInterval: RollingInterval.Day);
+                    rollingInterval: RollingInterval.Day
+                );
         }
 #endif
 
@@ -252,4 +257,33 @@ public static class Program
 
         return services;
     }
+
+#pragma warning disable RCS1213 // Remove unused member declaration.
+    private static async Task<IResult> RemoveExistingGlobalCommandsAsync(IServiceProvider services)
+    {
+        Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API oauth2Api = services.GetRequiredService<Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API>();
+        Remora.Discord.API.Abstractions.Rest.IDiscordRestApplicationAPI applicationApi = services.GetRequiredService<Remora.Discord.API.Abstractions.Rest.IDiscordRestApplicationAPI>();
+
+        Result<Remora.Discord.API.Abstractions.Objects.IApplication> appDetails = await oauth2Api.GetCurrentBotApplicationInformationAsync();
+        if (!appDetails.IsSuccess)
+        {
+            Log.Fatal("Could not get application information: ", appDetails.Error);
+            return appDetails;
+        }
+
+        Result<IReadOnlyList<Remora.Discord.API.Abstractions.Objects.IApplicationCommand>> deleteResult = await applicationApi.BulkOverwriteGlobalApplicationCommandsAsync
+        (
+            appDetails.Entity.ID,
+            new List<Remora.Discord.API.Abstractions.Objects.IBulkApplicationCommandData>()
+        );
+
+        if (!deleteResult.IsSuccess)
+        {
+            Log.Fatal("Could not get delete existing app commands: ", deleteResult.Error);
+            return deleteResult;
+        }
+
+        return Result.FromSuccess();
+    }
+#pragma warning restore RCS1213 // Remove unused member declaration.
 }

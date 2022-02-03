@@ -4,6 +4,7 @@ using UVOCBot.Discord.Core.Extensions;
 using UVOCBot.Plugins.Feeds;
 using UVOCBot.Plugins.Feeds.Commands;
 using UVOCBot.Plugins.Feeds.Responders;
+using UVOCBot.Plugins.Feeds.Workers;
 
 namespace UVOCBot.Plugins;
 
@@ -16,6 +17,8 @@ public static class IServiceCollectionExtensions
         services.AddCommandTree()
                 .WithCommandGroup<FeedCommands>()
                 .Finish();
+
+        services.AddHostedService<TwitterWorker>();
 
         return services;
     }

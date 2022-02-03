@@ -11,8 +11,8 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using Tweetinvi.Parameters;
 using UVOCBot.Core.Dto;
+using UVOCBot.Core.Util;
 using UVOCBot.Services.Abstractions;
-using UVOCBot.Utilities;
 
 namespace UVOCBot.Workers;
 
@@ -24,7 +24,7 @@ public sealed class TwitterWorker : BackgroundService
     private readonly IDbApiService _dbApi;
     private readonly ILogger<TwitterWorker> _logger;
 
-    private readonly MaxSizeQueue<long> _previousTweetIds = new(500);
+    private readonly BoundedQueue<long> _previousTweetIds = new(500);
 
     public TwitterWorker(
         IDiscordRestChannelAPI discordChannelClient,

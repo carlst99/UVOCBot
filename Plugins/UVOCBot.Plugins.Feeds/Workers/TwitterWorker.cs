@@ -108,9 +108,9 @@ public sealed class TwitterWorker : BackgroundService
             }
 
             if (tweets is null || tweets.Length == 0)
-                _lastRelayedTweetIds[user] = 0;
-            else
-                _lastRelayedTweetIds[user] = tweets[0].Id;
+                continue;
+
+            _lastRelayedTweetIds[user] = tweets[0].Id;
         }
     }
 
@@ -128,9 +128,11 @@ public sealed class TwitterWorker : BackgroundService
         {
             ExcludeReplies = true,
             IncludeRetweets = true,
-            SinceId = _lastRelayedTweetIds[userID],
             PageSize = 100
         };
+
+        if (_lastRelayedTweetIds.ContainsKey(userID))
+            timelineParameters.SinceId = _lastRelayedTweetIds[userID];
 
         ITweet[]? tweets = null;
         try

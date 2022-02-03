@@ -81,6 +81,8 @@ public static class Program
                     return 2;
                 }
             }
+
+            Console.WriteLine("==========> DEBUG");
 #else
             //IResult removeOldResult = await RemoveExistingGlobalCommandsAsync(host.Services);
             //if (!removeOldResult.IsSuccess)
@@ -92,6 +94,8 @@ public static class Program
                 Log.Fatal("Could not update global application commands: {error}", updateSlashCommandsResult.Error);
                 return 2;
             }
+
+            Console.WriteLine("==========> RELEASE");
 #endif
 
             await host.RunAsync().ConfigureAwait(false);
@@ -140,15 +144,16 @@ public static class Program
                 (
                     options =>
                     {
-                        options.UseMySql(
+                        options.UseMySql
+                        (
                             dbOptions.ConnectionString,
                             new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion))
                         )
 #if DEBUG
-                            .EnableSensitiveDataLogging()
-                            .EnableDetailedErrors()
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors()
 #endif
-                            ;
+                        ;
                     },
                     optionsLifetime: ServiceLifetime.Singleton
                 );

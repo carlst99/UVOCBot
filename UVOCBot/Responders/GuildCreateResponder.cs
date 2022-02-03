@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core.Services.Abstractions;
-using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Responders;
 
@@ -46,8 +45,6 @@ public class GuildCreateResponder : IResponder<IGuildCreate>
                 _cache.Set(trueState);
             }
         }
-
-        // TODO: Do we need to do any DB scaffolding here?
 
         return Task.FromResult(Result.FromSuccess());
     }

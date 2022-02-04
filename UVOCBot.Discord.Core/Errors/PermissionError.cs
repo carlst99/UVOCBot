@@ -1,39 +1,52 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.Commands.Contexts;
 using Remora.Rest.Core;
 using Remora.Results;
 
 namespace UVOCBot.Discord.Core.Errors;
 
-public record PermissionError : ResultError
+/// <summary>
+/// Represents an error caused by missing permissions.
+/// </summary>
+/// <param name="Permission">The missing permission.</param>
+/// <param name="UserID">The user that is missing the <paramref name="Permission"/>.</param>
+/// <param name="ChannelID">The channel that the <paramref name="Permission"/> is required in.</param>
+public record PermissionError
+(
+    DiscordPermission Permission,
+    Snowflake UserID,
+    Snowflake? ChannelID
+) : ResultError(string.Empty)
 {
-    /// <summary>
-    /// The required permission.
-    /// </summary>
-    public DiscordPermission Permission { get; init; }
-
-    /// <summary>
-    /// The user that doesn't have the required permission.
-    /// </summary>
-    public Snowflake UserID { get; init; }
-
-    /// <summary>
-    /// The channel in which the permission is required.
-    /// </summary>
-    public Snowflake ChannelID { get; init; } // TODO: Nullify
-
-    public PermissionError(DiscordPermission permission, Snowflake userID, Snowflake channelID, string? Message = null)
-        : base(Message ?? string.Empty)
+    public override string ToString()
     {
-        Permission = permission;
-        UserID = userID;
-        ChannelID = channelID;
+        string userMention = Formatter.UserMention(UserID) + " doesn't";
+        string permissionMention = Formatter.InlineQuote(Permission.ToString());
+
+        string message = $"{ userMention } have the required { permissionMention } permission";
+
+        if (ChannelID is not null)
+        {
+            string channelMention = Formatter.ChannelMention(ChannelID.Value);
+            message += $" in {channelMention}";
+        }
+
+        return message + ".";
     }
 
-    public PermissionError(DiscordPermission permission, Snowflake userID, Snowflake channelID, ResultError original)
-        : base(original)
+    public string ContextualToString(ICommandContext context)
     {
-        Permission = permission;
-        UserID = userID;
-        ChannelID = channelID;
+        string userMention = UserID == context.User.ID ? "You don't" : Formatter.UserMention(UserID) + " doesn't";
+        string permissionMention = Formatter.InlineQuote(Permission.ToString());
+
+        string message = $"{ userMention } have the required { permissionMention } permission";
+
+        if (ChannelID is not null)
+        {
+            string channelMention = ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(ChannelID.Value);
+            message += $" in {channelMention}";
+        }
+
+        return message + ".";
     }
 }

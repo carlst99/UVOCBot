@@ -75,20 +75,11 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
             return DiscordConstants.GENERIC_ERROR_MESSAGE;
         }
 
-        string GetPermissionErrorMessage(PermissionError pe)
-        {
-            string userMention = pe.UserID == context.User.ID ? "You don't" : Formatter.UserMention(pe.UserID) + " doesn't";
-            string channelMention = pe.ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(pe.ChannelID); // TODO: Null channel
-            string permissionMention = Formatter.InlineQuote(pe.Permission.ToString());
-
-            return $"{ userMention } have the required { permissionMention } permission in { channelMention }.";
-        }
-
         string errorMessage = actualError switch
         {
-            PermissionError pe => GetPermissionErrorMessage(pe),
+            PermissionError pe => pe.ContextualToString(context),
             CommandNotFoundError => "That command doesn't exist.",
-            ContextError ce => $"This command must be executed in a { Formatter.InlineQuote(ce.RequiredContext.ToString()) }.",
+            ContextError ce => ce.ToString(),
             RoleManipulationError rme => "Failed to modify roles: " + rme.Message,
             GenericCommandError or ConditionNotSatisfiedError => actualError.Message,
             _ => LogUnknownError()

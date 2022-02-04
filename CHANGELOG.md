@@ -1,5 +1,15 @@
 # Changelog
 
+## Release vNext
+
+- Added PlanetSide forum post relaying.
+- Remove the ForumPTSPatchNotes feed; it was never valid in the first place.
+- Fixed permission requirements for toggling feeds.
+
+## Release v1.0.1 - 04/02/2022
+
+- Improved logging and slash command initialization.
+
 ## Release v1.0.0 - 04/02/2022
 
 **Breaking Changes**

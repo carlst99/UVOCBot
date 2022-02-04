@@ -1,5 +1,6 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
@@ -15,6 +16,7 @@ using UVOCBot.Plugins.Greetings.Abstractions.Services;
 
 namespace UVOCBot.Plugins.Greetings.Responders;
 
+[Ephemeral]
 internal sealed class GreetingComponentResponder : IComponentResponder
 {
     private readonly IGreetingService _greetingService;

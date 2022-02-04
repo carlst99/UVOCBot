@@ -78,11 +78,7 @@ public sealed class TwitterWorker : BackgroundService
                 }
             }
 
-#if DEBUG
-            await Task.Delay(TimeSpan.FromSeconds(30), ct);
-#else
             await Task.Delay(TimeSpan.FromMinutes(5), ct);
-#endif
         }
     }
 

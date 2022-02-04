@@ -3,27 +3,15 @@ using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 
 namespace UVOCBot.Discord.Core.Errors;
 
-public record ContextError : ResultError
+/// <summary>
+/// Represents an error caused by an action being performed in the wrong context.
+/// </summary>
+/// <param name="RequiredContext">The context that the action requires.</param>
+public record ContextError
+(
+    ChannelContext RequiredContext
+) : ResultError(string.Empty)
 {
-    /// <summary>
-    /// The required context.
-    /// </summary>
-    public ChannelContext RequiredContext { get; init; }
-
-    public ContextError(ChannelContext requiredContext)
-        : this(requiredContext, string.Empty)
-    {
-    }
-
-    public ContextError(ChannelContext requiredContext, string Message)
-        : base(Message)
-    {
-        RequiredContext = requiredContext;
-    }
-
-    public ContextError(ChannelContext requiredContext, ResultError original)
-        : base(original)
-    {
-        RequiredContext = requiredContext;
-    }
+    public override string ToString()
+        => $"This command must be executed in a { Formatter.InlineQuote(RequiredContext.ToString()) }.";
 }

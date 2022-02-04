@@ -1,16 +1,19 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Remora.Commands.Extensions;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core.Components;
@@ -57,24 +60,6 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         if (user is null)
             return Result.FromSuccess();
 
-        InteractionResponse response = new
-        (
-            InteractionCallbackType.DeferredChannelMessageWithSource,
-            new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
-        );
-
-        Result createInteractionResponse = await _interactionApi.CreateInteractionResponseAsync
-        (
-            gatewayEvent.ID,
-            gatewayEvent.Token,
-            response,
-            default,
-            ct
-        ).ConfigureAwait(false);
-
-        if (!createInteractionResponse.IsSuccess)
-            return createInteractionResponse;
-
         // Provide the created context to any services inside this scope
         Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
         if (!context.IsSuccess)
@@ -108,6 +93,28 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
             _logger.LogWarning("A component interaction with the key {key} was received, but no responders have been registered for this key.", key);
             return Result.FromSuccess();
         }
+
+        InteractionCallbackDataFlags flags = InteractionCallbackDataFlags.Ephemeral;
+        if (responderList.Count == 1 && responderList[0].GetCustomAttribute<EphemeralAttribute>() is null)
+                flags &= ~InteractionCallbackDataFlags.Ephemeral;
+
+        InteractionResponse response = new
+        (
+            InteractionCallbackType.DeferredChannelMessageWithSource,
+            new InteractionCallbackData(Flags: flags)
+        );
+
+        Result createInteractionResponse = await _interactionApi.CreateInteractionResponseAsync
+        (
+            gatewayEvent.ID,
+            gatewayEvent.Token,
+            response,
+            default,
+            ct
+        ).ConfigureAwait(false);
+
+        if (!createInteractionResponse.IsSuccess)
+            return createInteractionResponse;
 
         // Naively run sequentially, this could be improved
         foreach (Type responderType in responderList)

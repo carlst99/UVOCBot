@@ -1,5 +1,6 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
 using Remora.Rest.Core;
+using System;
 
 namespace UVOCBot.Discord.Core;
 
@@ -25,8 +26,17 @@ public static class Formatter
     public static string Quote(string content) => $">{content}\n";
     public static string Spoiler(string content) => $"||{content}||";
     public static string Strikethrough(string content) => $"~~{content}~~";
-    public static string Timestamp(long timestamp, TimestampStyle style = TimestampStyle.ShortDate) => $"<t:{ timestamp }:{ TimestampStyleToCode(style) }>";
+    public static string MaskedLink(string title, string url) => $"[{title}]({url})";
     public static string Underline(string content) => $"__{content}__";
+
+    public static string Timestamp(long timestamp, TimestampStyle style)
+        => $"<t:{ timestamp }:{ TimestampStyleToCode(style) }>";
+
+    public static string Timestamp(DateTimeOffset dateTime, TimestampStyle style)
+        => Timestamp(dateTime.ToUnixTimeSeconds(), style);
+
+    public static string Timestamp(DateTime dateTime, TimestampStyle style)
+        => Timestamp(new DateTimeOffset(dateTime).ToUnixTimeSeconds(), style);
 
     private static char TimestampStyleToCode(TimestampStyle style)
         => style switch

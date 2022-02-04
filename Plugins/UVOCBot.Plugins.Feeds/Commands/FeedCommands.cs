@@ -1,4 +1,5 @@
-﻿using Remora.Commands.Attributes;
+﻿using CodeHollow.FeedReader;
+using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -174,6 +175,42 @@ public class FeedCommands : CommandGroup
             ct: CancellationToken
         );
     }
+
+#if DEBUG
+    [Command("test-rss")]
+    public async Task<IResult> TestRssCommandAsync(Feed feed)
+    {
+        string? rssUrl = feed switch
+        {
+            Feed.ForumAnnouncement => "https://forums.daybreakgames.com/ps2/index.php?forums/official-news-and-announcements.19/index.rss",
+            Feed.ForumPatchNotes => "https://forums.daybreakgames.com/ps2/index.php?forums/game-update-notes.73/index.rss",
+            Feed.ForumPTSAnnouncement => "https://forums.daybreakgames.com/ps2/index.php?forums/test-server-announcements.69/index.rss",
+            _ => null
+        };
+
+        if (rssUrl is null)
+            return Result.FromSuccess();
+
+        CodeHollow.FeedReader.Feed rss = await FeedReader.ReadAsync(rssUrl)
+            .WithCancellation(CancellationToken);
+
+        if (rss.Items.Count == 0)
+            return await _feedbackService.SendContextualInfoAsync("No posts are available from this feed.", ct: CancellationToken);
+
+        FeedItem item = rss.Items[0];
+        bool couldParseDate = DateTimeOffset.TryParse(item.PublishingDateString, out DateTimeOffset pubDate);
+        Embed testEmbed = new
+        (
+            item.Title,
+            Description: $"{item.Link}\n\n{item.Description.RemoveHtml(200)}...",
+            Url: item.Link,
+            Author: new EmbedAuthor(item.Author),
+            Timestamp: couldParseDate ? pubDate : default
+        );
+
+        return await _feedbackService.SendContextualEmbedAsync(testEmbed, ct: CancellationToken);
+    }
+#endif
 
     private async Task<Result> CheckFeedChannelPermissionsAsync(Snowflake channelId)
     {

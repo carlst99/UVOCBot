@@ -26,7 +26,8 @@ public static class IServiceCollectionExtensions
                 .WithCommandGroup<FeedCommands>()
                 .Finish();
 
-        services.AddHostedService<TwitterWorker>();
+        services.AddHostedService<ForumRssWorker>()
+                .AddHostedService<TwitterWorker>();
 
         return services;
     }

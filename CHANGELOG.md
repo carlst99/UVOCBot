@@ -1,6 +1,6 @@
 # Changelog
 
-## Release vNext
+## Release v1.0.2
 
 - Added PlanetSide forum post relaying.
 - Remove the ForumPTSPatchNotes feed; it was never valid in the first place.

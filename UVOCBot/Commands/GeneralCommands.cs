@@ -21,7 +21,7 @@ namespace UVOCBot.Commands;
 public class GeneralCommands : CommandGroup
 {
     public const string RELEASE_NOTES =
-        @"• Massive revamp to tweet relaying - check out the new `feed` commands.
+        @"• Massive revamp to tweet (and now, forum post!) relaying - check out the new `feed` commands.
         • Added support for Oshur.
         • Removed the map command.";
 

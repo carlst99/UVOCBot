@@ -1,5 +1,9 @@
 # Changelog
 
+## Release vNext
+
+- Updated the `population` command to bundle NS characters onto their respective faction.
+
 ## Release v1.0.2
 
 - Added PlanetSide forum post relaying.

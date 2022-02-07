@@ -69,28 +69,35 @@ public class WorldCommands : CommandGroup
 
     [Command("population")]
     [Description("Gets the population of a PlanetSide server.")]
-    public async Task<IResult> PopulationCommandAsync(
-        [Description("Set your default server with `/default-server`.")] ValidWorldDefinition server = 0)
+    public async Task<IResult> PopulationCommandAsync
+    (
+        [Description("Set your default server with `/default-server`.")] ValidWorldDefinition server = 0
+    )
     {
-        if (server == 0)
+        if (server != 0)
+            return await SendWorldPopulationAsync(server).ConfigureAwait(false);
+        
+        if (!_context.GuildID.HasValue)
         {
-            if (!_context.GuildID.HasValue)
-            {
-                return await _feedbackService.SendContextualErrorAsync(
-                    "To use this command in a DM you must provide a server.", ct: CancellationToken).ConfigureAwait(false);
-            }
-
-            PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-
-            if (settings.DefaultWorld is null)
-            {
-                return await _feedbackService.SendContextualErrorAsync(
-                    $"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.",
-                    ct: CancellationToken).ConfigureAwait(false);
-            }
-
-            server = (ValidWorldDefinition)settings.DefaultWorld;
+            return await _feedbackService.SendContextualErrorAsync
+            (
+                "To use this command in a DM you must provide a server.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
         }
+
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+
+        if (settings.DefaultWorld is null)
+        {
+            return await _feedbackService.SendContextualErrorAsync
+            (
+                $"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
+
+        server = (ValidWorldDefinition)settings.DefaultWorld;
 
         return await SendWorldPopulationAsync(server).ConfigureAwait(false);
     }
@@ -131,25 +138,19 @@ public class WorldCommands : CommandGroup
         if (!populationResult.IsSuccess)
             return populationResult;
 
-        IPopulation population = populationResult.Entity;
+        HonuPopulation population = (HonuPopulation)populationResult.Entity;
 
         List<EmbedField> embedFields = new()
         {
             new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
             new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
-            new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total))
+            new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
         };
-
-        if (population.NS is not null)
-        {
-            EmbedField nsField = new($"{Formatter.Emoji("white_circle")} NS - {population.NS}", BuildEmbedPopulationBar((int)population.NS, population.Total));
-            embedFields.Add(nsField);
-        }
 
         Embed embed = new()
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Title = world.ToString() + " - " + population.Total.ToString(),
+            Title = $"{world} - {population.Total}",
             Footer = new EmbedFooter("Data from Varunda's wt.honu.pw"),
             Fields = embedFields
         };
@@ -168,7 +169,11 @@ public class WorldCommands : CommandGroup
         }
 
         List<EmbedField> embedFields = new();
-        getMapsResult.Entity.Sort((m1, m2) => m1.ZoneID.Definition.ToString().CompareTo(m2.ZoneID.Definition.ToString()));
+        getMapsResult.Entity.Sort
+        (
+            (m1, m2)
+                => string.Compare(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString(), StringComparison.Ordinal)
+        );
 
         foreach (Map m in getMapsResult.Entity)
             embedFields.Add(GetMapStatusEmbedField(m, (WorldDefinition)world));

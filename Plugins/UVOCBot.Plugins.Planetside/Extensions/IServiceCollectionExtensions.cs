@@ -37,7 +37,7 @@ public static class IServiceCollectionExtensions
         services.AddSingleton(Options.Create(esOptions));
 
         services.AddHttpClient();
-        services.AddSingleton<IPopulationService, FisuPopulationService>();
+        services.AddSingleton<IPopulationService, HonuPopulationService>();
 
         services.AddCensusRestServices();
         services.AddSingleton<ICensusApiService, CachingCensusApiService>();

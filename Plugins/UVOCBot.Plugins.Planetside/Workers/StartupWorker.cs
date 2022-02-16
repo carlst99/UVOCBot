@@ -34,6 +34,9 @@ public class StartupWorker : BackgroundService
 
         foreach (ValidWorldDefinition world in Enum.GetValues<ValidWorldDefinition>())
         {
+            // Pre-cache map states
+            await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), ct);
+
             Result<List<QueryMetagameEvent>> events = await _censusApi.GetMetagameEventsAsync(world, ct: ct).ConfigureAwait(false);
             if (!events.IsDefined())
                 continue;
@@ -41,10 +44,8 @@ public class StartupWorker : BackgroundService
             if (events.Entity.Count == 0)
                 continue;
 
-            /**
-             * Pre-cache metagame events.
-             * Assume events are ordered by timestamp, as we do this in the query.
-             */
+            // Pre-cache metagame events.
+            // Assume events are ordered by timestamp, as we select this in the query.
             MetagameEvent eventStreamConversion = events.Entity[0].ToEventStreamMetagameEvent();
             object key = CacheKeyHelpers.GetMetagameEventKey(eventStreamConversion);
             _cache.Set(key, eventStreamConversion);

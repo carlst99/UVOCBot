@@ -134,14 +134,30 @@ public class WorldCommands : CommandGroup
     private async Task<IResult> SendWorldPopulationAsync(ValidWorldDefinition world)
     {
         Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
+        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync
+        (
+            world,
+            Enum.GetValues<ValidZoneDefinition>(),
+            CancellationToken
+        );
 
-        if (!populationResult.IsSuccess)
+        if (!populationResult.IsDefined(out IPopulation? population))
             return populationResult;
 
-        HonuPopulation population = (HonuPopulation)populationResult.Entity;
+        List<string> unlockedZones = new();
+        if (getMapsResult.IsDefined(out List<Map>? maps))
+        {
+            foreach (Map map in maps)
+            {
+                GetMapTerritoryControl(map, out double ncPercent, out double trPercent, out double vsPercent);
+                if (ncPercent < 99 && trPercent < 99 && vsPercent < 99)
+                    unlockedZones.Add(GetZoneName(map.ZoneID.Definition));
+            }
+        }
 
         List<EmbedField> embedFields = new()
         {
+            new EmbedField("Unlocked Continents", string.Join(" ", unlockedZones)),
             new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
             new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
             new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
@@ -151,7 +167,7 @@ public class WorldCommands : CommandGroup
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Title = $"{world} - {population.Total}",
-            Footer = new EmbedFooter("Data from Varunda's wt.honu.pw"),
+            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw"),
             Fields = embedFields
         };
 
@@ -199,21 +215,8 @@ public class WorldCommands : CommandGroup
             return result;
         }
 
-        double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != FactionDefinition.None);
-        double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.NC) / regionCount) * 100;
-        double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.TR) / regionCount) * 100;
-        double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.VS) / regionCount) * 100;
-
-        string title = map.ZoneID.Definition switch
-        {
-            ZoneDefinition.Amerish => $"{Formatter.Emoji("mountain")} {ZoneDefinition.Amerish}",
-            ZoneDefinition.Esamir => $"{Formatter.Emoji("snowflake")} {ZoneDefinition.Esamir}",
-            ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
-            ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
-            ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
-            ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} { ZoneDefinition.Oshur}",
-            _ => map.ZoneID.Definition.ToString()
-        };
+        GetMapTerritoryControl(map, out double ncPercent, out double trPercent, out double vsPercent);
+        string title = GetZoneName(map.ZoneID.Definition);
 
         object cacheKey = CacheKeyHelpers.GetMetagameEventKey(world, map.ZoneID.Definition);
         if (_cache.TryGetValue(cacheKey, out IMetagameEvent? metagameEvent) && metagameEvent!.MetagameEventState is MetagameEventState.Started)
@@ -222,7 +225,7 @@ public class WorldCommands : CommandGroup
             TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.MetagameEventID) - currentEventDuration;
             title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
         }
-        else if (ncPercent == 100 || trPercent == 100 || vsPercent == 100)
+        else if (ncPercent > 99 || trPercent > 99 || vsPercent > 99)
         {
             title += " " + Formatter.Emoji("lock");
         }
@@ -255,4 +258,30 @@ public class WorldCommands : CommandGroup
 
         return result;
     }
+
+    private static void GetMapTerritoryControl
+    (
+        Map map,
+        out double ncPercent,
+        out double trPercent,
+        out double vsPercent
+    )
+    {
+        double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != FactionDefinition.None);
+        ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.NC) / regionCount) * 100;
+        trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.TR) / regionCount) * 100;
+        vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.VS) / regionCount) * 100;
+    }
+
+    private static string GetZoneName(ZoneDefinition zone)
+        => zone switch
+        {
+            ZoneDefinition.Amerish => $"{Formatter.Emoji("mountain")} {ZoneDefinition.Amerish}",
+            ZoneDefinition.Esamir => $"{Formatter.Emoji("snowflake")} {ZoneDefinition.Esamir}",
+            ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
+            ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
+            ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
+            ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} {ZoneDefinition.Oshur}",
+            _ => zone.ToString()
+        };
 }

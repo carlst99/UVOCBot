@@ -3,6 +3,7 @@
 ## Release vNext
 
 - Updated the `population` command to bundle NS characters onto their respective faction.
+- Updated the `population` command to show current open continents on the requested server.
 - Updated the *forum* feeds to include the first discovered image in the post.
 
 ## Release v1.0.2

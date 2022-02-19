@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
@@ -10,6 +11,7 @@ using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -90,7 +92,7 @@ public class RoleMenuCommands : CommandGroup
         Result<IMessage> menuCreationResult = await _channelApi.CreateMessageAsync
         (
             channel.ID,
-            embeds: new IEmbed[] { e },
+            embeds: new[] { e },
             ct: CancellationToken
         ).ConfigureAwait(false);
 
@@ -207,7 +209,11 @@ public class RoleMenuCommands : CommandGroup
             dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name);
 
             menu.Roles.Add(dbRole);
-            menu.Roles.Sort((r1, r2) => r1.Label.CompareTo(r2.Label));
+            menu.Roles.Sort
+            (
+                (r1, r2) => string.Compare(r1.Label, r2.Label, StringComparison.Ordinal)
+            );
+
             _dbContext.Update(menu);
         }
         else
@@ -318,7 +324,7 @@ public class RoleMenuCommands : CommandGroup
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
-            embeds: new IEmbed[] { CreateRoleMenuEmbed(menu) },
+            embeds: new[] { CreateRoleMenuEmbed(menu) },
             components: menu.Roles.Count > 0 ? CreateRoleMenuMessageComponents(menu) : new Optional<IReadOnlyList<IMessageComponent>>(),
             ct: CancellationToken
         ).ConfigureAwait(false);

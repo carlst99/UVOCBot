@@ -55,7 +55,7 @@ public class PermissionChecksService : IPermissionChecksService
         // Check that each role is assignable by us
         foreach (ulong roleId in roleIds)
         {
-            if (!getGuildRoles.Entity.Any(r => r.ID.Value == roleId))
+            if (getGuildRoles.Entity.All(r => r.ID.Value != roleId))
                 return Result.FromError(new RoleManipulationError("A given role does not exist."));
 
             IRole role = getGuildRoles.Entity.First(r => r.ID.Value == roleId);
@@ -96,13 +96,10 @@ public class PermissionChecksService : IPermissionChecksService
 
         // Get and check the guild member
         Result<IGuildMember> getGuildMemberResult = await _guildApi.GetGuildMemberAsync(guildId, userId, ct).ConfigureAwait(false);
-        if (!getGuildMemberResult.IsSuccess)
+        if (!getGuildMemberResult.IsDefined(out IGuildMember? guildMember))
             return Result<IDiscordPermissionSet>.FromError(getGuildMemberResult);
 
-        if (getGuildMemberResult.Entity is null)
-            return new Exception("Member not found");
-
-        if (getGuildResult.Entity.OwnerID == getGuildMemberResult.Entity.User.Value.ID)
+        if (getGuildResult.Entity.OwnerID == guildMember.User.Value.ID)
             return new DiscordPermissionSet(Enum.GetValues<DiscordPermission>());
 
         // Get the relevant guild roles
@@ -112,12 +109,12 @@ public class PermissionChecksService : IPermissionChecksService
             return new Exception("No @everyone role found.");
 
         // Get every complete role object of the member
-        List<IRole> guildMemberRoles = getGuildResult.Entity.Roles.Where(r => getGuildMemberResult.Entity.Roles.Contains(r.ID)).ToList();
+        List<IRole> guildMemberRoles = getGuildResult.Entity.Roles.Where(r => guildMember.Roles.Contains(r.ID)).ToList();
 
         // Compute the final permissions
         if (channel.PermissionOverwrites.HasValue)
             return Result<IDiscordPermissionSet>.FromSuccess(DiscordPermissionSet.ComputePermissions(userId, everyoneRole, guildMemberRoles, channel.PermissionOverwrites.Value));
-        else
-            return Result<IDiscordPermissionSet>.FromSuccess(DiscordPermissionSet.ComputePermissions(userId, everyoneRole, guildMemberRoles));
+
+        return Result<IDiscordPermissionSet>.FromSuccess(DiscordPermissionSet.ComputePermissions(userId, everyoneRole, guildMemberRoles));
     }
 }

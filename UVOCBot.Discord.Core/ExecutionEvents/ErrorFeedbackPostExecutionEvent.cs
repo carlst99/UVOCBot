@@ -71,7 +71,7 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
 
         string LogUnknownError()
         {
-            _logger.LogError("A command failed to execute: {error}", actualError!.ToString());
+            _logger.LogError("A command failed to execute: {Error}", actualError!.ToString());
             return DiscordConstants.GENERIC_ERROR_MESSAGE;
         }
 

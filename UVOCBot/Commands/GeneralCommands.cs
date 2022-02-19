@@ -88,7 +88,7 @@ public class GeneralCommands : CommandGroup
 
         Result<IUser> authorUser = await _userAPI.GetUserAsync
         (
-            new Snowflake(165629177221873664, Constants.DiscordEpoch),
+            DiscordSnowflake.New(165629177221873664),
             CancellationToken
         ).ConfigureAwait(false);
 

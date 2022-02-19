@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
 using Remora.Discord.Caching.Extensions;
 using Remora.Discord.Commands.Extensions;
@@ -59,15 +60,12 @@ public static class Program
             IOptions<GeneralOptions> options = host.Services.GetRequiredService<IOptions<GeneralOptions>>();
             SlashService slashService = host.Services.GetRequiredService<SlashService>();
 
-            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select
-            (
-                l => DiscordSnowflake.New(l)
-            );
+            IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(DiscordSnowflake.New);
 
             Result slashCommandsSupported = slashService.SupportsSlashCommands();
             if (!slashCommandsSupported.IsSuccess)
             {
-                Log.Fatal("The registered commands of the bot aren't supported as slash commands: {reason}", slashCommandsSupported.Error);
+                Log.Fatal("The registered commands of the bot aren't supported as slash commands: {Reason}", slashCommandsSupported.Error);
                 return 2;
             }
 
@@ -75,11 +73,11 @@ public static class Program
             foreach (Snowflake guild in debugServerSnowflakes)
             {
                 Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync(guild).ConfigureAwait(false);
-                if (!updateSlashCommandsResult.IsSuccess)
-                {
-                    Log.Fatal("Could not update slash commands for the debug guild {id}: {error}", guild.Value, updateSlashCommandsResult.Error);
-                    return 2;
-                }
+                if (updateSlashCommandsResult.IsSuccess)
+                    continue;
+
+                Log.Fatal("Could not update slash commands for the debug guild {ID}: {Error}", guild.Value, updateSlashCommandsResult.Error);
+                return 2;
             }
 
             Console.WriteLine("==========> DEBUG");
@@ -91,7 +89,7 @@ public static class Program
             Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync().ConfigureAwait(false);
             if (!updateSlashCommandsResult.IsSuccess)
             {
-                Log.Fatal("Could not update global application commands: {error}", updateSlashCommandsResult.Error);
+                Log.Fatal("Could not update global application commands: {Error}", updateSlashCommandsResult.Error);
                 return 2;
             }
 
@@ -230,7 +228,7 @@ public static class Program
 #endif
 
         Log.Logger = logConfig.CreateLogger();
-        Log.Information("Appdata stored at {path}", GetAppdataFilePath(null));
+        Log.Information("Appdata stored at {Path}", GetAppdataFilePath(null));
 
         return Log.Logger;
     }
@@ -272,7 +270,7 @@ public static class Program
         Result<Remora.Discord.API.Abstractions.Objects.IApplication> appDetails = await oauth2Api.GetCurrentBotApplicationInformationAsync();
         if (!appDetails.IsSuccess)
         {
-            Log.Fatal("Could not get application information: ", appDetails.Error);
+            Log.Fatal("Could not get application information: {Error}", appDetails.Error);
             return appDetails;
         }
 
@@ -284,7 +282,7 @@ public static class Program
 
         if (!deleteResult.IsSuccess)
         {
-            Log.Fatal("Could not get delete existing app commands: ", deleteResult.Error);
+            Log.Fatal("Could not get delete existing app commands: {Error}", deleteResult.Error);
             return deleteResult;
         }
 

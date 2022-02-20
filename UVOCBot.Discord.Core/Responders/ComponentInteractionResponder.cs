@@ -21,7 +21,7 @@ using UVOCBot.Discord.Core.Components;
 
 namespace UVOCBot.Discord.Core.Responders;
 
-internal sealed class ComponentInteractionResponder : IResponder<IInteractionCreate>
+public class ComponentInteractionResponder : IResponder<IInteractionCreate>
 {
     private readonly ILogger<ComponentInteractionResponder> _logger;
     private readonly IDiscordRestInteractionAPI _interactionApi;
@@ -50,7 +50,7 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
 
     public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
     {
-        if (gatewayEvent.Type != InteractionType.MessageComponent)
+        if (gatewayEvent.Type is not (InteractionType.MessageComponent or InteractionType.ModalSubmit))
             return Result.FromSuccess();
 
         if (!gatewayEvent.Data.IsDefined(out IInteractionData? interactionData))

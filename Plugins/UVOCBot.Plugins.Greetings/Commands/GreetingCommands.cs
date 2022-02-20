@@ -31,7 +31,6 @@ public class GreetingCommands : CommandGroup
     private readonly ICommandContext _context;
     private readonly ICensusQueryService _censusService;
     private readonly IDiscordRestChannelAPI _channelApi;
-    private readonly IDiscordRestGuildAPI _guildApi;
     private readonly IGreetingService _greetingService;
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly DiscordContext _dbContext;
@@ -42,7 +41,6 @@ public class GreetingCommands : CommandGroup
         ICommandContext context,
         ICensusQueryService censusService,
         IDiscordRestChannelAPI channelApi,
-        IDiscordRestGuildAPI guildApi,
         IGreetingService greetingService,
         IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
@@ -53,7 +51,6 @@ public class GreetingCommands : CommandGroup
         _censusService = censusService;
         _feedbackService = responder;
         _channelApi = channelApi;
-        _guildApi = guildApi;
         _greetingService = greetingService;
         _dbContext = dbContext;
         _permissionChecksService = permissionChecksService;
@@ -117,7 +114,7 @@ public class GreetingCommands : CommandGroup
 
             replyResult = await _feedbackService.SendContextualSuccessAsync
             (
-                "The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
+                "The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(Formatter.RoleMention)),
                 ct: CancellationToken
             ).ConfigureAwait(false);
         }
@@ -194,12 +191,12 @@ public class GreetingCommands : CommandGroup
         }
         else
         {
-            IEnumerable<ulong> roleIds = ParseRoles(roles);
+            List<ulong> roleIds = ParseRoles(roles).ToList();
             IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
             if (!canManipulateRoles.IsSuccess)
                 return canManipulateRoles;
 
-            welcomeMessage.DefaultRoles = roleIds.ToList();
+            welcomeMessage.DefaultRoles = roleIds;
 
             replyResult = await _feedbackService.SendContextualSuccessAsync
             (
@@ -282,9 +279,11 @@ public class GreetingCommands : CommandGroup
             return await _feedbackService.SendContextualInfoAsync
             (
                 @$"This command requires you to post the message you'd like to set as the welcome message. You can do this anywhere you like.
+
                 Then, copy the ID by right-clicking said message, and re-run this command while supplying the ID.
-                Make sure you do this in the same channel that you posted the message in.
-                Note that you can use { Formatter.InlineQuote("<name>") } as a placeholder for the joining member's name.",
+                Make sure you run this command in the same channel that you posted the message in.
+
+                {Formatter.Emoji("bulb")} Note that you can use { Formatter.InlineQuote("<name>") } as a placeholder for the joining member's name.",
                 ct: CancellationToken
             ).ConfigureAwait(false);
         }
@@ -306,7 +305,7 @@ public class GreetingCommands : CommandGroup
         _dbContext.Update(welcomeMessage);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-        return await _feedbackService.SendContextualSuccessAsync("Message successfully updated!", ct: CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync("The greeting message has been successfully updated!", ct: CancellationToken).ConfigureAwait(false);
     }
 
 #if DEBUG
@@ -325,15 +324,19 @@ public class GreetingCommands : CommandGroup
     }
 #endif
 
-    private static IEnumerable<ulong> ParseRoles(string roles)
+    private static List<ulong> ParseRoles(string roles)
     {
+        List<ulong> roleIDs = new();
+
         foreach (string role in roles.Split("<@&", System.StringSplitOptions.RemoveEmptyEntries))
         {
             int index = role.IndexOf('>');
 
-            if (index > 0 && ulong.TryParse(role[0..index], out ulong roleId))
-                yield return roleId;
+            if (index > 0 && ulong.TryParse(role[..index], out ulong roleID))
+                roleIDs.Add(roleID);
         }
+
+        return roleIDs;
     }
 
     private async Task<GuildWelcomeMessage> GetWelcomeMessage()

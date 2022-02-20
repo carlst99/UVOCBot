@@ -4,12 +4,13 @@
 
 - Updated the `population` command to bundle NS characters onto their respective faction.
 - Updated the `population` command to show current open continents on the requested server.
+- Updated the `rolemenu create` and `rolemenu edit` commands to utilise modals for setting the title and description.
 - Updated the *forum* feeds to include the first discovered image in the post.
 
 ## Release v1.0.2
 
 - Added PlanetSide forum post relaying.
-- Remove the ForumPTSPatchNotes feed; it was never valid in the first place.
+- Removed the ForumPTSPatchNotes feed; it was never valid in the first place.
 - Fixed permission requirements for toggling feeds.
 
 ## Release v1.0.1 - 04/02/2022
@@ -35,7 +36,7 @@
 **Technical**
 
 - :warning: Updated to .NET 6.0
-- Began revamped the design of the bot. Individual components will, going forward, be placed into plugins which can be freely swapped in/out to customise UVOCBot's feature-set.
+- Began refactoring the design of the bot. Individual components will, going forward, be placed into plugins which can be freely swapped in/out to customise UVOCBot's feature-set.
     - The Planetside components are the first part of the bot to be plugin-ified.
 - :warning: Updated the map assets. Ensure you update them in your installation.
 - :warning: Updated the `appsettings.json` files. Ensure you update them in your installation.

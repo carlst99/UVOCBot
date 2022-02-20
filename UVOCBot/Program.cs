@@ -242,7 +242,7 @@ public static class Program
                      | GatewayIntents.GuildMessages
                      | GatewayIntents.Guilds
                      | GatewayIntents.GuildMembers
-                     | GatewayIntents.MessageContents; // TODO: We can likely remove this intent once modals are used for long text entry
+                     | GatewayIntents.MessageContents;
             });
 
         services.AddDiscordCommands(true)

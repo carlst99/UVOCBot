@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using OneOf;
 using Remora.Commands.Results;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -6,6 +7,7 @@ using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Discord.Commands.Services;
+using Remora.Rest.Core;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,7 +60,10 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
                     new InteractionResponse
                     (
                         InteractionCallbackType.DeferredChannelMessageWithSource,
-                        new InteractionCallbackData(Flags: InteractionCallbackDataFlags.Ephemeral)
+                        new Optional<OneOf<IInteractionMessageCallbackData, IInteractionAutocompleteCallbackData, IInteractionModalCallbackData>>
+                        (
+                            new InteractionMessageCallbackData(Flags: MessageFlags.Ephemeral)
+                        )
                     ),
                     default,
                     ct
@@ -71,7 +76,7 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
 
         string LogUnknownError()
         {
-            _logger.LogError("A command failed to execute: {Error}", actualError!.ToString());
+            _logger.LogError("A command failed to execute: {Error}", actualError.ToString());
             return DiscordConstants.GENERIC_ERROR_MESSAGE;
         }
 

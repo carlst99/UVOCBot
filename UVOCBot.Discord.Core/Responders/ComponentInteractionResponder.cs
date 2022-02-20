@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Remora.Commands.Extensions;
+using OneOf;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -10,6 +10,7 @@ using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Services;
 using Remora.Discord.Gateway.Responders;
+using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -52,7 +53,7 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         if (gatewayEvent.Type != InteractionType.MessageComponent)
             return Result.FromSuccess();
 
-        if (gatewayEvent.Data.Value is null)
+        if (!gatewayEvent.Data.IsDefined(out IInteractionData? interactionData))
             return Result.FromSuccess();
 
         // Get the user who initiated the interaction
@@ -66,7 +67,7 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
             return Result.FromError(context);
         _contextInjectionService.Context = context.Entity;
 
-        if (gatewayEvent.Data.Value.CustomID.Value is null)
+        if (!interactionData.CustomID.IsDefined(out string? customID))
             return Result.FromSuccess();
 
         // Run any user-provided pre-execution events
@@ -82,7 +83,7 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
 
         ComponentIDFormatter.Parse
         (
-            gatewayEvent.Data.Value!.CustomID.Value,
+            customID,
             out string key,
             out string? payload
         );
@@ -90,18 +91,21 @@ internal sealed class ComponentInteractionResponder : IResponder<IInteractionCre
         IReadOnlyList<Type> responderList = _componentRepository.GetResponders(key);
         if (responderList.Count == 0)
         {
-            _logger.LogWarning("A component interaction with the key {key} was received, but no responders have been registered for this key.", key);
+            _logger.LogWarning("A component interaction with the key {Key} was received, but no responders have been registered for this key", key);
             return Result.FromSuccess();
         }
 
-        InteractionCallbackDataFlags flags = InteractionCallbackDataFlags.Ephemeral;
+        MessageFlags flags = MessageFlags.Ephemeral;
         if (responderList.Count == 1 && responderList[0].GetCustomAttribute<EphemeralAttribute>() is null)
-                flags &= ~InteractionCallbackDataFlags.Ephemeral;
+                flags &= ~MessageFlags.Ephemeral;
 
         InteractionResponse response = new
         (
             InteractionCallbackType.DeferredChannelMessageWithSource,
-            new InteractionCallbackData(Flags: flags)
+            new Optional<OneOf<IInteractionMessageCallbackData, IInteractionAutocompleteCallbackData, IInteractionModalCallbackData>>
+            (
+                new InteractionMessageCallbackData(Flags: flags)
+            )
         );
 
         Result createInteractionResponse = await _interactionApi.CreateInteractionResponseAsync

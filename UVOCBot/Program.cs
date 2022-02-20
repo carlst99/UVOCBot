@@ -239,9 +239,10 @@ public static class Program
             o =>
             {
                 o.Intents |= GatewayIntents.DirectMessages
-                    | GatewayIntents.GuildMessages
-                    | GatewayIntents.Guilds
-                    | GatewayIntents.GuildMembers;
+                     | GatewayIntents.GuildMessages
+                     | GatewayIntents.Guilds
+                     | GatewayIntents.GuildMembers
+                     | GatewayIntents.MessageContents; // TODO: We can likely remove this intent once modals are used for long text entry
             });
 
         services.AddDiscordCommands(true)

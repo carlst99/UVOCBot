@@ -60,18 +60,15 @@ public static class IDiscordRestGuildAPIExtensions
                 yield return members;
                 yield break;
             }
-            else
-            {
-                yield return members.Entity.Where(predicate).ToList().AsReadOnly();
-            }
 
-            afterID = members.Entity.Max(u =>
-            {
-                if (u.User.HasValue)
-                    return u.User.Value.ID;
-                else
-                    return new Snowflake(0, Constants.DiscordEpoch);
-            });
+            yield return members.Entity.Where(predicate).ToList().AsReadOnly();
+
+            afterID = members.Entity.Max
+            (
+                member => member.User.HasValue
+                    ? member.User.Value.ID
+                    : new Snowflake(0, Constants.DiscordEpoch)
+            );
         }
         while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
     }
@@ -84,7 +81,7 @@ public static class IDiscordRestGuildAPIExtensions
     /// <param name="userId">The user to assign the roles to.</param>
     /// <param name="currentRoles">The user's existing roles. Optional.</param>
     /// <param name="rolesToAdd">The roles to add.</param>
-    /// <param name="rolesToAdd">The roles to remove.</param>
+    /// <param name="rolesToRemove">The roles to remove.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation.</returns>
     public static async Task<Result> ModifyRoles

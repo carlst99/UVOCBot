@@ -1,17 +1,27 @@
-﻿using Remora.Results;
-using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+﻿using Remora.Discord.API.Abstractions.Objects;
+using Remora.Results;
+using System.Collections.Generic;
 
 namespace UVOCBot.Discord.Core.Errors;
 
 /// <summary>
 /// Represents an error caused by an action being performed in the wrong context.
 /// </summary>
-/// <param name="RequiredContext">The context that the action requires.</param>
+/// <param name="RequiredContexts">The context/s that the action requires.</param>
 public record ContextError
 (
-    ChannelContext RequiredContext
+    IReadOnlyList<ChannelType> RequiredContexts
 ) : ResultError(string.Empty)
 {
+    public static readonly IReadOnlyList<ChannelType> GuildTextChannels = new[] {
+        ChannelType.GuildNews,
+        ChannelType.GuildStore,
+        ChannelType.GuildText,
+        ChannelType.GuildNewsThread,
+        ChannelType.GuildPrivateThread,
+        ChannelType.GuildPublicThread
+    };
+
     public override string ToString()
-        => $"This command must be executed in a { Formatter.InlineQuote(RequiredContext.ToString()) }.";
+        => $"This command can only be executed in one of the following channel types: {Formatter.InlineQuote(string.Join(", ", RequiredContexts))}.";
 }

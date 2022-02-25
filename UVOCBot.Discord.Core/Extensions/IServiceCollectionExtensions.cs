@@ -25,7 +25,6 @@ public static class IServiceCollectionExtensions
         services.AddSingleton<IPermissionChecksService, PermissionChecksService>();
         services.AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>();
 
-        services.AddCondition<RequireContextCondition>();
         services.AddCondition<RequireGuildPermissionCondition>();
 
         services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();

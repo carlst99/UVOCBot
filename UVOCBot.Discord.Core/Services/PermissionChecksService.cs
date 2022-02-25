@@ -85,7 +85,7 @@ public class PermissionChecksService : IPermissionChecksService
     {
         // Check the channel belongs to a guild
         if (!channel.GuildID.HasValue)
-            return new ContextError(Commands.Conditions.Attributes.ChannelContext.Guild);
+            return new ContextError(ContextError.GuildTextChannels);
 
         Snowflake guildId = channel.GuildID.Value;
 

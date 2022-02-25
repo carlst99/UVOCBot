@@ -19,7 +19,7 @@ public class RequireGuildPermissionAttribute : ConditionAttribute
     /// <summary>
     /// Gets or sets a value indicating if the current user (i.e. the bot) will also be included in the permission checks.
     /// </summary>
-    public bool IncludeCurrent { get; set; }
+    public bool IncludeSelf { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RequireGuildPermissionAttribute"/> class.

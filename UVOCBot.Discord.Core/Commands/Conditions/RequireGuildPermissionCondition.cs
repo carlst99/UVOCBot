@@ -37,7 +37,7 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
         if (!_context.GuildID.HasValue)
             return new ContextError(ContextError.GuildTextChannels);
 
-        if (attribute.IncludeCurrent)
+        if (attribute.IncludeSelf)
         {
             Result selfPermissionCheck = await DoPermissionCheck(attribute.RequiredPermissions, DiscordConstants.UserId, ct).ConfigureAwait(false);
             if (!selfPermissionCheck.IsSuccess)

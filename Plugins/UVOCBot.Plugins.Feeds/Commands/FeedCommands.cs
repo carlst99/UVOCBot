@@ -6,6 +6,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Discord.Commands.Feedback.Services;
@@ -28,7 +29,7 @@ namespace UVOCBot.Plugins.Feeds.Commands;
 [Group("feed")]
 [Description("Commands that manage external feeds")]
 [RequireContext(ChannelContext.Guild)]
-[RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+[RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
 public class FeedCommands : CommandGroup
 {
     private readonly ICommandContext _context;

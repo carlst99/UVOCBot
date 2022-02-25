@@ -5,6 +5,7 @@ using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
@@ -52,7 +53,7 @@ public class WorldCommands : CommandGroup
     [Command("default-server")]
     [Description("Sets the default world for planetside-related commands")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> DefaultWorldCommandAsync(ValidWorldDefinition server)
     {
         PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
@@ -76,7 +77,7 @@ public class WorldCommands : CommandGroup
     {
         if (server != 0)
             return await SendWorldPopulationAsync(server).ConfigureAwait(false);
-        
+
         if (!_context.GuildID.HasValue)
         {
             return await _feedbackService.SendContextualErrorAsync

@@ -3,6 +3,7 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Attributes;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
@@ -25,7 +26,7 @@ namespace UVOCBot.Plugins.Greetings.Commands;
 [Group("greeting")]
 [Description("Commands that allow the greetings feature to be setup")]
 [RequireContext(ChannelContext.Guild)]
-[RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+[RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
 public class GreetingCommands : CommandGroup
 {
     private readonly ICommandContext _context;

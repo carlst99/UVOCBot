@@ -86,7 +86,7 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
             CommandNotFoundError => "That command doesn't exist.",
             ContextError ce => ce.ToString(),
             RoleManipulationError rme => "Failed to modify roles: " + rme.Message,
-            GenericCommandError or ConditionNotSatisfiedError => actualError.Message,
+            GenericCommandError or ConditionNotSatisfiedError or InvalidOperationError => actualError.Message,
             _ => LogUnknownError()
         };
 

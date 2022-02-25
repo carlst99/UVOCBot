@@ -60,7 +60,7 @@ public record PermissionError
         string userMention = UserID == context.User.ID ? "You don't" : Formatter.UserMention(UserID) + " doesn't";
         string permissionMention = Formatter.InlineQuote(string.Join(", ", Permissions));
 
-        string message = $"{ userMention } have the required permission ({permissionMention})";
+        string message = $"{ userMention } have the required permission/s ({permissionMention})";
 
         if (ChannelID is not null)
         {

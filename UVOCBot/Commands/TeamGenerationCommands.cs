@@ -53,7 +53,7 @@ public class TeamGenerationCommands : CommandGroup
 
         await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildAPI.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
         {
-            if (!users.IsSuccess || users.Entity is null)
+            if (!users.IsDefined())
                 return users;
 
             roleMembers.AddRange(users.Entity.Select(m => m.User.Value.ID.Value));

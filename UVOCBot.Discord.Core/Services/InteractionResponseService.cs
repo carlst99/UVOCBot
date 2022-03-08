@@ -128,25 +128,42 @@ public class InteractionResponseService : IInteractionResponseService
     /// <inheritdoc />
     public async Task<Result> CreateContextualMessageResponse
     (
-        InteractionMessageCallbackData message,
+        Optional<string> content = default,
+        Optional<bool> isTTS = default,
+        Optional<IReadOnlyList<IEmbed>> embeds = default,
+        Optional<IAllowedMentions> allowedMentions = default,
+        Optional<IReadOnlyList<IMessageComponent>> components = default,
         Optional<IReadOnlyList<OneOf<FileData, IPartialAttachment>>> attachments = default,
+        Optional<MessageFlags> flags = default,
         CancellationToken ct = default
     )
     {
         if (!HasResponded)
-            return await CreateMessageResponse(message, attachments, ct);
+        {
+            InteractionMessageCallbackData messageData = new
+            (
+                isTTS,
+                content,
+                embeds,
+                allowedMentions,
+                flags,
+                components
+            );
+
+            return await CreateMessageResponse(messageData, attachments, ct);
+        }
 
         Result<IMessage> responseResult = await _interactionApi.CreateFollowupMessageAsync
         (
             DiscordConstants.ApplicationId,
             _context.Token,
-            message.Content,
-            message.IsTTS,
-            message.Embeds,
-            message.AllowedMentions,
-            message.Components,
+            content,
+            isTTS,
+            embeds,
+            allowedMentions,
+            components,
             attachments,
-            message.Flags,
+            flags,
             ct
         );
 

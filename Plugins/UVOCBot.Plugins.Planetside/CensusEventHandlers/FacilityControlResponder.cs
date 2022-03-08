@@ -48,12 +48,13 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         if (censusEvent.OutfitID == 0)
             return;
 
-        IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
+        List<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
             .Where(s => s.BaseCaptureChannelId != null)
             .AsEnumerable()
-            .Where(s => s.TrackedOutfits.Contains(censusEvent.OutfitID));
+            .Where(s => s.TrackedOutfits.Contains(censusEvent.OutfitID))
+            .ToList();
 
-        if (!validPSettings.Any())
+        if (validPSettings.Count == 0)
             return;
 
         Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(censusEvent.OutfitID, ct).ConfigureAwait(false);

@@ -55,7 +55,7 @@ public static class IServiceCollectionExtensions
                 .Finish();
 
         services.AddHostedService<EventStreamWorker>();
-        services.AddHostedService<StartupWorker>();
+        services.AddHostedService<CensusStateWorker>();
 
         return services;
     }

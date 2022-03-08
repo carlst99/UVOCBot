@@ -12,19 +12,22 @@ using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 
 namespace UVOCBot.Plugins.Planetside.Workers;
 
-public class StartupWorker : BackgroundService
+public class CensusStateWorker : BackgroundService
 {
-    private readonly ICensusApiService _censusApi;
     private readonly IMemoryCache _cache;
+    private readonly ICensusApiService _censusApi;
+    private readonly IPopulationService _populationService;
 
-    public StartupWorker
+    public CensusStateWorker
     (
+        IMemoryCache cache,
         ICensusApiService censusApi,
-        IMemoryCache cache
+        IPopulationService populationService
     )
     {
-        _censusApi = censusApi;
         _cache = cache;
+        _censusApi = censusApi;
+        _populationService = populationService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -49,6 +52,21 @@ public class StartupWorker : BackgroundService
             MetagameEvent eventStreamConversion = events.Entity[0].ToEventStreamMetagameEvent();
             object key = CacheKeyHelpers.GetMetagameEventKey(eventStreamConversion);
             _cache.Set(key, eventStreamConversion);
+        }
+
+        TimeSpan? popUpdateFrequency = CacheEntryHelpers.PopulationOptions.AbsoluteExpirationRelativeToNow;
+        if (popUpdateFrequency is null)
+            return;
+
+        popUpdateFrequency = popUpdateFrequency.Value.Subtract(TimeSpan.FromSeconds(15));
+
+        while (!ct.IsCancellationRequested)
+        {
+            // Assume this is caching
+            foreach (ValidWorldDefinition world in Enum.GetValues<ValidWorldDefinition>())
+                await _populationService.GetWorldPopulationAsync(world, ct);
+
+            await Task.Delay(popUpdateFrequency.Value, ct);
         }
     }
 }

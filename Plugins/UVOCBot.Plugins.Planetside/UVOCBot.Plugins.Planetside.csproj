@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="DbgCensus.EventStream.EventHandlers" Version="2.0.2" />
-    <PackageReference Include="DbgCensus.Rest" Version="1.2.1" />
+    <PackageReference Include="DbgCensus.EventStream.EventHandlers" Version="2.4.0" />
+    <PackageReference Include="DbgCensus.Rest" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />

@@ -1,13 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using OneOf;
 using Remora.Commands.Results;
-using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.API.Abstractions.Rest;
-using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Discord.Commands.Services;
-using Remora.Rest.Core;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,18 +16,15 @@ namespace UVOCBot.Discord.Core.ExecutionEvents;
 public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
 {
     private readonly ILogger<ErrorFeedbackPostExecutionEvent> _logger;
-    private readonly IDiscordRestInteractionAPI _interactionApi;
     private readonly FeedbackService _feedbackService;
 
     public ErrorFeedbackPostExecutionEvent
     (
         ILogger<ErrorFeedbackPostExecutionEvent> logger,
-        IDiscordRestInteractionAPI interactionApi,
         FeedbackService feedbackService
     )
     {
         _logger = logger;
-        _interactionApi = interactionApi;
         _feedbackService = feedbackService;
     }
 
@@ -48,27 +40,6 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
             IResultError? nestedError = GetFirstInnerErrorOfNotTypeT<ConditionNotSatisfiedError>(commandResult);
             if (nestedError is not null)
                 actualError = nestedError;
-
-            // Conditions are checked before the interaction is created.
-            if (context is InteractionContext ictx)
-            {
-                // We're not worrying about an error. It's a rare occurence and more important to log the execution error.
-                await _interactionApi.CreateInteractionResponseAsync
-                (
-                    ictx.ID,
-                    ictx.Token,
-                    new InteractionResponse
-                    (
-                        InteractionCallbackType.DeferredChannelMessageWithSource,
-                        new Optional<OneOf<IInteractionMessageCallbackData, IInteractionAutocompleteCallbackData, IInteractionModalCallbackData>>
-                        (
-                            new InteractionMessageCallbackData(Flags: MessageFlags.Ephemeral)
-                        )
-                    ),
-                    default,
-                    ct
-                ).ConfigureAwait(false);
-            }
         }
 
         if (actualError is null)

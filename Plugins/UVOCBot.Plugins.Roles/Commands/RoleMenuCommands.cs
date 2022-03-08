@@ -1,5 +1,4 @@
-﻿using OneOf;
-using Remora.Commands.Attributes;
+﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -8,7 +7,6 @@ using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Messages;
-using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
@@ -18,6 +16,7 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Roles.Abstractions.Services;
@@ -33,7 +32,7 @@ public class RoleMenuCommands : CommandGroup
 {
     private readonly ICommandContext _context;
     private readonly IDiscordRestChannelAPI _channelApi;
-    private readonly IDiscordRestInteractionAPI _interactionApi;
+    private readonly IInteractionResponseService _interactionResponseService;
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly IRoleMenuService _roleMenuService;
     private readonly DiscordContext _dbContext;
@@ -43,7 +42,7 @@ public class RoleMenuCommands : CommandGroup
     (
         ICommandContext context,
         IDiscordRestChannelAPI channelApi,
-        IDiscordRestInteractionAPI interactionApi,
+        IInteractionResponseService interactionResponseService,
         IPermissionChecksService permissionChecksService,
         IRoleMenuService roleMenuService,
         DiscordContext dbContext,
@@ -52,7 +51,7 @@ public class RoleMenuCommands : CommandGroup
     {
         _context = context;
         _channelApi = channelApi;
-        _interactionApi = interactionApi;
+        _interactionResponseService = interactionResponseService;
         _permissionChecksService = permissionChecksService;
         _roleMenuService = roleMenuService;
         _dbContext = dbContext;
@@ -67,29 +66,8 @@ public class RoleMenuCommands : CommandGroup
         [Description("The channel to post the role menu in.")][ChannelTypes(ChannelType.GuildText)] IChannel channel
     )
     {
-        if (_context is not InteractionContext ictx)
-        {
-            await _feedbackService.SendContextualErrorAsync("This command must be executed as a slash command.", ct: CancellationToken);
-            return Result.FromSuccess();
-        }
-
-        async Task CreateNormalResponse()
-        {
-            await _interactionApi.CreateInteractionResponseAsync
-            (
-                ictx.ID,
-                ictx.Token,
-                new InteractionResponse
-                (
-                    InteractionCallbackType.DeferredChannelMessageWithSource,
-                    new Optional<OneOf<IInteractionMessageCallbackData, IInteractionAutocompleteCallbackData, IInteractionModalCallbackData>>
-                    (
-                        new InteractionMessageCallbackData(Flags: MessageFlags.Ephemeral)
-                    )
-                ),
-                ct: CancellationToken
-            );
-        }
+        if (_context is not InteractionContext)
+            return await _feedbackService.SendContextualErrorAsync("This command must be executed as a slash command.", ct: CancellationToken);
 
         Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel
         (
@@ -99,22 +77,13 @@ public class RoleMenuCommands : CommandGroup
         ).ConfigureAwait(false);
 
         if (!permissionsResult.IsSuccess)
-        {
-            await CreateNormalResponse();
             return Result.FromError(permissionsResult);
-        }
 
         if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.ManageRoles))
-        {
-            await CreateNormalResponse();
             return new PermissionError(DiscordPermission.ManageRoles, DiscordConstants.UserId, channel.ID);
-        }
 
         if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
-        {
-            await CreateNormalResponse();
             return new PermissionError(DiscordPermission.SendMessages, DiscordConstants.UserId, channel.ID);
-        }
 
         GuildRoleMenu menu = new
         (
@@ -135,10 +104,7 @@ public class RoleMenuCommands : CommandGroup
         ).ConfigureAwait(false);
 
         if (!menuCreationResult.IsSuccess)
-        {
-            await CreateNormalResponse();
             return Result.FromError(menuCreationResult);
-        }
 
         Snowflake messageID = menuCreationResult.Entity.ID;
         menu.MessageId = messageID.Value;
@@ -147,10 +113,7 @@ public class RoleMenuCommands : CommandGroup
         int addedCount = await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
         if (addedCount < 1)
-        {
-            await CreateNormalResponse();
             return new GenericCommandError();
-        }
 
         return await EditRoleMenuCommandAsync(messageID);
     }
@@ -163,7 +126,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID
     )
     {
-        if (_context is not InteractionContext ictx)
+        if (_context is not InteractionContext)
             return new GenericCommandError("This command must be executed as a slash command.");
 
         if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
@@ -214,17 +177,7 @@ public class RoleMenuCommands : CommandGroup
             }
         );
 
-        return await _interactionApi.CreateInteractionResponseAsync
-        (
-            ictx.ID,
-            ictx.Token,
-            new InteractionResponse
-            (
-                InteractionCallbackType.Modal,
-                new Optional<OneOf<IInteractionMessageCallbackData, IInteractionAutocompleteCallbackData, IInteractionModalCallbackData>>(modal)
-            ),
-            ct: CancellationToken
-        );
+        return await _interactionResponseService.CreateModalResponse(modal, CancellationToken);
     }
 
     [Command("delete")]

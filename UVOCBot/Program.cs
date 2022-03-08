@@ -250,7 +250,7 @@ public static class Program
 
         services.Configure<InteractionResponderOptions>(o => o.SuppressAutomaticResponses = true);
 
-        services.AddDiscordCommands(true, useDefaultInteractionResponder: false)
+        services.AddDiscordCommands(true, false, false)
                 .AddDiscordCaching();
 
         services.AddResponder<GuildCreateResponder>()

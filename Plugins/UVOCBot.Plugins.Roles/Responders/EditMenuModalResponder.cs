@@ -1,6 +1,6 @@
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
+using UVOCBot.Discord.Core.Commands;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Linq;

@@ -4,7 +4,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
+using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Results;
 using System.Collections.Generic;

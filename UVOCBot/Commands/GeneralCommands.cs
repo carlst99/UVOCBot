@@ -5,7 +5,6 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
@@ -14,6 +13,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands;
 
 namespace UVOCBot.Commands;
 

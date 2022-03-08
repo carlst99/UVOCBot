@@ -5,9 +5,9 @@ using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -16,6 +16,7 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Greetings.Abstractions.Services;
@@ -329,7 +330,7 @@ public class GreetingCommands : CommandGroup
     {
         List<ulong> roleIDs = new();
 
-        foreach (string role in roles.Split("<@&", System.StringSplitOptions.RemoveEmptyEntries))
+        foreach (string role in roles.Split("<@&", StringSplitOptions.RemoveEmptyEntries))
         {
             int index = role.IndexOf('>');
 

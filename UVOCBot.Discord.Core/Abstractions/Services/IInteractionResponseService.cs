@@ -21,6 +21,12 @@ public interface IInteractionResponseService
     public bool HasResponded { get; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether or not an
+    /// interaction response should default to being ephemeral.
+    /// </summary>
+    public bool WillDefaultToEphemeral { get; set; }
+
+    /// <summary>
     /// Creates a modal interaction response.
     /// </summary>
     /// <param name="modalData">The modal to respond with.</param>
@@ -50,14 +56,9 @@ public interface IInteractionResponseService
     /// Creates a deferred message response. Use <see cref="CreateContextualMessageResponse"/>
     /// or similar means to send followup messages.
     /// </summary>
-    /// <param name="isEphemeral">A value indicating whether the deferred response should be ephemeral.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation.</returns>
-    Task<Result> CreateDeferredMessageResponse
-    (
-        bool isEphemeral,
-        CancellationToken ct = default
-    );
+    Task<Result> CreateDeferredMessageResponse(CancellationToken ct = default);
 
     /// <summary>
     /// Creates a message interaction response. If an interaction response has already been

@@ -5,6 +5,7 @@ using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Gateway;
 using Remora.Discord.Gateway.Extensions;
 using UVOCBot.Discord.Core.Abstractions.Services;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions;
 using UVOCBot.Discord.Core.Components;
 using UVOCBot.Discord.Core.ExecutionEvents;
@@ -24,11 +25,14 @@ public static class IServiceCollectionExtensions
 
         services.AddSingleton<IPermissionChecksService, PermissionChecksService>();
         services.AddSingleton<IVoiceStateCacheService, VoiceStateCacheService>();
+        services.AddScoped<IInteractionResponseService, InteractionResponseService>();
+        services.AddScoped<FeedbackService>();
 
         services.AddCondition<RequireGuildPermissionCondition>();
 
         services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();
 
+        services.AddResponder<CommandInteractionResponder>();
         services.AddResponder<ComponentInteractionResponder>();
         services.AddResponder<VoiceStateUpdateResponder>();
 

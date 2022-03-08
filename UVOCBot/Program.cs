@@ -194,6 +194,7 @@ public static class Program
     }
 
 #pragma warning disable RCS1163 // Unused parameter.
+    // ReSharper disable twice UnusedParameter.Local
     private static ILogger SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
 #pragma warning restore RCS1163 // Unused parameter.
     {
@@ -235,7 +236,8 @@ public static class Program
 
     private static IServiceCollection AddRemoraServices(this IServiceCollection services)
     {
-        services.Configure<DiscordGatewayClientOptions>(
+        services.Configure<DiscordGatewayClientOptions>
+        (
             o =>
             {
                 o.Intents |= GatewayIntents.DirectMessages
@@ -243,9 +245,12 @@ public static class Program
                      | GatewayIntents.Guilds
                      | GatewayIntents.GuildMembers
                      | GatewayIntents.MessageContents;
-            });
+            }
+        );
 
-        services.AddDiscordCommands(true)
+        services.Configure<InteractionResponderOptions>(o => o.SuppressAutomaticResponses = true);
+
+        services.AddDiscordCommands(true, useDefaultInteractionResponder: false)
                 .AddDiscordCaching();
 
         services.AddResponder<GuildCreateResponder>()
@@ -263,6 +268,7 @@ public static class Program
     }
 
 #pragma warning disable RCS1213 // Remove unused member declaration.
+    // ReSharper disable once UnusedMember.Local
     private static async Task<IResult> RemoveExistingGlobalCommandsAsync(IServiceProvider services)
     {
         Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API oauth2Api = services.GetRequiredService<Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API>();

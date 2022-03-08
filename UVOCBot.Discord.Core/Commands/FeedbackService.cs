@@ -40,7 +40,7 @@ using UVOCBot.Discord.Core.Abstractions.Services;
 namespace UVOCBot.Discord.Core.Commands;
 
 /// <summary>
-/// Handles sending formatted messages to the users.
+/// Handles sending formatted messages to users.
 /// </summary>
 public class FeedbackService
 {
@@ -85,6 +85,10 @@ public class FeedbackService
 
         this.Theme = feedbackTheme;
     }
+
+    /// <inheritdoc cref="IInteractionResponseService.CreateDeferredMessageResponse(CancellationToken)" />
+    public Task<Result> CreateDeferredMessageResponse(CancellationToken ct = default)
+        => _interactionResponseService.CreateDeferredMessageResponse(ct);
 
     /// <summary>
     /// Send an informational message.
@@ -432,10 +436,27 @@ public class FeedbackService
     /// <param name="options">The message options to use.</param>
     /// <param name="ct">The cancellation token for this operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task<Result> SendEmbedAsync
+    public Task<Result> SendEmbedAsync
     (
         Snowflake channel,
-        Embed embed,
+        IEmbed embed,
+        FeedbackMessageOptions? options = null,
+        CancellationToken ct = default
+    )
+        => SendEmbedsAsync(channel, new[] { embed }, options, ct);
+
+    /// <summary>
+    /// Sends the given embed to the given channel.
+    /// </summary>
+    /// <param name="channel">The channel to send the embed to.</param>
+    /// <param name="embeds">The embed.</param>
+    /// <param name="options">The message options to use.</param>
+    /// <param name="ct">The cancellation token for this operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public async Task<Result> SendEmbedsAsync
+    (
+        Snowflake channel,
+        IReadOnlyList<IEmbed> embeds,
         FeedbackMessageOptions? options = null,
         CancellationToken ct = default
     )
@@ -444,7 +465,7 @@ public class FeedbackService
         (
             channel,
             isTTS: options?.IsTTS ?? default,
-            embeds: new[] { embed },
+            embeds: new Optional<IReadOnlyList<IEmbed>>(embeds),
             allowedMentions: options?.AllowedMentions ?? default,
             components: options?.MessageComponents ?? default,
             attachments: options?.Attachments ?? default,
@@ -463,9 +484,24 @@ public class FeedbackService
     /// <param name="options">The message options to use.</param>
     /// <param name="ct">The cancellation token for this operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task<Result> SendContextualEmbedAsync
+    public Task<Result> SendContextualEmbedAsync
     (
-        Embed embed,
+        IEmbed embed,
+        FeedbackMessageOptions? options = null,
+        CancellationToken ct = default
+    )
+        => SendContextualEmbedsAsync(new[] { embed }, options, ct);
+
+    /// <summary>
+    /// Sends the given embed to current context.
+    /// </summary>
+    /// <param name="embeds">The embed.</param>
+    /// <param name="options">The message options to use.</param>
+    /// <param name="ct">The cancellation token for this operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public async Task<Result> SendContextualEmbedsAsync
+    (
+        IReadOnlyList<IEmbed> embeds,
         FeedbackMessageOptions? options = null,
         CancellationToken ct = default
     )
@@ -479,7 +515,7 @@ public class FeedbackService
         {
             case MessageContext messageContext:
             {
-                return await SendEmbedAsync(messageContext.ChannelID, embed, options, ct);
+                return await SendEmbedsAsync(messageContext.ChannelID, embeds, options, ct);
             }
             case InteractionContext:
             {
@@ -488,7 +524,7 @@ public class FeedbackService
                 Result result = await _interactionResponseService.CreateContextualMessageResponse
                 (
                     isTTS: options?.IsTTS ?? default,
-                    embeds: new[] { embed },
+                    embeds: new Optional<IReadOnlyList<IEmbed>>(embeds),
                     allowedMentions: options?.AllowedMentions ?? default,
                     components: options?.MessageComponents ?? default,
                     flags: messageFlags,

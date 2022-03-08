@@ -8,7 +8,6 @@ using Remora.Results;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
 
 namespace UVOCBot.Discord.Core.Services;
@@ -21,6 +20,9 @@ public class InteractionResponseService : IInteractionResponseService
 
     /// <inheritdoc />
     public bool HasResponded { get; protected set; }
+
+    /// <inheritdoc />
+    public bool WillDefaultToEphemeral { get; set; }
 
     public InteractionResponseService
     (
@@ -71,13 +73,16 @@ public class InteractionResponseService : IInteractionResponseService
         if (HasResponded)
             return new InvalidOperationError("A response has already been created for this scope.");
 
+        if (WillDefaultToEphemeral && !message.Flags.HasValue)
+            message = message with { Flags = MessageFlags.Ephemeral };
+
         Result responseResult = await _interactionApi.CreateInteractionResponseAsync
         (
             _context.ID,
             _context.Token,
             new InteractionResponse
             (
-                InteractionCallbackType.DeferredChannelMessageWithSource,
+                InteractionCallbackType.ChannelMessageWithSource,
                 new Optional<OneOf<IInteractionMessageCallbackData, IInteractionAutocompleteCallbackData, IInteractionModalCallbackData>>(message)
             ),
             attachments,
@@ -91,16 +96,12 @@ public class InteractionResponseService : IInteractionResponseService
     }
 
     /// <inheritdoc />
-    public async Task<Result> CreateDeferredMessageResponse
-    (
-        bool isEphemeral,
-        CancellationToken ct = default
-    )
+    public async Task<Result> CreateDeferredMessageResponse(CancellationToken ct = default)
     {
         if (HasResponded)
             return new InvalidOperationError("A response has already been created for this scope.");
 
-        Optional<MessageFlags> flags = isEphemeral
+        Optional<MessageFlags> flags = WillDefaultToEphemeral
             ? MessageFlags.Ephemeral
             : default;
 
@@ -138,6 +139,9 @@ public class InteractionResponseService : IInteractionResponseService
         CancellationToken ct = default
     )
     {
+        if (WillDefaultToEphemeral && !flags.HasValue)
+            flags = MessageFlags.Ephemeral;
+
         if (!HasResponded)
         {
             InteractionMessageCallbackData messageData = new

@@ -1,5 +1,4 @@
-﻿using CodeHollow.FeedReader;
-using Remora.Commands.Attributes;
+﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
@@ -9,7 +8,6 @@ using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Messages;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
@@ -21,8 +19,12 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
+#if DEBUG
+using CodeHollow.FeedReader;
+#endif
 
 namespace UVOCBot.Plugins.Feeds.Commands;
 
@@ -200,10 +202,10 @@ public class FeedCommands : CommandGroup
             return await _feedbackService.SendContextualInfoAsync("No posts are available from this feed.", ct: CancellationToken);
 
         FeedItem item = rss.Items[0];
-        
+
         bool couldParseDate = DateTimeOffset.TryParse(item.PublishingDateString, out DateTimeOffset pubDate);
         bool couldFindImage = TryFindFirstImageLink(item.Description, out string? imageUrl);
-        
+
         Embed testEmbed = new
         (
             item.Title,
@@ -254,11 +256,11 @@ public class FeedCommands : CommandGroup
         Snowflake channelSnowflake = DiscordSnowflake.New(settings.FeedChannelID.Value);
         return await CheckFeedChannelPermissionsAsync(channelSnowflake).ConfigureAwait(false);
     }
-    
+
     private static bool TryFindFirstImageLink(string html, out string? imgLink)
     {
         imgLink = null;
-        
+
         int imgElementIndex = html.IndexOf("<img", StringComparison.OrdinalIgnoreCase);
         if (imgElementIndex < 0)
             return false;

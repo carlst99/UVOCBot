@@ -116,7 +116,9 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         if (!roleManipulationResult.IsSuccess)
             return roleManipulationResult;
 
-        string response = $"Sweet! You've been {(shouldRemove ? "relieved of" : "given")} the {Formatter.RoleMention(roleID.Value)} role.";
+        string response = shouldRemove
+            ? $"The {Formatter.RoleMention(roleID.Value)} has been removed."
+            : $"Sweet! You've been given the {Formatter.RoleMention(roleID.Value)} role.";
 
         IResult res = await _feedbackService.SendContextualSuccessAsync
         (

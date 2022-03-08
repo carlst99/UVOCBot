@@ -11,6 +11,7 @@ using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -95,7 +96,7 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
 
         IInteractionResponseService interactionResponseService = _services.GetRequiredService<IInteractionResponseService>();
 
-        if (responderList.Count >= 1 && responderList[0].GetCustomAttribute<EphemeralAttribute>() is null)
+        if (responderList.Any(r => r.GetCustomAttribute<EphemeralAttribute>() is not null))
             interactionResponseService.WillDefaultToEphemeral = true;
 
         if (!_interactionResponderOptions.SuppressAutomaticResponses)

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <Version>1.0.2</Version>
+    <Version>1.1.0</Version>
     <UserSecretsId>dotnet-UVOCBot-BCEF48FF-ADA7-4525-8513-6E65E0B7D897</UserSecretsId>
     <Authors>Carl Stephens</Authors>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>

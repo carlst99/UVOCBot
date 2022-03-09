@@ -14,16 +14,17 @@ using System.Drawing;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 
 namespace UVOCBot.Commands;
 
 public class GeneralCommands : CommandGroup
 {
     public const string RELEASE_NOTES =
-        @"• Massive revamp to tweet (and now, forum post!) relaying - check out the new `feed` commands.
-        • Improvements to the `population` command.
-        • Added support for Oshur.
-        • Removed the `map` command.";
+        @"• Made many commands faster.
+          • Updated the population command.
+          • Updated the rolemenu commands.
+          • Disabled text commands.";
 
     private readonly IDiscordRestUserAPI _userAPI;
     private readonly FeedbackService _feedbackService;
@@ -60,6 +61,7 @@ public class GeneralCommands : CommandGroup
 
     [Command("http-cat")]
     [Description("Posts a cat image that represents the given HTTP error code.")]
+    [Deferred]
     public async Task<IResult> PostHttpCatCommandAsync([Description("The HTTP code.")][DiscordTypeHint(TypeHint.Integer)] int httpCode)
     {
         Embed embed = new()

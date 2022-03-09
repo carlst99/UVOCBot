@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 
@@ -26,6 +27,7 @@ namespace UVOCBot.Plugins.Roles.Commands;
 [Description("Commands that help with role management")]
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageRoles)]
+[Deferred]
 public class RoleCommands : CommandGroup
 {
     /// <summary>

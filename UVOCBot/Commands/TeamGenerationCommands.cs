@@ -14,12 +14,14 @@ using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 
 namespace UVOCBot.Commands;
 
 [Group("team")]
 [Description("Commands that help with team generation")]
 [RequireContext(ChannelContext.Guild)]
+[Deferred]
 public class TeamGenerationCommands : CommandGroup
 {
     private readonly ICommandContext _context;

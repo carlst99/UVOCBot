@@ -13,12 +13,14 @@ using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 
 namespace UVOCBot.Commands;
 
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.MoveMembers)]
+[Deferred]
 public class MovementCommands : CommandGroup
 {
     private readonly ICommandContext _context;

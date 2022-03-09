@@ -17,6 +17,7 @@ using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Roles.Abstractions.Services;
@@ -28,6 +29,7 @@ namespace UVOCBot.Plugins.Roles.Commands;
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageRoles)]
 [Ephemeral]
+[Deferred]
 public class RoleMenuCommands : CommandGroup
 {
     private readonly ICommandContext _context;

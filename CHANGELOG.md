@@ -1,11 +1,14 @@
 # Changelog
 
-## Release vNext
+## Release v1.1.0
 
+- Made many commands faster.
 - Updated the `population` command to bundle NS characters onto their respective faction.
 - Updated the `population` command to show current open continents on the requested server.
 - Updated the `rolemenu create` and `rolemenu edit` commands to utilise modals for setting the title and description.
 - Updated the *forum* feeds to include the first discovered image in the post.
+- Disabled text commands
+- Fixed a couple of bugs in `online` and `status` commands.
 
 ## Release v1.0.2
 

@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Messages;
-using Remora.Discord.Commands.Feedback.Services;
+using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Results;
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -84,11 +84,8 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
                 : Result.FromSuccess();
         }
 
-        if (!menu.Roles.Any(r => r.RoleId == roleID.Value.Value))
+        if (menu.Roles.All(r => r.RoleId != roleID.Value.Value))
             return new GenericCommandError(); // If this happens something sus is going on. Give no more info.
-
-        string addedRoles = string.Empty;
-        string removedRoles = string.Empty;
 
         bool shouldRemove = member.Roles.Contains(roleID.Value);
         Result roleManipulationResult;
@@ -97,7 +94,7 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         {
             roleManipulationResult = await _guildApi.RemoveGuildMemberRoleAsync
             (
-                _context.GuildID.Value,
+                guildID,
                 _context.User.ID,
                 roleID.Value,
                 "User self-removed via role menu",
@@ -108,7 +105,7 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         {
             roleManipulationResult = await _guildApi.AddGuildMemberRoleAsync
             (
-                _context.GuildID.Value,
+                guildID,
                 _context.User.ID,
                 roleID.Value,
                 "User self-added via role menu",
@@ -116,7 +113,12 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
             ).ConfigureAwait(false);
         }
 
-        string response = $"Sweet! You've been {(shouldRemove ? "relieved of" : "given")} the {Formatter.RoleMention(roleID.Value)} role.";
+        if (!roleManipulationResult.IsSuccess)
+            return roleManipulationResult;
+
+        string response = shouldRemove
+            ? $"The {Formatter.RoleMention(roleID.Value)} has been removed."
+            : $"Sweet! You've been given the {Formatter.RoleMention(roleID.Value)} role.";
 
         IResult res = await _feedbackService.SendContextualSuccessAsync
         (

@@ -3,24 +3,25 @@ using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Messages;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
-using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 
 namespace UVOCBot.Commands;
 
 [Group("team")]
 [Description("Commands that help with team generation")]
 [RequireContext(ChannelContext.Guild)]
+[Deferred]
 public class TeamGenerationCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -54,7 +55,7 @@ public class TeamGenerationCommands : CommandGroup
 
         await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildAPI.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
         {
-            if (!users.IsSuccess || users.Entity is null)
+            if (!users.IsDefined())
                 return users;
 
             roleMembers.AddRange(users.Entity.Select(m => m.User.Value.ID.Value));

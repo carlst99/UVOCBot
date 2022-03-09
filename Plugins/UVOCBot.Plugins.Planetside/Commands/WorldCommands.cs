@@ -5,8 +5,8 @@ using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
@@ -52,7 +53,7 @@ public class WorldCommands : CommandGroup
     [Command("default-server")]
     [Description("Sets the default world for planetside-related commands")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> DefaultWorldCommandAsync(ValidWorldDefinition server)
     {
         PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
@@ -69,28 +70,35 @@ public class WorldCommands : CommandGroup
 
     [Command("population")]
     [Description("Gets the population of a PlanetSide server.")]
-    public async Task<IResult> PopulationCommandAsync(
-        [Description("Set your default server with `/default-server`.")] ValidWorldDefinition server = 0)
+    public async Task<IResult> PopulationCommandAsync
+    (
+        [Description("Set your default server with `/default-server`.")] ValidWorldDefinition server = 0
+    )
     {
-        if (server == 0)
+        if (server != 0)
+            return await SendWorldPopulationAsync(server).ConfigureAwait(false);
+
+        if (!_context.GuildID.HasValue)
         {
-            if (!_context.GuildID.HasValue)
-            {
-                return await _feedbackService.SendContextualErrorAsync(
-                    "To use this command in a DM you must provide a server.", ct: CancellationToken).ConfigureAwait(false);
-            }
-
-            PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-
-            if (settings.DefaultWorld is null)
-            {
-                return await _feedbackService.SendContextualErrorAsync(
-                    $"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.",
-                    ct: CancellationToken).ConfigureAwait(false);
-            }
-
-            server = (ValidWorldDefinition)settings.DefaultWorld;
+            return await _feedbackService.SendContextualErrorAsync
+            (
+                "To use this command in a DM you must provide a server.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
         }
+
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+
+        if (settings.DefaultWorld is null)
+        {
+            return await _feedbackService.SendContextualErrorAsync
+            (
+                $"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
+
+        server = (ValidWorldDefinition)settings.DefaultWorld;
 
         return await SendWorldPopulationAsync(server).ConfigureAwait(false);
     }
@@ -127,30 +135,40 @@ public class WorldCommands : CommandGroup
     private async Task<IResult> SendWorldPopulationAsync(ValidWorldDefinition world)
     {
         Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
+        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync
+        (
+            world,
+            Enum.GetValues<ValidZoneDefinition>(),
+            CancellationToken
+        );
 
-        if (!populationResult.IsSuccess)
+        if (!populationResult.IsDefined(out IPopulation? population))
             return populationResult;
 
-        IPopulation population = populationResult.Entity;
+        List<string> unlockedZones = new();
+        if (getMapsResult.IsDefined(out List<Map>? maps))
+        {
+            foreach (Map map in maps)
+            {
+                GetMapTerritoryControl(map, out double ncPercent, out double trPercent, out double vsPercent);
+                if (ncPercent < 99 && trPercent < 99 && vsPercent < 99)
+                    unlockedZones.Add(GetZoneName(map.ZoneID.Definition));
+            }
+        }
 
         List<EmbedField> embedFields = new()
         {
+            new EmbedField("Unlocked Continents", string.Join(" ", unlockedZones)),
             new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
             new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
-            new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total))
+            new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
         };
-
-        if (population.NS is not null)
-        {
-            EmbedField nsField = new($"{Formatter.Emoji("white_circle")} NS - {population.NS}", BuildEmbedPopulationBar((int)population.NS, population.Total));
-            embedFields.Add(nsField);
-        }
 
         Embed embed = new()
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Title = world.ToString() + " - " + population.Total.ToString(),
-            Footer = new EmbedFooter("Data from Varunda's wt.honu.pw"),
+            Title = $"{world} - {population.Total}",
+            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw"),
             Fields = embedFields
         };
 
@@ -168,7 +186,11 @@ public class WorldCommands : CommandGroup
         }
 
         List<EmbedField> embedFields = new();
-        getMapsResult.Entity.Sort((m1, m2) => m1.ZoneID.Definition.ToString().CompareTo(m2.ZoneID.Definition.ToString()));
+        getMapsResult.Entity.Sort
+        (
+            (m1, m2)
+                => string.Compare(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString(), StringComparison.Ordinal)
+        );
 
         foreach (Map m in getMapsResult.Entity)
             embedFields.Add(GetMapStatusEmbedField(m, (WorldDefinition)world));
@@ -194,21 +216,8 @@ public class WorldCommands : CommandGroup
             return result;
         }
 
-        double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != FactionDefinition.None);
-        double ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.NC) / regionCount) * 100;
-        double trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.TR) / regionCount) * 100;
-        double vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.VS) / regionCount) * 100;
-
-        string title = map.ZoneID.Definition switch
-        {
-            ZoneDefinition.Amerish => $"{Formatter.Emoji("mountain")} {ZoneDefinition.Amerish}",
-            ZoneDefinition.Esamir => $"{Formatter.Emoji("snowflake")} {ZoneDefinition.Esamir}",
-            ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
-            ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
-            ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
-            ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} { ZoneDefinition.Oshur}",
-            _ => map.ZoneID.Definition.ToString()
-        };
+        GetMapTerritoryControl(map, out double ncPercent, out double trPercent, out double vsPercent);
+        string title = GetZoneName(map.ZoneID.Definition);
 
         object cacheKey = CacheKeyHelpers.GetMetagameEventKey(world, map.ZoneID.Definition);
         if (_cache.TryGetValue(cacheKey, out IMetagameEvent? metagameEvent) && metagameEvent!.MetagameEventState is MetagameEventState.Started)
@@ -217,7 +226,7 @@ public class WorldCommands : CommandGroup
             TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.MetagameEventID) - currentEventDuration;
             title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
         }
-        else if (ncPercent == 100 || trPercent == 100 || vsPercent == 100)
+        else if (ncPercent > 99 || trPercent > 99 || vsPercent > 99)
         {
             title += " " + Formatter.Emoji("lock");
         }
@@ -250,4 +259,30 @@ public class WorldCommands : CommandGroup
 
         return result;
     }
+
+    private static void GetMapTerritoryControl
+    (
+        Map map,
+        out double ncPercent,
+        out double trPercent,
+        out double vsPercent
+    )
+    {
+        double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != FactionDefinition.None);
+        ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.NC) / regionCount) * 100;
+        trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.TR) / regionCount) * 100;
+        vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.VS) / regionCount) * 100;
+    }
+
+    private static string GetZoneName(ZoneDefinition zone)
+        => zone switch
+        {
+            ZoneDefinition.Amerish => $"{Formatter.Emoji("mountain")} {ZoneDefinition.Amerish}",
+            ZoneDefinition.Esamir => $"{Formatter.Emoji("snowflake")} {ZoneDefinition.Esamir}",
+            ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
+            ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
+            ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
+            ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} {ZoneDefinition.Oshur}",
+            _ => zone.ToString()
+        };
 }

@@ -21,7 +21,7 @@ public class CachingCensusApiService : CensusApiService
     private readonly IMemoryCache _cache;
 
     public CachingCensusApiService(
-        ILogger<CensusApiService> logger,
+        ILogger<CachingCensusApiService> logger,
         IQueryService queryService,
         IMemoryCache cache)
         : base(logger, queryService)
@@ -46,7 +46,7 @@ public class CachingCensusApiService : CensusApiService
             (
                 CacheKeyHelpers.GetOutfitKey(getOutfit.Entity),
                 getOutfit.Entity,
-                CacheEntryHelpers.GetOutfitOptions()
+                CacheEntryHelpers.OutfitOptions
             );
         }
 
@@ -70,7 +70,7 @@ public class CachingCensusApiService : CensusApiService
             (
                 CacheKeyHelpers.GetFacilityMapRegionKey(getMapRegionResult.Entity),
                 getMapRegionResult.Entity,
-                CacheEntryHelpers.GetMapRegionOptions()
+                CacheEntryHelpers.MapRegionOptions
             );
         }
 
@@ -99,23 +99,22 @@ public class CachingCensusApiService : CensusApiService
 
         Result<List<Map>> getMapsResult = await base.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
 
-        if (getMapsResult.IsDefined())
+        if (!getMapsResult.IsDefined())
+            return getMapsResult;
+
+        foreach (Map map in getMapsResult.Entity)
         {
-            foreach (Map map in getMapsResult.Entity)
-            {
-                _cache.Set
-                (
-                    CacheKeyHelpers.GetMapKey((WorldDefinition)world, map),
-                    map,
-                    CacheEntryHelpers.GetMapOptions()
-                );
+            _cache.Set
+            (
+                CacheKeyHelpers.GetMapKey((WorldDefinition)world, map),
+                map,
+                CacheEntryHelpers.MapOptions
+            );
 
-                maps.Add(map);
-            }
-
-            return maps;
+            maps.Add(map);
         }
 
-        return getMapsResult;
+        return maps;
+
     }
 }

@@ -6,7 +6,7 @@ namespace UVOCBot.Discord.Core.Components;
 /// <summary>
 /// Represents a repository of <see cref="IComponentResponder"/> types.
 /// </summary>
-internal class ComponentResponderRepository
+public class ComponentResponderRepository
 {
     private static readonly IReadOnlyList<Type> SharedEmptyList = new List<Type>();
 
@@ -26,12 +26,9 @@ internal class ComponentResponderRepository
     /// <param name="key">The key of the responder.</param>
     /// <returns>A list of <see cref="IComponentResponder"/> types.</returns>
     public IReadOnlyList<Type> GetResponders(string key)
-    {
-        if (_responders.TryGetValue(key, out List<Type>? result))
-            return result;
-        else
-            return SharedEmptyList;
-    }
+        => _responders.TryGetValue(key, out List<Type>? result)
+            ? result
+            : SharedEmptyList;
 
     /// <summary>
     /// Adds a <see cref="IComponentResponder"/> type to the repository.

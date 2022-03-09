@@ -34,7 +34,7 @@ public sealed class HonuPopulationService : CachingPopulationService
         _jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
     }
 
-    protected override async Task<Result<IPopulation>> QueryPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default)
+    protected override async Task<Result<IPopulation>> QueryPopulationAsync(ValidWorldDefinition world, CancellationToken ct)
     {
         string queryUrl = $"{ _options.HonuApiEndpoint }/population/{ (int)world }";
 

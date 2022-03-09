@@ -3,6 +3,8 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Contexts;
 using Remora.Rest.Core;
 using Remora.Results;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core.Abstractions.Services;
@@ -33,19 +35,19 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
     public async ValueTask<Result> CheckAsync(RequireGuildPermissionAttribute attribute, CancellationToken ct = default)
     {
         if (!_context.GuildID.HasValue)
-            return new ContextError(ChannelContext.Guild);
+            return new ContextError(ContextError.GuildTextChannels);
 
-        if (attribute.IncludeCurrent)
+        if (attribute.IncludeSelf)
         {
-            Result selfPermissionCheck = await DoPermissionCheck(attribute.Permission, DiscordConstants.UserId, ct).ConfigureAwait(false);
+            Result selfPermissionCheck = await DoPermissionCheck(attribute.RequiredPermissions, DiscordConstants.UserId, ct).ConfigureAwait(false);
             if (!selfPermissionCheck.IsSuccess)
                 return selfPermissionCheck;
         }
 
-        return await DoPermissionCheck(attribute.Permission, _context.User.ID, ct).ConfigureAwait(false);
+        return await DoPermissionCheck(attribute.RequiredPermissions, _context.User.ID, ct).ConfigureAwait(false);
     }
 
-    private async Task<Result> DoPermissionCheck(DiscordPermission permission, Snowflake userID, CancellationToken ct = default)
+    private async Task<Result> DoPermissionCheck(IEnumerable<DiscordPermission> permissions, Snowflake userID, CancellationToken ct = default)
     {
         Result<IDiscordPermissionSet> getPermissions = await _permissionChecksService.GetPermissionsInChannel
         (
@@ -54,12 +56,15 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
             ct
         ).ConfigureAwait(false);
 
-        if (!getPermissions.IsDefined())
+        if (!getPermissions.IsDefined(out IDiscordPermissionSet? permissionSet))
             return Result.FromError(getPermissions);
 
-        if (!getPermissions.Entity.HasAdminOrPermission(permission))
-            return new PermissionError(permission, _context.User.ID, _context.ChannelID);
+        List<DiscordPermission> missingPermissions = permissions
+            .Where(p => !permissionSet.HasAdminOrPermission(p))
+            .ToList();
 
-        return Result.FromSuccess();
+        return missingPermissions.Count > 0
+            ? new PermissionError(missingPermissions, userID, _context.ChannelID)
+            : Result.FromSuccess();
     }
 }

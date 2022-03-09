@@ -6,12 +6,14 @@ public static class ComponentIDFormatter
 {
     public const char SEPARATOR = ':';
 
-    public static string GetId(string key, string payload)
+    public static string GetId(string key, string? payload)
     {
         if (key.Contains(SEPARATOR))
             throw new ArgumentException($"The key must not contain the '{SEPARATOR}' character", nameof(key));
 
-        return $"{key}{SEPARATOR}{payload}";
+        return payload is null
+            ? key
+            : $"{key}{SEPARATOR}{payload}";
     }
 
     public static void Parse(string id, out string key, out string? payload)

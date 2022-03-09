@@ -5,25 +5,26 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.Reflection;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 
 namespace UVOCBot.Commands;
 
 public class GeneralCommands : CommandGroup
 {
     public const string RELEASE_NOTES =
-        @"• Massive revamp to tweet (and now, forum post!) relaying - check out the new `feed` commands.
-        • Added support for Oshur.
-        • Removed the map command.";
+        @"• Made many commands faster.
+          • Updated the population command.
+          • Updated the rolemenu commands.
+          • Disabled text commands.";
 
     private readonly IDiscordRestUserAPI _userAPI;
     private readonly FeedbackService _feedbackService;
@@ -45,11 +46,9 @@ public class GeneralCommands : CommandGroup
     [Description("Flips a coin")]
     public async Task<IResult> CoinFlipCommandAsync()
     {
-        string description;
-        if (_rndGen.Next(0, 2) == 0)
-            description = $"{ Formatter.Emoji("coin") } You flipped a { Formatter.Bold("heads") }! { Formatter.Emoji("coin") }";
-        else
-            description = $"{ Formatter.Emoji("coin") } You flipped a { Formatter.Bold("tails") }! { Formatter.Emoji("coin") }";
+        string description = _rndGen.Next(0, 2) == 0
+            ? $"{ Formatter.Emoji("coin") } You flipped a { Formatter.Bold("heads") }! { Formatter.Emoji("coin") }"
+            : $"{ Formatter.Emoji("coin") } You flipped a { Formatter.Bold("tails") }! { Formatter.Emoji("coin") }";
 
         Embed embed = new()
         {
@@ -62,6 +61,7 @@ public class GeneralCommands : CommandGroup
 
     [Command("http-cat")]
     [Description("Posts a cat image that represents the given HTTP error code.")]
+    [Deferred]
     public async Task<IResult> PostHttpCatCommandAsync([Description("The HTTP code.")][DiscordTypeHint(TypeHint.Integer)] int httpCode)
     {
         Embed embed = new()
@@ -90,7 +90,7 @@ public class GeneralCommands : CommandGroup
 
         Result<IUser> authorUser = await _userAPI.GetUserAsync
         (
-            new Snowflake(165629177221873664, Constants.DiscordEpoch),
+            DiscordSnowflake.New(165629177221873664),
             CancellationToken
         ).ConfigureAwait(false);
 
@@ -106,14 +106,13 @@ public class GeneralCommands : CommandGroup
             Title = "UVOCBot",
             Description = "A general-purpose bot built to assist the UVOC Discord server",
             Thumbnail = botAvatar is not null ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96) : new Optional<IEmbedThumbnail>(),
-            Author = new EmbedAuthor("Written by FalconEye#1153", IconUrl: authorAvatar),
-            Footer = new EmbedFooter($"Version {Assembly.GetEntryAssembly()?.GetName().Version}"),
+            Footer = new EmbedFooter("Written by FalconEye#1153", authorAvatar),
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Url = "https://github.com/carlst99/UVOCBot",
             Fields = new List<IEmbedField>
-                {
-                    new EmbedField("Release Notes", RELEASE_NOTES)
-                }
+            {
+                new EmbedField("Release Notes", RELEASE_NOTES)
+            }
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
@@ -129,7 +128,7 @@ public class GeneralCommands : CommandGroup
         TimestampStyle style = TimestampStyle.ShortTime
     )
     {
-        if (utcOffset < -12 || utcOffset > 14)
+        if (utcOffset is < -12 or > 14)
             return await _feedbackService.SendContextualErrorAsync("GMT offset must be between -12 and 14.", ct: CancellationToken).ConfigureAwait(false);
 
         DateTimeOffset time = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(utcOffset));
@@ -142,7 +141,7 @@ public class GeneralCommands : CommandGroup
 
         try
         {
-            time = new((int)year, (int)month, (int)day, (int)hour, (int)minute, 0, TimeSpan.FromHours(utcOffset));
+            time = new DateTimeOffset((int)year, (int)month, (int)day, (int)hour, (int)minute, 0, TimeSpan.FromHours(utcOffset));
         }
         catch
         {

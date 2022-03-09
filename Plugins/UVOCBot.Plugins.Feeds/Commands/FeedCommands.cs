@@ -1,13 +1,13 @@
-﻿using CodeHollow.FeedReader;
-using Remora.Commands.Attributes;
+﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Messages;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
@@ -19,15 +19,19 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
+#if DEBUG
+using CodeHollow.FeedReader;
+#endif
 
 namespace UVOCBot.Plugins.Feeds.Commands;
 
 [Group("feed")]
 [Description("Commands that manage external feeds")]
 [RequireContext(ChannelContext.Guild)]
-[RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+[RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
 public class FeedCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -198,12 +202,16 @@ public class FeedCommands : CommandGroup
             return await _feedbackService.SendContextualInfoAsync("No posts are available from this feed.", ct: CancellationToken);
 
         FeedItem item = rss.Items[0];
+
         bool couldParseDate = DateTimeOffset.TryParse(item.PublishingDateString, out DateTimeOffset pubDate);
+        bool couldFindImage = TryFindFirstImageLink(item.Description, out string? imageUrl);
+
         Embed testEmbed = new
         (
             item.Title,
             Description: $"{item.Link}\n\n{item.Description.RemoveHtml(200)}...",
             Url: item.Link,
+            Image: couldFindImage ? new EmbedImage(imageUrl!) : new Optional<IEmbedImage>(),
             Author: new EmbedAuthor(item.Author),
             Timestamp: couldParseDate ? pubDate : default
         );
@@ -242,10 +250,35 @@ public class FeedCommands : CommandGroup
         if (!channelsResult.IsDefined(out IReadOnlyList<IChannel>? channels))
             return Result.FromError(channelsResult);
 
-        if (!channels.Any(c => c.ID.Value == settings.FeedChannelID))
+        if (channels.All(c => c.ID.Value != settings.FeedChannelID))
             return new GenericCommandError("Your selected feed channel no longer exists. Please reset it.");
 
         Snowflake channelSnowflake = DiscordSnowflake.New(settings.FeedChannelID.Value);
         return await CheckFeedChannelPermissionsAsync(channelSnowflake).ConfigureAwait(false);
+    }
+
+    private static bool TryFindFirstImageLink(string html, out string? imgLink)
+    {
+        imgLink = null;
+
+        int imgElementIndex = html.IndexOf("<img", StringComparison.OrdinalIgnoreCase);
+        if (imgElementIndex < 0)
+            return false;
+
+        int srcAttributeIndex = html.IndexOf("src=", StringComparison.OrdinalIgnoreCase);
+        if (srcAttributeIndex < 0)
+            return false;
+
+        int attrStartIndex = html.IndexOf('"', srcAttributeIndex);
+        if (attrStartIndex < 0)
+            return false;
+        attrStartIndex++;
+
+        int attrEndIndex = html.IndexOf('"', attrStartIndex);
+        if (attrEndIndex < 0)
+            return false;
+
+        imgLink = html.Substring(attrStartIndex, attrEndIndex - attrStartIndex);
+        return true;
     }
 }

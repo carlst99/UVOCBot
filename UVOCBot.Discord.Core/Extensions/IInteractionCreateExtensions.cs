@@ -28,7 +28,7 @@ public static class IInteractionCreateExtensions
             gatewayEvent.Token,
             gatewayEvent.ID,
             gatewayEvent.ApplicationID,
-            gatewayEvent.Data.Value!, // We can assume this is non-null for the time being
+            gatewayEvent.Data.Value,
             gatewayEvent.Message,
             gatewayEvent.Locale
         );

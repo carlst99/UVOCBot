@@ -8,6 +8,5 @@ public enum ValidZoneDefinition
     Hossin = ZoneDefinition.Hossin,
     Amerish = ZoneDefinition.Amerish,
     Esamir = ZoneDefinition.Esamir,
-    Koltyr = ZoneDefinition.Koltyr,
     Oshur = ZoneDefinition.Oshur
 }

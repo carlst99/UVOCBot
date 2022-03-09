@@ -2,12 +2,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Remora.Discord.API;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Rest.Core;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core;
@@ -123,12 +125,14 @@ public sealed class ForumRssWorker : BackgroundService
         foreach (FeedItem item in tweets)
         {
             bool couldParseDate = DateTimeOffset.TryParse(item.PublishingDateString, out DateTimeOffset pubDate);
+            bool couldFindImage = TryFindFirstImageLink(item.Description, out string? imageUrl);
 
             Embed testEmbed = new
             (
                 item.Title,
                 Description: $"{item.Link}\n\n{item.Description.RemoveHtml(200)}...",
                 Url: item.Link,
+                Image: couldFindImage ? new EmbedImage(imageUrl!) : new Optional<IEmbedImage>(),
                 Author: new EmbedAuthor(item.Author),
                 Timestamp: couldParseDate ? pubDate : default
             );
@@ -147,15 +151,40 @@ public sealed class ForumRssWorker : BackgroundService
         CodeHollow.FeedReader.Feed? feed = null;
         try
         {
-            feed = await FeedReader.ReadAsync(ForumRssFeeds[fType])
+            feed = await FeedReader.ReadAsync(ForumRssFeeds[fType], ct)
                 .WithCancellation(ct);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not retrieve RSS feed.");
+            _logger.LogError(ex, "Could not retrieve RSS feed");
         }
 
         return feed;
+    }
+
+    private static bool TryFindFirstImageLink(string html, [NotNullWhen(true)] out string? imgLink)
+    {
+        imgLink = null;
+        
+        int imgElementIndex = html.IndexOf("<img", StringComparison.OrdinalIgnoreCase);
+        if (imgElementIndex < 0)
+            return false;
+
+        int srcAttributeIndex = html.IndexOf("src=", StringComparison.OrdinalIgnoreCase);
+        if (srcAttributeIndex < 0)
+            return false;
+
+        int attrStartIndex = html.IndexOf('"', srcAttributeIndex);
+        if (attrStartIndex < 0)
+            return false;
+        attrStartIndex++;
+
+        int attrEndIndex = html.IndexOf('"', attrStartIndex);
+        if (attrEndIndex < 0)
+            return false;
+
+        imgLink = html.Substring(attrStartIndex, attrEndIndex - attrStartIndex);
+        return true;
     }
 
     private static int GetItemId(FeedItem item)

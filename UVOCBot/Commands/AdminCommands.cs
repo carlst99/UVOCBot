@@ -1,9 +1,10 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Attributes;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System.ComponentModel;
@@ -12,6 +13,7 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Model;
@@ -21,7 +23,7 @@ namespace UVOCBot.Commands;
 [Group("admin")]
 [Description("Administorial commands.")]
 [RequireContext(ChannelContext.Guild)]
-[RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+[RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
 [Ephemeral]
 public class AdminCommands : CommandGroup
 {

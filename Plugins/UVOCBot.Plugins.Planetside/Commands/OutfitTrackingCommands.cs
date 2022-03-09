@@ -2,8 +2,8 @@
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Attributes;
+using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
-using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -11,6 +11,7 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
@@ -43,7 +44,7 @@ public class OutfitTrackingCommands : CommandGroup
     [Command("track")]
     [Description("Tracks an outfit's base captures.")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> TrackOutfitCommandAsync(string outfitTag)
     {
         Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(outfitTag, CancellationToken).ConfigureAwait(false);
@@ -70,7 +71,7 @@ public class OutfitTrackingCommands : CommandGroup
     [Command("untrack")]
     [Description("Removes a tracked outfit.")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> UntrackOutfitCommandAsync(
         [Description("The 1-4 letter tag of the outfit to track.")] string outfitTag)
     {
@@ -95,7 +96,7 @@ public class OutfitTrackingCommands : CommandGroup
     [Command("base-capture-channel")]
     [Description("Sets the channel to post base capture notifications in for any tracked outfits.")]
     [RequireContext(ChannelContext.Guild)]
-    [RequireGuildPermission(DiscordPermission.ManageGuild, false)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> SetBaseCaptureChannelCommandAsync
     (
         [Description("The channel. Leave empty to disable base capture notifications.")]

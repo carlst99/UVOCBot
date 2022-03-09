@@ -41,19 +41,28 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
 
     public async Task HandleAsync(IFacilityControl censusEvent, CancellationToken ct = default)
     {
-        // Shouldn't report same-faction control events (i.e. point defenses).
+        // No need to bother with same-faction control events (i.e. point defenses).
         if (censusEvent.OldFactionID == censusEvent.NewFactionID)
             return;
 
+        // Update the map cache
+        Result<MapRegion?> getFacilityResult = await _censusApi.GetFacilityRegionAsync(censusEvent.FacilityID, ct).ConfigureAwait(false);
+        if (!getFacilityResult.IsDefined(out MapRegion? facility))
+            return;
+
+        UpdateMapCache(censusEvent, facility);
+
+        // Send base capture messages
         if (censusEvent.OutfitID == 0)
             return;
 
-        IEnumerable<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
+        List<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
             .Where(s => s.BaseCaptureChannelId != null)
             .AsEnumerable()
-            .Where(s => s.TrackedOutfits.Contains(censusEvent.OutfitID));
+            .Where(s => s.TrackedOutfits.Contains(censusEvent.OutfitID))
+            .ToList();
 
-        if (!validPSettings.Any())
+        if (validPSettings.Count == 0)
             return;
 
         Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(censusEvent.OutfitID, ct).ConfigureAwait(false);
@@ -61,12 +70,6 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
             return;
         Outfit outfit = getOutfitResult.Entity;
 
-        Result<MapRegion?> getFacilityResult = await _censusApi.GetFacilityRegionAsync(censusEvent.FacilityID, ct).ConfigureAwait(false);
-        if (!getFacilityResult.IsDefined())
-            return;
-        MapRegion facility = getFacilityResult.Entity;
-
-        UpdateMapCache(censusEvent, facility);
         await SendBaseCaptureMessages(validPSettings, outfit, facility, ct).ConfigureAwait(false);
     }
 
@@ -115,7 +118,7 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         (
             CacheKeyHelpers.GetMapKey(controlEvent.WorldID, map),
             map,
-            CacheEntryHelpers.GetMapOptions()
+            CacheEntryHelpers.MapOptions
         );
     }
 }

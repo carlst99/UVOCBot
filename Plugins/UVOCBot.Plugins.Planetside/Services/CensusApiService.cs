@@ -55,7 +55,8 @@ public class CensusApiService : ICensusApiService
     {
         List<ulong> outfitIds = new();
 
-        await Parallel.ForEachAsync(
+        await Parallel.ForEachAsync
+        (
             outfitTags,
             new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = 3 },
             async (tag, ct) =>
@@ -71,6 +72,9 @@ public class CensusApiService : ICensusApiService
                     outfitIds.Add(outfit.OutfitId);
             }
         ).ConfigureAwait(false);
+
+        if (outfitIds.Count == 0)
+            return new List<OutfitOnlineMembers>();
 
         return await GetOnlineMembersAsync(outfitIds, ct).ConfigureAwait(false);
     }
@@ -152,7 +156,7 @@ public class CensusApiService : ICensusApiService
         }
         catch (Exception ex) when (ex is not TaskCanceledException)
         {
-            _logger.LogError(ex, "Census query failed for query {query}.", callerName);
+            _logger.LogError(ex, "Census query failed for query {Query}", callerName);
             return ex;
         }
     }
@@ -170,7 +174,7 @@ public class CensusApiService : ICensusApiService
         }
         catch (Exception ex) when (ex is not TaskCanceledException)
         {
-            _logger.LogError(ex, "Census query failed for query {query}.", callerName);
+            _logger.LogError(ex, "Census query failed for query {Query}", callerName);
             return ex;
         }
     }

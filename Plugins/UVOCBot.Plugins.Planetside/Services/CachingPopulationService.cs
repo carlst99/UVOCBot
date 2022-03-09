@@ -33,7 +33,7 @@ public abstract class CachingPopulationService : IPopulationService
         (
             CacheKeyHelpers.GetPopulationKey(popResult.Entity),
             popResult.Entity,
-            CacheEntryHelpers.GetPopulationOptions()
+            CacheEntryHelpers.PopulationOptions
         );
 
         return Result<IPopulation>.FromSuccess(popResult.Entity);

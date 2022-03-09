@@ -106,7 +106,7 @@ public class GeneralCommands : CommandGroup
             Title = "UVOCBot",
             Description = "A general-purpose bot built to assist the UVOC Discord server",
             Thumbnail = botAvatar is not null ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96) : new Optional<IEmbedThumbnail>(),
-            Footer = new EmbedFooter("Written by FalconEye#1153", authorAvatar),
+            Footer = new EmbedFooter("Developed by FalconEye#1153", authorAvatar),
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Url = "https://github.com/carlst99/UVOCBot",
             Fields = new List<IEmbedField>

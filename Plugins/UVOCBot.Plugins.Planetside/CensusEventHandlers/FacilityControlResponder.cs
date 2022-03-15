@@ -109,10 +109,7 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
             return;
 
         Map.RowModel mapRow = map.Regions.Row[index];
-        map.Regions.Row.RemoveAt(index);
-
-        mapRow = mapRow with { RowData = mapRow.RowData with { FactionID = controlEvent.NewFactionID } };
-        map.Regions.Row.Add(mapRow);
+        map.Regions.Row[index] = mapRow with { RowData = mapRow.RowData with { FactionID = controlEvent.NewFactionID } };
 
         _cache.Set
         (

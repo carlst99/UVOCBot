@@ -1,5 +1,9 @@
 # Changelog
 
+## Release vNext
+
+- Fixed Oshur alert durations.
+
 ## Release v1.1.0
 
 - Made many commands faster.

@@ -188,8 +188,7 @@ public class WorldCommands : CommandGroup
         List<EmbedField> embedFields = new();
         getMapsResult.Entity.Sort
         (
-            (m1, m2)
-                => string.Compare(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString(), StringComparison.Ordinal)
+            (m1, m2) => string.CompareOrdinal(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString())
         );
 
         foreach (Map m in getMapsResult.Entity)

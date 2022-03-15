@@ -70,5 +70,5 @@ public interface ICensusApiService
     /// <param name="limit">The number of events to return.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Result"/> representing the metagame events.</returns>
-    Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default);
+    Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, int limit = 10, CancellationToken ct = default);
 }

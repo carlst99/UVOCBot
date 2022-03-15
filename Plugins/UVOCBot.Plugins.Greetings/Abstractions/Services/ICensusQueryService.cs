@@ -18,7 +18,7 @@ public interface ICensusQueryService
     /// <param name="limit">The number of new members to get.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A list of the new outfit members.</returns>
-    Task<Result<IReadOnlyList<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, uint limit, CancellationToken ct = default);
+    Task<Result<IReadOnlyList<NewOutfitMember>>> GetNewOutfitMembersAsync(ulong outfitId, int limit, CancellationToken ct = default);
 
     /// <summary>
     /// Gets an outfit.

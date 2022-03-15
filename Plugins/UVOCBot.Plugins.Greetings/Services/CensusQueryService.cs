@@ -33,7 +33,7 @@ public class CensusQueryService : ICensusQueryService
     public virtual async Task<Result<IReadOnlyList<NewOutfitMember>>> GetNewOutfitMembersAsync
     (
         ulong outfitId,
-        uint limit,
+        int limit,
         CancellationToken ct = default
     )
     {

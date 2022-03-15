@@ -136,7 +136,7 @@ public class CensusApiService : ICensusApiService
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default)
+    public virtual async Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, int limit = 10, CancellationToken ct = default)
     {
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("world_event")

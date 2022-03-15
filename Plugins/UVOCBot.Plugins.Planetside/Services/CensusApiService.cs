@@ -1,4 +1,6 @@
 ﻿using DbgCensus.Core.Exceptions;
+using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Objects.Events.Worlds;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
@@ -11,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
@@ -20,6 +21,17 @@ namespace UVOCBot.Plugins.Planetside.Services;
 /// <inheritdoc cref="ICensusApiService"/>
 public class CensusApiService : ICensusApiService
 {
+    /// <summary>
+    /// Gets the number of metagame events that are expected to be
+    /// received over the course of ALL continents opening and closing.
+    /// </summary>
+    /// <remarks>
+    /// Currently, a start and end event for each continent is expected.
+    /// Also, adding 2 for resiliency.
+    /// Hence, 2 * VALID_CONT_COUNT + 2.
+    /// </remarks>
+    public const int ExpectedMetagameEventsPerFullCycle = 12;
+
     protected readonly ILogger<CensusApiService> _logger;
     protected readonly IQueryService _queryService;
 
@@ -136,7 +148,12 @@ public class CensusApiService : ICensusApiService
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, int limit = 10, CancellationToken ct = default)
+    public virtual async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
+    (
+        WorldDefinition world,
+        int limit = ExpectedMetagameEventsPerFullCycle,
+        CancellationToken ct = default
+    )
     {
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("world_event")
@@ -145,7 +162,22 @@ public class CensusApiService : ICensusApiService
             .WithLimit(limit)
             .WithSortOrder("timestamp");
 
-        return await GetListAsync<QueryMetagameEvent>(query, ct).ConfigureAwait(false);
+        return await GetListAsync<MetagameEvent>(query, ct).ConfigureAwait(false);
+    }
+
+    public virtual async Task<Result<MetagameEvent>> GetMetagameEventAsync(WorldDefinition world, ZoneDefinition zone, CancellationToken ct = default)
+    {
+        Result<List<MetagameEvent>> eventsResult = await GetMetagameEventsAsync(world, ct: ct);
+        if (!eventsResult.IsDefined(out List<MetagameEvent>? events))
+            return Result<MetagameEvent>.FromError(eventsResult);
+
+        foreach (MetagameEvent mev in events)
+        {
+            if (mev.ZoneID.Definition == (ZoneDefinition)zone)
+                return mev;
+        }
+
+        return Result<MetagameEvent>.FromError(new CensusException("Census did not provide enough data."));
     }
 
     protected async Task<Result<T?>> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)

@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Objects.Events.Worlds;
 using DbgCensus.Rest.Abstractions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -115,5 +116,16 @@ public class CachingCensusApiService : CensusApiService
         }
 
         return maps;
+    }
+
+    public override async Task<Result<MetagameEvent>> GetMetagameEventAsync(WorldDefinition world, ZoneDefinition zone, CancellationToken ct = default)
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey(world, zone), out MetagameEvent found))
+            return found;
+
+        // Note that we don't cache the result here
+        // This is because we expect the MetagameEventResponder
+        // to keep events up-to-date in a more reliable manner.
+        return await base.GetMetagameEventAsync(world, zone, ct);
     }
 }

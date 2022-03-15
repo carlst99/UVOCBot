@@ -27,6 +27,8 @@ namespace UVOCBot.Plugins.Planetside.Commands;
 
 public class WorldCommands : CommandGroup
 {
+    private static readonly ValidZoneDefinition[] ValidZones = Enum.GetValues<ValidZoneDefinition>();
+
     private readonly ICommandContext _context;
     private readonly ICensusApiService _censusApi;
     private readonly IPopulationService _populationApi;
@@ -134,13 +136,8 @@ public class WorldCommands : CommandGroup
 
     private async Task<IResult> SendWorldPopulationAsync(ValidWorldDefinition world)
     {
-        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
-        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync
-        (
-            world,
-            Enum.GetValues<ValidZoneDefinition>(),
-            CancellationToken
-        );
+        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken);
+        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, ValidZones, CancellationToken);
 
         if (!populationResult.IsDefined(out IPopulation? population))
             return populationResult;
@@ -177,13 +174,10 @@ public class WorldCommands : CommandGroup
 
     private async Task<IResult> SendWorldStatusAsync(ValidWorldDefinition world)
     {
-        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken).ConfigureAwait(false);
+        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, ValidZones, CancellationToken);
 
         if (!getMapsResult.IsDefined())
-        {
-            await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
             return getMapsResult;
-        }
 
         List<EmbedField> embedFields = new();
         getMapsResult.Entity.Sort

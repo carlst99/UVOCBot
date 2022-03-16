@@ -4,7 +4,6 @@ using DbgCensus.Rest;
 using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using UVOCBot.Plugins.Planetside;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
@@ -19,22 +18,9 @@ public static class IServiceCollectionExtensions
 {
     public static IServiceCollection AddPlanetsidePlugin(this IServiceCollection services, IConfiguration config)
     {
-        PlanetsidePluginOptions pOptions = new();
-        config.GetSection(nameof(PlanetsidePluginOptions)).Bind(pOptions);
-
-        CensusQueryOptions queryOptions = new()
-        {
-            LanguageCode = "en",
-            ServiceId = pOptions.CensusApiKey
-        };
-        EventStreamOptions esOptions = new()
-        {
-            ServiceId = pOptions.CensusApiKey
-        };
-
-        services.AddSingleton(Options.Create(pOptions));
-        services.AddSingleton(Options.Create(queryOptions));
-        services.AddSingleton(Options.Create(esOptions));
+        services.Configure<PlanetsidePluginOptions>(config.GetSection(nameof(PlanetsidePluginOptions)));
+        services.Configure<CensusQueryOptions>(config.GetSection(nameof(CensusQueryOptions)));
+        services.Configure<EventStreamOptions>(config.GetSection(nameof(EventStreamOptions)));
 
         services.AddHttpClient();
         services.AddSingleton<IPopulationService, HonuPopulationService>();

@@ -192,7 +192,7 @@ public class CensusApiService : ICensusApiService
     {
         try
         {
-            return await _queryService.GetAsync<T>(query, ct).ConfigureAwait(false);
+            return await _queryService.GetAsync<T>(query, ct);
         }
         catch (Exception ex) when (ex is not TaskCanceledException)
         {
@@ -205,7 +205,7 @@ public class CensusApiService : ICensusApiService
     {
         try
         {
-            List<T>? result = await _queryService.GetAsync<List<T>>(query, ct).ConfigureAwait(false);
+            List<T>? result = await _queryService.GetAsync<List<T>>(query, ct);
 
             if (result is null)
                 return new CensusException($"Census returned no data for query { callerName }.");

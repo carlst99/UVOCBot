@@ -43,7 +43,6 @@ public static class IServiceCollectionExtensions
         services.AddSingleton<ICensusApiService, CachingCensusApiService>();
 
         services.AddCensusEventHandlingServices();
-        services.AddSingleton<ISubscriptionBuilderService, SubscriptionBuilderService>();
         services.AddPayloadHandler<ConnectionStateChangedResponder>();
         services.AddPayloadHandler<FacilityControlResponder>();
         services.AddPayloadHandler<MetagameEventResponder>();

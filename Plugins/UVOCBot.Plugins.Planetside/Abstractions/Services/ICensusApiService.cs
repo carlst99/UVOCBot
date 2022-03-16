@@ -1,5 +1,4 @@
-﻿using DbgCensus.Core.Objects;
-using DbgCensus.EventStream.Objects.Events.Worlds;
+﻿using DbgCensus.EventStream.Objects.Events.Worlds;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Threading;
@@ -71,7 +70,7 @@ public interface ICensusApiService
     /// <param name="limit">The number of events to return.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Result"/> representing the metagame events.</returns>
-    Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync(WorldDefinition world, int limit = 10, CancellationToken ct = default);
+    Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, int limit = 10, CancellationToken ct = default);
 
     /// <summary>
     /// Gets the most recent metagame event for a world/zone.
@@ -80,5 +79,5 @@ public interface ICensusApiService
     /// <param name="zone">The zone.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation, and containing a valid <see cref="MetagameEvent"/> if successful.</returns>
-    Task<Result<MetagameEvent>> GetMetagameEventAsync(WorldDefinition world, ZoneDefinition zone, CancellationToken ct = default);
+    Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default);
 }

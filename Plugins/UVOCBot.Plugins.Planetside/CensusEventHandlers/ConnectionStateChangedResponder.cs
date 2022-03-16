@@ -1,29 +1,38 @@
 ﻿using DbgCensus.EventStream.Abstractions;
-using DbgCensus.EventStream.Abstractions.Objects.Commands;
+using DbgCensus.EventStream.Abstractions.Objects;
 using DbgCensus.EventStream.Abstractions.Objects.Control;
+using DbgCensus.EventStream.Abstractions.Objects.Events;
 using DbgCensus.EventStream.EventHandlers.Abstractions;
 using DbgCensus.EventStream.EventHandlers.Abstractions.Objects;
+using DbgCensus.EventStream.Objects.Commands;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Plugins.Planetside.Abstractions.Services;
 
 namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
 
 internal sealed class ConnectionStateChangedResponder : IPayloadHandler<IConnectionStateChanged>
 {
+    private static readonly Subscribe Subscription = new
+    (
+        new All(),
+        new string[]
+        {
+                EventNames.FacilityControl,
+                EventNames.MetagameEvent
+        },
+        Worlds: new All()
+    );
+
     private readonly IEventStreamClientFactory _clientFactory;
-    private readonly ISubscriptionBuilderService _subscriptionBuilder;
     private readonly IPayloadContext _context;
 
     public ConnectionStateChangedResponder
     (
         IEventStreamClientFactory clientFactory,
-        ISubscriptionBuilderService subscriptionBuilder,
         IPayloadContext context
     )
     {
         _clientFactory = clientFactory;
-        _subscriptionBuilder = subscriptionBuilder;
         _context = context;
     }
 
@@ -33,8 +42,6 @@ internal sealed class ConnectionStateChangedResponder : IPayloadHandler<IConnect
             return;
 
         IEventStreamClient client = _clientFactory.GetClient(_context.DispatchingClientName);
-
-        ISubscribe subscription = await _subscriptionBuilder.BuildAsync(ct).ConfigureAwait(false);
-        await client.SendCommandAsync(subscription, ct).ConfigureAwait(false);
+        await client.SendCommandAsync(Subscription, ct).ConfigureAwait(false);
     }
 }

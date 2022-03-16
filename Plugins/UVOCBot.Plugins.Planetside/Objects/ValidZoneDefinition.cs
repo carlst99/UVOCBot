@@ -2,7 +2,10 @@
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
-public enum ValidZoneDefinition
+/// <summary>
+/// Enumerates Census zones that are valid for Census REST queries.
+/// </summary>
+public enum ValidZoneDefinition : ushort
 {
     Indar = ZoneDefinition.Indar,
     Hossin = ZoneDefinition.Hossin,

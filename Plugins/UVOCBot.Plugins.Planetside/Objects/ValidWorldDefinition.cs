@@ -1,14 +1,16 @@
-﻿namespace UVOCBot.Plugins.Planetside.Objects;
+﻿using DbgCensus.Core.Objects;
+
+namespace UVOCBot.Plugins.Planetside.Objects;
 
 /// <summary>
-/// Enumerates Census worlds that may be used in commands.
+/// Enumerates Census worlds that are valid for Census REST queries.
 /// </summary>
 public enum ValidWorldDefinition
 {
-    Connery = 1,
-    Miller = 10,
-    Cobalt = 13,
-    Emerald = 17,
-    Jaeger = 19,
-    Soltech = 40
+    Connery = WorldDefinition.Connery,
+    Miller = WorldDefinition.Miller,
+    Cobalt = WorldDefinition.Cobalt,
+    Emerald = WorldDefinition.Emerald,
+    Jaeger = WorldDefinition.Jaeger,
+    Soltech = WorldDefinition.Soltech
 }

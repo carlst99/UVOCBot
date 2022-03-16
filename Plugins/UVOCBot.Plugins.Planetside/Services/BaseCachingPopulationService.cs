@@ -10,11 +10,11 @@ using UVOCBot.Plugins.Planetside.Objects;
 namespace UVOCBot.Plugins.Planetside.Services;
 
 /// <inheritdoc cref="IPopulationService" />
-public abstract class CachingPopulationService : IPopulationService
+public abstract class BaseCachingPopulationService : IPopulationService
 {
     protected readonly IMemoryCache _cache;
 
-    protected CachingPopulationService(IMemoryCache cache)
+    protected BaseCachingPopulationService(IMemoryCache cache)
     {
         _cache = cache;
     }

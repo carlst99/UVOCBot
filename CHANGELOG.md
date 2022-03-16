@@ -3,6 +3,7 @@
 ## Release vNext
 
 - Fixed Oshur alert durations.
+- Fixed map caching. The `status` command should be more reliable.
 
 ## Release v1.1.0
 

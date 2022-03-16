@@ -12,10 +12,10 @@ using UVOCBot.Plugins.Planetside.Objects;
 namespace UVOCBot.Plugins.Planetside.Services;
 
 /// <summary>
-/// <inheritdoc cref="CachingPopulationService"/>
+/// <inheritdoc cref="BaseCachingPopulationService"/>
 /// Data is collected from <see href="https://ps2.fisu.pw/api/population"/>
 /// </summary>
-public sealed class FisuPopulationService : CachingPopulationService
+public sealed class FisuPopulationService : BaseCachingPopulationService
 {
     private readonly PlanetsidePluginOptions _options;
     private readonly HttpClient _httpClient;

@@ -135,14 +135,17 @@ public class CensusApiService : ICensusApiService
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<Map>>> GetMapsAsync(ValidWorldDefinition world, IEnumerable<ValidZoneDefinition> zones, CancellationToken ct = default)
+    public virtual async Task<Result<List<Map>>> GetMapsAsync
+    (
+        ValidWorldDefinition world,
+        IEnumerable<ValidZoneDefinition> zones,
+        CancellationToken ct = default
+    )
     {
-        // https://census.daybreakgames.com/get/ps2/map?world_id=1&zone_ids=2,4,6,8
-
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("map")
             .Where("world_id", SearchModifier.Equals, (int)world)
-            .WhereAll("zone_ids", SearchModifier.Equals, zones.Select(z => (int)z));
+            .WhereAll("zone_ids", SearchModifier.Equals, zones.Cast<ushort>());
 
         return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
     }
@@ -150,7 +153,7 @@ public class CensusApiService : ICensusApiService
     /// <inheritdoc />
     public virtual async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
     (
-        WorldDefinition world,
+        ValidWorldDefinition world,
         int limit = ExpectedMetagameEventsPerFullCycle,
         CancellationToken ct = default
     )
@@ -165,7 +168,12 @@ public class CensusApiService : ICensusApiService
         return await GetListAsync<MetagameEvent>(query, ct).ConfigureAwait(false);
     }
 
-    public virtual async Task<Result<MetagameEvent>> GetMetagameEventAsync(WorldDefinition world, ZoneDefinition zone, CancellationToken ct = default)
+    public virtual async Task<Result<MetagameEvent>> GetMetagameEventAsync
+    (
+        ValidWorldDefinition world,
+        ValidZoneDefinition zone,
+        CancellationToken ct = default
+    )
     {
         Result<List<MetagameEvent>> eventsResult = await GetMetagameEventsAsync(world, ct: ct);
         if (!eventsResult.IsDefined(out List<MetagameEvent>? events))

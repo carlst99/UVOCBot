@@ -65,7 +65,7 @@ public class CensusStateWorker : BackgroundService
     {
         HashSet<ZoneDefinition> seenZones = new();
 
-        Result<List<MetagameEvent>> events = await _censusApi.GetMetagameEventsAsync((WorldDefinition)world, ct: ct).ConfigureAwait(false);
+        Result<List<MetagameEvent>> events = await _censusApi.GetMetagameEventsAsync(world, ct: ct).ConfigureAwait(false);
         if (!events.IsDefined())
             return;
 

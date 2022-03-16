@@ -21,10 +21,12 @@ public class CachingCensusApiService : CensusApiService
 {
     private readonly IMemoryCache _cache;
 
-    public CachingCensusApiService(
+    public CachingCensusApiService
+    (
         ILogger<CachingCensusApiService> logger,
         IQueryService queryService,
-        IMemoryCache cache)
+        IMemoryCache cache
+    )
         : base(logger, queryService)
     {
         _cache = cache;
@@ -118,9 +120,9 @@ public class CachingCensusApiService : CensusApiService
         return maps;
     }
 
-    public override async Task<Result<MetagameEvent>> GetMetagameEventAsync(WorldDefinition world, ZoneDefinition zone, CancellationToken ct = default)
+    public override async Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey(world, zone), out MetagameEvent found))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, (ZoneDefinition)zone), out MetagameEvent found))
             return found;
 
         // Note that we don't cache the result here

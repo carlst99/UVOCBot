@@ -88,7 +88,27 @@ public class WorldCommands : CommandGroup
             server = defaultWorld.Entity;
         }
 
-        return await SendWorldPopulationAsync(server).ConfigureAwait(false);
+        Result<List<EmbedField>> statusFields = await GetStatusEmbedFields(server, false);
+        if (!statusFields.IsSuccess)
+            return statusFields;
+
+        Result<(List<EmbedField> Fields, int TotalPop)> populationFields = await GetPopulationEmbedFields(server);
+        if (!populationFields.IsSuccess)
+            return populationFields;
+
+        List<EmbedField> fields = new(populationFields.Entity.Fields);
+        fields.Add(new EmbedField("Unlocked Continents", Formatter.Bold(" ")));
+        fields.AddRange(statusFields.Entity);
+
+        Embed embed = new()
+        {
+            Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
+            Title = $"{server} - {populationFields.Entity.TotalPop}",
+            Fields = fields,
+            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw")
+        };
+
+        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
     }
 
     [Command("status")]
@@ -107,7 +127,7 @@ public class WorldCommands : CommandGroup
             server = defaultWorld.Entity;
         }
 
-        Result<List<EmbedField>> embedFields = await GetStatusEmbeds(server, true);
+        Result<List<EmbedField>> embedFields = await GetStatusEmbedFields(server, true);
         if (!embedFields.IsSuccess)
             return embedFields;
 
@@ -134,45 +154,7 @@ public class WorldCommands : CommandGroup
         return (ValidWorldDefinition)settings.DefaultWorld;
     }
 
-    private async Task<IResult> SendWorldPopulationAsync(ValidWorldDefinition world)
-    {
-        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken);
-        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, ValidZones, CancellationToken);
-
-        if (!populationResult.IsDefined(out IPopulation? population))
-            return populationResult;
-
-        List<string> unlockedZones = new();
-        if (getMapsResult.IsDefined(out List<Map>? maps))
-        {
-            foreach (Map map in maps)
-            {
-                GetMapTerritoryControl(map, out bool isLocked);
-                if (!isLocked)
-                    unlockedZones.Add(GetZoneName(map.ZoneID.Definition));
-            }
-        }
-
-        List<EmbedField> embedFields = new()
-        {
-            new EmbedField("Unlocked Continents", string.Join(" ", unlockedZones)),
-            new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
-            new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
-            new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
-        };
-
-        Embed embed = new()
-        {
-            Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Title = $"{world} - {population.Total}",
-            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw"),
-            Fields = embedFields
-        };
-
-        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<Result<List<EmbedField>>> GetStatusEmbeds(ValidWorldDefinition world, bool includeLockedContinents)
+    private async Task<Result<List<EmbedField>>> GetStatusEmbedFields(ValidWorldDefinition world, bool includeLockedContinents)
     {
         Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, ValidZones, CancellationToken);
 
@@ -233,26 +215,54 @@ public class WorldCommands : CommandGroup
         return new EmbedField(title, popBarBuilder.ToString());
     }
 
-    private static string BuildEmbedPopulationBar(int population, int totalPopulation)
+    private async Task<Result<(List<EmbedField> EmbedFields, int TotalPop)>> GetPopulationEmbedFields(ValidWorldDefinition world)
     {
-        // Can't divide by zero!
-        if (totalPopulation == 0 || population > totalPopulation)
-            return Formatter.Emoji("black_large_square");
+        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken);
+        if (!populationResult.IsDefined(out IPopulation? population))
+            return Result<(List<EmbedField>, int)>.FromError(populationResult);
 
-        double tensPercentage = Math.Ceiling((double)population / totalPopulation * 10);
+        List<EmbedField> fields = new()
+        {
+            GetPopulationEmbedField(population.NC, population.Total, FactionDefinition.NC),
+            GetPopulationEmbedField(population.TR, population.Total, FactionDefinition.TR),
+            GetPopulationEmbedField(population.VS, population.Total, FactionDefinition.VS)
+        };
+
+        return (fields, population.Total);
+    }
+
+    private static EmbedField GetPopulationEmbedField(int factionPopulation, int totalPopulation, FactionDefinition faction)
+    {
+        string blackSquare = Formatter.Emoji("black_large_square");
+        string greenSquare = Formatter.Emoji("green_square");
+
+        string title = faction switch
+        {
+            FactionDefinition.NC => $"{Formatter.Emoji("blue_circle")} NC - {factionPopulation}",
+            FactionDefinition.TR => $"{Formatter.Emoji("red_circle")} TR - {factionPopulation}",
+            FactionDefinition.VS => $"{Formatter.Emoji("purple_circle")} VS - {factionPopulation}",
+            _ => "Unknown"
+        };
+
+        // Can't divide by zero!
+        if (totalPopulation == 0 || factionPopulation > totalPopulation)
+            return new EmbedField(title, blackSquare);
+
+        double tensPercentage = Math.Ceiling((double)factionPopulation / totalPopulation * 10);
         double remainder = 10 - tensPercentage;
-        string result = string.Empty;
+        StringBuilder sb = new();
 
         for (int i = 0; i < tensPercentage; i++)
-            result += Formatter.Emoji("green_square");
+            sb.Append(greenSquare);
 
         for (int i = 0; i < remainder; i++)
-            result += Formatter.Emoji("black_large_square");
+            sb.Append(blackSquare);
 
-        string stringPercentage = ((double)population / totalPopulation * 100).ToString("F1");
-        result += $"{Formatter.Bold("   ")}({ stringPercentage }%)";
+        string stringPercentage = ((double)factionPopulation / totalPopulation * 100).ToString("F1");
+        sb.Append(Formatter.Bold("   "));
+        sb.Append('(').Append(stringPercentage).Append(")%");
 
-        return result;
+        return new EmbedField(title, sb.ToString());
     }
 
     private static (double NCPercent, double TRPercent, double VSPercent) GetMapTerritoryControl(Map map, out bool isLocked)

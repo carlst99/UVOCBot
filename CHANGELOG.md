@@ -2,6 +2,7 @@
 
 ## Release vNext
 
+- Unlocked continents are now shown in the `population` command.
 - Fixed Oshur alert durations.
 - Fixed map caching. The `status` command should be more reliable.
 

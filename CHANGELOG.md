@@ -1,6 +1,6 @@
 # Changelog
 
-## Release vNext
+## Release v1.2.0
 
 - Unlocked continents are now shown in the `population` command.
 - Fixed Oshur alert durations.

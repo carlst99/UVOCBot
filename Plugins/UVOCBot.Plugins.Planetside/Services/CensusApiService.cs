@@ -19,7 +19,7 @@ using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 namespace UVOCBot.Plugins.Planetside.Services;
 
 /// <inheritdoc cref="ICensusApiService"/>
-public class CensusApiService : ICensusApiService
+public class CensusApiService : ICensusApiService, IDisposable
 {
     /// <summary>
     /// Gets the number of metagame events that are expected to be
@@ -32,13 +32,18 @@ public class CensusApiService : ICensusApiService
     /// </remarks>
     public const int ExpectedMetagameEventsPerFullCycle = 12;
 
+    private readonly SemaphoreSlim _queryLimiter;
+
     protected readonly ILogger<CensusApiService> _logger;
     protected readonly IQueryService _queryService;
+
+    private bool _isDisposed;
 
     public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService)
     {
         _logger = logger;
         _queryService = queryService;
+        _queryLimiter = new SemaphoreSlim(10, 10);
     }
 
     /// <inheritdoc />
@@ -71,17 +76,21 @@ public class CensusApiService : ICensusApiService
         (
             outfitTags,
             new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = 3 },
-            async (tag, ct) =>
+            async (tag, ict) =>
             {
                 IQueryBuilder query = _queryService.CreateQuery();
 
                 query.OnCollection("outfit")
                      .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
 
-                Outfit? outfit = await _queryService.GetAsync<Outfit?>(query, ct).ConfigureAwait(false);
+                Result<Outfit?> outfitResult = await GetAsync<Outfit>(query, ict);
+                if (!outfitResult.IsDefined(out Outfit? outfit))
+                {
+                    _logger.LogError("Failed to retrieve outfit: {Error}", outfitResult.Error);
+                    return;
+                }
 
-                if (outfit is not null)
-                    outfitIds.Add(outfit.OutfitId);
+                outfitIds.Add(outfit.OutfitId);
             }
         ).ConfigureAwait(false);
 
@@ -188,11 +197,22 @@ public class CensusApiService : ICensusApiService
         return Result<MetagameEvent>.FromError(new CensusException("Census did not provide enough data."));
     }
 
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
     protected async Task<Result<T?>> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
     {
         try
         {
-            return await _queryService.GetAsync<T>(query, ct);
+            await _queryLimiter.WaitAsync(ct);
+            T? result = await _queryService.GetAsync<T>(query, ct);
+            _queryLimiter.Release();
+
+            return result;
         }
         catch (Exception ex) when (ex is not TaskCanceledException)
         {
@@ -203,19 +223,27 @@ public class CensusApiService : ICensusApiService
 
     protected async Task<Result<List<T>>> GetListAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
     {
-        try
-        {
-            List<T>? result = await _queryService.GetAsync<List<T>>(query, ct);
+        Result<List<T>?> result = await GetAsync<List<T>>(query, ct, callerName);
+        if (!result.IsSuccess)
+            return Result<List<T>>.FromError(result);
 
-            if (result is null)
-                return new CensusException($"Census returned no data for query { callerName }.");
-            else
-                return result;
-        }
-        catch (Exception ex) when (ex is not TaskCanceledException)
-        {
-            _logger.LogError(ex, "Census query failed for query {Query}", callerName);
-            return ex;
-        }
+        return result.Entity is null
+            ? new CensusException($"Census returned no data for query {callerName}.")
+            : result.Entity;
+    }
+
+    /// <summary>
+    /// Disposes of managed and unmanaged resources.
+    /// </summary>
+    /// <param name="disposeManaged">A value indicating whether or not to dispose of managed resources.</param>
+    protected virtual void Dispose(bool disposeManaged)
+    {
+        if (_isDisposed)
+            return;
+
+        if (disposeManaged)
+            _queryLimiter.Dispose();
+
+        _isDisposed = true;
     }
 }

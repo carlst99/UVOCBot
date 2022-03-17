@@ -1,9 +1,9 @@
-﻿using Remora.Results;
+﻿using DbgCensus.EventStream.Objects.Events.Worlds;
+using Remora.Results;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
@@ -70,5 +70,14 @@ public interface ICensusApiService
     /// <param name="limit">The number of events to return.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Result"/> representing the metagame events.</returns>
-    Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default);
+    Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, int limit = 10, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the most recent metagame event for a world/zone.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="zone">The zone.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation, and containing a valid <see cref="MetagameEvent"/> if successful.</returns>
+    Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default);
 }

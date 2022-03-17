@@ -12,12 +12,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
@@ -27,6 +29,8 @@ namespace UVOCBot.Plugins.Planetside.Commands;
 
 public class WorldCommands : CommandGroup
 {
+    private static readonly ValidZoneDefinition[] ValidZones = Enum.GetValues<ValidZoneDefinition>();
+
     private readonly ICommandContext _context;
     private readonly ICensusApiService _censusApi;
     private readonly IPopulationService _populationApi;
@@ -75,203 +79,201 @@ public class WorldCommands : CommandGroup
         [Description("Set your default server with `/default-server`.")] ValidWorldDefinition server = 0
     )
     {
-        if (server != 0)
-            return await SendWorldPopulationAsync(server).ConfigureAwait(false);
-
-        if (!_context.GuildID.HasValue)
+        if (server == 0)
         {
-            return await _feedbackService.SendContextualErrorAsync
-            (
-                "To use this command in a DM you must provide a server.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
+            Result<ValidWorldDefinition> defaultWorld = await CheckForDefaultServer();
+            if (!defaultWorld.IsSuccess)
+                return defaultWorld;
+
+            server = defaultWorld.Entity;
         }
 
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        Result<List<EmbedField>> statusFields = await GetStatusEmbedFields(server, false);
+        if (!statusFields.IsSuccess)
+            return statusFields;
 
-        if (settings.DefaultWorld is null)
+        Result<(List<EmbedField> Fields, int TotalPop)> populationFields = await GetPopulationEmbedFields(server);
+        if (!populationFields.IsSuccess)
+            return populationFields;
+
+        List<EmbedField> fields = new(populationFields.Entity.Fields);
+        fields.Add(new EmbedField("Unlocked Continents", Formatter.Bold(" ")));
+        fields.AddRange(statusFields.Entity);
+
+        Embed embed = new()
         {
-            return await _feedbackService.SendContextualErrorAsync
-            (
-                $"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
+            Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
+            Title = $"{server} - {populationFields.Entity.TotalPop}",
+            Fields = fields,
+            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw")
+        };
 
-        server = (ValidWorldDefinition)settings.DefaultWorld;
-
-        return await SendWorldPopulationAsync(server).ConfigureAwait(false);
+        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
     }
 
     [Command("status")]
     [Description("Gets the status of a PlanetSide server.")]
-    public async Task<IResult> GetServerStatusCommandAsync(
-        [Description("Set your default server with '/default-server'.")] ValidWorldDefinition server = 0)
+    public async Task<IResult> GetServerStatusCommandAsync
+    (
+        [Description("Set your default server with '/default-server'.")] ValidWorldDefinition server = 0
+    )
     {
         if (server == 0)
         {
-            if (!_context.GuildID.HasValue)
-            {
-                return await _feedbackService.SendContextualErrorAsync(
-                    "To use this command in a DM you must provide a server.",
-                    ct: CancellationToken).ConfigureAwait(false);
-            }
+            Result<ValidWorldDefinition> defaultWorld = await CheckForDefaultServer();
+            if (!defaultWorld.IsSuccess)
+                return defaultWorld;
 
-            PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-
-            if (settings.DefaultWorld is null)
-            {
-                return await _feedbackService.SendContextualErrorAsync(
-                    $"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.",
-                    ct: CancellationToken).ConfigureAwait(false);
-            }
-
-            server = (ValidWorldDefinition)settings.DefaultWorld;
+            server = defaultWorld.Entity;
         }
 
-        return await SendWorldStatusAsync(server).ConfigureAwait(false);
-    }
-
-    private async Task<IResult> SendWorldPopulationAsync(ValidWorldDefinition world)
-    {
-        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken).ConfigureAwait(false);
-        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync
-        (
-            world,
-            Enum.GetValues<ValidZoneDefinition>(),
-            CancellationToken
-        );
-
-        if (!populationResult.IsDefined(out IPopulation? population))
-            return populationResult;
-
-        List<string> unlockedZones = new();
-        if (getMapsResult.IsDefined(out List<Map>? maps))
-        {
-            foreach (Map map in maps)
-            {
-                GetMapTerritoryControl(map, out double ncPercent, out double trPercent, out double vsPercent);
-                if (ncPercent < 99 && trPercent < 99 && vsPercent < 99)
-                    unlockedZones.Add(GetZoneName(map.ZoneID.Definition));
-            }
-        }
-
-        List<EmbedField> embedFields = new()
-        {
-            new EmbedField("Unlocked Continents", string.Join(" ", unlockedZones)),
-            new EmbedField($"{Formatter.Emoji("blue_circle")} NC - {population.NC}", BuildEmbedPopulationBar(population.NC, population.Total)),
-            new EmbedField($"{Formatter.Emoji("red_circle")} TR - {population.TR}", BuildEmbedPopulationBar(population.TR, population.Total)),
-            new EmbedField($"{Formatter.Emoji("purple_circle")} VS - {population.VS}", BuildEmbedPopulationBar(population.VS, population.Total)),
-        };
+        Result<List<EmbedField>> embedFields = await GetStatusEmbedFields(server, true);
+        if (!embedFields.IsSuccess)
+            return embedFields;
 
         Embed embed = new()
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Title = $"{world} - {population.Total}",
-            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw"),
-            Fields = embedFields
+            Title = server.ToString(),
+            Fields = embedFields.Entity
         };
 
-        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
     }
 
-    private async Task<IResult> SendWorldStatusAsync(ValidWorldDefinition world)
+    private async Task<Result<ValidWorldDefinition>> CheckForDefaultServer()
     {
-        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), CancellationToken).ConfigureAwait(false);
+        if (!_context.GuildID.HasValue)
+            return new GenericCommandError("To use this command in a DM you must provide a server.");
+
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+
+        if (settings.DefaultWorld is null)
+            return new GenericCommandError($"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.");
+
+        return (ValidWorldDefinition)settings.DefaultWorld;
+    }
+
+    private async Task<Result<List<EmbedField>>> GetStatusEmbedFields(ValidWorldDefinition world, bool includeLockedContinents)
+    {
+        Result<List<Map>> getMapsResult = await _censusApi.GetMapsAsync(world, ValidZones, CancellationToken);
 
         if (!getMapsResult.IsDefined())
-        {
-            await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
-            return getMapsResult;
-        }
+            return Result<List<EmbedField>>.FromError(getMapsResult);
 
         List<EmbedField> embedFields = new();
         getMapsResult.Entity.Sort
         (
-            (m1, m2)
-                => string.Compare(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString(), StringComparison.Ordinal)
+            (m1, m2) => string.CompareOrdinal(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString())
         );
 
-        foreach (Map m in getMapsResult.Entity)
-            embedFields.Add(GetMapStatusEmbedField(m, (WorldDefinition)world));
-
-        Embed embed = new()
+        foreach (Map map in getMapsResult.Entity)
         {
-            Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Title = world.ToString(),
-            Fields = embedFields
-        };
+            GetMapTerritoryControl(map, out bool isLocked);
+            if (isLocked && !includeLockedContinents)
+                continue;
 
-        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
-    }
-
-    private EmbedField GetMapStatusEmbedField(Map map, WorldDefinition world)
-    {
-        static string ConstructPopBar(double percent, string emojiName)
-        {
-            string result = string.Empty;
-            for (int i = 0; i < Math.Round(percent / 10); i++)
-                result += Formatter.Emoji(emojiName);
-
-            return result;
+            embedFields.Add(GetMapStatusEmbedField(map, world));
         }
 
-        GetMapTerritoryControl(map, out double ncPercent, out double trPercent, out double vsPercent);
+        if (embedFields.Count == 0)
+            return new GenericCommandError("I can't find any open continents! Something has gone wrong.");
+
+        return embedFields;
+    }
+
+    private EmbedField GetMapStatusEmbedField(Map map, ValidWorldDefinition world)
+    {
+        static void ConstructPopBar(double percent, string emojiName, StringBuilder sb)
+        {
+            string name = Formatter.Emoji(emojiName);
+
+            for (int i = 0; i < Math.Round(percent / 10); i++)
+                sb.Append(name);
+        }
+
+        (double ncPercent, double trPercent, double vsPercent) = GetMapTerritoryControl(map, out bool isLocked);
         string title = GetZoneName(map.ZoneID.Definition);
 
-        object cacheKey = CacheKeyHelpers.GetMetagameEventKey(world, map.ZoneID.Definition);
+        object cacheKey = CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, map.ZoneID.Definition);
         if (_cache.TryGetValue(cacheKey, out IMetagameEvent? metagameEvent) && metagameEvent!.MetagameEventState is MetagameEventState.Started)
         {
             TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
             TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.MetagameEventID) - currentEventDuration;
             title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
         }
-        else if (ncPercent > 99 || trPercent > 99 || vsPercent > 99)
+        else if (isLocked)
         {
             title += " " + Formatter.Emoji("lock");
         }
 
-        string popBar = ConstructPopBar(ncPercent, "blue_square");
-        popBar += ConstructPopBar(trPercent, "red_square");
-        popBar += ConstructPopBar(vsPercent, "purple_square");
+        StringBuilder popBarBuilder = new(1300); // "purple_square" x 9 + some space for formatting
+        ConstructPopBar(ncPercent, "blue_square", popBarBuilder);
+        ConstructPopBar(trPercent, "red_square", popBarBuilder);
+        ConstructPopBar(vsPercent, "purple_square", popBarBuilder);
 
-        return new EmbedField(title, popBar);
+        return new EmbedField(title, popBarBuilder.ToString());
     }
 
-    private static string BuildEmbedPopulationBar(int population, int totalPopulation)
+    private async Task<Result<(List<EmbedField> EmbedFields, int TotalPop)>> GetPopulationEmbedFields(ValidWorldDefinition world)
     {
-        // Can't divide by zero!
-        if (totalPopulation == 0 || population > totalPopulation)
-            return Formatter.Emoji("black_large_square");
+        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken);
+        if (!populationResult.IsDefined(out IPopulation? population))
+            return Result<(List<EmbedField>, int)>.FromError(populationResult);
 
-        double tensPercentage = Math.Ceiling((double)population / totalPopulation * 10);
+        List<EmbedField> fields = new()
+        {
+            GetPopulationEmbedField(population.NC, population.Total, FactionDefinition.NC),
+            GetPopulationEmbedField(population.TR, population.Total, FactionDefinition.TR),
+            GetPopulationEmbedField(population.VS, population.Total, FactionDefinition.VS)
+        };
+
+        return (fields, population.Total);
+    }
+
+    private static EmbedField GetPopulationEmbedField(int factionPopulation, int totalPopulation, FactionDefinition faction)
+    {
+        string blackSquare = Formatter.Emoji("black_large_square");
+        string greenSquare = Formatter.Emoji("green_square");
+
+        string title = faction switch
+        {
+            FactionDefinition.NC => $"{Formatter.Emoji("blue_circle")} NC - {factionPopulation}",
+            FactionDefinition.TR => $"{Formatter.Emoji("red_circle")} TR - {factionPopulation}",
+            FactionDefinition.VS => $"{Formatter.Emoji("purple_circle")} VS - {factionPopulation}",
+            _ => "Unknown"
+        };
+
+        // Can't divide by zero!
+        if (totalPopulation == 0 || factionPopulation > totalPopulation)
+            return new EmbedField(title, blackSquare);
+
+        double tensPercentage = Math.Ceiling((double)factionPopulation / totalPopulation * 10);
         double remainder = 10 - tensPercentage;
-        string result = string.Empty;
+        StringBuilder sb = new();
 
         for (int i = 0; i < tensPercentage; i++)
-            result += Formatter.Emoji("green_square");
+            sb.Append(greenSquare);
 
         for (int i = 0; i < remainder; i++)
-            result += Formatter.Emoji("black_large_square");
+            sb.Append(blackSquare);
 
-        string stringPercentage = ((double)population / totalPopulation * 100).ToString("F1");
-        result += $"{Formatter.Bold("   ")}({ stringPercentage }%)";
+        string stringPercentage = ((double)factionPopulation / totalPopulation * 100).ToString("F1");
+        sb.Append(Formatter.Bold("   "));
+        sb.Append('(').Append(stringPercentage).Append(")%");
 
-        return result;
+        return new EmbedField(title, sb.ToString());
     }
 
-    private static void GetMapTerritoryControl
-    (
-        Map map,
-        out double ncPercent,
-        out double trPercent,
-        out double vsPercent
-    )
+    private static (double NCPercent, double TRPercent, double VSPercent) GetMapTerritoryControl(Map map, out bool isLocked)
     {
         double regionCount = map.Regions.Row.Count(r => r.RowData.FactionID != FactionDefinition.None);
-        ncPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.NC) / regionCount) * 100;
-        trPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.TR) / regionCount) * 100;
-        vsPercent = (map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.VS) / regionCount) * 100;
+        double ncPercent = map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.NC) / regionCount * 100;
+        double trPercent = map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.TR) / regionCount * 100;
+        double vsPercent = map.Regions.Row.Count(r => r.RowData.FactionID == FactionDefinition.VS) / regionCount * 100;
+
+        isLocked = ncPercent > 99 || trPercent > 99 || vsPercent > 99;
+        return (ncPercent, trPercent, vsPercent);
     }
 
     private static string GetZoneName(ZoneDefinition zone)

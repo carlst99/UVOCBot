@@ -1,4 +1,6 @@
 ﻿using DbgCensus.Core.Exceptions;
+using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Objects.Events.Worlds;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
@@ -11,22 +13,37 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
 /// <inheritdoc cref="ICensusApiService"/>
-public class CensusApiService : ICensusApiService
+public class CensusApiService : ICensusApiService, IDisposable
 {
+    /// <summary>
+    /// Gets the number of metagame events that are expected to be
+    /// received over the course of ALL continents opening and closing.
+    /// </summary>
+    /// <remarks>
+    /// Currently, a start and end event for each continent is expected.
+    /// Also, adding 2 for resiliency.
+    /// Hence, 2 * VALID_CONT_COUNT + 2.
+    /// </remarks>
+    public const int ExpectedMetagameEventsPerFullCycle = 12;
+
+    private readonly SemaphoreSlim _queryLimiter;
+
     protected readonly ILogger<CensusApiService> _logger;
     protected readonly IQueryService _queryService;
+
+    private bool _isDisposed;
 
     public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService)
     {
         _logger = logger;
         _queryService = queryService;
+        _queryLimiter = new SemaphoreSlim(10, 10);
     }
 
     /// <inheritdoc />
@@ -59,17 +76,21 @@ public class CensusApiService : ICensusApiService
         (
             outfitTags,
             new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = 3 },
-            async (tag, ct) =>
+            async (tag, ict) =>
             {
                 IQueryBuilder query = _queryService.CreateQuery();
 
                 query.OnCollection("outfit")
                      .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
 
-                Outfit? outfit = await _queryService.GetAsync<Outfit?>(query, ct).ConfigureAwait(false);
+                Result<Outfit?> outfitResult = await GetAsync<Outfit>(query, ict);
+                if (!outfitResult.IsDefined(out Outfit? outfit))
+                {
+                    _logger.LogError("Failed to retrieve outfit: {Error}", outfitResult.Error);
+                    return;
+                }
 
-                if (outfit is not null)
-                    outfitIds.Add(outfit.OutfitId);
+                outfitIds.Add(outfit.OutfitId);
             }
         ).ConfigureAwait(false);
 
@@ -123,20 +144,28 @@ public class CensusApiService : ICensusApiService
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<Map>>> GetMapsAsync(ValidWorldDefinition world, IEnumerable<ValidZoneDefinition> zones, CancellationToken ct = default)
+    public virtual async Task<Result<List<Map>>> GetMapsAsync
+    (
+        ValidWorldDefinition world,
+        IEnumerable<ValidZoneDefinition> zones,
+        CancellationToken ct = default
+    )
     {
-        // https://census.daybreakgames.com/get/ps2/map?world_id=1&zone_ids=2,4,6,8
-
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("map")
             .Where("world_id", SearchModifier.Equals, (int)world)
-            .WhereAll("zone_ids", SearchModifier.Equals, zones.Select(z => (int)z));
+            .WhereAll("zone_ids", SearchModifier.Equals, zones.Cast<ushort>());
 
         return await GetListAsync<Map>(query, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<QueryMetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, uint limit = 10, CancellationToken ct = default)
+    public virtual async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
+    (
+        ValidWorldDefinition world,
+        int limit = ExpectedMetagameEventsPerFullCycle,
+        CancellationToken ct = default
+    )
     {
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("world_event")
@@ -145,14 +174,45 @@ public class CensusApiService : ICensusApiService
             .WithLimit(limit)
             .WithSortOrder("timestamp");
 
-        return await GetListAsync<QueryMetagameEvent>(query, ct).ConfigureAwait(false);
+        return await GetListAsync<MetagameEvent>(query, ct).ConfigureAwait(false);
+    }
+
+    public virtual async Task<Result<MetagameEvent>> GetMetagameEventAsync
+    (
+        ValidWorldDefinition world,
+        ValidZoneDefinition zone,
+        CancellationToken ct = default
+    )
+    {
+        Result<List<MetagameEvent>> eventsResult = await GetMetagameEventsAsync(world, ct: ct);
+        if (!eventsResult.IsDefined(out List<MetagameEvent>? events))
+            return Result<MetagameEvent>.FromError(eventsResult);
+
+        foreach (MetagameEvent mev in events)
+        {
+            if (mev.ZoneID.Definition == (ZoneDefinition)zone)
+                return mev;
+        }
+
+        return Result<MetagameEvent>.FromError(new CensusException("Census did not provide enough data."));
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     protected async Task<Result<T?>> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
     {
         try
         {
-            return await _queryService.GetAsync<T>(query, ct).ConfigureAwait(false);
+            await _queryLimiter.WaitAsync(ct);
+            T? result = await _queryService.GetAsync<T>(query, ct);
+            _queryLimiter.Release();
+
+            return result;
         }
         catch (Exception ex) when (ex is not TaskCanceledException)
         {
@@ -163,19 +223,27 @@ public class CensusApiService : ICensusApiService
 
     protected async Task<Result<List<T>>> GetListAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
     {
-        try
-        {
-            List<T>? result = await _queryService.GetAsync<List<T>>(query, ct).ConfigureAwait(false);
+        Result<List<T>?> result = await GetAsync<List<T>>(query, ct, callerName);
+        if (!result.IsSuccess)
+            return Result<List<T>>.FromError(result);
 
-            if (result is null)
-                return new CensusException($"Census returned no data for query { callerName }.");
-            else
-                return result;
-        }
-        catch (Exception ex) when (ex is not TaskCanceledException)
-        {
-            _logger.LogError(ex, "Census query failed for query {Query}", callerName);
-            return ex;
-        }
+        return result.Entity is null
+            ? new CensusException($"Census returned no data for query {callerName}.")
+            : result.Entity;
+    }
+
+    /// <summary>
+    /// Disposes of managed and unmanaged resources.
+    /// </summary>
+    /// <param name="disposeManaged">A value indicating whether or not to dispose of managed resources.</param>
+    protected virtual void Dispose(bool disposeManaged)
+    {
+        if (_isDisposed)
+            return;
+
+        if (disposeManaged)
+            _queryLimiter.Dispose();
+
+        _isDisposed = true;
     }
 }

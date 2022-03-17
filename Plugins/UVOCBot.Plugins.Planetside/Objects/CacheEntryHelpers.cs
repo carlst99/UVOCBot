@@ -5,13 +5,6 @@ namespace UVOCBot.Plugins.Planetside.Objects;
 
 public static class CacheEntryHelpers
 {
-    public static readonly MemoryCacheEntryOptions MetagameEventOptions = new()
-    {
-        SlidingExpiration = TimeSpan.FromDays(1),
-        Priority = CacheItemPriority.Low,
-        Size = 1
-    };
-
     public static readonly MemoryCacheEntryOptions OutfitOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(3),
@@ -28,7 +21,7 @@ public static class CacheEntryHelpers
 
     public static readonly MemoryCacheEntryOptions MapOptions = new()
     {
-        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+        SlidingExpiration = TimeSpan.FromHours(1), // Expect the map state to be kept up to date by the FacilityControlResponder
         Priority = CacheItemPriority.Normal,
         Size = 2
     };
@@ -36,7 +29,7 @@ public static class CacheEntryHelpers
     public static readonly MemoryCacheEntryOptions PopulationOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(3),
-        Priority = CacheItemPriority.Low,
+        Priority = CacheItemPriority.Normal,
         Size = 1
     };
 }

@@ -12,10 +12,10 @@ using UVOCBot.Plugins.Planetside.Objects;
 namespace UVOCBot.Plugins.Planetside.Services;
 
 /// <summary>
-/// <inheritdoc cref="CachingPopulationService"/>
+/// <inheritdoc cref="BaseCachingPopulationService"/>
 /// Data is collected from <see href="https://wt.honu.pw"/>.
 /// </summary>
-public sealed class HonuPopulationService : CachingPopulationService
+public sealed class HonuPopulationService : BaseCachingPopulationService
 {
     private readonly PlanetsidePluginOptions _options;
     private readonly HttpClient _httpClient;

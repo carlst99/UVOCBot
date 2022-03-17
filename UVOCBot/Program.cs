@@ -187,10 +187,9 @@ public static class Program
         if (!Directory.Exists(directory))
             Directory.CreateDirectory(directory);
 
-        if (fileName is not null)
-            return Path.Combine(directory, fileName);
-        else
-            return directory;
+        return fileName is not null
+            ? Path.Combine(directory, fileName)
+            : directory;
     }
 
 #pragma warning disable RCS1163 // Unused parameter.

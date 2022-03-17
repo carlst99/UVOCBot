@@ -1,5 +1,12 @@
 # Changelog
 
+## Release v1.2.0
+
+- Unlocked continents are now shown in the `population` command.
+- Fixed Oshur alert durations.
+- Fixed map caching. The `status` command should be more reliable.
+- Service ID configuration has changed. See the updated `appsettings.json`.
+
 ## Release v1.1.0
 
 - Made many commands faster.

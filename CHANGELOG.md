@@ -1,5 +1,9 @@
 # Changelog
 
+## Release v1.2.1
+
+- Fixed a bug causing the Census query semaphore to be exhausted. In other words; PlanetSide queries will once again work regardless of uptime.
+
 ## Release v1.2.0
 
 - Unlocked continents are now shown in the `population` command.

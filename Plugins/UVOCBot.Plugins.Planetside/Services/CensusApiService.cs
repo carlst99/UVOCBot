@@ -210,11 +210,11 @@ public class CensusApiService : ICensusApiService, IDisposable
 
         try
         {
-            enteredSemaphore = await _queryLimiter.WaitAsync(2000, ct);
+            enteredSemaphore = await _queryLimiter.WaitAsync(5000, ct);
             if (!enteredSemaphore)
             {
-                _logger.LogError("Failed to enter query semaphore");
-                return new TimeoutException("Failed to enter query semaphore");
+                _logger.LogError("Failed to enter query semaphore on route {Caller}", callerName);
+                return new TimeoutException("Failed to enter query semaphore on route " + callerName);
             }
 
             T? result = await _queryService.GetAsync<T>(query, ct);

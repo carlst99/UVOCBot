@@ -47,10 +47,7 @@ public class OtherCommands : CommandGroup
 
         Result<List<OutfitOnlineMembers>> outfits = await _censusApi.GetOnlineMembersAsync(tags, CancellationToken).ConfigureAwait(false);
         if (!outfits.IsDefined())
-        {
-            await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
             return Result.FromError(outfits);
-        }
 
         if (outfits.Entity.Count == 0)
             return await _feedbackService.SendContextualWarningAsync("None of the provided outfit tags exist", ct: CancellationToken);

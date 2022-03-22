@@ -14,7 +14,7 @@ public record CharacterInfo
     short PrestigeLevel,
     WorldDefinition WorldID,
     bool OnlineStatus,
-    CharacterInfo.CharacterTitleInfo? Title,
+    CharacterInfo.CharacterTitleInfo? TitleInfo,
     CharacterInfo.CharacterStatHistory Deaths,
     CharacterInfo.CharacterStatHistory Kills
 )

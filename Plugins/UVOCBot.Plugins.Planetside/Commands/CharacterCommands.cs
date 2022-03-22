@@ -6,6 +6,7 @@ using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -77,9 +78,9 @@ public class CharacterCommands : CommandGroup
             : Formatter.Emoji("red_circle");
 
         title += " ";
-        title += character.Title is null
+        title += character.TitleInfo is null
             ? character.Name.First
-            : character.Title.Name.English + " " + character.Name.First;
+            : character.TitleInfo.Name.English + " " + character.Name.First;
 
         string description = $"Of {character.WorldID}'s {character.FactionID}";
 
@@ -143,7 +144,7 @@ public class CharacterCommands : CommandGroup
 
         EmbedField createdAtField = new
         (
-            "Created At",
+            "Created",
             Formatter.Timestamp(character.Times.Creation, TimestampStyle.ShortDate),
             true
         );
@@ -153,7 +154,7 @@ public class CharacterCommands : CommandGroup
             title,
             default,
             description,
-            "https://ps2.fisu.pw/player/?name=" + character.Name.First,
+            default,
             default,
             color,
             default,
@@ -172,8 +173,36 @@ public class CharacterCommands : CommandGroup
             }
         );
 
-        Result r = await _feedbackService.SendContextualEmbedAsync(embed, null, CancellationToken);
-        return r;
+        ActionRowComponent buttons = new
+        (
+            new IMessageComponent[] {
+                new ButtonComponent
+                (
+                    ButtonComponentStyle.Link,
+                    "Fisu Stats",
+                    URL: "https://ps2.fisu.pw/player/?name=" + character.Name.First
+                ),
+                new ButtonComponent
+                (
+                    ButtonComponentStyle.Link,
+                    "Honu Stats",
+                    URL: "https://wt.honu.pw/c/" + character.CharacterID
+                ),
+                new ButtonComponent
+                (
+                    ButtonComponentStyle.Link,
+                    "Voidwell Stats",
+                    URL: $"https://voidwell.com/ps2/player/{character.CharacterID}/stats"
+                )
+            }
+        );
+
+        return await _feedbackService.SendContextualEmbedAsync
+        (
+            embed,
+            new FeedbackMessageOptions(MessageComponents: new IMessageComponent[] { buttons }),
+            CancellationToken
+        );
     }
     #pragma warning restore CS8509
 }

@@ -6,6 +6,7 @@ using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Results;
 using System;
@@ -36,7 +37,7 @@ public class CharacterCommands : CommandGroup
     [Command("character")]
     [Description("Gets basic info about a PlanetSide character.")]
     [Deferred]
-    public async Task<Result> GetCharacterInfoCommandAsync(string characterName)
+    public async Task<Result> GetCharacterInfoCommandAsync([AutocompleteProvider("autocomplete::ps2CharacterName")] string characterName)
     {
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("character")
@@ -66,11 +67,9 @@ public class CharacterCommands : CommandGroup
             .ShowFields("all_time", "month.m01")
             .InjectAt("deaths");
 
-        Result<CharacterInfo?> characterResult = await _queryService.GetAsync<CharacterInfo>(query, CancellationToken);
-        if (!characterResult.IsSuccess)
-            return Result.FromError(characterResult);
+        CharacterInfo? character = await _queryService.GetAsync<CharacterInfo>(query, CancellationToken);
 
-        if (!characterResult.IsDefined(out CharacterInfo? character))
+        if (character is null)
             return new GenericCommandError("That character doesn't exist");
 
         string title = character.OnlineStatus

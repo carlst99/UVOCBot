@@ -5,6 +5,7 @@ using DbgCensus.Rest.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Remora.Commands.Extensions;
+using Remora.Discord.Commands.Extensions;
 using UVOCBot.Plugins.Planetside;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.CensusEventHandlers;
@@ -39,7 +40,8 @@ public static class IServiceCollectionExtensions
                 .WithCommandGroup<OtherCommands>()
                 .WithCommandGroup<OutfitTrackingCommands>()
                 .WithCommandGroup<WorldCommands>()
-                .Finish();
+                .Finish()
+                .AddAutocompleteProvider<CharacterNameAutocompleteProvider>();
 
         services.AddHostedService<EventStreamWorker>();
         services.AddHostedService<CensusStateWorker>();

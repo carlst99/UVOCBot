@@ -91,6 +91,14 @@ public class CharacterCommands : CommandGroup
             FactionDefinition.NSO => Color.LightGray
         };
 
+        EmbedField battleRankField = new
+        (
+            "Battle Rank",
+            character.BattleRank.Value + (character.PrestigeLevel > 0
+                ? $"~{character.PrestigeLevel}" : string.Empty),
+            true
+        );
+
         EmbedField lastLoginField = new
         (
             "Last Login",
@@ -126,7 +134,12 @@ public class CharacterCommands : CommandGroup
             default,
             default,
             default,
-            new List<IEmbedField> { lastLoginField, playtimeField, createdAtField }
+            new List<IEmbedField> {
+                battleRankField,
+                lastLoginField,
+                playtimeField,
+                createdAtField
+            }
         );
 
         Result r = await _feedbackService.SendContextualEmbedAsync(embed, null, CancellationToken);

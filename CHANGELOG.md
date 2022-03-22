@@ -1,5 +1,9 @@
 # Changelog
 
+## Release vNext
+
+- Added a basic character info command - `/character`.
+
 ## Release v1.2.2
 
 - Improved the manner in which map region data is retrieved. One should see less internal errors now.

@@ -35,6 +35,7 @@ public static class IServiceCollectionExtensions
         services.AddPayloadHandler<MetagameEventResponder>();
 
         services.AddCommandTree()
+                .WithCommandGroup<CharacterCommands>()
                 .WithCommandGroup<OtherCommands>()
                 .WithCommandGroup<OutfitTrackingCommands>()
                 .WithCommandGroup<WorldCommands>()

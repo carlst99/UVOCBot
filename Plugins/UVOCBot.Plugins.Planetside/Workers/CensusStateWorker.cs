@@ -18,17 +18,20 @@ public class CensusStateWorker : BackgroundService
 
     private readonly IMemoryCache _cache;
     private readonly ICensusApiService _censusApi;
+    private readonly IMapRegionResolverService _mapRegionResolver;
     private readonly IPopulationService _populationService;
 
     public CensusStateWorker
     (
         IMemoryCache cache,
         ICensusApiService censusApi,
+        IMapRegionResolverService mapRegionResolver,
         IPopulationService populationService
     )
     {
         _cache = cache;
         _censusApi = censusApi;
+        _mapRegionResolver = mapRegionResolver;
         _populationService = populationService;
     }
 
@@ -36,6 +39,8 @@ public class CensusStateWorker : BackgroundService
     {
         if (_censusApi is not Services.CachingCensusApiService)
             throw new InvalidOperationException("Expected the " + nameof(Services.CachingCensusApiService) + " to be registered with the service provider.");
+
+        _ = _mapRegionResolver.RunAsync(ct);
 
         foreach (ValidWorldDefinition world in ValidWorlds)
         {

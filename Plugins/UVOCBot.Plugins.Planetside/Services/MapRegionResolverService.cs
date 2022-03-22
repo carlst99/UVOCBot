@@ -1,4 +1,5 @@
 using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
+using Microsoft.Extensions.Logging;
 using Polly.CircuitBreaker;
 using Remora.Results;
 using System;
@@ -13,8 +14,9 @@ namespace UVOCBot.Plugins.Planetside.Services;
 /// <inheritdoc cref="IMapRegionResolverService" />
 public sealed class MapRegionResolverService : IMapRegionResolverService
 {
+    private readonly ILogger<MapRegionResolverService> _logger;
     private readonly ICensusApiService _censusApiService;
-    private readonly Channel<(IFacilityControl ControlEvent, Func<MapRegion, Task> Callback)> _resolveQueue;
+    private readonly Channel<(IFacilityControl ControlEvent, Func<MapRegion, CancellationToken, Task> Callback)> _resolveQueue;
 
     /// <inheritdoc />
     public bool IsRunning { get; private set; }
@@ -22,12 +24,14 @@ public sealed class MapRegionResolverService : IMapRegionResolverService
     /// <summary>
     /// Initializes a new instance of the <see cref="MapRegionResolverService"/> class.
     /// </summary>
+    /// <param name="logger">The logging provider.</param>
     /// <param name="censusApiService">The Census API query service.</param>
-    public MapRegionResolverService(ICensusApiService censusApiService)
+    public MapRegionResolverService(ILogger<MapRegionResolverService> logger, ICensusApiService censusApiService)
     {
+        _logger = logger;
         _censusApiService = censusApiService;
 
-        _resolveQueue = Channel.CreateUnbounded<(IFacilityControl ControlEvent, Func<MapRegion, Task> Callback)>();
+        _resolveQueue = Channel.CreateUnbounded<(IFacilityControl ControlEvent, Func<MapRegion, CancellationToken, Task> Callback)>();
     }
 
     /// <inheritdoc />
@@ -38,25 +42,33 @@ public sealed class MapRegionResolverService : IMapRegionResolverService
 
         IsRunning = true;
 
-        await foreach ((IFacilityControl cEvent, Func<MapRegion, Task> callback) in _resolveQueue.Reader.ReadAllAsync(ct))
+        await foreach ((IFacilityControl cEvent, Func<MapRegion, CancellationToken, Task> callback) in _resolveQueue.Reader.ReadAllAsync(ct))
         {
-            Result<MapRegion?> regionResult = await _censusApiService.GetFacilityRegionAsync(cEvent.FacilityID, ct);
-            if (!regionResult.IsDefined(out MapRegion? region))
+            try
             {
-                if (regionResult.Error is ExceptionError {Exception: BrokenCircuitException})
-                    await Task.Delay(TimeSpan.FromSeconds(15), ct);
+                Result<MapRegion?> regionResult = await _censusApiService.GetFacilityRegionAsync(cEvent.FacilityID, ct);
+                if (!regionResult.IsDefined(out MapRegion? region))
+                {
+                    if (regionResult.Error is ExceptionError {Exception: BrokenCircuitException})
+                        await Task.Delay(TimeSpan.FromSeconds(15), ct);
 
-                await _resolveQueue.Writer.WriteAsync((cEvent, callback), ct);
-                continue;
+                    await _resolveQueue.Writer.WriteAsync((cEvent, callback), ct);
+                    continue;
+                }
+
+                DateTimeOffset startCallbackTime = DateTimeOffset.UtcNow;
+                await callback(region, ct);
+                TimeSpan executionTime = DateTimeOffset.UtcNow - startCallbackTime;
+
+                TimeSpan delayTime = TimeSpan.FromMilliseconds(100) - executionTime;
+                if (delayTime > TimeSpan.Zero)
+                    await Task.Delay(delayTime, ct);
             }
-
-            DateTimeOffset startCallbackTime = DateTimeOffset.UtcNow;
-            await callback(region);
-            TimeSpan executionTime = DateTimeOffset.UtcNow - startCallbackTime;
-
-            TimeSpan delayTime = TimeSpan.FromMilliseconds(100) - executionTime;
-            if (delayTime > TimeSpan.Zero)
-                await Task.Delay(delayTime, ct);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected failure when resolving map region");
+                await Task.Delay(100, ct);
+            }
         }
     }
 
@@ -64,7 +76,7 @@ public sealed class MapRegionResolverService : IMapRegionResolverService
     public ValueTask EnqueueAsync
     (
         IFacilityControl facilityControlEvent,
-        Func<MapRegion, Task> callback,
+        Func<MapRegion, CancellationToken, Task> callback,
         CancellationToken ct = default
     )
         => _resolveQueue.Writer.WriteAsync((facilityControlEvent, callback), ct);

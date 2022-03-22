@@ -34,7 +34,7 @@ public interface IMapRegionResolverService
     ValueTask EnqueueAsync
     (
         IFacilityControl facilityControlEvent,
-        Func<MapRegion, Task> callback,
+        Func<MapRegion, CancellationToken, Task> callback,
         CancellationToken ct = default
     );
 }

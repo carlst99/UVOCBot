@@ -12,6 +12,7 @@ using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
@@ -45,6 +46,7 @@ public class OutfitTrackingCommands : CommandGroup
     [Description("Tracks an outfit's base captures.")]
     [RequireContext(ChannelContext.Guild)]
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
+    [Deferred]
     public async Task<IResult> TrackOutfitCommandAsync(string outfitTag)
     {
         Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(outfitTag, CancellationToken).ConfigureAwait(false);
@@ -72,6 +74,7 @@ public class OutfitTrackingCommands : CommandGroup
     [Description("Removes a tracked outfit.")]
     [RequireContext(ChannelContext.Guild)]
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
+    [Deferred]
     public async Task<IResult> UntrackOutfitCommandAsync(
         [Description("The 1-4 letter tag of the outfit to track.")] string outfitTag)
     {
@@ -100,8 +103,8 @@ public class OutfitTrackingCommands : CommandGroup
     public async Task<IResult> SetBaseCaptureChannelCommandAsync
     (
         [Description("The channel. Leave empty to disable base capture notifications.")]
-            [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)]
-            IChannel? channel = null
+        [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)]
+        IChannel? channel = null
     )
     {
         PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);

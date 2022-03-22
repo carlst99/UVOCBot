@@ -1,5 +1,6 @@
 ﻿using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
 using DbgCensus.EventStream.EventHandlers.Abstractions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -22,21 +23,26 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
 
 internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityControl>
 {
-    private readonly DiscordContext _dbContext;
+    private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
     private readonly IMemoryCache _cache;
     private readonly ICensusApiService _censusApi;
     private readonly IDiscordRestChannelAPI _channelApi;
+    private readonly IMapRegionResolverService _mapRegionResolver;
 
-    public FacilityControlResponder(
-        DiscordContext dbContext,
+    public FacilityControlResponder
+    (
+        IDbContextFactory<DiscordContext> dbContextFactory,
         IMemoryCache cache,
         ICensusApiService censusApi,
-        IDiscordRestChannelAPI channelApi)
+        IDiscordRestChannelAPI channelApi,
+        IMapRegionResolverService mapRegionResolver
+    )
     {
-        _dbContext = dbContext;
+        _dbContextFactory = dbContextFactory;
         _cache = cache;
         _censusApi = censusApi;
         _channelApi = channelApi;
+        _mapRegionResolver = mapRegionResolver;
     }
 
     public async Task HandleAsync(IFacilityControl censusEvent, CancellationToken ct = default)
@@ -45,18 +51,25 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         if (censusEvent.OldFactionID == censusEvent.NewFactionID)
             return;
 
-        // Update the map cache
-        Result<MapRegion?> getFacilityResult = await _censusApi.GetFacilityRegionAsync(censusEvent.FacilityID, ct).ConfigureAwait(false);
-        if (!getFacilityResult.IsDefined(out MapRegion? facility))
-            return;
+        await _mapRegionResolver.EnqueueAsync
+        (
+            censusEvent,
+            (r, c) => OnRegionResolved(censusEvent, r, c),
+            CancellationToken.None
+        );
+    }
 
-        UpdateMapCache(censusEvent, facility);
+    private async Task OnRegionResolved(IFacilityControl censusEvent, MapRegion region, CancellationToken ct)
+    {
+        UpdateMapCache(censusEvent, region);
 
         // Send base capture messages
         if (censusEvent.OutfitID == 0)
             return;
 
-        List<PlanetsideSettings> validPSettings = _dbContext.PlanetsideSettings
+        DiscordContext dbContext = await _dbContextFactory.CreateDbContextAsync(ct);
+
+        List<PlanetsideSettings> validPSettings = dbContext.PlanetsideSettings
             .Where(s => s.BaseCaptureChannelId != null)
             .AsEnumerable()
             .Where(s => s.TrackedOutfits.Contains(censusEvent.OutfitID))
@@ -66,11 +79,10 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
             return;
 
         Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(censusEvent.OutfitID, ct).ConfigureAwait(false);
-        if (!getOutfitResult.IsDefined())
+        if (!getOutfitResult.IsDefined(out Outfit? outfit))
             return;
-        Outfit outfit = getOutfitResult.Entity;
 
-        await SendBaseCaptureMessages(validPSettings, outfit, facility, ct).ConfigureAwait(false);
+        await SendBaseCaptureMessages(validPSettings, outfit, region, ct).ConfigureAwait(false);
     }
 
     private async Task SendBaseCaptureMessages

@@ -48,5 +48,12 @@ public record CharacterInfo
         GlobalisedString Name
     );
 
-    public record CharacterStatHistory(uint AllTime);
+    public record CharacterStatHistory
+    (
+        uint AllTime,
+        CharacterStatHistory.MonthHistory Month
+    )
+    {
+        public record MonthHistory(uint M01);
+    }
 }

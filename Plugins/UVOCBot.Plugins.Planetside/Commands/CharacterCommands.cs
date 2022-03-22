@@ -57,12 +57,12 @@ public class CharacterCommands : CommandGroup
 
         query.AddJoin("characters_stat_history")
             .Where("stat_name", SearchModifier.Equals, "kills")
-            .ShowFields("all_time")
+            .ShowFields("all_time", "month.m01")
             .InjectAt("kills");
 
         query.AddJoin("characters_stat_history")
             .Where("stat_name", SearchModifier.Equals, "deaths")
-            .ShowFields("all_time")
+            .ShowFields("all_time", "month.m01")
             .InjectAt("deaths");
 
         Result<CharacterInfo?> characterResult = await _queryService.GetAsync<CharacterInfo>(query, CancellationToken);
@@ -83,14 +83,18 @@ public class CharacterCommands : CommandGroup
 
         string description = $"Of {character.WorldID}'s {character.FactionID}";
 
-        string iconUrl = "https://census.daybreakgames.com" + character.PrestigeLevel switch
+        string? iconUrl = "https://census.daybreakgames.com" + character.PrestigeLevel switch
         {
             0 when character.FactionID is FactionDefinition.NC => character.BattleRank.Icons.NCImagePath,
             0 when character.FactionID is FactionDefinition.TR => character.BattleRank.Icons.TRImagePath,
             0 when character.FactionID is FactionDefinition.VS => character.BattleRank.Icons.VSImagePath,
+            0 => string.Empty,
             1 => "/files/ps2/images/static/88685.png",
             2 => "/files/ps2/images/static/94469.png"
         };
+
+        if (character.FactionID is FactionDefinition.NSO && character.PrestigeLevel == 0)
+            iconUrl = null;
 
 
         Color color = character.FactionID switch
@@ -113,6 +117,13 @@ public class CharacterCommands : CommandGroup
         (
             "K/D",
             ((double)character.Kills.AllTime / character.Deaths.AllTime).ToString("F2"),
+            true
+        );
+
+        EmbedField recentRatioField = new
+        (
+            "Recent K/D",
+            ((double)character.Kills.Month.M01 / character.Deaths.Month.M01).ToString("F2"),
             true
         );
 
@@ -147,13 +158,14 @@ public class CharacterCommands : CommandGroup
             color,
             default,
             default,
-            new EmbedThumbnail(iconUrl),
+            iconUrl is null ? default(Remora.Rest.Core.Optional<IEmbedThumbnail>) : new EmbedThumbnail(iconUrl),
             default,
             default,
             default,
             new List<IEmbedField> {
                 battleRankField,
                 kdRatioField,
+                recentRatioField,
                 lastLoginField,
                 playtimeField,
                 createdAtField

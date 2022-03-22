@@ -29,7 +29,6 @@ namespace UVOCBot.Plugins.Roles.Commands;
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageRoles)]
 [Ephemeral]
-[Deferred]
 public class RoleMenuCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -212,6 +211,7 @@ public class RoleMenuCommands : CommandGroup
 
     [Command("add-role")]
     [Description("Adds a role to a menu. If the role already exists on the message it will be updated.")]
+    [Deferred]
     public async Task<IResult> AddRole
     (
         [Description("The ID of the role menu message.")] Snowflake messageID,
@@ -277,6 +277,7 @@ public class RoleMenuCommands : CommandGroup
 
     [Command("remove-role")]
     [Description("Removes a role from a menu.")]
+    [Deferred]
     public async Task<IResult> RemoveRole
     (
         [Description("The ID of the role menu message.")] Snowflake messageID,
@@ -327,6 +328,7 @@ public class RoleMenuCommands : CommandGroup
 
     [Command("update")]
     [Description("Forces an update on a role menu message. This should seldom be needed.")]
+    [Deferred]
     public async Task<IResult> UpdateMenuCommandAsync
     (
         [Description("The ID of the role menu message.")] Snowflake messageID

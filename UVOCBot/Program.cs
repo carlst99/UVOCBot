@@ -242,8 +242,7 @@ public static class Program
                 o.Intents |= GatewayIntents.DirectMessages
                      | GatewayIntents.GuildMessages
                      | GatewayIntents.Guilds
-                     | GatewayIntents.GuildMembers
-                     | GatewayIntents.MessageContents;
+                     | GatewayIntents.GuildMembers;
             }
         );
 

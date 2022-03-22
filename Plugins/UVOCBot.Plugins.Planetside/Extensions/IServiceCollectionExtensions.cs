@@ -27,6 +27,7 @@ public static class IServiceCollectionExtensions
 
         services.AddCensusRestServices();
         services.AddSingleton<ICensusApiService, CachingCensusApiService>();
+        services.AddSingleton<IMapRegionResolverService, MapRegionResolverService>();
 
         services.AddCensusEventHandlingServices();
         services.AddPayloadHandler<ConnectionStateChangedResponder>();

@@ -1,5 +1,10 @@
 # Changelog
 
+## Release v1.2.2
+
+- Improved the manner in which map region data is retrieved. One should see less internal errors now.
+- Removed Message Content intent, which was unneeded.
+
 ## Release v1.2.1
 
 - Fixed a bug causing the Census query semaphore to be exhausted. In other words; PlanetSide queries will once again work regardless of uptime.

@@ -55,6 +55,16 @@ public class CharacterCommands : CommandGroup
         query.AddJoin("title")
             .InjectAt("title_info");
 
+        query.AddJoin("characters_stat_history")
+            .Where("stat_name", SearchModifier.Equals, "kills")
+            .ShowFields("all_time")
+            .InjectAt("kills");
+
+        query.AddJoin("characters_stat_history")
+            .Where("stat_name", SearchModifier.Equals, "deaths")
+            .ShowFields("all_time")
+            .InjectAt("deaths");
+
         Result<CharacterInfo?> characterResult = await _queryService.GetAsync<CharacterInfo>(query, CancellationToken);
         if (!characterResult.IsSuccess)
             return Result.FromError(characterResult);
@@ -99,6 +109,13 @@ public class CharacterCommands : CommandGroup
             true
         );
 
+        EmbedField kdRatioField = new
+        (
+            "K/D",
+            ((double)character.Kills.AllTime / character.Deaths.AllTime).ToString("F2"),
+            true
+        );
+
         EmbedField lastLoginField = new
         (
             "Last Login",
@@ -136,6 +153,7 @@ public class CharacterCommands : CommandGroup
             default,
             new List<IEmbedField> {
                 battleRankField,
+                kdRatioField,
                 lastLoginField,
                 playtimeField,
                 createdAtField

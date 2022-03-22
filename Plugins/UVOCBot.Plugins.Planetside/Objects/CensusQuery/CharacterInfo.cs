@@ -14,7 +14,9 @@ public record CharacterInfo
     short PrestigeLevel,
     WorldDefinition WorldID,
     bool OnlineStatus,
-    CharacterInfo.CharacterTitleInfo? Title
+    CharacterInfo.CharacterTitleInfo? Title,
+    CharacterInfo.CharacterStatHistory Deaths,
+    CharacterInfo.CharacterStatHistory Kills
 )
 {
     public record CharacterTimes
@@ -45,4 +47,6 @@ public record CharacterInfo
         uint TitleID,
         GlobalisedString Name
     );
+
+    public record CharacterStatHistory(uint AllTime);
 }

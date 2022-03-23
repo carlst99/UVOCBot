@@ -36,8 +36,6 @@ public class CharacterNameAutocompleteProvider : IAutocompleteProvider
         if (string.IsNullOrEmpty(userInput) || userInput.Length < 5)
             return Array.Empty<IApplicationCommandOptionChoice>();
 
-        _logger.LogCritical("QUERIED");
-
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("character")
             .Where("name.first_lower", SearchModifier.StartsWith, userInput)

@@ -24,6 +24,8 @@ namespace UVOCBot.Plugins.Planetside.Commands;
 
 public class CharacterCommands : CommandGroup
 {
+    private const string FirstMonthKey = "m01";
+
     private readonly IQueryService _queryService;
     private readonly FeedbackService _feedbackService;
 
@@ -121,7 +123,7 @@ public class CharacterCommands : CommandGroup
         EmbedField recentKDRatioField = new
         (
             "K/D",
-            ((double)character.Kills.Month.M01 / character.Deaths.Month.M01).ToString("F2"),
+            ((double)character.Kills.Month[FirstMonthKey] / character.Deaths.Month[FirstMonthKey]).ToString("F2"),
             true
         );
 
@@ -135,7 +137,7 @@ public class CharacterCommands : CommandGroup
         EmbedField kpmField = new
         (
             "KPM",
-            (character.Kills.Month.M01 / ((double)character.Time.Month.M01 / 60)).ToString("F2"),
+            (character.Kills.Month[FirstMonthKey] / ((double)character.Time.Month[FirstMonthKey] / 60)).ToString("F2"),
             true
         );
 

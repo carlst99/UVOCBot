@@ -1,5 +1,6 @@
 using DbgCensus.Core.Objects;
 using System;
+using System.Collections.Generic;
 
 namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 
@@ -52,9 +53,6 @@ public record CharacterInfo
     public record CharacterStatHistory
     (
         uint AllTime,
-        CharacterStatHistory.MonthHistory Month
-    )
-    {
-        public record MonthHistory(uint M01);
-    }
+        Dictionary<string, uint> Month
+    );
 }

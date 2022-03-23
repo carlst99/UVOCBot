@@ -16,7 +16,8 @@ public record CharacterInfo
     bool OnlineStatus,
     CharacterInfo.CharacterTitleInfo? TitleInfo,
     CharacterInfo.CharacterStatHistory Deaths,
-    CharacterInfo.CharacterStatHistory Kills
+    CharacterInfo.CharacterStatHistory Kills,
+    CharacterInfo.CharacterStatHistory Time
 )
 {
     public record CharacterTimes

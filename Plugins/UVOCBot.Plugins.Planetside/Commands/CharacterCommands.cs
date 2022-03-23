@@ -67,6 +67,11 @@ public class CharacterCommands : CommandGroup
             .ShowFields("all_time", "month.m01")
             .InjectAt("deaths");
 
+        query.AddJoin("characters_stat_history")
+            .Where("stat_name", SearchModifier.Equals, "time")
+            .ShowFields("month.m01")
+            .InjectAt("time");
+
         CharacterInfo? character = await _queryService.GetAsync<CharacterInfo>(query, CancellationToken);
 
         if (character is null)
@@ -113,17 +118,24 @@ public class CharacterCommands : CommandGroup
             true
         );
 
-        EmbedField kdRatioField = new
+        EmbedField recentKDRatioField = new
         (
             "K/D",
+            ((double)character.Kills.Month.M01 / character.Deaths.Month.M01).ToString("F2"),
+            true
+        );
+
+        EmbedField kdRatioField = new
+        (
+            "Lifetime K/D",
             ((double)character.Kills.AllTime / character.Deaths.AllTime).ToString("F2"),
             true
         );
 
-        EmbedField recentRatioField = new
+        EmbedField kpmField = new
         (
-            "Recent K/D",
-            ((double)character.Kills.Month.M01 / character.Deaths.Month.M01).ToString("F2"),
+            "KPM",
+            (character.Kills.Month.M01 / ((double)character.Time.Month.M01 / 60)).ToString("F2"),
             true
         );
 
@@ -156,7 +168,7 @@ public class CharacterCommands : CommandGroup
             default,
             default,
             color,
-            default,
+            new EmbedFooter("If not otherwise specified, all stats are calculated from the last month of playtime"),
             default,
             iconUrl is null ? default(Remora.Rest.Core.Optional<IEmbedThumbnail>) : new EmbedThumbnail(iconUrl),
             default,
@@ -164,8 +176,9 @@ public class CharacterCommands : CommandGroup
             default,
             new List<IEmbedField> {
                 battleRankField,
+                recentKDRatioField,
                 kdRatioField,
-                recentRatioField,
+                kpmField,
                 lastLoginField,
                 playtimeField,
                 createdAtField

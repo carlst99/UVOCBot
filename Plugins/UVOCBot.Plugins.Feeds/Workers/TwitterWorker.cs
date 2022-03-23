@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Rest.Core;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Tweetinvi;
@@ -31,6 +31,7 @@ public sealed class TwitterWorker : BackgroundService
     };
 
     private readonly ILogger<TwitterWorker> _logger;
+    private readonly FeedsPluginOptions _options;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly ITwitterClient _twitterClient;
     private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
@@ -41,12 +42,14 @@ public sealed class TwitterWorker : BackgroundService
     public TwitterWorker
     (
         ILogger<TwitterWorker> logger,
+        IOptions<FeedsPluginOptions> options,
         IDiscordRestChannelAPI channelApi,
         ITwitterClient twitterClient,
         IDbContextFactory<DiscordContext> dbContextFactory
     )
     {
         _logger = logger;
+        _options = options.Value;
         _channelApi = channelApi;
         _twitterClient = twitterClient;
         _dbContextFactory = dbContextFactory;
@@ -58,6 +61,9 @@ public sealed class TwitterWorker : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
+        if (!_options.EnableTwitterFeed)
+            return;
+
         await InitializeAsync(ct);
 
         while (!ct.IsCancellationRequested)

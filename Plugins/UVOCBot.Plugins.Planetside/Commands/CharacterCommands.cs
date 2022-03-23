@@ -41,43 +41,11 @@ public class CharacterCommands : CommandGroup
     [Deferred]
     public async Task<Result> GetCharacterInfoCommandAsync([AutocompleteProvider("autocomplete::ps2CharacterName")] string characterName)
     {
-        IQueryBuilder query = _queryService.CreateQuery()
-            .OnCollection("character")
-            .WithLanguage(CensusLanguage.English)
-            .Where("name.first_lower", SearchModifier.Equals, characterName.ToLower())
-            .HideFields("certs", "daily_ribbon", "head_id", "profile_id")
-            .AddResolve("online_status")
-            .AddResolve("world");
-
-        query.AddJoin("experience_rank")
-            .OnField("battle_rank.value")
-            .ToField("rank")
-            .Where("vs.title.en", SearchModifier.NotEquals, "A.S.P. Operative")
-            .InjectAt("icons")
-            .ShowFields("vs_image_path", "nc_image_path", "tr_image_path");
-
-        query.AddJoin("title")
-            .InjectAt("title_info");
-
-        query.AddJoin("characters_stat_history")
-            .Where("stat_name", SearchModifier.Equals, "kills")
-            .ShowFields("all_time", "month.m01")
-            .InjectAt("kills");
-
-        query.AddJoin("characters_stat_history")
-            .Where("stat_name", SearchModifier.Equals, "deaths")
-            .ShowFields("all_time", "month.m01")
-            .InjectAt("deaths");
-
-        query.AddJoin("characters_stat_history")
-            .Where("stat_name", SearchModifier.Equals, "time")
-            .ShowFields("month.m01")
-            .InjectAt("time");
-
-        CharacterInfo? character = await _queryService.GetAsync<CharacterInfo>(query, CancellationToken);
-
+        CharacterInfo? character = await GetCharacter(characterName);
         if (character is null)
             return new GenericCommandError("That character doesn't exist");
+
+        CharactersWeaponStat? favWeapon = await GetFavouriteWeapon(character);
 
         string title = character.OnlineStatus
             ? Formatter.Emoji("green_circle")
@@ -141,6 +109,20 @@ public class CharacterCommands : CommandGroup
             true
         );
 
+        EmbedField killCountField = new
+        (
+            "Lifetime Kills",
+            character.Kills.AllTime.ToString(),
+            true
+        );
+
+        EmbedField favWeaponField = new
+        (
+            "Favourite Weapon",
+            favWeapon is null ? "Unknown" : favWeapon.Info.Name.English,
+            true
+        );
+
         EmbedField lastLoginField = new
         (
             "Last Login",
@@ -181,6 +163,8 @@ public class CharacterCommands : CommandGroup
                 recentKDRatioField,
                 kdRatioField,
                 kpmField,
+                killCountField,
+                favWeaponField,
                 lastLoginField,
                 playtimeField,
                 createdAtField
@@ -219,4 +203,60 @@ public class CharacterCommands : CommandGroup
         );
     }
     #pragma warning restore CS8509
+
+    private async Task<CharacterInfo?> GetCharacter(string name)
+    {
+        IQueryBuilder characterQuery = _queryService.CreateQuery()
+            .OnCollection("character")
+            .WithLanguage(CensusLanguage.English)
+            .Where("name.first_lower", SearchModifier.Equals, name.ToLower())
+            .HideFields("certs", "daily_ribbon", "head_id", "profile_id")
+            .AddResolve("online_status")
+            .AddResolve("world");
+
+        characterQuery.AddJoin("experience_rank")
+            .OnField("battle_rank.value")
+            .ToField("rank")
+            .Where("vs.title.en", SearchModifier.NotEquals, "A.S.P. Operative")
+            .InjectAt("icons")
+            .ShowFields("vs_image_path", "nc_image_path", "tr_image_path");
+
+        characterQuery.AddJoin("title")
+            .InjectAt("title_info");
+
+        characterQuery.AddJoin("characters_stat_history")
+            .Where("stat_name", SearchModifier.Equals, "kills")
+            .ShowFields("all_time", "month.m01")
+            .InjectAt("kills");
+
+        characterQuery.AddJoin("characters_stat_history")
+            .Where("stat_name", SearchModifier.Equals, "deaths")
+            .ShowFields("all_time", "month.m01")
+            .InjectAt("deaths");
+
+        characterQuery.AddJoin("characters_stat_history")
+            .Where("stat_name", SearchModifier.Equals, "time")
+            .ShowFields("month.m01")
+            .InjectAt("time");
+
+        return await _queryService.GetAsync<CharacterInfo>(characterQuery, CancellationToken);
+    }
+
+    private async Task<CharactersWeaponStat?> GetFavouriteWeapon(CharacterInfo character)
+    {
+        IQueryBuilder favWeaponQuery = _queryService.CreateQuery()
+            .OnCollection("characters_weapon_stat")
+            .Where("character_id", SearchModifier.Equals, character.CharacterID)
+            .Where("stat_name", SearchModifier.Equals, "weapon_fire_count")
+            .Where("item_id", SearchModifier.NotEquals, 0)
+            .WithSortOrder("value", SortOrder.Descending)
+            .ShowFields("item_id")
+            .AddJoin("item", j =>
+            {
+                j.InjectAt("info")
+                    .ShowFields("name");
+            });
+
+        return await _queryService.GetAsync<CharactersWeaponStat>(favWeaponQuery, CancellationToken);
+    }
 }

@@ -126,7 +126,7 @@ public class CharacterCommands : CommandGroup
         EmbedField lastLoginField = new
         (
             "Last Login",
-            Formatter.Timestamp(character.Times.LastLogin, TimestampStyle.ShortDateTime),
+            Formatter.Timestamp(character.Times.LastLogin, TimestampStyle.RelativeTime),
             true
         );
 
@@ -141,6 +141,15 @@ public class CharacterCommands : CommandGroup
         (
             "Created",
             Formatter.Timestamp(character.Times.Creation, TimestampStyle.ShortDate),
+            true
+        );
+
+        CharacterInfo.OutfitMemberExtended outfit = character.OutfitMember;
+        EmbedField outfitField = new
+        (
+            "Outfit",
+            Formatter.MaskedLink($"[{outfit.Alias}] {outfit.Name}", $"https://wt.honu.pw/o/{outfit.OutfitID}")
+            + $"\nRank: {outfit.MemberRankOrdinal}. {outfit.MemberRank}",
             true
         );
 
@@ -167,7 +176,8 @@ public class CharacterCommands : CommandGroup
                 favWeaponField,
                 lastLoginField,
                 playtimeField,
-                createdAtField
+                createdAtField,
+                outfitField
             }
         );
 
@@ -212,6 +222,7 @@ public class CharacterCommands : CommandGroup
             .Where("name.first_lower", SearchModifier.Equals, name.ToLower())
             .HideFields("certs", "daily_ribbon", "head_id", "profile_id")
             .AddResolve("online_status")
+            .AddResolve("outfit_member_extended", "member_since", "member_rank", "member_rank_ordinal", "outfit_id", "name", "alias")
             .AddResolve("world");
 
         characterQuery.AddJoin("experience_rank")

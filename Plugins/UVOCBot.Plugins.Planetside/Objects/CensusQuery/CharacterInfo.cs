@@ -18,7 +18,8 @@ public record CharacterInfo
     CharacterInfo.CharacterTitleInfo? TitleInfo,
     CharacterInfo.CharacterStatHistory Deaths,
     CharacterInfo.CharacterStatHistory Kills,
-    CharacterInfo.CharacterStatHistory Time
+    CharacterInfo.CharacterStatHistory Time,
+    CharacterInfo.OutfitMemberExtended OutfitMember
 )
 {
     public record CharacterTimes
@@ -54,5 +55,15 @@ public record CharacterInfo
     (
         uint AllTime,
         Dictionary<string, uint> Month
+    );
+
+    public record OutfitMemberExtended
+    (
+        ulong OutfitID,
+        DateTimeOffset MemberSince,
+        string MemberRank,
+        int MemberRankOrdinal,
+        string Name,
+        string Alias
     );
 }

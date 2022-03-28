@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using Remora.Commands.Results;
+using Remora.Discord.API.Abstractions.Results;
+using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Discord.Commands.Services;
+using Remora.Rest.Results;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,6 +61,9 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
             ContextError ce => ce.ToString(),
             RoleManipulationError rme => "Failed to modify roles: " + rme.Message,
             GenericCommandError or ConditionNotSatisfiedError or InvalidOperationError => actualError.Message,
+            RestResultError<RestError> rre when rre.Error.Code is DiscordError.MissingAccess => "I am not allowed to view this channel.",
+            RestResultError<RestError> rre when rre.Error.Code is DiscordError.MissingPermission => "I do not have permission to do that.",
+            RestResultError<RestError> rre when rre.Error.Code is DiscordError.OwnerOnly => "Only the owner can do that!",
             _ => LogUnknownError()
         };
 

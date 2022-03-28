@@ -60,7 +60,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     {
         List<ulong> outfitIDList = outfitIDs.ToList();
         if (outfitIDList.Count == 0)
-            return default;
+            return new List<Outfit>();
 
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("outfit")

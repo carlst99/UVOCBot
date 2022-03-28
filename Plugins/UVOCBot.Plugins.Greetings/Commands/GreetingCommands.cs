@@ -315,7 +315,7 @@ public class GreetingCommands : CommandGroup
     }
 
     [Command("test")]
-    [Description("Tests the welcome message feature with your current setup.")]
+    [Description("Tests the greeting feature with your current setup.")]
     public async Task<IResult> TestCommand()
     {
         if (_context is not InteractionContext ictx)

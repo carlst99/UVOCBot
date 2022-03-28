@@ -32,28 +32,36 @@ public class CachingCensusApiService : CensusApiService
         _cache = cache;
     }
 
-    /// <inheritdoc />
-    /// <summary>
-    /// This query is cached.
-    /// </summary>
-    public override async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
+    public override async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit outfit))
-            return Result<Outfit?>.FromSuccess(outfit);
+        List<Outfit> outfits = new();
+        List<ulong> toQuery = new();
 
-        Result<Outfit?> getOutfit = await base.GetOutfitAsync(id, ct).ConfigureAwait(false);
+        foreach (ulong id in outfitIDs)
+        {
+            if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit outfit))
+                outfits.Add(outfit);
+            else
+                toQuery.Add(id);
+        }
 
-        if (getOutfit.IsDefined())
+        Result<List<Outfit>> outfitsResult = await base.GetOutfitsAsync(toQuery, ct);
+        if (!outfitsResult.IsDefined())
+            return outfitsResult;
+
+        foreach (Outfit retrieved in outfitsResult.Entity)
         {
             _cache.Set
             (
-                CacheKeyHelpers.GetOutfitKey(getOutfit.Entity),
-                getOutfit.Entity,
+                CacheKeyHelpers.GetOutfitKey(retrieved),
+                retrieved,
                 CacheEntryHelpers.OutfitOptions
             );
+
+            outfits.Add(retrieved);
         }
 
-        return getOutfit;
+        return Result<List<Outfit>>.FromSuccess(outfits);
     }
 
     /// <inheritdoc />

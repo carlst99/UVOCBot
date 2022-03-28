@@ -53,18 +53,28 @@ public class CensusApiService : ICensusApiService, IDisposable
             .OnCollection("outfit")
             .Where("alias_lower", SearchModifier.Equals, tag.ToLower());
 
-        return await GetAsync<Outfit?>(query, ct).ConfigureAwait(false);
+        return await GetAsync<Outfit>(query, ct).ConfigureAwait(false);
     }
 
-    /// <inheritdoc />
-    /// <remarks>This query is cached.</remarks>
-    public virtual async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
+    public virtual async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
     {
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("outfit")
-            .Where("outfit_id", SearchModifier.Equals, id);
+            .WhereAll("outfit_id", SearchModifier.Equals, outfitIDs);
 
-        return await GetAsync<Outfit?>(query, ct).ConfigureAwait(false);
+        return await GetListAsync<Outfit>(query, ct);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
+    {
+        Result<List<Outfit>> outfitsResult = await GetOutfitsAsync(new[] { id }, ct);
+        if (!outfitsResult.IsSuccess)
+            return Result<Outfit?>.FromError(outfitsResult);
+
+        return outfitsResult.Entity.Count == 0
+            ? default
+            : outfitsResult.Entity[0];
     }
 
     /// <inheritdoc/>

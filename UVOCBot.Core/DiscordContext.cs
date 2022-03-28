@@ -27,31 +27,39 @@ public sealed class DiscordContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        ValueComparer<List<ulong>> idListComparer = new(
+        ValueComparer<List<ulong>> idListComparer = new
+        (
             (l1, l2) => l1 != null && l2 != null && l1.SequenceEqual(l2),
             l => l.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-            l => l);
+            l => l
+        );
 
         modelBuilder.Entity<GuildWelcomeMessage>()
                     .Property(p => p.AlternateRoles)
-                    .HasConversion(
+                    .HasConversion
+                    (
                         v => IdListToBytes(v),
                         v => BytesToIdList(v),
-                        idListComparer);
+                        idListComparer
+                    );
 
         modelBuilder.Entity<GuildWelcomeMessage>()
                     .Property(p => p.DefaultRoles)
-                    .HasConversion(
+                    .HasConversion
+                    (
                         v => IdListToBytes(v),
                         v => BytesToIdList(v),
-                        idListComparer);
+                        idListComparer
+                    );
 
         modelBuilder.Entity<PlanetsideSettings>()
                     .Property(p => p.TrackedOutfits)
-                    .HasConversion(
+                    .HasConversion
+                    (
                         v => IdListToBytes(v),
                         v => BytesToIdList(v),
-                        idListComparer);
+                        idListComparer
+                    );
     }
 
     private static byte[] IdListToBytes(List<ulong> idList)

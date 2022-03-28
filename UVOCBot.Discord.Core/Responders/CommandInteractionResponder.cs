@@ -212,7 +212,7 @@ public class CommandInteractionResponder : IResponder<IInteractionCreate>
             .FindCustomAttributeOnLocalTree<DeferredAttribute>();
 
         var shouldSendResponse = !(suppressResponseAttribute?.Suppress ?? _options.SuppressAutomaticResponses);
-        if (shouldSendResponse || deferredResponseAttribute is not null)
+        if (shouldSendResponse || (deferredResponseAttribute?.IsDeferred ?? false))
         {
             var interactionResponse = await interactionResponseService.CreateDeferredMessageResponse(ct);
             if (!interactionResponse.IsSuccess)

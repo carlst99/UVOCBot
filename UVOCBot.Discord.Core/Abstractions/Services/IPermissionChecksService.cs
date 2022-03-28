@@ -16,7 +16,7 @@ public interface IPermissionChecksService
     /// <param name="roleIds">The roles to be manipulated.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A result that may or may not have been successful.</returns>
-    Task<IResult> CanManipulateRoles(Snowflake guildId, IEnumerable<ulong> roleIds, CancellationToken ct = default);
+    Task<Result> CanManipulateRoles(Snowflake guildId, IEnumerable<ulong> roleIds, CancellationToken ct = default);
 
     /// <summary>
     /// Gets the permission set of a user in a given channel.

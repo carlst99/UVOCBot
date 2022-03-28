@@ -2,11 +2,13 @@
 using DbgCensus.EventStream.EventHandlers.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Rest.Core;
 using Remora.Results;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -23,6 +25,10 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
 
 internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityControl>
 {
+    private static readonly Uri AuraxiumImageUri = GetResourceImageUri("auraxium_icon");
+    private static readonly Uri SynthiumImageUri = GetResourceImageUri("synthium_icon");
+    private static readonly Uri PolystellariteImageUri = GetResourceImageUri("polystellarite_icon");
+
     private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
     private readonly IMemoryCache _cache;
     private readonly ICensusApiService _censusApi;
@@ -59,6 +65,9 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         );
     }
 
+    private static Uri GetResourceImageUri(string resourceName)
+        => CDN.GetApplicationAssetUrl(DiscordConstants.ApplicationId, resourceName, CDNImageFormat.WebP, 128).Entity;
+
     private async Task OnRegionResolved(IFacilityControl censusEvent, MapRegion region, CancellationToken ct)
     {
         UpdateMapCache(censusEvent, region);
@@ -93,18 +102,36 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         CancellationToken ct = default
     )
     {
+        Uri? thumbnailUri = facility.FacilityTypeID switch
+        {
+            FacilityType.SmallOutpost => AuraxiumImageUri,
+            FacilityType.ConstructionOutpost => SynthiumImageUri,
+            FacilityType.LargeOutpost => SynthiumImageUri,
+            FacilityType.AmpStation => PolystellariteImageUri,
+            FacilityType.BioLab => PolystellariteImageUri,
+            FacilityType.InterlinkFacility => PolystellariteImageUri,
+            FacilityType.TechPlant => PolystellariteImageUri,
+            FacilityType.Default => default,
+            FacilityType.RelicOutpost => default,
+            FacilityType.Warpgate => default,
+            _ => default
+        };
+
+        Embed embed = new
+        (
+            "Base Captured",
+            Description: $"{ Formatter.Bold($"[{ outfit.Alias }]") } has captured { Formatter.Italic(facility.FacilityName) }",
+            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
+            Thumbnail: thumbnailUri is null
+                ? default(Optional<IEmbedThumbnail>)
+                : new EmbedThumbnail(thumbnailUri.ToString())
+        );
+
         foreach (PlanetsideSettings pSettings in planetSideSettings)
         {
-            Embed embed = new
-            (
-                "Base Captured",
-                Description: $"{ Formatter.Bold($"[{ outfit.Alias }]") } has captured { Formatter.Italic(facility.FacilityName) }",
-                Colour: DiscordConstants.DEFAULT_EMBED_COLOUR
-            );
-
             await _channelApi.CreateMessageAsync
             (
-                new Snowflake(pSettings.BaseCaptureChannelId!.Value, Remora.Discord.API.Constants.DiscordEpoch),
+                new Snowflake(pSettings.BaseCaptureChannelId!.Value, Constants.DiscordEpoch),
                 embeds: new IEmbed[] { embed },
                 ct: ct
             ).ConfigureAwait(false);

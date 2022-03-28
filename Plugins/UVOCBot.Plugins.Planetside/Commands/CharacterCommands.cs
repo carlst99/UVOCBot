@@ -216,6 +216,8 @@ public class CharacterCommands : CommandGroup
 
     private async Task<CharacterInfo?> GetCharacter(string name)
     {
+        // https://census.daybreakgames.com/s:{{ID}}/get/ps2/character?name.first_lower=falconeye36&c:lang=en&c:hide=certs,daily_ribbon,head_id,profile_id&c:resolve=online_status,world,outfit_member_extended(member_since,member_rank,member_rank_ordinal,outfit_id,name,alias)&c:join=experience_rank^on:battle_rank.value^to:rank^terms:vs.title.en=!A.S.P.%20Operative^inject_at:icons^show:vs_image_path'nc_image_path'tr_image_path,title^inject_at:title_info,characters_stat_history^terms:stat_name=kills^show:all_time'month.m01^inject_at:kills,characters_stat_history^terms:stat_name=deaths^show:all_time'month.m01^inject_at:deaths,characters_stat_history^terms:stat_name=time^show:month.m01^inject_at:time
+
         IQueryBuilder characterQuery = _queryService.CreateQuery()
             .OnCollection("character")
             .WithLanguage(CensusLanguage.English)

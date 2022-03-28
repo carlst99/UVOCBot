@@ -28,32 +28,29 @@ public class PermissionChecksService : IPermissionChecksService
     }
 
     /// <inheritdoc />
-    public async Task<IResult> CanManipulateRoles(Snowflake guildID, IEnumerable<ulong> roleIds, CancellationToken ct = default)
+    public async Task<Result> CanManipulateRoles(Snowflake guildID, IEnumerable<ulong> roleIds, CancellationToken ct = default)
     {
+        List<ulong> roleIDList = roleIds.ToList();
+        if (roleIDList.Count == 0)
+            return Result.FromSuccess();
+
         Result<IReadOnlyList<IRole>> getGuildRoles = await _guildApi.GetGuildRolesAsync(guildID, ct).ConfigureAwait(false);
         if (!getGuildRoles.IsSuccess)
-            return getGuildRoles;
+            return Result.FromError(getGuildRoles);
 
         Result<IGuildMember> getCurrentMember = await _guildApi.GetGuildMemberAsync(guildID, DiscordConstants.UserId, ct).ConfigureAwait(false);
         if (!getCurrentMember.IsSuccess)
-            return getCurrentMember;
+            return Result.FromError(getCurrentMember);
 
         // Enumerate roles in order from highest to lowest ranked, so that logically the first role in the current member's role list is its highest
-        IRole? highestRole = null;
-        foreach (IRole role in getGuildRoles.Entity.OrderByDescending(r => r.Position))
-        {
-            if (getCurrentMember.Entity.Roles.Contains(role.ID))
-            {
-                highestRole = role;
-                break;
-            }
-        }
+        IRole? highestRole = getGuildRoles.Entity.OrderByDescending(r => r.Position)
+            .FirstOrDefault(role => getCurrentMember.Entity.Roles.Contains(role.ID));
 
         if (highestRole is null)
             return Result.FromError(new RoleManipulationError("I require a role to be able to assign roles to others."));
 
         // Check that each role is assignable by us
-        foreach (ulong roleId in roleIds)
+        foreach (ulong roleId in roleIDList)
         {
             if (getGuildRoles.Entity.All(r => r.ID.Value != roleId))
                 return Result.FromError(new RoleManipulationError("A given role does not exist."));
@@ -61,8 +58,10 @@ public class PermissionChecksService : IPermissionChecksService
             IRole role = getGuildRoles.Entity.First(r => r.ID.Value == roleId);
             if (role.Position > highestRole.Position)
             {
-                return Result.FromError(
-                    new RoleManipulationError($"Cannot assign the { Formatter.RoleMention(role.ID) } role, as it is positioned above my own highest role."));
+                return Result.FromError
+                (
+                    new RoleManipulationError($"Cannot assign the { Formatter.RoleMention(role.ID) } role, as it is positioned above my own highest role.")
+                );
             }
         }
 

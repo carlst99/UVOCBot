@@ -44,18 +44,18 @@ public sealed class MapRegionResolverService : IMapRegionResolverService
 
         await foreach ((IFacilityControl cEvent, Func<MapRegion, CancellationToken, Task> callback) in _resolveQueue.Reader.ReadAllAsync(ct))
         {
+            Result<MapRegion?> regionResult = await _censusApiService.GetFacilityRegionAsync(cEvent.FacilityID, ct);
+            if (!regionResult.IsDefined(out MapRegion? region))
+            {
+                if (regionResult.Error is ExceptionError { Exception: BrokenCircuitException })
+                    await Task.Delay(TimeSpan.FromSeconds(15), ct);
+
+                await _resolveQueue.Writer.WriteAsync((cEvent, callback), ct);
+                continue;
+            }
+
             try
             {
-                Result<MapRegion?> regionResult = await _censusApiService.GetFacilityRegionAsync(cEvent.FacilityID, ct);
-                if (!regionResult.IsDefined(out MapRegion? region))
-                {
-                    if (regionResult.Error is ExceptionError {Exception: BrokenCircuitException})
-                        await Task.Delay(TimeSpan.FromSeconds(15), ct);
-
-                    await _resolveQueue.Writer.WriteAsync((cEvent, callback), ct);
-                    continue;
-                }
-
                 DateTimeOffset startCallbackTime = DateTimeOffset.UtcNow;
                 await callback(region, ct);
                 TimeSpan executionTime = DateTimeOffset.UtcNow - startCallbackTime;
@@ -66,7 +66,7 @@ public sealed class MapRegionResolverService : IMapRegionResolverService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected failure when resolving map region");
+                _logger.LogError(ex, "Unexpected failure when invoking map region resolved callback");
                 await Task.Delay(100, ct);
             }
         }

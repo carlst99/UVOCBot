@@ -58,9 +58,13 @@ public class CensusApiService : ICensusApiService, IDisposable
 
     public virtual async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
     {
+        List<ulong> outfitIDList = outfitIDs.ToList();
+        if (outfitIDList.Count == 0)
+            return default;
+
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("outfit")
-            .WhereAll("outfit_id", SearchModifier.Equals, outfitIDs);
+            .WhereAll("outfit_id", SearchModifier.Equals, outfitIDList);
 
         return await GetListAsync<Outfit>(query, ct);
     }

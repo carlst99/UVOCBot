@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using UVOCBot.Abstractions.Services;
 using UVOCBot.Commands;
 using UVOCBot.Config;
 using UVOCBot.Core;
@@ -29,7 +30,6 @@ using UVOCBot.Discord.Core.Extensions;
 using UVOCBot.Plugins;
 using UVOCBot.Responders;
 using UVOCBot.Services;
-using UVOCBot.Services.Abstractions;
 using UVOCBot.Workers;
 
 namespace UVOCBot;

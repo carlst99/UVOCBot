@@ -8,13 +8,14 @@ using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Abstractions.Services;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Model;
-using UVOCBot.Services.Abstractions;
 
 namespace UVOCBot.Services;
 
@@ -22,26 +23,32 @@ public class AdminLogService : IAdminLogService
 {
     private readonly DiscordContext _dbContext;
     private readonly IDiscordRestChannelAPI _channelApi;
+    private readonly IDiscordRestGuildAPI _guildApi;
 
-    public AdminLogService(DiscordContext dbContext, IDiscordRestChannelAPI channelApi)
+    public AdminLogService
+    (
+        DiscordContext dbContext,
+        IDiscordRestChannelAPI channelApi,
+        IDiscordRestGuildAPI guildApi
+    )
     {
         _dbContext = dbContext;
         _channelApi = channelApi;
+        _guildApi = guildApi;
     }
 
     public async Task<Result> LogMemberJoin(IGuildMemberAdd member, CancellationToken ct = default)
     {
-        if (!member.User.HasValue || member.User.Value is null)
+        if (!member.User.IsDefined(out IUser? user))
             return Result.FromSuccess();
-        IUser user = member.User.Value;
 
-        Result<Snowflake> canLogToChannel = await CheckCanLog(member.GuildID, AdminLogTypes.MemberJoin, ct).ConfigureAwait(false);
+        Result<Snowflake> canLogToChannel = await CheckCanLog(member.GuildID, AdminLogTypes.MemberJoin, ct);
         if (!canLogToChannel.IsSuccess)
             return Result.FromSuccess();
 
         Embed e = new()
         {
-            Title = Formatter.Bold("A member has joined: ") + user.Username,
+            Title = Formatter.Bold("A member has joined: ") + Formatter.UserMention(user),
             Colour = Color.Green,
             Timestamp = DateTimeOffset.UtcNow
         };
@@ -57,15 +64,50 @@ public class AdminLogService : IAdminLogService
 
     public async Task<Result> LogMemberLeave(IGuildMemberRemove user, CancellationToken ct = default)
     {
-        Result<Snowflake> canLogToChannel = await CheckCanLog(user.GuildID, AdminLogTypes.MemberLeave, ct).ConfigureAwait(false);
+        Result<Snowflake> canLogToChannel = await CheckCanLog(user.GuildID, AdminLogTypes.MemberLeave, ct);
         if (!canLogToChannel.IsSuccess)
             return Result.FromSuccess();
 
+        List<IEmbedField> embedFields = new();
+
+        EmbedField infoField = new
+        (
+            "Information",
+            Formatter.UserMention(user.User)
+            + $"\nUsername: {user.User.Username}#{user.User.Discriminator}"
+            + $"\nID: {user.User.ID}"
+        );
+
+        // This will pull from cache. If not in cache, we might be very lucky and get a result from the API
+        Result<IGuildMember> memberResult = await _guildApi.GetGuildMemberAsync(user.GuildID, user.User.ID, ct);
+        if (memberResult.IsDefined(out IGuildMember? member))
+        {
+            infoField = infoField with { Value = infoField.Value + $"\nLast Nickname: {member.Nickname}" };
+
+            EmbedField joinedAtField = new
+            (
+                "Joined At",
+                Formatter.Timestamp(member.JoinedAt, TimestampStyle.LongDateTime)
+                + $"\n({Formatter.Timestamp(member.JoinedAt, TimestampStyle.RelativeTime)})"
+            );
+            embedFields.Add(joinedAtField);
+
+            EmbedField rolesField = new
+            (
+                "Roles",
+                string.Join(", ", member.Roles.Select(Formatter.RoleMention))
+            );
+            embedFields.Add(rolesField);
+        }
+
+        embedFields.Add(infoField);
+
         Embed e = new()
         {
-            Title = Formatter.Bold("A member has left: ") + user.User.Username,
+            Title = user.User.Username + " has left",
             Colour = Color.Red,
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTimeOffset.UtcNow,
+            Fields = embedFields
         };
 
         Result<Uri> userAvatar = CDN.GetUserAvatarUrl(user.User);

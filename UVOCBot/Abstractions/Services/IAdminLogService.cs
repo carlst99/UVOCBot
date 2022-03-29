@@ -3,7 +3,7 @@ using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UVOCBot.Services.Abstractions;
+namespace UVOCBot.Abstractions.Services;
 
 public interface IAdminLogService
 {

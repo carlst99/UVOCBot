@@ -4,7 +4,7 @@ using Remora.Discord.Gateway.Responders;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Services.Abstractions;
+using UVOCBot.Abstractions.Services;
 
 namespace UVOCBot.Responders;
 

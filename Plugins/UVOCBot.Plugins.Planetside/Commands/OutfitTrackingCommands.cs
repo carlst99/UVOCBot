@@ -5,7 +5,9 @@ using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Results;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
@@ -20,6 +22,7 @@ using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 namespace UVOCBot.Plugins.Planetside.Commands;
 
 [Group("outfit")]
+[RequireContext(ChannelContext.Guild)]
 public class OutfitTrackingCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -44,50 +47,53 @@ public class OutfitTrackingCommands : CommandGroup
 
     [Command("track")]
     [Description("Tracks an outfit's base captures.")]
-    [RequireContext(ChannelContext.Guild)]
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     [Deferred]
-    public async Task<IResult> TrackOutfitCommandAsync(string outfitTag)
+    public async Task<Result> TrackOutfitCommandAsync(string outfitTag)
     {
-        Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(outfitTag, CancellationToken).ConfigureAwait(false);
-
+        Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(outfitTag, CancellationToken);
         if (!getOutfitResult.IsSuccess)
-            return await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
+            return Result.FromError(getOutfitResult);
+
         if (getOutfitResult.Entity is null)
-            return await _feedbackService.SendContextualErrorAsync("That outfit doesn't exist.", ct: CancellationToken).ConfigureAwait(false);
+            return await _feedbackService.SendContextualErrorAsync("That outfit doesn't exist.", ct: CancellationToken);
 
         Outfit outfit = getOutfitResult.Entity;
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken);
 
         if (!settings.TrackedOutfits.Contains(outfit.OutfitId))
             settings.TrackedOutfits.Add(outfit.OutfitId);
 
         _dbContext.Update(settings);
-        await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+        await _dbContext.SaveChangesAsync(CancellationToken);
 
-        return await _feedbackService.SendContextualSuccessAsync(
+        return await _feedbackService.SendContextualSuccessAsync
+        (
             $"Now tracking [{ outfit.Alias }] { outfit.Name }",
-            ct: CancellationToken).ConfigureAwait(false);
+            ct: CancellationToken
+        );
     }
 
     [Command("untrack")]
     [Description("Removes a tracked outfit.")]
-    [RequireContext(ChannelContext.Guild)]
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     [Deferred]
-    public async Task<IResult> UntrackOutfitCommandAsync(
+    public async Task<Result> UntrackOutfitCommandAsync(
         [Description("The 1-4 letter tag of the outfit to track.")] string outfitTag)
     {
         PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
 
         Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(outfitTag, CancellationToken).ConfigureAwait(false);
         if (!getOutfitResult.IsSuccess)
-            return await _feedbackService.SendContextualErrorAsync(DiscordConstants.GENERIC_ERROR_MESSAGE, ct: CancellationToken).ConfigureAwait(false);
+            return Result.FromError(getOutfitResult);
+
+        if (getOutfitResult.Entity is null)
+            return await _feedbackService.SendContextualErrorAsync("That outfit doesn't exist.", ct: CancellationToken);
 
         /* We're not worrying about the outfit not existing here, as it isn't a huge concern to leave them sitting around
          * if the in-game outfit has been deleted.
          */
-        if (getOutfitResult.Entity is not null && settings.TrackedOutfits.Contains(getOutfitResult.Entity.OutfitId))
+        if (settings.TrackedOutfits.Contains(getOutfitResult.Entity.OutfitId))
             settings.TrackedOutfits.Remove(getOutfitResult.Entity.OutfitId);
 
         _dbContext.Update(settings);
@@ -96,9 +102,37 @@ public class OutfitTrackingCommands : CommandGroup
         return await _feedbackService.SendContextualSuccessAsync("That outfit is no longer being tracked.", ct: CancellationToken).ConfigureAwait(false);
     }
 
+    [Command("list-tracked")]
+    [Description("Lists the outfits that are being tracked.")]
+    [Ephemeral]
+    public async Task<Result> ListTrackedOutfitsCommandAsync()
+    {
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken);
+
+        Result<List<Outfit>> outfitsResult = await _censusApi.GetOutfitsAsync(settings.TrackedOutfits, CancellationToken);
+        if (!outfitsResult.IsDefined(out List<Outfit>? outfits))
+            return Result.FromError(outfitsResult);
+
+        StringBuilder outfitListBuilder = new StringBuilder()
+            .AppendLine("Currently tracked outfits:")
+            .AppendLine();
+
+        foreach (Outfit outfit in outfits)
+        {
+            outfitListBuilder.Append(Formatter.Bold('[' + outfit.Alias + ']'))
+                .Append(' ')
+                .AppendLine(outfit.Name);
+        }
+
+        return await _feedbackService.SendContextualInfoAsync
+        (
+            outfitListBuilder.ToString(),
+            ct: CancellationToken
+        );
+    }
+
     [Command("base-capture-channel")]
     [Description("Sets the channel to post base capture notifications in for any tracked outfits.")]
-    [RequireContext(ChannelContext.Guild)]
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> SetBaseCaptureChannelCommandAsync
     (
@@ -114,9 +148,11 @@ public class OutfitTrackingCommands : CommandGroup
         {
             if (channel.Type != ChannelType.GuildText)
             {
-                return await _feedbackService.SendContextualErrorAsync(
+                return await _feedbackService.SendContextualErrorAsync
+                (
                     Formatter.ChannelMention(channel) + " must be a text channel.",
-                    ct: CancellationToken).ConfigureAwait(false);
+                    ct: CancellationToken
+                );
             }
 
             Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel(

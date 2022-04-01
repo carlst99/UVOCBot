@@ -60,7 +60,7 @@ public class CensusStateWorker : BackgroundService
         {
             // Assume this to be caching
             foreach (ValidWorldDefinition world in ValidWorlds)
-                await _populationService.GetWorldPopulationAsync(world, ct);
+                await _populationService.GetWorldPopulationAsync(world, ct, true);
 
             await Task.Delay(popUpdateFrequency.Value, ct);
         }

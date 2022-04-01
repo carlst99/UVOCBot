@@ -9,4 +9,10 @@ namespace UVOCBot.Discord.Core.Commands.Attributes;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class DeferredAttribute : Attribute
 {
+    public bool IsDeferred { get; }
+
+    public DeferredAttribute(bool isDeferred = true)
+    {
+        IsDeferred = isDeferred;
+    }
 }

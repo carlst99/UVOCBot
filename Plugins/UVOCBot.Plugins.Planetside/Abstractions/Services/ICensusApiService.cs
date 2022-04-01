@@ -23,6 +23,14 @@ public interface ICensusApiService
     Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default);
 
     /// <summary>
+    /// Gets a list of outfits.
+    /// </summary>
+    /// <param name="outfitIDs">The outfits to query.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation, and containing the outfit list if successful.</returns>
+    Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default);
+
+    /// <summary>
     /// Gets an outfit.
     /// </summary>
     /// <param name="id">The ID of the outfit.</param>

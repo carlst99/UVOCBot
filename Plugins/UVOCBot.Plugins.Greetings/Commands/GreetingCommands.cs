@@ -17,6 +17,7 @@ using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Greetings.Abstractions.Services;
@@ -28,6 +29,7 @@ namespace UVOCBot.Plugins.Greetings.Commands;
 [Description("Commands that allow the greetings feature to be setup")]
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
+[Deferred]
 public class GreetingCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -180,7 +182,7 @@ public class GreetingCommands : CommandGroup
     [RequireGuildPermission(DiscordPermission.ManageRoles)]
     public async Task<IResult> DefaultRolesCommand
     (
-        [Description("The roles to apply. Leave empty to apply no roles.")] string? roles
+        [Description("The roles to apply. Leave empty to apply no roles.")] string? roles = null
     )
     {
         GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
@@ -189,12 +191,13 @@ public class GreetingCommands : CommandGroup
         if (string.IsNullOrEmpty(roles))
         {
             welcomeMessage.DefaultRoles.Clear();
-            replyResult = await _feedbackService.SendContextualSuccessAsync("No roles will be assigned by default.", ct: CancellationToken).ConfigureAwait(false);
+            replyResult = await _feedbackService.SendContextualSuccessAsync("No roles will be assigned by default.", ct: CancellationToken);
         }
         else
         {
             List<ulong> roleIds = ParseRoles(roles).ToList();
-            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
+
+            Result canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds);
             if (!canManipulateRoles.IsSuccess)
                 return canManipulateRoles;
 
@@ -202,9 +205,10 @@ public class GreetingCommands : CommandGroup
 
             replyResult = await _feedbackService.SendContextualSuccessAsync
             (
-                "The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(r => Formatter.RoleMention(r))),
+                "The following roles will be assigned when a new member requests alternate roles: "
+                    + string.Join(' ', roleIds.Select(Formatter.RoleMention)),
                 ct: CancellationToken
-            ).ConfigureAwait(false);
+            );
         }
 
         _dbContext.Update(welcomeMessage);
@@ -310,9 +314,8 @@ public class GreetingCommands : CommandGroup
         return await _feedbackService.SendContextualSuccessAsync("The greeting message has been successfully updated!", ct: CancellationToken).ConfigureAwait(false);
     }
 
-#if DEBUG
     [Command("test")]
-    [Description("Tests the welcome message feature.")]
+    [Description("Tests the greeting feature with your current setup.")]
     public async Task<IResult> TestCommand()
     {
         if (_context is not InteractionContext ictx)
@@ -324,7 +327,6 @@ public class GreetingCommands : CommandGroup
             ? greetingResult
             : await _feedbackService.SendContextualSuccessAsync("Greeting sent.", ct: CancellationToken).ConfigureAwait(false);
     }
-#endif
 
     private static List<ulong> ParseRoles(string roles)
     {

@@ -1,5 +1,14 @@
 # Changelog
 
+## Release v1.3.0
+
+- Added a basic character info command - `/character`.
+- Added more info to the `GuildMemberLeave` admin log.
+- Added a configuration option to disable twitter feeds.
+- Added the `outfit list-tracked` command, to view the outfits that are being tracked by the guild.
+- Fixed occasional failures to respond when running the population command.
+- Fixed the formatting of continent status embeds on mobile.
+
 ## Release v1.2.2
 
 - Improved the manner in which map region data is retrieved. One should see less internal errors now.

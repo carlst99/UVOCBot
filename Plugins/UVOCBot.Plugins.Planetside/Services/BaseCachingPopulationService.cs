@@ -20,9 +20,9 @@ public abstract class BaseCachingPopulationService : IPopulationService
     }
 
     /// <inheritdoc />
-    public async Task<Result<IPopulation>> GetWorldPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default)
+    public async Task<Result<IPopulation>> GetWorldPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default, bool skipCacheRetrieval = false)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetPopulationKey((WorldDefinition)world), out IPopulation pop))
+        if (!skipCacheRetrieval && _cache.TryGetValue(CacheKeyHelpers.GetPopulationKey((WorldDefinition)world), out IPopulation pop))
             return Result<IPopulation>.FromSuccess(pop);
 
         Result<IPopulation> popResult = await QueryPopulationAsync(world, ct).ConfigureAwait(false);

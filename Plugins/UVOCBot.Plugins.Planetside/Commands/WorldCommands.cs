@@ -208,6 +208,7 @@ public class WorldCommands : CommandGroup
         }
 
         StringBuilder popBarBuilder = new(1300); // "purple_square" x 9 + some space for formatting
+        popBarBuilder.Append("\\> "); // Prevents strange formatting on mobile
         ConstructPopBar(ncPercent, "blue_square", popBarBuilder);
         ConstructPopBar(trPercent, "red_square", popBarBuilder);
         ConstructPopBar(vsPercent, "purple_square", popBarBuilder);

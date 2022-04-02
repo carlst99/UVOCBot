@@ -20,7 +20,6 @@ namespace UVOCBot.Commands;
 
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.MoveMembers)]
-[Deferred]
 public class MovementCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -44,6 +43,7 @@ public class MovementCommands : CommandGroup
 
     [Command("move")]
     [Description("Moves members from one voice channel to another")]
+    [Deferred]
     public async Task<IResult> MoveCommandAsync
     (
         [Description("The voice channel to move people to")]

@@ -31,12 +31,14 @@ public class OutfitTrackingCommands : CommandGroup
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly FeedbackService _feedbackService;
 
-    public OutfitTrackingCommands(
+    public OutfitTrackingCommands
+    (
         ICommandContext context,
         DiscordContext dbContext,
         ICensusApiService censusApi,
         IPermissionChecksService permissionChecksService,
-        FeedbackService feedbackService)
+        FeedbackService feedbackService
+    )
     {
         _context = context;
         _dbContext = dbContext;

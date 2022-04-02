@@ -201,6 +201,7 @@ public static class Program
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
+            .Destructure.ByTransforming<ExceptionError>(x => x.Exception)
             .Enrich.FromLogContext()
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 

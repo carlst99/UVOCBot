@@ -29,6 +29,7 @@ namespace UVOCBot.Plugins.Roles.Commands;
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageRoles)]
 [Ephemeral]
+[Deferred]
 public class RoleMenuCommands : CommandGroup
 {
     private readonly ICommandContext _context;
@@ -67,9 +68,6 @@ public class RoleMenuCommands : CommandGroup
         [Description("The channel to post the role menu in.")][ChannelTypes(ChannelType.GuildText)] IChannel channel
     )
     {
-        if (_context is not InteractionContext)
-            return await _feedbackService.SendContextualErrorAsync("This command must be executed as a slash command.", ct: CancellationToken);
-
         Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel
         (
             channel.ID,
@@ -116,12 +114,18 @@ public class RoleMenuCommands : CommandGroup
         if (addedCount < 1)
             return new GenericCommandError();
 
-        return await EditRoleMenuCommandAsync(messageID);
+        return await _feedbackService.SendContextualSuccessAsync
+        (
+            $"A placeholder rolemenu has been created! Please run the {Formatter.InlineQuote("/rolemenu edit")}"
+            + $"command, with the {Formatter.InlineQuote("messageID")} set to {Formatter.InlineQuote(messageID.Value.ToString())}",
+            ct: CancellationToken
+        );
     }
 
     [Command("edit")]
     [Description("Edits a role menu.")]
     [SuppressInteractionResponse(true)]
+    [Deferred(false)]
     public async Task<Result> EditRoleMenuCommandAsync
     (
         [Description("The ID of the role menu message.")] Snowflake messageID

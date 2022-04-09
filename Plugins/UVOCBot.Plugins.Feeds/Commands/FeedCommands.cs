@@ -22,6 +22,8 @@ using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
+using UVOCBot.Plugins.Feeds.Objects;
+using Feed = UVOCBot.Plugins.Feeds.Objects.Feed;
 #if DEBUG
 using CodeHollow.FeedReader;
 #endif

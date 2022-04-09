@@ -11,6 +11,7 @@ using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Components;
 using UVOCBot.Discord.Core.Errors;
+using UVOCBot.Plugins.Feeds.Objects;
 
 namespace UVOCBot.Plugins.Feeds.Responders;
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace UVOCBot.Plugins.Feeds;
+namespace UVOCBot.Plugins.Feeds.Objects;
 
 /// <summary>
 /// Enumerates the available feeds.

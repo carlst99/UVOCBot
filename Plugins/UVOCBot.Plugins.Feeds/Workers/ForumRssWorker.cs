@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
+using Feed = UVOCBot.Plugins.Feeds.Objects.Feed;
 
 namespace UVOCBot.Plugins.Feeds.Workers;
 

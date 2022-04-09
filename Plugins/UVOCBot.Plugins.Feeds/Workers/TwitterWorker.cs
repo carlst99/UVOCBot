@@ -15,6 +15,7 @@ using Tweetinvi.Parameters;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Core.Util;
+using UVOCBot.Plugins.Feeds.Objects;
 
 namespace UVOCBot.Plugins.Feeds.Workers;
 

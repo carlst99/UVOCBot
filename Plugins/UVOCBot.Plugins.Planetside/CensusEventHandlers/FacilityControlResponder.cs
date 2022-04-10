@@ -1,4 +1,5 @@
-﻿using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
+﻿using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
 using DbgCensus.EventStream.EventHandlers.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -25,9 +26,9 @@ namespace UVOCBot.Plugins.Planetside.CensusEventHandlers;
 
 internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityControl>
 {
-    private static readonly Uri AuraxiumImageUri = GetResourceImageUri("auraxium_icon");
-    private static readonly Uri SynthiumImageUri = GetResourceImageUri("synthium_icon");
-    private static readonly Uri PolystellariteImageUri = GetResourceImageUri("polystellarite_icon");
+    private static readonly Uri AuraxiumImageUri = GetResourceImageUri("957264037048115242");
+    private static readonly Uri SynthiumImageUri = GetResourceImageUri("957264081465786388");
+    private static readonly Uri PolystellariteImageUri = GetResourceImageUri("957264140093763604");
 
     private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
     private readonly IMemoryCache _cache;
@@ -65,8 +66,9 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         );
     }
 
-    private static Uri GetResourceImageUri(string resourceName)
-        => CDN.GetApplicationAssetUrl(DiscordConstants.ApplicationId, resourceName, CDNImageFormat.WebP, 128).Entity;
+    // Note: This is the primary UVOCBot app ID. We don't expect other apps to have the same resources.
+    private static Uri GetResourceImageUri(string assetID)
+        => CDN.GetApplicationAssetUrl(new Snowflake(747683069737041970), assetID, CDNImageFormat.PNG, 128).Entity;
 
     private async Task OnRegionResolved(IFacilityControl censusEvent, MapRegion region, CancellationToken ct)
     {
@@ -91,40 +93,36 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         if (!getOutfitResult.IsDefined(out Outfit? outfit))
             return;
 
-        await SendBaseCaptureMessages(validPSettings, outfit, region, ct).ConfigureAwait(false);
+        await SendBaseCaptureMessages(validPSettings, censusEvent, outfit, region, ct).ConfigureAwait(false);
     }
 
     private async Task SendBaseCaptureMessages
     (
         IEnumerable<PlanetsideSettings> planetSideSettings,
+        IFacilityControl facilityControlEvent,
         Outfit outfit,
         MapRegion facility,
         CancellationToken ct = default
     )
     {
-        Uri? thumbnailUri = facility.FacilityTypeID switch
-        {
-            FacilityType.SmallOutpost => AuraxiumImageUri,
-            FacilityType.ConstructionOutpost => SynthiumImageUri,
-            FacilityType.LargeOutpost => SynthiumImageUri,
-            FacilityType.AmpStation => PolystellariteImageUri,
-            FacilityType.BioLab => PolystellariteImageUri,
-            FacilityType.InterlinkFacility => PolystellariteImageUri,
-            FacilityType.TechPlant => PolystellariteImageUri,
-            FacilityType.Default => default,
-            FacilityType.RelicOutpost => default,
-            FacilityType.Warpgate => default,
-            _ => default
-        };
+        FacilityResource resourceType = FacilityTypeToBaseResource(facility.FacilityTypeID);
+        Uri? thumbnailUri = BaseResourceToImageUri(resourceType);
+
+        EmbedField resourceField = new
+        (
+            "Resources",
+            $"{facility.RewardAmount} {resourceType}"
+        );
 
         Embed embed = new
         (
             "Base Captured",
-            Description: $"{ Formatter.Bold($"[{ outfit.Alias }]") } has captured { Formatter.Italic(facility.FacilityName) }",
-            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
+            Description: $"{Formatter.Bold(outfit.Alias)} has captured {Formatter.Italic(facility.FacilityName)} from the {facilityControlEvent.OldFactionID}",
+            Colour: facilityControlEvent.NewFactionID.ToColor(),
             Thumbnail: thumbnailUri is null
-                ? default(Optional<IEmbedThumbnail>)
-                : new EmbedThumbnail(thumbnailUri.ToString())
+                ? default(Remora.Rest.Core.Optional<IEmbedThumbnail>)
+                : new EmbedThumbnail(thumbnailUri.ToString()),
+            Fields: new IEmbedField[] { resourceField }
         );
 
         foreach (PlanetsideSettings pSettings in planetSideSettings)
@@ -137,6 +135,31 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
             ).ConfigureAwait(false);
         }
     }
+
+    private static FacilityResource FacilityTypeToBaseResource(FacilityType? type)
+        => type switch
+        {
+            FacilityType.SmallOutpost => FacilityResource.Auraxium,
+            FacilityType.ConstructionOutpost => FacilityResource.Synthium,
+            FacilityType.LargeOutpost => FacilityResource.Synthium,
+            FacilityType.AmpStation => FacilityResource.Polystellarite,
+            FacilityType.BioLab => FacilityResource.Polystellarite,
+            FacilityType.InterlinkFacility => FacilityResource.Polystellarite,
+            FacilityType.TechPlant => FacilityResource.Polystellarite,
+            FacilityType.Default => FacilityResource.None,
+            FacilityType.RelicOutpost => FacilityResource.None,
+            FacilityType.Warpgate => FacilityResource.None,
+            _ => FacilityResource.None
+        };
+
+    private static Uri? BaseResourceToImageUri(FacilityResource resource)
+        => resource switch
+        {
+            FacilityResource.Auraxium => AuraxiumImageUri,
+            FacilityResource.Synthium => SynthiumImageUri,
+            FacilityResource.Polystellarite => PolystellariteImageUri,
+            _ => default
+        };
 
     private void UpdateMapCache(IFacilityControl controlEvent, MapRegion facility)
     {

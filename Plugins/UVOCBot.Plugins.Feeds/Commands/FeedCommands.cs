@@ -22,6 +22,8 @@ using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
+using UVOCBot.Plugins.Feeds.Objects;
+using Feed = UVOCBot.Plugins.Feeds.Objects.Feed;
 #if DEBUG
 using CodeHollow.FeedReader;
 #endif
@@ -140,7 +142,7 @@ public class FeedCommands : CommandGroup
         => await ListFeedsCommandAsync();
 
     [Command("toggle")]
-    [Description("Enables or disables a particular feed.")]
+    [Description("Enable or disable particular feeds.")]
     public async Task<IResult> ToggleFeedCommandAsync()
     {
         GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);

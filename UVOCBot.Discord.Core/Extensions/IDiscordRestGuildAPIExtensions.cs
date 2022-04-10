@@ -130,6 +130,13 @@ public static class IDiscordRestGuildAPIExtensions
             }
         }
 
-        return await guildApi.ModifyGuildMemberAsync(guildId, userId, roles: newRoles, ct: ct).ConfigureAwait(false);
+        return await guildApi.ModifyGuildMemberAsync
+        (
+            guildId,
+            userId,
+            roles: newRoles,
+            reason: "Updated via greeting message",
+            ct: ct
+        ).ConfigureAwait(false);
     }
 }

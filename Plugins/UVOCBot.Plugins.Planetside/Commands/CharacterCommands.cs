@@ -12,7 +12,6 @@ using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
@@ -70,15 +69,6 @@ public class CharacterCommands : CommandGroup
 
         if (character.FactionID is FactionDefinition.NSO && character.PrestigeLevel == 0)
             iconUrl = null;
-
-
-        Color color = character.FactionID switch
-        {
-            FactionDefinition.NC => Color.DodgerBlue,
-            FactionDefinition.TR => Color.DarkRed,
-            FactionDefinition.VS => Color.Purple,
-            FactionDefinition.NSO => Color.LightGray
-        };
 
         EmbedField battleRankField = new
         (
@@ -160,7 +150,7 @@ public class CharacterCommands : CommandGroup
             description,
             default,
             default,
-            color,
+            character.FactionID.ToColor(),
             new EmbedFooter("If not otherwise specified, all stats are calculated from the last month of playtime"),
             default,
             iconUrl is null ? default(Remora.Rest.Core.Optional<IEmbedThumbnail>) : new EmbedThumbnail(iconUrl),

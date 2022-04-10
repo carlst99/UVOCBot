@@ -19,6 +19,7 @@ public static class IServiceCollectionExtensions
         services.Configure<FeedsPluginOptions>(config.GetSection(nameof(FeedsPluginOptions)));
 
         services.AddTransient(TwitterClientFactory);
+        services.AddHttpClient<PatchManifestWorker>();
 
         services.AddComponentResponder<ToggleFeedComponentResponder>(FeedComponentKeys.ToggleFeed);
 
@@ -27,7 +28,8 @@ public static class IServiceCollectionExtensions
                 .Finish();
 
         services.AddHostedService<ForumRssWorker>()
-                .AddHostedService<TwitterWorker>();
+            .AddHostedService<PatchManifestWorker>()
+            .AddHostedService<TwitterWorker>();
 
         return services;
     }

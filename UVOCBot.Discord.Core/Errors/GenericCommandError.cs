@@ -13,9 +13,4 @@ public record GenericCommandError : ResultError
         : base(Message)
     {
     }
-
-    public GenericCommandError(ResultError original)
-        : base(original)
-    {
-    }
 }

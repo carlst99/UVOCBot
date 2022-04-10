@@ -30,7 +30,6 @@ using UVOCBot.Discord.Core.Extensions;
 using UVOCBot.Plugins;
 using UVOCBot.Responders;
 using UVOCBot.Services;
-using UVOCBot.Workers;
 
 namespace UVOCBot;
 
@@ -125,8 +124,8 @@ public static class Program
                 string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
                 logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
             })
-            .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
             .UseSerilog(logger)
+            .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
             .UseSystemd()
             .ConfigureServices((c, services) =>
             {
@@ -161,16 +160,13 @@ public static class Program
                 // Add Discord-related services
                 services.AddRemoraServices()
                         .AddCoreDiscordServices()
-                        .AddScoped<IAdminLogService, AdminLogService>()
-                        .Configure<CommandResponderOptions>(o => o.Prefix = "<>"); // Sets the text command prefix
+                        .AddScoped<IAdminLogService, AdminLogService>();
 
                 // Plugin registration
                 services.AddFeedsPlugin(c.Configuration)
                         .AddGreetingsPlugin()
                         .AddPlanetsidePlugin(c.Configuration)
                         .AddRolesPlugin();
-
-                services.AddHostedService<GenericWorker>();
             });
     }
 
@@ -201,6 +197,7 @@ public static class Program
             .MinimumLevel.Debug()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning)
+            .Destructure.ByTransforming<ExceptionError>(x => x.Exception)
             .Enrich.FromLogContext()
             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}");
 
@@ -240,9 +237,9 @@ public static class Program
             o =>
             {
                 o.Intents |= GatewayIntents.DirectMessages
-                     | GatewayIntents.GuildMessages
-                     | GatewayIntents.Guilds
-                     | GatewayIntents.GuildMembers;
+                             | GatewayIntents.GuildMessages
+                             | GatewayIntents.Guilds
+                             | GatewayIntents.GuildMembers;
             }
         );
 
@@ -285,13 +282,11 @@ public static class Program
             new List<Remora.Discord.API.Abstractions.Objects.IBulkApplicationCommandData>()
         );
 
-        if (!deleteResult.IsSuccess)
-        {
-            Log.Fatal("Could not get delete existing app commands: {Error}", deleteResult.Error);
-            return deleteResult;
-        }
+        if (deleteResult.IsSuccess)
+            return Result.FromSuccess();
 
-        return Result.FromSuccess();
+        Log.Fatal("Could not get delete existing app commands: {Error}", deleteResult.Error);
+        return deleteResult;
     }
 #pragma warning restore RCS1213 // Remove unused member declaration.
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## Release v1.3.1
+
+- Added the awarded resource type, and the faction a base was captured from, to base capture notifications.
+- Added a new feed for notifications about updates to the live and PTS clients.
+- Fixed the bot failing to respond when running certain commands.
+
 ## Release v1.3.0
 
 - Added a basic character info command - `/character`.

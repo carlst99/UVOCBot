@@ -142,7 +142,7 @@ public class FeedCommands : CommandGroup
         => await ListFeedsCommandAsync();
 
     [Command("toggle")]
-    [Description("Enables or disables a particular feed.")]
+    [Description("Enable or disable particular feeds.")]
     public async Task<IResult> ToggleFeedCommandAsync()
     {
         GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);

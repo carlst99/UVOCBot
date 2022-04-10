@@ -14,7 +14,8 @@ public enum Feed : ulong
     ForumPTSAnnouncement = 1 << 2,
     TwitterPlanetside = 1 << 4,
     TwitterWrel = 1 << 5,
-    TwitterRPG = 1 << 6
+    TwitterRPG = 1 << 6,
+    PatchNotifications = 1 << 7
 }
 
 public static class FeedDescriptions
@@ -26,6 +27,7 @@ public static class FeedDescriptions
         { Feed.ForumPTSAnnouncement, "📢 Forum PTS Announcements" },
         { Feed.TwitterPlanetside, "🐦 Official PlanetSide Twitter" },
         { Feed.TwitterWrel, "🐦 Wrel's Twitter" },
-        { Feed.TwitterRPG, "🐦 Rogue Planet Game's Twitter" }
+        { Feed.TwitterRPG, "🐦 Rogue Planet Game's Twitter" },
+        { Feed.PatchNotifications, "📜 Patch Notifications" }
     };
 }

@@ -87,7 +87,7 @@ public class PatchManifestWorker : BackgroundService
                 }
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(15), ct).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(5), ct).ConfigureAwait(false);
         }
     }
 

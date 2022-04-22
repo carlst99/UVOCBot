@@ -1,5 +1,10 @@
 # Changelog
 
+## Release vNext
+
+- Added the `online-friends` command.
+- Decreased the patch check interval to five minutes.
+
 ## Release v1.3.1
 
 - Added the awarded resource type, and the faction a base was captured from, to base capture notifications.

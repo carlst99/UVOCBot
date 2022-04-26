@@ -4,6 +4,7 @@
 
 - Added the `online-friends` command.
 - Base capture notifications now show any outfit members involved in the capture.
+- The `character` command now shows a character's most used weapon, rather than their 'favourite' weapon.
 - Decreased the patch check interval to five minutes.
 
 ## Release v1.3.1

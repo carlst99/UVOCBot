@@ -2,6 +2,7 @@
 using DbgCensus.EventStream.Objects.Events.Worlds;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -16,22 +17,27 @@ public class CensusStateWorker : BackgroundService
 {
     private static readonly ValidWorldDefinition[] ValidWorlds = Enum.GetValues<ValidWorldDefinition>();
 
+    private readonly ILogger<CensusStateWorker> _logger;
     private readonly IMemoryCache _cache;
     private readonly ICensusApiService _censusApi;
-    private readonly IMapRegionResolverService _mapRegionResolver;
+    private readonly IFacilityCaptureService _facilityCaptureService;
     private readonly IPopulationService _populationService;
+
+    private Task? _facilityCaptureServiceTask;
 
     public CensusStateWorker
     (
+        ILogger<CensusStateWorker> logger,
         IMemoryCache cache,
         ICensusApiService censusApi,
-        IMapRegionResolverService mapRegionResolver,
+        IFacilityCaptureService facilityCaptureService,
         IPopulationService populationService
     )
     {
+        _logger = logger;
         _cache = cache;
         _censusApi = censusApi;
-        _mapRegionResolver = mapRegionResolver;
+        _facilityCaptureService = facilityCaptureService;
         _populationService = populationService;
     }
 
@@ -40,7 +46,7 @@ public class CensusStateWorker : BackgroundService
         if (_censusApi is not Services.CachingCensusApiService)
             throw new InvalidOperationException("Expected the " + nameof(Services.CachingCensusApiService) + " to be registered with the service provider.");
 
-        _ = _mapRegionResolver.RunAsync(ct);
+        _facilityCaptureServiceTask = _facilityCaptureService.RunAsync(ct);
 
         foreach (ValidWorldDefinition world in ValidWorlds)
         {
@@ -61,6 +67,17 @@ public class CensusStateWorker : BackgroundService
             // Assume this to be caching
             foreach (ValidWorldDefinition world in ValidWorlds)
                 await _populationService.GetWorldPopulationAsync(world, ct, true);
+
+            if (_facilityCaptureServiceTask.IsCompleted)
+            {
+                if (_facilityCaptureServiceTask.Exception is not null)
+                {
+                    foreach (Exception ex in _facilityCaptureServiceTask.Exception.InnerExceptions)
+                        _logger.LogError(ex, "An exception occured in the FacilityCaptureService");
+                }
+
+                _facilityCaptureServiceTask = _facilityCaptureService.RunAsync(ct);
+            }
 
             await Task.Delay(popUpdateFrequency.Value, ct);
         }

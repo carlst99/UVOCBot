@@ -34,7 +34,7 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
     private readonly IMemoryCache _cache;
     private readonly ICensusApiService _censusApi;
     private readonly IDiscordRestChannelAPI _channelApi;
-    private readonly IMapRegionResolverService _mapRegionResolver;
+    private readonly IFacilityCaptureService _facilityCaptureService;
 
     public FacilityControlResponder
     (
@@ -42,14 +42,14 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         IMemoryCache cache,
         ICensusApiService censusApi,
         IDiscordRestChannelAPI channelApi,
-        IMapRegionResolverService mapRegionResolver
+        IFacilityCaptureService facilityCaptureService
     )
     {
         _dbContextFactory = dbContextFactory;
         _cache = cache;
         _censusApi = censusApi;
         _channelApi = channelApi;
-        _mapRegionResolver = mapRegionResolver;
+        _facilityCaptureService = facilityCaptureService;
     }
 
     public async Task HandleAsync(IFacilityControl censusEvent, CancellationToken ct = default)
@@ -58,7 +58,7 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
         if (censusEvent.OldFactionID == censusEvent.NewFactionID)
             return;
 
-        await _mapRegionResolver.EnqueueAsync
+        await _facilityCaptureService.EnqueueAsync
         (
             censusEvent,
             (r, c) => OnRegionResolved(censusEvent, r, c),
@@ -171,7 +171,7 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
             return;
 
         Map.RowModel mapRow = map.Regions.Row[index];
-        map.Regions.Row[index] = mapRow with { RowData = mapRow.RowData with { FactionID = controlEvent.NewFactionID } };
+        map.Regions.Row[index] = new Map.RowModel(RowData: mapRow.RowData with { FactionID = controlEvent.NewFactionID });
 
         _cache.Set
         (

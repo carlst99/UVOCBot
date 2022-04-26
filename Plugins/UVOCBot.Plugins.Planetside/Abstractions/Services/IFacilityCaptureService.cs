@@ -11,7 +11,7 @@ namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 /// This is required as resolving individual map regions can need batching
 /// when certain events, like a continent closing/opening, occur.
 /// </summary>
-public interface IMapRegionResolverService
+public interface IFacilityCaptureService
 {
     /// <summary>
     /// Gets a value indicating whether or not the resolver is running.

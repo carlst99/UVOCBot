@@ -11,10 +11,10 @@ using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
-/// <inheritdoc cref="IMapRegionResolverService" />
-public sealed class MapRegionResolverService : IMapRegionResolverService
+/// <inheritdoc cref="IFacilityCaptureService" />
+public sealed class FacilityCaptureService : IFacilityCaptureService
 {
-    private readonly ILogger<MapRegionResolverService> _logger;
+    private readonly ILogger<FacilityCaptureService> _logger;
     private readonly ICensusApiService _censusApiService;
     private readonly Channel<(IFacilityControl ControlEvent, Func<MapRegion, CancellationToken, Task> Callback)> _resolveQueue;
 
@@ -22,11 +22,11 @@ public sealed class MapRegionResolverService : IMapRegionResolverService
     public bool IsRunning { get; private set; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MapRegionResolverService"/> class.
+    /// Initializes a new instance of the <see cref="FacilityCaptureService"/> class.
     /// </summary>
     /// <param name="logger">The logging provider.</param>
     /// <param name="censusApiService">The Census API query service.</param>
-    public MapRegionResolverService(ILogger<MapRegionResolverService> logger, ICensusApiService censusApiService)
+    public FacilityCaptureService(ILogger<FacilityCaptureService> logger, ICensusApiService censusApiService)
     {
         _logger = logger;
         _censusApiService = censusApiService;

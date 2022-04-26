@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
@@ -88,4 +89,12 @@ public interface ICensusApiService
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation, and containing a valid <see cref="MetagameEvent"/> if successful.</returns>
     Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a collection of minimal characters.
+    /// </summary>
+    /// <param name="characterIDs">The ID of the characters to retrieve.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation, and containing the minimal character records if successful.</returns>
+    Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync(IEnumerable<ulong> characterIDs, CancellationToken ct = default);
 }

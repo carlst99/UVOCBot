@@ -12,6 +12,13 @@ public static class CacheEntryHelpers
         Size = 1
     };
 
+    public static readonly MemoryCacheEntryOptions MapOptions = new()
+    {
+        SlidingExpiration = TimeSpan.FromMinutes(15), // Expect the map state to be kept up to date by the FacilityControlResponder
+        Priority = CacheItemPriority.Normal,
+        Size = 2
+    };
+
     public static readonly MemoryCacheEntryOptions MapRegionOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7),
@@ -19,11 +26,11 @@ public static class CacheEntryHelpers
         Size = 1
     };
 
-    public static readonly MemoryCacheEntryOptions MapOptions = new()
+    public static readonly MemoryCacheEntryOptions MinimalCharacterOptions = new()
     {
-        SlidingExpiration = TimeSpan.FromMinutes(15), // Expect the map state to be kept up to date by the FacilityControlResponder
-        Priority = CacheItemPriority.Normal,
-        Size = 2
+        SlidingExpiration = TimeSpan.FromDays(1),
+        Priority = CacheItemPriority.Low,
+        Size = 1
     };
 
     public static readonly MemoryCacheEntryOptions PopulationOptions = new()

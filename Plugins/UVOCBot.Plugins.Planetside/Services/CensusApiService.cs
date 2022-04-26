@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
@@ -191,6 +192,7 @@ public class CensusApiService : ICensusApiService, IDisposable
         return await GetListAsync<MetagameEvent>(query, ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
     public virtual async Task<Result<MetagameEvent>> GetMetagameEventAsync
     (
         ValidWorldDefinition world,
@@ -209,6 +211,25 @@ public class CensusApiService : ICensusApiService, IDisposable
         }
 
         return Result<MetagameEvent>.FromError(new CensusException("Census did not provide enough data."));
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync
+    (
+        IEnumerable<ulong> characterIDs,
+        CancellationToken ct = default
+    )
+    {
+        List<ulong> idList = characterIDs.ToList();
+        if (idList.Count == 0)
+            return default;
+
+        IQueryBuilder query = _queryService.CreateQuery()
+            .OnCollection("character")
+            .WhereAll("character_id", SearchModifier.Equals, idList)
+            .ShowFields("character_id", "name", "faction_id");
+
+        return await GetListAsync<MinimalCharacter>(query, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

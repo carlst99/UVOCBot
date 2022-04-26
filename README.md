@@ -10,7 +10,8 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
     - Server population and continent status.
     - Basic character stats.
     - Online outfit members.
-    - Outfit base capture tracking.
+    - Online friends.
+    - Outfit base capture tracking, including members involved in any captures.
 - Tweet relaying - posts tweets from PlanetSide 2 developers into a channel.
 - Role menus.
 - Bulk voice channel movement - never drag people one-at-a-time again!

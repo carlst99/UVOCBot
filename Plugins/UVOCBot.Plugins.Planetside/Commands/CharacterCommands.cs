@@ -46,7 +46,7 @@ public class CharacterCommands : CommandGroup
         if (character is null)
             return new GenericCommandError("That character doesn't exist");
 
-        CharactersWeaponStat? favWeapon = await GetFavouriteWeapon(character);
+        CharactersWeaponStat? favWeapon = await GetMostUsedWeapon(character);
 
         string title = character.OnlineStatus
             ? Formatter.Emoji("green_circle")
@@ -108,9 +108,9 @@ public class CharacterCommands : CommandGroup
             true
         );
 
-        EmbedField favWeaponField = new
+        EmbedField mostUsedWeaponField = new
         (
-            "Favourite Weapon",
+            "Most Used Weapon",
             favWeapon is null ? "Unknown" : favWeapon.Info.Name.English,
             true
         );
@@ -165,7 +165,7 @@ public class CharacterCommands : CommandGroup
                 kdRatioField,
                 kpmField,
                 killCountField,
-                favWeaponField,
+                mostUsedWeaponField,
                 lastLoginField,
                 playtimeField,
                 createdAtField,
@@ -293,12 +293,12 @@ public class CharacterCommands : CommandGroup
         return await _queryService.GetAsync<CharacterInfo>(characterQuery, CancellationToken);
     }
 
-    private async Task<CharactersWeaponStat?> GetFavouriteWeapon(CharacterInfo character)
+    private async Task<CharactersWeaponStat?> GetMostUsedWeapon(CharacterInfo character)
     {
         IQueryBuilder favWeaponQuery = _queryService.CreateQuery()
             .OnCollection("characters_weapon_stat")
             .Where("character_id", SearchModifier.Equals, character.CharacterID)
-            .Where("stat_name", SearchModifier.Equals, "weapon_fire_count")
+            .Where("stat_name", SearchModifier.Equals, "weapon_play_time")
             .Where("item_id", SearchModifier.NotEquals, 0)
             .WithSortOrder("value", SortOrder.Descending)
             .ShowFields("item_id")

@@ -17,8 +17,9 @@ internal sealed class ConnectionStateChangedResponder : IPayloadHandler<IConnect
         new All(),
         new string[]
         {
-                EventNames.FacilityControl,
-                EventNames.MetagameEvent
+            EventNames.FacilityControl,
+            EventNames.MetagameEvent,
+            EventNames.PlayerFacilityCapture
         },
         Worlds: new All()
     );

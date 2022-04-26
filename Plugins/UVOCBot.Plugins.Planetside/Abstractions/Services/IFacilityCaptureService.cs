@@ -1,20 +1,18 @@
+using DbgCensus.EventStream.Abstractions.Objects.Events.Characters;
 using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 
 namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 
 /// <summary>
-/// Represents a service for resolving <see cref="MapRegion"/>.
-/// This is required as resolving individual map regions can need batching
-/// when certain events, like a continent closing/opening, occur.
+/// Represents a service for collating and logging base capture events.
 /// </summary>
 public interface IFacilityCaptureService
 {
     /// <summary>
-    /// Gets a value indicating whether or not the resolver is running.
+    /// Gets a value indicating whether or not this <see cref="IFacilityCaptureService"/>
+    /// is running.
     /// </summary>
     bool IsRunning { get; }
 
@@ -26,15 +24,16 @@ public interface IFacilityCaptureService
     Task RunAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Queues a facility to be resolved into a map region.
+    /// Registers a facility control event.
     /// </summary>
-    /// <param name="facilityControlEvent">The facility control event.</param>
-    /// <param name="callback">The callback to invoke when the map region is resolved.</param>
+    /// <param name="facilityControl">The facility control event.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
-    ValueTask EnqueueAsync
-    (
-        IFacilityControl facilityControlEvent,
-        Func<MapRegion, CancellationToken, Task> callback,
-        CancellationToken ct = default
-    );
+    /// <returns>A <see cref="ValueTask"/> representing the potentially asynchronous operation.</returns>
+    ValueTask RegisterFacilityControlEventAsync(IFacilityControl facilityControl, CancellationToken ct = default);
+
+    /// <summary>
+    /// Registers a player facility capture event.
+    /// </summary>
+    /// <param name="playerFacilityCapture">The player facility capture event.</param>
+    void RegisterPlayerFacilityCaptureEvent(IPlayerFacilityCapture playerFacilityCapture);
 }

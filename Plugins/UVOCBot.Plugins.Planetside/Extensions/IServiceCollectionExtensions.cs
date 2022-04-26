@@ -36,6 +36,7 @@ public static class IServiceCollectionExtensions
         services.AddPayloadHandler<ConnectionStateChangedResponder>();
         services.AddPayloadHandler<FacilityControlResponder>();
         services.AddPayloadHandler<MetagameEventResponder>();
+        services.AddPayloadHandler<PlayerFacilityCaptureResponder>();
 
         services.AddCommandTree()
                 .WithCommandGroup<CharacterCommands>()

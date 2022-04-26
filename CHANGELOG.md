@@ -3,6 +3,7 @@
 ## Release vNext
 
 - Added the `online-friends` command.
+- Base capture notifications now show any outfit members involved in the capture.
 - Decreased the patch check interval to five minutes.
 
 ## Release v1.3.1

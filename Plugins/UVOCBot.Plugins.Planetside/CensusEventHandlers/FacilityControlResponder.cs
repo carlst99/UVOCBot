@@ -16,11 +16,5 @@ internal sealed class FacilityControlResponder : IPayloadHandler<IFacilityContro
     }
 
     public async Task HandleAsync(IFacilityControl censusEvent, CancellationToken ct = default)
-    {
-        // No need to bother with same-faction control events (i.e. point defenses).
-        if (censusEvent.OldFactionID == censusEvent.NewFactionID)
-            return;
-
-        await _facilityCaptureService.RegisterFacilityControlEventAsync(censusEvent, ct).ConfigureAwait(false);
-    }
+        => await _facilityCaptureService.RegisterFacilityControlEventAsync(censusEvent, ct).ConfigureAwait(false);
 }

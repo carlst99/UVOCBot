@@ -84,7 +84,7 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
                 await Task.Delay(1000, ct).ConfigureAwait(false);
 
                 Result<MapRegion?> regionResult = await _censusApiService.GetFacilityRegionAsync(facilityControl.FacilityID, ct).ConfigureAwait(false);
-                if (!regionResult.IsDefined(out MapRegion? region))
+                if (!regionResult.IsSuccess)
                 {
                     // Sigh... thanks Census
                     if (regionResult.Error is ExceptionError { Exception: BrokenCircuitException })
@@ -94,6 +94,14 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
                     continue;
                 }
 
+                if (regionResult.Entity is null)
+                {
+                    // We've encountered a facility that Census doesn't know about
+                    _playerFacilityCaptures.TryRemove(facilityControl.FacilityID, out _);
+                    continue;
+                }
+
+                MapRegion region = regionResult.Entity;
                 UpdateMapCache(facilityControl, region);
 
                 // We don't really care about the result of this
@@ -126,8 +134,14 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
     }
 
     /// <inheritdoc />
-    public ValueTask RegisterFacilityControlEventAsync(IFacilityControl facilityControl, CancellationToken ct = default)
-        => _facilityControls.Writer.WriteAsync(facilityControl, ct);
+    public async ValueTask RegisterFacilityControlEventAsync(IFacilityControl facilityControl, CancellationToken ct = default)
+    {
+        // No need to bother with same-faction control events (i.e. point defenses).
+        if (facilityControl.OldFactionID == facilityControl.NewFactionID)
+            return;
+
+        await _facilityControls.Writer.WriteAsync(facilityControl, ct);
+    }
 
     private async Task SendFacilityCaptureMessages
     (

@@ -1,10 +1,12 @@
-﻿using DbgCensus.EventStream.Abstractions;
+﻿using DbgCensus.Core.Objects;
+using DbgCensus.EventStream.Abstractions;
 using DbgCensus.EventStream.Abstractions.Objects;
 using DbgCensus.EventStream.Abstractions.Objects.Control;
 using DbgCensus.EventStream.Abstractions.Objects.Events;
 using DbgCensus.EventStream.EventHandlers.Abstractions;
 using DbgCensus.EventStream.EventHandlers.Abstractions.Objects;
 using DbgCensus.EventStream.Objects.Commands;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,7 +23,7 @@ internal sealed class ConnectionStateChangedResponder : IPayloadHandler<IConnect
             EventNames.MetagameEvent,
             EventNames.PlayerFacilityCapture
         },
-        Worlds: new All()
+        Worlds: Enum.GetValues<WorldDefinition>()
     );
 
     private readonly IEventStreamClientFactory _clientFactory;

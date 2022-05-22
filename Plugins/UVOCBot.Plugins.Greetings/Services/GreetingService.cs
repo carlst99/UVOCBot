@@ -1,4 +1,5 @@
 ﻿using FuzzySharp;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
@@ -71,22 +72,27 @@ public class GreetingService : IGreetingService
         // Send the welcome message
         Result<IMessage> sendWelcomeMessageResult = await _channelApi.CreateMessageAsync
         (
-            new Snowflake(welcomeMessage.ChannelId, Remora.Discord.API.Constants.DiscordEpoch),
+            DiscordSnowflake.New(welcomeMessage.ChannelId),
             messageContent,
             allowedMentions: new AllowedMentions(new List<MentionType>() { MentionType.Users }),
             components: new List<IMessageComponent>() { new ActionRowComponent(messageButtons) },
             ct: ct
         ).ConfigureAwait(false);
 
-        // Assign default roles
-        await _guildApi.ModifyRoles
-        (
-            guildID,
-            user.ID,
-            member.Roles,
-            rolesToAdd: welcomeMessage.DefaultRoles,
-            ct: ct
-        ).ConfigureAwait(false);
+        // We add roles one-at-a-time because there is no bulk add-role endpoint,
+        // and modifying roles risks losing roles that other welcome bots have
+        // assigned as we are not able to see that change in time
+        foreach (ulong roleID in welcomeMessage.DefaultRoles)
+        {
+            await _guildApi.AddGuildMemberRoleAsync
+            (
+                guildID,
+                user.ID,
+                DiscordSnowflake.New(roleID),
+                "Default role assigned by greeting",
+                ct
+            ).ConfigureAwait(false);
+        }
 
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
         return sendWelcomeMessageResult;
@@ -124,7 +130,7 @@ public class GreetingService : IGreetingService
             }
         }
 
-        nicknameGuesses.Sort((Tuple<string, int> x, Tuple<string, int> y) => y.Item2.CompareTo(x.Item2));
+        nicknameGuesses.Sort((x, y) => y.Item2.CompareTo(x.Item2));
 
         if (nicknameGuesses.Count < maxGuesses)
             nicknameGuesses.AddRange(newMembers.Take(maxGuesses - nicknameGuesses.Count).Select(m => new Tuple<string, int>(m.CharacterName.Name.First, 0)));

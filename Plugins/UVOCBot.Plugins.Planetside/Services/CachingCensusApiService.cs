@@ -88,7 +88,12 @@ public class CachingCensusApiService : CensusApiService
     }
 
     ///<inheritdoc />
-    public override async Task<Result<List<Map>>> GetMapsAsync(ValidWorldDefinition world, IEnumerable<ValidZoneDefinition> zones, CancellationToken ct = default)
+    public override async Task<Result<List<Map>>> GetMapsAsync
+    (
+        ValidWorldDefinition world,
+        IEnumerable<ValidZoneDefinition> zones,
+        CancellationToken ct = default
+    )
     {
         List<Map> maps = new();
         List<ValidZoneDefinition> toRetrieve = new();
@@ -104,6 +109,7 @@ public class CachingCensusApiService : CensusApiService
         if (toRetrieve.Count == 0)
             return maps;
 
+        _logger.LogWarning("Couldn't retrieve maps from cache! {Maps}", toRetrieve);
         Result<List<Map>> getMapsResult = await base.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
 
         if (!getMapsResult.IsDefined())

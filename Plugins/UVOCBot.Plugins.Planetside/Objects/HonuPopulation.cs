@@ -9,7 +9,7 @@ public record HonuPopulation
 (
     WorldDefinition WorldID,
     int NC,
-    
+
     [property: JsonPropertyName("nsOther")]
     int? NS,
 
@@ -35,5 +35,5 @@ public record HonuPopulation
 
     public int VS => _vs + NSVS;
 
-    public int Total => NC + TR + VS;
+    public int Total => NC + TR + VS + NS ?? 0;
 }

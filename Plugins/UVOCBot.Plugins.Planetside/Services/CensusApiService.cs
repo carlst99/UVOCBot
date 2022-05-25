@@ -31,7 +31,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     /// Also, adding 2 for resiliency.
     /// Hence, 2 * VALID_CONT_COUNT + 2.
     /// </remarks>
-    public const int ExpectedMetagameEventsPerFullCycle = 12;
+    protected static readonly int ExpectedMetagameEventsPerFullCycle = Enum.GetValues<ValidZoneDefinition>().Length * 2 + 2;
 
     private readonly SemaphoreSlim _queryLimiter;
 
@@ -178,7 +178,6 @@ public class CensusApiService : ICensusApiService, IDisposable
     public virtual async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
     (
         ValidWorldDefinition world,
-        int limit = ExpectedMetagameEventsPerFullCycle,
         CancellationToken ct = default
     )
     {
@@ -186,7 +185,7 @@ public class CensusApiService : ICensusApiService, IDisposable
             .OnCollection("world_event")
             .Where("type", SearchModifier.Equals, "METAGAME")
             .Where("world_id", SearchModifier.Equals, (int)world)
-            .WithLimit(limit)
+            .WithLimit(ExpectedMetagameEventsPerFullCycle)
             .WithSortOrder("timestamp");
 
         return await GetListAsync<MetagameEvent>(query, ct).ConfigureAwait(false);

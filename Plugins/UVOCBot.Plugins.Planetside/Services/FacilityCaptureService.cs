@@ -241,8 +241,8 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
         if (index == -1)
             return;
 
-        Map.RowModel mapRow = map.Regions.Row[index];
-        map.Regions.Row[index] = new Map.RowModel(RowData: mapRow.RowData with { FactionID = controlEvent.NewFactionID });
+        Map.RowDataModel rowData = map.Regions.Row[index].RowData;
+        map.Regions.Row[index] = new Map.RowModel(rowData with { FactionID = controlEvent.NewFactionID });
 
         _cache.Set
         (

@@ -1,5 +1,21 @@
 # Changelog
 
+## Release 1.4.0
+
+**Additions**
+- Added the `online-friends` command.
+- Base capture notifications now show any outfit members involved in the capture.
+- The `character` command now shows a character's most used weapon, rather than their 'favourite' weapon.
+
+**Fixes**
+- Fixed issues with Oshur map data, thanks to [Honu's](https://wt.honu.pw) facility information.
+- Fixed UVOCBot overwriting roles applied by other bots when a new member joins.
+- Fixed the `online` command for non-Connery outfits.
+
+**Miscellaneous**
+- Improved overall stability of map status.
+- Decreased the patch check interval to five minutes.
+
 ## Release v1.3.1
 
 - Added the awarded resource type, and the faction a base was captured from, to base capture notifications.

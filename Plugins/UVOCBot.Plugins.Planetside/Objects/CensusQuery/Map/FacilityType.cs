@@ -14,5 +14,7 @@ public enum FacilityType
     Warpgate = 7,
     InterlinkFacility = 8,
     ConstructionOutpost = 9,
-    RelicOutpost = 10
+    RelicOutpost = 10,
+    ContainmentSite = 11,
+    TridentSpire = 12
 }

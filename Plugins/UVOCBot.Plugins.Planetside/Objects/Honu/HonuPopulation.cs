@@ -2,14 +2,14 @@
 using System.Text.Json.Serialization;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 
-namespace UVOCBot.Plugins.Planetside.Objects;
+namespace UVOCBot.Plugins.Planetside.Objects.Honu;
 
 /// <inheritdoc cref="IPopulation"/>
 public record HonuPopulation
 (
     WorldDefinition WorldID,
     int NC,
-    
+
     [property: JsonPropertyName("nsOther")]
     int? NS,
 
@@ -35,5 +35,5 @@ public record HonuPopulation
 
     public int VS => _vs + NSVS;
 
-    public int Total => NC + TR + VS;
+    public int Total => NC + TR + VS + NS ?? 0;
 }

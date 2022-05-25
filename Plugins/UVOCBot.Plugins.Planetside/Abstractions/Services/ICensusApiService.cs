@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 
@@ -72,13 +74,24 @@ public interface ICensusApiService
     Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default);
 
     /// <summary>
+    /// Gets facility data from Honu.
+    /// <see href="https://wt.honu.pw/api/map/facilities"/>.
+    /// </summary>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A <see cref="Result{TEntity}"/> representing the facility list.</returns>
+    Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Gets the most recent metagame events for a world.
     /// </summary>
     /// <param name="world">The world to query events for.</param>
-    /// <param name="limit">The number of events to return.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Result"/> representing the metagame events.</returns>
-    Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync(ValidWorldDefinition world, int limit = 10, CancellationToken ct = default);
+    Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
+    (
+        ValidWorldDefinition world,
+        CancellationToken ct = default
+    );
 
     /// <summary>
     /// Gets the most recent metagame event for a world/zone.
@@ -88,4 +101,12 @@ public interface ICensusApiService
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation, and containing a valid <see cref="MetagameEvent"/> if successful.</returns>
     Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a collection of minimal characters.
+    /// </summary>
+    /// <param name="characterIDs">The ID of the characters to retrieve.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation, and containing the minimal character records if successful.</returns>
+    Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync(IEnumerable<ulong> characterIDs, CancellationToken ct = default);
 }

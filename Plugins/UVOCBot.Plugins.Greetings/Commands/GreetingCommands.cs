@@ -274,7 +274,7 @@ public class GreetingCommands : CommandGroup
 
     [Command("message")]
     [Description("Sets the message to present to new members. Use without arguments for more information.")]
-    public async Task<IResult> MessageCommand
+    public async Task<Result> MessageCommand
     (
         [Description("The ID of the message to replicate as the welcome message.")] Snowflake? messageId = null
     )
@@ -297,12 +297,11 @@ public class GreetingCommands : CommandGroup
         Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync(_context.ChannelID, (Snowflake)messageId, CancellationToken).ConfigureAwait(false);
         if (!getMessageResult.IsSuccess)
         {
-            await _feedbackService.SendContextualErrorAsync
+            return new GenericCommandError
             (
-                "I couldn't find that message. Make sure you use this command in the same channel as you sent the message, and that you've provided the right ID.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-            return getMessageResult;
+                "I couldn't find that message. Make sure you use this command in the same channel " +
+                "as you sent the message, and that you've provided the right ID."
+            );
         }
 
         GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);

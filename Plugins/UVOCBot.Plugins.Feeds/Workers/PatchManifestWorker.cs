@@ -67,13 +67,13 @@ public class PatchManifestWorker : BackgroundService
 
                     _manifestLastUpdateTimes[manifest] = manifestUpdateTime;
 
-                    DiscordContext dbContext = await _dbContextFactory.CreateDbContextAsync(ct);
+                    await using DiscordContext dbContext = await _dbContextFactory.CreateDbContextAsync(ct);
                     foreach (GuildFeedsSettings feedsSettings in dbContext.GuildFeedsSettings)
                     {
                         if (!feedsSettings.IsEnabled || feedsSettings.FeedChannelID is null)
                             continue;
 
-                        await PostTweetsToChannelAsync
+                        await PostManifestToChannelAsync
                         (
                             feedsSettings,
                             manifest,
@@ -87,7 +87,7 @@ public class PatchManifestWorker : BackgroundService
                 }
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(15), ct).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromMinutes(5), ct).ConfigureAwait(false);
         }
     }
 
@@ -115,7 +115,7 @@ public class PatchManifestWorker : BackgroundService
         throw new Exception("Failed to find the timestamp");
     }
 
-    private async Task PostTweetsToChannelAsync
+    private async Task PostManifestToChannelAsync
     (
         GuildFeedsSettings settings,
         Manifest updatedManifest,

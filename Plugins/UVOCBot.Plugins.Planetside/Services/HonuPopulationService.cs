@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remora.Results;
 using System.IO;
@@ -8,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Objects;
+using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -23,10 +25,11 @@ public sealed class HonuPopulationService : BaseCachingPopulationService
 
     public HonuPopulationService
     (
+        ILogger<HonuPopulationService> logger,
         IOptions<PlanetsidePluginOptions> options,
         IMemoryCache cache,
         HttpClient httpClient
-    ) : base(cache)
+    ) : base(logger, cache)
     {
         _options = options.Value;
         _httpClient = httpClient;

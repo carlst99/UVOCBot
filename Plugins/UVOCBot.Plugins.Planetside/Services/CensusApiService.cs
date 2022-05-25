@@ -7,14 +7,19 @@ using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -30,20 +35,30 @@ public class CensusApiService : ICensusApiService, IDisposable
     /// Also, adding 2 for resiliency.
     /// Hence, 2 * VALID_CONT_COUNT + 2.
     /// </remarks>
-    public const int ExpectedMetagameEventsPerFullCycle = 12;
+    protected static readonly int ExpectedMetagameEventsPerFullCycle = Enum.GetValues<ValidZoneDefinition>().Length * 2 + 2;
 
     private readonly SemaphoreSlim _queryLimiter;
 
     protected readonly ILogger<CensusApiService> _logger;
     protected readonly IQueryService _queryService;
+    protected readonly HttpClient _httpClient;
+    protected readonly JsonSerializerOptions _honuJsonOptions;
 
     private bool _isDisposed;
 
-    public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService)
+    public CensusApiService
+    (
+        ILogger<CensusApiService> logger,
+        IQueryService queryService,
+        HttpClient httpClient
+    )
     {
         _logger = logger;
         _queryService = queryService;
+        _httpClient = httpClient;
+
         _queryLimiter = new SemaphoreSlim(8, 8);
+        _honuJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
     }
 
     /// <inheritdoc />
@@ -148,6 +163,21 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
+    public virtual async Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            Stream data = await _httpClient.GetStreamAsync("https://wt.honu.pw/api/map/facilities", ct).ConfigureAwait(false);
+            return await JsonSerializer.DeserializeAsync<List<Facility>>(data, _honuJsonOptions, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get Honu facility data");
+            return ex;
+        }
+    }
+
+    /// <inheritdoc />
     public virtual async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
         IQueryBuilder query = _queryService.CreateQuery()
@@ -177,7 +207,6 @@ public class CensusApiService : ICensusApiService, IDisposable
     public virtual async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
     (
         ValidWorldDefinition world,
-        int limit = ExpectedMetagameEventsPerFullCycle,
         CancellationToken ct = default
     )
     {
@@ -185,12 +214,13 @@ public class CensusApiService : ICensusApiService, IDisposable
             .OnCollection("world_event")
             .Where("type", SearchModifier.Equals, "METAGAME")
             .Where("world_id", SearchModifier.Equals, (int)world)
-            .WithLimit(limit)
+            .WithLimit(ExpectedMetagameEventsPerFullCycle)
             .WithSortOrder("timestamp");
 
         return await GetListAsync<MetagameEvent>(query, ct).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
     public virtual async Task<Result<MetagameEvent>> GetMetagameEventAsync
     (
         ValidWorldDefinition world,
@@ -209,6 +239,25 @@ public class CensusApiService : ICensusApiService, IDisposable
         }
 
         return Result<MetagameEvent>.FromError(new CensusException("Census did not provide enough data."));
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync
+    (
+        IEnumerable<ulong> characterIDs,
+        CancellationToken ct = default
+    )
+    {
+        List<ulong> idList = characterIDs.ToList();
+        if (idList.Count == 0)
+            return default;
+
+        IQueryBuilder query = _queryService.CreateQuery()
+            .OnCollection("character")
+            .WhereAll("character_id", SearchModifier.Equals, idList)
+            .ShowFields("character_id", "name", "faction_id");
+
+        return await GetListAsync<MinimalCharacter>(query, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

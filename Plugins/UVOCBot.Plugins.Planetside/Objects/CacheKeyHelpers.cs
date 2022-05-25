@@ -2,6 +2,7 @@
 using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
 using System;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
 
@@ -14,6 +15,12 @@ public static class CacheKeyHelpers
 
     public static object GetMetagameEventKey(WorldDefinition worldDefinition, ZoneDefinition zoneDefinition)
         => (typeof(IMetagameEvent), (uint)worldDefinition, (uint)zoneDefinition);
+
+    public static object GetMinimalCharacterKey(ulong characterID)
+        => (typeof(MinimalCharacter), characterID);
+
+    public static object GetMinimalCharacterKey(MinimalCharacter character)
+        => (typeof(MinimalCharacter), character.CharacterID);
 
     public static object GetOutfitKey(Outfit outfit)
         => GetOutfitKey(outfit.OutfitId);

@@ -177,7 +177,7 @@ public class WorldCommands : CommandGroup
         }
 
         if (embedFields.Count == 0)
-            return new GenericCommandError("I can't find any open continents! Something has gone wrong.");
+            embedFields.Add(new EmbedField("Ruh Roh!", "I can't find any open continents! Something has gone wrong."));
 
         return embedFields;
     }

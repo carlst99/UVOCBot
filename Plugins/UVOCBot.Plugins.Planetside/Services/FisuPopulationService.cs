@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remora.Results;
 using System.IO;
@@ -23,10 +24,11 @@ public sealed class FisuPopulationService : BaseCachingPopulationService
 
     public FisuPopulationService
     (
+        ILogger<FisuPopulationService> logger,
         IOptions<PlanetsidePluginOptions> options,
         IMemoryCache cache,
         HttpClient httpClient
-    ) : base(cache)
+    ) : base(logger, cache)
     {
         _options = options.Value;
         _httpClient = httpClient;
@@ -34,7 +36,7 @@ public sealed class FisuPopulationService : BaseCachingPopulationService
         _jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
     }
 
-    protected override async Task<Result<IPopulation>> QueryPopulationAsync(ValidWorldDefinition world, CancellationToken ct = default)
+    protected override async Task<Result<IPopulation>> QueryPopulationAsync(ValidWorldDefinition world, CancellationToken ct)
     {
         string queryUrl = $"{ _options.FisuApiEndpoint }/population?world={ (int)world }";
 

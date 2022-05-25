@@ -5,11 +5,14 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -25,13 +28,14 @@ public class CachingCensusApiService : CensusApiService
     (
         ILogger<CachingCensusApiService> logger,
         IQueryService queryService,
+        HttpClient httpClient,
         IMemoryCache cache
-    )
-        : base(logger, queryService)
+    ) : base(logger, queryService, httpClient)
     {
         _cache = cache;
     }
 
+    /// <inheritdoc />
     public override async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
     {
         List<Outfit> outfits = new();
@@ -65,9 +69,41 @@ public class CachingCensusApiService : CensusApiService
     }
 
     /// <inheritdoc />
-    /// <summary>
-    /// This query is cached.
-    /// </summary>
+    public override async Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default)
+    {
+        Result<List<Facility>> getFacilities = await base.GetHonuFacilitiesAsync(ct).ConfigureAwait(false);
+        if (!getFacilities.IsDefined(out List<Facility>? facilities))
+            return getFacilities;
+
+        foreach (Facility f in facilities)
+        {
+            MapRegion m = new
+            (
+                f.RegionID,
+                new ZoneID(f.ZoneID),
+                f.FacilityID,
+                f.Name,
+                (FacilityType)f.TypeID,
+                f.TypeName,
+                f.LocationX,
+                f.LocationY,
+                f.LocationZ,
+                null,
+                null
+            );
+
+            _cache.Set
+            (
+                CacheKeyHelpers.GetFacilityMapRegionKey(m),
+                m,
+                CacheEntryHelpers.MapRegionOptions
+            );
+        }
+
+        return facilities;
+    }
+
+    /// <inheritdoc />
     public override async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
         if (_cache.TryGetValue(CacheKeyHelpers.GetFacilityMapRegionKey(facilityID), out MapRegion region))
@@ -89,10 +125,12 @@ public class CachingCensusApiService : CensusApiService
     }
 
     ///<inheritdoc />
-    ///<summary>
-    /// This query is cached.
-    ///</summary>
-    public override async Task<Result<List<Map>>> GetMapsAsync(ValidWorldDefinition world, IEnumerable<ValidZoneDefinition> zones, CancellationToken ct = default)
+    public override async Task<Result<List<Map>>> GetMapsAsync
+    (
+        ValidWorldDefinition world,
+        IEnumerable<ValidZoneDefinition> zones,
+        CancellationToken ct = default
+    )
     {
         List<Map> maps = new();
         List<ValidZoneDefinition> toRetrieve = new();
@@ -108,6 +146,7 @@ public class CachingCensusApiService : CensusApiService
         if (toRetrieve.Count == 0)
             return maps;
 
+        _logger.LogWarning("Couldn't retrieve maps for {World} from cache! {Maps}", world, toRetrieve);
         Result<List<Map>> getMapsResult = await base.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
 
         if (!getMapsResult.IsDefined())
@@ -128,6 +167,7 @@ public class CachingCensusApiService : CensusApiService
         return maps;
     }
 
+    /// <inheritdoc />
     public override async Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default)
     {
         if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, (ZoneDefinition)zone), out MetagameEvent found))
@@ -137,5 +177,41 @@ public class CachingCensusApiService : CensusApiService
         // This is because we expect the MetagameEventResponder
         // to keep events up-to-date in a more reliable manner.
         return await base.GetMetagameEventAsync(world, zone, ct);
+    }
+
+    public override async Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync
+    (
+        IEnumerable<ulong> characterIDs,
+        CancellationToken ct = default
+    )
+    {
+        List<MinimalCharacter> characters = new();
+        List<ulong> toQuery = new();
+
+        foreach (ulong id in characterIDs)
+        {
+            if (_cache.TryGetValue(CacheKeyHelpers.GetMinimalCharacterKey(id), out MinimalCharacter character))
+                characters.Add(character);
+            else
+                toQuery.Add(id);
+        }
+
+        Result<List<MinimalCharacter>> retrieveResult = await base.GetMinimalCharactersAsync(toQuery, ct).ConfigureAwait(false);
+        if (!retrieveResult.IsSuccess)
+            return retrieveResult;
+
+        foreach (MinimalCharacter rc in retrieveResult.Entity)
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetMinimalCharacterKey(rc),
+                rc,
+                CacheEntryHelpers.MinimalCharacterOptions
+            );
+
+            characters.Add(rc);
+        }
+
+        return Result<List<MinimalCharacter>>.FromSuccess(characters);
     }
 }

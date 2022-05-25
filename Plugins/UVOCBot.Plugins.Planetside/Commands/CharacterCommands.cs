@@ -12,6 +12,8 @@ using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
@@ -44,7 +46,7 @@ public class CharacterCommands : CommandGroup
         if (character is null)
             return new GenericCommandError("That character doesn't exist");
 
-        CharactersWeaponStat? favWeapon = await GetFavouriteWeapon(character);
+        CharactersWeaponStat? favWeapon = await GetMostUsedWeapon(character);
 
         string title = character.OnlineStatus
             ? Formatter.Emoji("green_circle")
@@ -106,9 +108,9 @@ public class CharacterCommands : CommandGroup
             true
         );
 
-        EmbedField favWeaponField = new
+        EmbedField mostUsedWeaponField = new
         (
-            "Favourite Weapon",
+            "Most Used Weapon",
             favWeapon is null ? "Unknown" : favWeapon.Info.Name.English,
             true
         );
@@ -163,7 +165,7 @@ public class CharacterCommands : CommandGroup
                 kdRatioField,
                 kpmField,
                 killCountField,
-                favWeaponField,
+                mostUsedWeaponField,
                 lastLoginField,
                 playtimeField,
                 createdAtField,
@@ -203,6 +205,52 @@ public class CharacterCommands : CommandGroup
         );
     }
     #pragma warning restore CS8509
+
+    [Command("online-friends")]
+    [Description("Gets friends of the given character that are currently online.")]
+    [Deferred]
+    public async Task<Result> GetOnlineFriendsCommandAsync(string characterName)
+    {
+        IQueryBuilder query = _queryService.CreateQuery()
+            .OnCollection("character_name")
+            .Where("name.first_lower", SearchModifier.Equals, characterName.ToLower());
+
+        IJoinBuilder friendsJoin = query.AddJoin("characters_friend")
+            .OnField("character_id")
+            .InjectAt("friends")
+            .HideFields("character_id", "name");
+
+        friendsJoin.AddNestedJoin("character_name")
+            .OnField("friend_list.character_id")
+            .ToField("character_id")
+            .InjectAt("name")
+            .HideFields("character_id", "name.first_lower");
+
+        CharactersFriends? friends = await _queryService.GetAsync<CharactersFriends>(query, CancellationToken);
+        if (friends is null)
+            return new GenericCommandError("That character does not exist");
+
+        StringBuilder sb = new();
+        sb.AppendLine(Formatter.Bold($"{friends.Name.First}'s Online Friends:"));
+        sb.AppendLine();
+
+        IReadOnlyList<CharactersFriends.Friend> onlineFriends = friends.Friends
+            .FriendList
+            .Where(f => f.IsOnline)
+            .ToList();
+
+        if (onlineFriends.Count == 0)
+        {
+            sb.Append("Not an online soul to be found...");
+        }
+        else
+        {
+            foreach (CharactersFriends.Friend friend in onlineFriends)
+                sb.AppendLine(friend.Name.Name.First);
+        }
+
+        return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: CancellationToken);
+    }
 
     private async Task<CharacterInfo?> GetCharacter(string name)
     {
@@ -245,12 +293,12 @@ public class CharacterCommands : CommandGroup
         return await _queryService.GetAsync<CharacterInfo>(characterQuery, CancellationToken);
     }
 
-    private async Task<CharactersWeaponStat?> GetFavouriteWeapon(CharacterInfo character)
+    private async Task<CharactersWeaponStat?> GetMostUsedWeapon(CharacterInfo character)
     {
         IQueryBuilder favWeaponQuery = _queryService.CreateQuery()
             .OnCollection("characters_weapon_stat")
             .Where("character_id", SearchModifier.Equals, character.CharacterID)
-            .Where("stat_name", SearchModifier.Equals, "weapon_fire_count")
+            .Where("stat_name", SearchModifier.Equals, "weapon_play_time")
             .Where("item_id", SearchModifier.NotEquals, 0)
             .WithSortOrder("value", SortOrder.Descending)
             .ShowFields("item_id")

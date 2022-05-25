@@ -30,12 +30,13 @@ public static class IServiceCollectionExtensions
 
         services.AddCensusRestServices();
         services.AddSingleton<ICensusApiService, CachingCensusApiService>();
-        services.AddSingleton<IMapRegionResolverService, MapRegionResolverService>();
+        services.AddSingleton<IFacilityCaptureService, FacilityCaptureService>();
 
         services.AddCensusEventHandlingServices();
         services.AddPayloadHandler<ConnectionStateChangedResponder>();
         services.AddPayloadHandler<FacilityControlResponder>();
         services.AddPayloadHandler<MetagameEventResponder>();
+        services.AddPayloadHandler<PlayerFacilityCaptureResponder>();
 
         services.AddCommandTree()
                 .WithCommandGroup<CharacterCommands>()

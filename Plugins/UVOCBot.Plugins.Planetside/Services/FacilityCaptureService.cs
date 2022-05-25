@@ -278,6 +278,8 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
             FacilityType.Default => FacilityResource.None,
             FacilityType.RelicOutpost => FacilityResource.None,
             FacilityType.Warpgate => FacilityResource.None,
+            FacilityType.ContainmentSite => FacilityResource.Synthium,
+            FacilityType.TridentSpire => FacilityResource.Polystellarite,
             _ => FacilityResource.None
         };
 }

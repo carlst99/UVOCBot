@@ -24,6 +24,7 @@ public class CensusStateWorker : BackgroundService
     private readonly IPopulationService _populationService;
 
     private Task? _facilityCaptureServiceTask;
+    private DateTimeOffset _lastHonuFacilitiesRetrieval = DateTimeOffset.MinValue;
 
     public CensusStateWorker
     (
@@ -64,10 +65,6 @@ public class CensusStateWorker : BackgroundService
 
         while (!ct.IsCancellationRequested)
         {
-            // Assume this to be caching
-            foreach (ValidWorldDefinition world in ValidWorlds)
-                await _populationService.GetWorldPopulationAsync(world, ct, true);
-
             if (_facilityCaptureServiceTask.IsCompleted)
             {
                 if (_facilityCaptureServiceTask.Exception is not null)
@@ -78,6 +75,14 @@ public class CensusStateWorker : BackgroundService
 
                 _facilityCaptureServiceTask = _facilityCaptureService.RunAsync(ct);
             }
+
+            // Assume this to be caching
+            foreach (ValidWorldDefinition world in ValidWorlds)
+                await _populationService.GetWorldPopulationAsync(world, ct, true);
+
+            // Cache Honu's facilities
+            if (_lastHonuFacilitiesRetrieval.AddHours(12) < DateTimeOffset.UtcNow)
+                await _censusApi.GetHonuFacilitiesAsync(ct).ConfigureAwait(false);
 
             await Task.Delay(popUpdateFrequency.Value, ct);
         }

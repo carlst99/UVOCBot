@@ -5,12 +5,14 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -26,9 +28,9 @@ public class CachingCensusApiService : CensusApiService
     (
         ILogger<CachingCensusApiService> logger,
         IQueryService queryService,
+        HttpClient httpClient,
         IMemoryCache cache
-    )
-        : base(logger, queryService)
+    ) : base(logger, queryService, httpClient)
     {
         _cache = cache;
     }
@@ -64,6 +66,41 @@ public class CachingCensusApiService : CensusApiService
         }
 
         return Result<List<Outfit>>.FromSuccess(outfits);
+    }
+
+    /// <inheritdoc />
+    public override async Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default)
+    {
+        Result<List<Facility>> getFacilities = await base.GetHonuFacilitiesAsync(ct).ConfigureAwait(false);
+        if (!getFacilities.IsDefined(out List<Facility>? facilities))
+            return getFacilities;
+
+        foreach (Facility f in facilities)
+        {
+            MapRegion m = new
+            (
+                f.RegionID,
+                new ZoneID(f.ZoneID),
+                f.FacilityID,
+                f.Name,
+                (FacilityType)f.TypeID,
+                f.TypeName,
+                f.LocationX,
+                f.LocationY,
+                f.LocationZ,
+                null,
+                null
+            );
+
+            _cache.Set
+            (
+                CacheKeyHelpers.GetFacilityMapRegionKey(m),
+                m,
+                CacheEntryHelpers.MapRegionOptions
+            );
+        }
+
+        return facilities;
     }
 
     /// <inheritdoc />
@@ -109,7 +146,7 @@ public class CachingCensusApiService : CensusApiService
         if (toRetrieve.Count == 0)
             return maps;
 
-        _logger.LogWarning("Couldn't retrieve maps from cache! {Maps}", toRetrieve);
+        _logger.LogWarning("Couldn't retrieve maps for {World} from cache! {Maps}", world, toRetrieve);
         Result<List<Map>> getMapsResult = await base.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
 
         if (!getMapsResult.IsDefined())

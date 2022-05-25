@@ -7,6 +7,7 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 
@@ -71,6 +72,14 @@ public interface ICensusApiService
     /// <param name="ct">A <see cref="CancellationToken"/> used to stop the operation.</param>
     /// <returns>A <see cref="Result"/> representing the <see cref="MapRegion"/>, or <c>null</c> if the facility does not exist.</returns>
     Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets facility data from Honu.
+    /// <see href="https://wt.honu.pw/api/map/facilities"/>.
+    /// </summary>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A <see cref="Result{TEntity}"/> representing the facility list.</returns>
+    Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default);
 
     /// <summary>
     /// Gets the most recent metagame events for a world.

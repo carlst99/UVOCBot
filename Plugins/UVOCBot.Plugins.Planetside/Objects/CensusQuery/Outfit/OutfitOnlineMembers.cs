@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using DbgCensus.Core.Objects;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using static UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit.OutfitOnlineMembers;
 
@@ -32,8 +33,12 @@ public record OutfitOnlineMembers
         OnlineStatusModel OnlineStatus
     );
 
+    /// <summary>
+    /// Represents the online status information of a character.
+    /// </summary>
+    /// <param name="World">The world that the character is connected to.</param>
     public record OnlineStatusModel
     (
-        [property: JsonPropertyName("online_status")] bool IsOnline
+        [property: JsonPropertyName("online_status")] WorldDefinition World
     );
 }

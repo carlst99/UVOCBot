@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 
-namespace UVOCBot.Plugins.Planetside.Objects;
+namespace UVOCBot.Plugins.Planetside.Objects.Honu;
 
 /// <inheritdoc cref="IPopulation"/>
 public record HonuPopulation

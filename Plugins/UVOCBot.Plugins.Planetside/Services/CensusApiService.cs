@@ -7,8 +7,11 @@ using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
@@ -16,6 +19,7 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -37,14 +41,24 @@ public class CensusApiService : ICensusApiService, IDisposable
 
     protected readonly ILogger<CensusApiService> _logger;
     protected readonly IQueryService _queryService;
+    protected readonly HttpClient _httpClient;
+    protected readonly JsonSerializerOptions _honuJsonOptions;
 
     private bool _isDisposed;
 
-    public CensusApiService(ILogger<CensusApiService> logger, IQueryService queryService)
+    public CensusApiService
+    (
+        ILogger<CensusApiService> logger,
+        IQueryService queryService,
+        HttpClient httpClient
+    )
     {
         _logger = logger;
         _queryService = queryService;
+        _httpClient = httpClient;
+
         _queryLimiter = new SemaphoreSlim(8, 8);
+        _honuJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
     }
 
     /// <inheritdoc />
@@ -146,6 +160,21 @@ public class CensusApiService : ICensusApiService, IDisposable
                             .IsInnerJoin();
 
         return await GetListAsync<OutfitOnlineMembers>(query, ct).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            Stream data = await _httpClient.GetStreamAsync("https://wt.honu.pw/api/map/facilities", ct).ConfigureAwait(false);
+            return await JsonSerializer.DeserializeAsync<List<Facility>>(data, _honuJsonOptions, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get Honu facility data");
+            return ex;
+        }
     }
 
     /// <inheritdoc />

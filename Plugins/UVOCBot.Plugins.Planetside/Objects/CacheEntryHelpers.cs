@@ -20,7 +20,7 @@ public static class CacheEntryHelpers
     /// </summary>
     public static readonly MemoryCacheEntryOptions MapOptions = new()
     {
-        SlidingExpiration = TimeSpan.FromHours(1), // Expect the map state to be kept up to date by the FacilityCaptureService
+        SlidingExpiration = TimeSpan.FromHours(8), // Expect the map state to be kept up to date by the FacilityCaptureService
         Priority = CacheItemPriority.High,
         Size = 4
     };

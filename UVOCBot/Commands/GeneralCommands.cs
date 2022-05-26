@@ -21,10 +21,8 @@ namespace UVOCBot.Commands;
 public class GeneralCommands : CommandGroup
 {
     public const string RELEASE_NOTES =
-        @"• Made many commands faster.
-          • Updated the population command.
-          • Updated the rolemenu commands.
-          • Disabled text commands.";
+        @"• Added the `online-friends` command
+            Base capture notifications now show outfit members that were involved.";
 
     private readonly IDiscordRestUserAPI _userAPI;
     private readonly FeedbackService _feedbackService;
@@ -75,6 +73,7 @@ public class GeneralCommands : CommandGroup
 
     [Command("info")]
     [Description("Gets information about UVOCBot")]
+    [Deferred]
     public async Task<IResult> InfoCommandAsync()
     {
         string? botAvatar = null;

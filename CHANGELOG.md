@@ -1,5 +1,10 @@
 # Changelog
 
+## Release 1.4.1
+
+- Fixed the `population` and `status` failing to respond.
+- Updated in-app release notes
+
 ## Release 1.4.0
 
 **Additions**

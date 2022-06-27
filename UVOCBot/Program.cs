@@ -249,8 +249,8 @@ public static class Program
                 .AddDiscordCaching();
 
         services.AddResponder<GuildCreateResponder>()
-                .AddResponder<GuildMemberResponder>()
-                .AddResponder<ReadyResponder>();
+            .AddResponder<GuildMemberResponder>()
+            .AddResponder<ReadyResponder>();
 
         services.AddCommandTree()
                 .WithCommandGroup<AdminCommands>()

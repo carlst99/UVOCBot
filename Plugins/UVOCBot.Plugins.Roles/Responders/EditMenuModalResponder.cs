@@ -79,10 +79,10 @@ internal sealed class EditMenuModalResponder : IComponentResponder
         titleText = string.Empty;
         descriptionText = null;
 
-        if (!_context.Data.Components.IsDefined(out IReadOnlyList<IPartialMessageComponent>? components))
+        if (!_context.Data.TryPickT2(out IModalSubmitData modalData, out _))
             return Result.FromError(new GenericCommandError());
 
-        List<IPartialTextInputComponent> textInputs = components
+        List<IPartialTextInputComponent> textInputs = modalData.Components
             .SelectMany(c => ((IPartialActionRowComponent)c).Components.Value)
             .OfType<IPartialTextInputComponent>()
             .ToList();

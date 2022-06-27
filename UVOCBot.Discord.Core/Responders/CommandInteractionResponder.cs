@@ -114,10 +114,13 @@ public class CommandInteractionResponder : IResponder<IInteractionCreate>
 
         var context = createContext.Entity;
 
+        if (!context.Data.IsT0)
+            return Result.FromSuccess();
+
         // Provide the created context to any services inside this scope
         _contextInjection.Context = context;
 
-        context.Data.UnpackInteraction(out var commandPath, out var parameters);
+        context.Data.AsT0.UnpackInteraction(out var commandPath, out var parameters);
 
         // Run any user-provided pre-execution events
         var preExecution = await _eventCollector.RunPreExecutionEvents(_services, context, ct);

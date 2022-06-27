@@ -41,7 +41,8 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
         if (key != FeedComponentKeys.ToggleFeed)
             return Result.FromError(new GenericCommandError());
 
-        if (!_context.Data.Values.IsDefined(out IReadOnlyList<string>? values))
+        if (!_context.Data.TryPickT1(out IMessageComponentData componentData, out _)
+            || !componentData.Values.IsDefined(out IReadOnlyList<string>? values))
             return Result.FromError(new GenericCommandError());
 
         Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel(_context.ChannelID, _context.User.ID, ct);

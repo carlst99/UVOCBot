@@ -81,7 +81,12 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
             {
                 // Wait for player facility captures to be processed,
                 // and also back off Census
-                await Task.Delay(1000, ct).ConfigureAwait(false);
+                await Task.Delay(200, ct).ConfigureAwait(false);
+                if (facilityControl.Timestamp.AddSeconds(10) > DateTimeOffset.UtcNow)
+                {
+                    await _facilityControls.Writer.WriteAsync(facilityControl, ct).ConfigureAwait(false);
+                    continue;
+                }
 
                 Result<MapRegion?> regionResult = await _censusApiService.GetFacilityRegionAsync(facilityControl.FacilityID, ct).ConfigureAwait(false);
                 if (!regionResult.IsSuccess)

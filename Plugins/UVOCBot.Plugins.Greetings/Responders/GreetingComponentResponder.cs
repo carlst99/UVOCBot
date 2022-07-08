@@ -7,11 +7,8 @@ using Remora.Rest.Core;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UVOCBot.Core;
-using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Components;
 using UVOCBot.Discord.Core.Errors;
@@ -26,22 +23,19 @@ internal sealed class GreetingComponentResponder : IComponentResponder
     private readonly IDiscordRestGuildAPI _guildApi;
     private readonly InteractionContext _context;
     private readonly FeedbackService _feedbackService;
-    private readonly DiscordContext _dbContext;
 
     public GreetingComponentResponder
     (
         IGreetingService greetingService,
         IDiscordRestGuildAPI guildApi,
         InteractionContext context,
-        FeedbackService feedbackService,
-        DiscordContext dbContext
+        FeedbackService feedbackService
     )
     {
         _greetingService = greetingService;
         _guildApi = guildApi;
         _context = context;
         _feedbackService = feedbackService;
-        _dbContext = dbContext;
     }
 
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
@@ -50,7 +44,6 @@ internal sealed class GreetingComponentResponder : IComponentResponder
             GreetingComponentKeys.NoNicknameMatches => await NoNicknameMatches(ct).ConfigureAwait(false),
             GreetingComponentKeys.SetAlternateRoleset => await SetAlternateRolesetAsync(dataFragment, ct).ConfigureAwait(false),
             GreetingComponentKeys.SetGuessedNickname => await SetGuessedNickname(dataFragment, ct).ConfigureAwait(false),
-            GreetingComponentKeys.DeleteAlternateRolesets => await DeleteAlternateRolesetsAsync(ct).ConfigureAwait(false),
             _ => Result.FromError(new GenericCommandError())
         };
 
@@ -149,52 +142,5 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         return alertResponse.IsSuccess
             ? Result.FromSuccess()
             : Result.FromError(alertResponse.Error!);
-    }
-
-    private async Task<Result> DeleteAlternateRolesetsAsync(CancellationToken ct)
-    {
-        if (!_context.GuildID.IsDefined(out Snowflake guildID))
-            return new GenericCommandError();
-
-        if (!_context.Member.IsDefined(out IGuildMember? member))
-            return new GenericCommandError();
-
-        if (!member.User.IsDefined(out IUser? user))
-            return new GenericCommandError();
-
-        if (!member.Permissions.IsDefined(out IDiscordPermissionSet? memberPerms))
-            return new GenericCommandError();
-
-        if (!memberPerms.HasPermission(DiscordPermission.ManageGuild))
-            return new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID);
-        if (!memberPerms.HasPermission(DiscordPermission.ManageRoles))
-            return new PermissionError(DiscordPermission.ManageRoles, user.ID, _context.ChannelID);
-
-        if (!_context.Data.TryPickT1(out IMessageComponentData componentData, out _))
-            return new GenericCommandError();
-
-        if (!componentData.Values.IsDefined(out IReadOnlyList<string>? selectedValues))
-            return new GenericCommandError();
-
-        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct)
-            .ConfigureAwait(false);
-
-        List<GuildGreetingAlternateRoleSet> removedRolesets = new();
-        foreach (ulong rolesetID in selectedValues.Select(ulong.Parse))
-        {
-            int removeIndex = welcomeMessage.AlternateRolesets.FindIndex(rs => rs.ID == rolesetID);
-            removedRolesets.Add(welcomeMessage.AlternateRolesets[removeIndex]);
-            welcomeMessage.AlternateRolesets.RemoveAt(removeIndex);
-        }
-
-        _dbContext.Update(welcomeMessage);
-        await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-
-        StringBuilder sb = new(Formatter.Bold("The following rolesets have been removed:"));
-        sb.AppendLine();
-        foreach (GuildGreetingAlternateRoleSet removedRS in removedRolesets)
-            sb.Append("- ").AppendLine(removedRS.Description);
-
-        return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: ct).ConfigureAwait(false);
     }
 }

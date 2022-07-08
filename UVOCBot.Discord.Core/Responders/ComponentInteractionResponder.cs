@@ -52,8 +52,15 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         if (gatewayEvent.Type is not (InteractionType.MessageComponent or InteractionType.ModalSubmit))
             return Result.FromSuccess();
 
-        if (!gatewayEvent.Data.IsDefined(out IInteractionData? interactionData))
+        if (!gatewayEvent.Data.IsDefined(out OneOf.OneOf<IApplicationCommandData, IMessageComponentData, IModalSubmitData> data))
             return Result.FromSuccess();
+
+        if (data.IsT0)
+            return Result.FromSuccess();
+
+        string customID = data.IsT1
+            ? data.AsT1.CustomID
+            : data.AsT2.CustomID;
 
         // Get the user who initiated the interaction
         IUser? user = gatewayEvent.GetUser();
@@ -65,9 +72,6 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         if (!context.IsSuccess)
             return Result.FromError(context);
         _contextInjectionService.Context = context.Entity;
-
-        if (!interactionData.CustomID.IsDefined(out string? customID))
-            return Result.FromSuccess();
 
         // Run any user-provided pre-execution events
         Result preExecution = await _eventCollector.RunPreExecutionEvents

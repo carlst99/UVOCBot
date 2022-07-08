@@ -1,4 +1,5 @@
 ﻿using FuzzySharp;
+using Microsoft.Extensions.Logging;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Greetings.Abstractions.Services;
 using UVOCBot.Plugins.Greetings.Objects;
 
@@ -21,6 +23,7 @@ namespace UVOCBot.Plugins.Greetings.Services;
 /// <inheritdoc />
 public class GreetingService : IGreetingService
 {
+    private readonly ILogger<GreetingService> _logger;
     private readonly ICensusQueryService _censusService;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IDiscordRestGuildAPI _guildApi;
@@ -28,12 +31,14 @@ public class GreetingService : IGreetingService
 
     public GreetingService
     (
+        ILogger<GreetingService> logger,
         ICensusQueryService censusService,
         IDiscordRestChannelAPI channelApi,
         IDiscordRestGuildAPI guildApi,
         DiscordContext dbContext
     )
     {
+        _logger = logger;
         _censusService = censusService;
         _channelApi = channelApi;
         _guildApi = guildApi;
@@ -41,7 +46,7 @@ public class GreetingService : IGreetingService
     }
 
     /// <inheritdoc />
-    public async Task<Result<IMessage?>> SendGreeting
+    public async Task<Result> SendGreeting
     (
         Snowflake guildID,
         IGuildMember member,
@@ -51,21 +56,32 @@ public class GreetingService : IGreetingService
         if (!member.User.IsDefined(out IUser? user))
             return new ArgumentNullError(nameof(user));
 
-        // Get the welcome message settings
         GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct).ConfigureAwait(false);
-
         if (!welcomeMessage.IsEnabled)
-            return Result<IMessage?>.FromSuccess(null);
+            return Result.FromSuccess();
 
-        Result<IEnumerable<string>>? nicknameGuesses = null;
+        List<IMessageComponent> messageComponents = new();
+
         if (welcomeMessage.DoIngameNameGuess)
-            nicknameGuesses = await DoFuzzyNicknameGuess(user.Username, welcomeMessage.OutfitId, ct).ConfigureAwait(false);
+        {
+            Result<List<ButtonComponent>> getNicknameButtons = await CreateNicknameGuessButtonsAsync
+            (
+                welcomeMessage,
+                user,
+                ct
+            ).ConfigureAwait(false);
 
-        // Prepare components of the welcome message
-        List<ButtonComponent> messageButtons = CreateWelcomeMessageButtons
-            (welcomeMessage,
-            nicknameGuesses.HasValue && nicknameGuesses.Value.IsDefined() ? nicknameGuesses.Value.Entity : null,
-            user.ID.Value);
+            if (!getNicknameButtons.IsSuccess)
+                _logger.LogWarning("Failed to retrieve nickname guesses: {Error}", getNicknameButtons.Error);
+            else
+                messageComponents.Add(new ActionRowComponent(getNicknameButtons.Entity));
+        }
+
+        if (welcomeMessage.AlternateRolesets.Count > 0)
+        {
+            List<ButtonComponent> altRolesetButtons = CreateAlternateRolesetButtons(welcomeMessage, user.ID);
+            messageComponents.Add(new ActionRowComponent(altRolesetButtons));
+        }
 
         string messageContent = SubstituteMessageVariables(welcomeMessage.Message, user.ID);
 
@@ -74,8 +90,10 @@ public class GreetingService : IGreetingService
         (
             DiscordSnowflake.New(welcomeMessage.ChannelId),
             messageContent,
-            allowedMentions: new AllowedMentions(new List<MentionType>() { MentionType.Users }),
-            components: new List<IMessageComponent>() { new ActionRowComponent(messageButtons) },
+            allowedMentions: new AllowedMentions(new List<MentionType> { MentionType.Users }),
+            components: messageComponents.Count == 0
+                ? default(Optional<IReadOnlyList<IMessageComponent>>)
+                : messageComponents,
             ct: ct
         ).ConfigureAwait(false);
 
@@ -94,9 +112,7 @@ public class GreetingService : IGreetingService
             ).ConfigureAwait(false);
         }
 
-#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
-        return sendWelcomeMessageResult;
-#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
+        return (Result)sendWelcomeMessageResult;
     }
 
     /// <inheritdoc />
@@ -122,12 +138,12 @@ public class GreetingService : IGreetingService
             NewOutfitMember m = newMembers[i];
 
             int matchRatio = Fuzz.PartialRatio(m.CharacterName.Name.First, username);
-            if (matchRatio > minMatchRatio)
-            {
-                nicknameGuesses.Add(new Tuple<string, int>(m.CharacterName.Name.First, matchRatio));
-                newMembers.RemoveAt(i);
-                i--;
-            }
+            if (matchRatio <= minMatchRatio)
+                continue;
+
+            nicknameGuesses.Add(new Tuple<string, int>(m.CharacterName.Name.First, matchRatio));
+            newMembers.RemoveAt(i);
+            i--;
         }
 
         nicknameGuesses.Sort((x, y) => y.Item2.CompareTo(x.Item2));
@@ -139,17 +155,32 @@ public class GreetingService : IGreetingService
     }
 
     /// <inheritdoc />
-    public async Task<Result<IReadOnlyList<ulong>>> SetAlternateRoles
+    public async Task<Result<IReadOnlyList<ulong>>> SetAlternateRolesetAsync
     (
         Snowflake guildID,
         IGuildMember member,
+        ulong rolesetID,
         CancellationToken ct = default
     )
     {
         if (!member.User.IsDefined(out IUser? user))
             return new ArgumentNullError(nameof(user));
 
-        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct).ConfigureAwait(false);
+        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct)
+            .ConfigureAwait(false);
+
+        GuildGreetingAlternateRoleSet? roleset = welcomeMessage.AlternateRolesets
+            .FirstOrDefault(rs => rs.ID == rolesetID);
+
+        if (roleset is null)
+            return new GenericCommandError("That roleset has been removed by your guild administrator!");
+
+        List<ulong> toRemove = welcomeMessage.DefaultRoles;
+        toRemove.AddRange
+        (
+            welcomeMessage.AlternateRolesets.Where(rs => rs.ID != rolesetID)
+                .SelectMany(rs => rs.RoleIDs)
+        );
 
         // Remove the default roles and add the alternate roles
         Result roleChangeResult = await _guildApi.ModifyRoles
@@ -157,55 +188,94 @@ public class GreetingService : IGreetingService
             guildID,
             user.ID,
             member.Roles,
-            welcomeMessage.AlternateRoles,
-            welcomeMessage.DefaultRoles,
+            roleset.RoleIDs,
+            toRemove,
             ct
         ).ConfigureAwait(false);
 
         return !roleChangeResult.IsSuccess
             ? Result<IReadOnlyList<ulong>>.FromError(roleChangeResult)
-            : Result<IReadOnlyList<ulong>>.FromSuccess(welcomeMessage.AlternateRoles.AsReadOnly());
+            : Result<IReadOnlyList<ulong>>.FromSuccess(roleset.RoleIDs);
     }
 
-    private static List<ButtonComponent> CreateWelcomeMessageButtons
-    (
-        GuildWelcomeMessage welcomeMessage,
-        IEnumerable<string>? nicknameGuesses,
-        ulong userId
-    )
+    /// <inheritdoc />
+    public ISelectOption[] CreateAlternateRoleSelectOptions(IReadOnlyList<GuildGreetingAlternateRoleSet> alternateRolesets)
     {
-        List<ButtonComponent> messageButtons = new();
-
-        if (welcomeMessage.OfferAlternateRoles)
+        ISelectOption[] options = new ISelectOption[alternateRolesets.Count];
+        for (int i = 0; i < alternateRolesets.Count; i++)
         {
-            messageButtons.Add(new ButtonComponent(
-                ButtonComponentStyle.Danger,
-                welcomeMessage.AlternateRoleLabel,
-                CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.SetAlternateRoles, userId.ToString())));
-        }
+            GuildGreetingAlternateRoleSet roleset = alternateRolesets[i];
 
-        if (nicknameGuesses is not null)
-        {
-            foreach (string nickname in nicknameGuesses)
-            {
-                messageButtons.Add(new ButtonComponent
-                (
-                    ButtonComponentStyle.Primary,
-                    "My PS2 name is: " + nickname,
-                    CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.SetGuessedNickname, userId.ToString() + '@' + nickname))
-                );
-            }
-
-            messageButtons.Add(new ButtonComponent
+            options[i] = new SelectOption
             (
-                ButtonComponentStyle.Secondary,
-                "My PS2 name is none of these!",
-                CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.NoNicknameMatches, userId.ToString()))
+                roleset.Description,
+                roleset.ID.ToString()
             );
         }
 
+        return options;
+    }
+
+    private async Task<Result<List<ButtonComponent>>> CreateNicknameGuessButtonsAsync
+    (
+        GuildWelcomeMessage welcomeMessage,
+        IUser user,
+        CancellationToken ct
+    )
+    {
+        if (!welcomeMessage.DoIngameNameGuess)
+            throw new InvalidOperationException("In-game name guesses are not enabled for this guild");
+
+        Result<IEnumerable<string>> getNicknameGuesses = await DoFuzzyNicknameGuess
+        (
+            user.Username,
+            welcomeMessage.OutfitId,
+            ct
+        ).ConfigureAwait(false);
+
+        if (!getNicknameGuesses.IsDefined(out IEnumerable<string>? nicknameGuesses))
+            return Result<List<ButtonComponent>>.FromError(getNicknameGuesses);
+
+        string userID = user.ID.Value.ToString();
+
+        List<ButtonComponent> messageButtons = nicknameGuesses.Select
+        (
+            nickname => new ButtonComponent
+            (
+                ButtonComponentStyle.Primary,
+                "My PS2 name is: " + nickname,
+                CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.SetGuessedNickname, userID + '@' + nickname)
+            )
+        ).ToList();
+
+        messageButtons.Add(new ButtonComponent
+        (
+            ButtonComponentStyle.Secondary,
+            "My PS2 name is none of these!",
+            CustomID: ComponentIDFormatter.GetId(GreetingComponentKeys.NoNicknameMatches, userID)
+        ));
+
         return messageButtons;
     }
+
+    private static List<ButtonComponent> CreateAlternateRolesetButtons
+    (
+        GuildWelcomeMessage welcomeMessage,
+        Snowflake userID
+    )
+        => welcomeMessage.AlternateRolesets.Select
+        (
+            roleset => new ButtonComponent
+            (
+                ButtonComponentStyle.Primary,
+                roleset.Description,
+                CustomID: ComponentIDFormatter.GetId
+                (
+                    GreetingComponentKeys.SetAlternateRoleset,
+                    userID.Value + "|" + roleset.ID
+                )
+            )
+        ).ToList();
 
     private static string SubstituteMessageVariables(string welcomeMessage, Snowflake userId)
         => welcomeMessage.Replace("<name>", Formatter.UserMention(userId));

@@ -21,8 +21,9 @@ namespace UVOCBot.Commands;
 public class GeneralCommands : CommandGroup
 {
     public const string RELEASE_NOTES =
-        @"• Added the `online-friends` command
-            Base capture notifications now show outfit members that were involved.";
+        @"• BREAKING CHANGE to alternate role assignments in the Greeting message.
+            Please re-setup any alternate role assignments you had.
+          • Fixed the `population` and `status` commands failing to respond.";
 
     private readonly IDiscordRestUserAPI _userAPI;
     private readonly FeedbackService _feedbackService;

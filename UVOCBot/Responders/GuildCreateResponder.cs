@@ -21,29 +21,28 @@ public class GuildCreateResponder : IResponder<IGuildCreate>
 
     public Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
     {
-        if (gatewayEvent.VoiceStates.HasValue)
+        foreach (IPartialVoiceState voiceState in gatewayEvent.VoiceStates.Where(v => v.ChannelID.HasValue))
         {
-            foreach (IPartialVoiceState voiceState in gatewayEvent.VoiceStates.Value.Where(v => v.ChannelID.HasValue))
-            {
-                VoiceState trueState = new
-                (
-                    gatewayEvent.ID,
-                    voiceState.ChannelID.Value,
-                    voiceState.UserID.Value,
-                    voiceState.Member,
-                    voiceState.SessionID.Value,
-                    voiceState.IsDeafened.Value,
-                    voiceState.IsMuted.Value,
-                    voiceState.IsSelfDeafened.Value,
-                    voiceState.IsSelfMuted.Value,
-                    voiceState.IsStreaming,
-                    voiceState.IsVideoEnabled.Value,
-                    voiceState.IsSuppressed.Value,
-                    null
-                );
+            // We can assume each value is present because the IGuildCreate event
+            // is guaranteed to contain complete voice state payloads.
+            VoiceState trueState = new
+            (
+                gatewayEvent.ID,
+                voiceState.ChannelID.Value,
+                voiceState.UserID.Value,
+                voiceState.Member,
+                voiceState.SessionID.Value,
+                voiceState.IsDeafened.Value,
+                voiceState.IsMuted.Value,
+                voiceState.IsSelfDeafened.Value,
+                voiceState.IsSelfMuted.Value,
+                voiceState.IsStreaming,
+                voiceState.IsVideoEnabled.Value,
+                voiceState.IsSuppressed.Value,
+                null
+            );
 
-                _cache.Set(trueState);
-            }
+            _cache.Set(trueState);
         }
 
         return Task.FromResult(Result.FromSuccess());

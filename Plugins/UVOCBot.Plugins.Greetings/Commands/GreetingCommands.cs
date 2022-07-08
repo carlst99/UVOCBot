@@ -1,10 +1,13 @@
 ﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
@@ -62,10 +65,9 @@ public class GreetingCommands : CommandGroup
 
     [Command("enabled")]
     [Description("Enables or disables the entire welcome message feature.")]
-    public async Task<IResult> EnabledCommand([Description("True to enable the welcome message feature.")] bool isEnabled)
+    public async Task<Result> EnabledCommand([Description("True to enable the welcome message feature.")] bool isEnabled)
     {
         GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
-
         welcomeMessage.IsEnabled = isEnabled;
 
         _dbContext.Update(welcomeMessage);
@@ -73,60 +75,81 @@ public class GreetingCommands : CommandGroup
 
         return await _feedbackService.SendContextualSuccessAsync
         (
-            $"The welcome message feature has been {Formatter.Bold(isEnabled ? "enabled" : "disabled")}.",
+            $"Greetings have been {Formatter.Bold(isEnabled ? "enabled" : "disabled")}.",
             ct: CancellationToken
         ).ConfigureAwait(false);
     }
 
-    [Command("alternate-roles")]
-    [Description("Provides the new member with the option to give themself an alternative set of roles.")]
+    [Command("add-alternate-roleset")]
+    [Description("Adds an alternate roleset that will be offered to the new member, in place of the default roleset.")]
     [RequireGuildPermission(DiscordPermission.ManageRoles)]
-    public async Task<IResult> AlternateRolesCommand
+    public async Task<Result> AddAlternateRolesetCommandAsync
     (
-        [Description("Set whether the alternate roles will be offered.")] bool offerAlternateRoles,
-        [Description("The label of the alternate role button.")] string? alternateRoleButtonLabel = null,
-        [Description("The roles to apply.")] string? roles = null
+        [Description("The description of the roleset, shown when the user selects the set.")] string label,
+        [Description("The first role to grant the user.")][DiscordTypeHint(TypeHint.Role)] Snowflake role1,
+        [Description("Optional. The second role to grant the user.")][DiscordTypeHint(TypeHint.Role)] Snowflake? role2 = null,
+        [Description("Optional. The third role to grant the user.")][DiscordTypeHint(TypeHint.Role)] Snowflake? role3 = null
     )
     {
+        if (label.Length > 80)
+            return new GenericCommandError("The description must be no longer than 80 characters");
+
         GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
-        welcomeMessage.OfferAlternateRoles = offerAlternateRoles;
+        if (welcomeMessage.AlternateRolesets.Count >= 5)
+            return new GenericCommandError("You can add a maximum of 5 alternate rolesets. Please remove an existing set before adding this new one.");
 
-        if (offerAlternateRoles && string.IsNullOrEmpty(alternateRoleButtonLabel))
-            return await _feedbackService.SendContextualErrorAsync("You must set a label.", ct: CancellationToken).ConfigureAwait(false);
+        List<ulong> roleIDs = new() { role1.Value };
+        if (role2.HasValue)
+            roleIDs.Add(role2.Value.Value);
+        if (role3.HasValue)
+            roleIDs.Add(role3.Value.Value);
 
-        if (offerAlternateRoles && string.IsNullOrEmpty(roles))
-            return await _feedbackService.SendContextualErrorAsync("You must provide some roles.", ct: CancellationToken).ConfigureAwait(false);
+        GuildGreetingAlternateRoleSet roleset = new
+        (
+            Snowflake.CreateTimestampSnowflake(DateTimeOffset.UtcNow, Constants.DiscordEpoch).Value,
+            label,
+            roleIDs
+        );
 
-        IResult replyResult;
-        if (!offerAlternateRoles)
-        {
-            replyResult = await _feedbackService.SendContextualSuccessAsync
-            (
-                "Alternate roles will not be offered to new members.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
-        else
-        {
-            IEnumerable<ulong> roleIds = ParseRoles(roles!);
-            IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, roleIds).ConfigureAwait(false);
-            if (!canManipulateRoles.IsSuccess)
-                return canManipulateRoles;
-
-            welcomeMessage.AlternateRoleLabel = alternateRoleButtonLabel ?? string.Empty;
-            welcomeMessage.AlternateRoles = roleIds.ToList();
-
-            replyResult = await _feedbackService.SendContextualSuccessAsync
-            (
-                "The following roles will be assigned when a new member requests alternate roles: " + string.Join(' ', roleIds.Select(Formatter.RoleMention)),
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
-
+        welcomeMessage.AlternateRolesets.Add(roleset);
         _dbContext.Update(welcomeMessage);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-        return replyResult;
+        return await _feedbackService.SendContextualSuccessAsync("Roleset added successfully!", ct: CancellationToken);
+    }
+
+    [Command("delete-alternate-rolesets")]
+    [Description("Allows a selection of alternate rolesets to be deleted.")]
+    [RequireGuildPermission(DiscordPermission.ManageRoles)]
+    public async Task<Result> DeleteAlternateRolesetsCommandAsync()
+    {
+        GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
+        if (welcomeMessage.AlternateRolesets.Count == 0)
+            return new GenericCommandError("You must add at least one roleset before you can remove any.");
+
+        ISelectOption[] selectOptions = _greetingService.CreateAlternateRoleSelectOptions(welcomeMessage.AlternateRolesets);
+        SelectMenuComponent alternateRoleSelectMenu = new
+        (
+            GreetingComponentKeys.DeleteAlternateRolesets,
+            selectOptions,
+            "Select rolesets to delete",
+            0,
+            selectOptions.Length
+        );
+
+        Result t = await _feedbackService.SendContextualNeutralAsync
+        (
+            "Select rolesets to delete",
+            options: new FeedbackMessageOptions
+            (
+                MessageComponents: new IMessageComponent[] {
+                    new ActionRowComponent(new[] { alternateRoleSelectMenu })
+                }
+            ),
+            ct: CancellationToken
+        );
+
+        return t;
     }
 
     [Command("channel")]
@@ -141,7 +164,7 @@ public class GreetingCommands : CommandGroup
         ).ConfigureAwait(false);
 
         if (!getPermissionSet.IsSuccess)
-            return Result.FromError(getPermissionSet);
+            return (Result)getPermissionSet;
 
         if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ViewChannel))
             return new PermissionError(DiscordPermission.ViewChannel, DiscordConstants.UserId, channel.ID);
@@ -173,21 +196,21 @@ public class GreetingCommands : CommandGroup
         ).ConfigureAwait(false);
 
         return !responseResult.IsSuccess
-            ? Result.FromError(responseResult.Error!)
+            ? (Result)responseResult
             : Result.FromSuccess();
     }
 
     [Command("default-roles")]
     [Description("Provides the new member default roles.")]
     [RequireGuildPermission(DiscordPermission.ManageRoles)]
-    public async Task<IResult> DefaultRolesCommand
+    public async Task<Result> DefaultRolesCommand
     (
         [Description("The roles to apply. Leave empty to apply no roles.")] string? roles = null
     )
     {
         GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
 
-        IResult replyResult;
+        Result replyResult;
         if (string.IsNullOrEmpty(roles))
         {
             welcomeMessage.DefaultRoles.Clear();
@@ -220,7 +243,7 @@ public class GreetingCommands : CommandGroup
     [Command("ingame-name-guess")]
     [Description("Attempts to guess the new member's in-game name, in order to make an offer to set their nickname.")]
     [RequireGuildPermission(DiscordPermission.ChangeNickname)]
-    public async Task<IResult> IngameNameGuessCommand
+    public async Task<Result> IngameNameGuessCommand
     (
         [Description("Is the nickname guess feature enabled.")] bool isEnabled,
         [Description("The tag of the outfit to make nickname guesses from, based on its newest members.")] string? outfitTag = null
@@ -238,7 +261,7 @@ public class GreetingCommands : CommandGroup
         GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
         welcomeMessage.DoIngameNameGuess = isEnabled;
 
-        IResult replyResult;
+        Result replyResult;
         if (!isEnabled)
         {
             welcomeMessage.DoIngameNameGuess = false;
@@ -252,7 +275,7 @@ public class GreetingCommands : CommandGroup
         {
             Result<Outfit?> getOutfit = await _censusService.GetOutfitAsync(outfitTag!, CancellationToken).ConfigureAwait(false);
             if (!getOutfit.IsSuccess)
-                return getOutfit;
+                return (Result)getOutfit;
 
             if (getOutfit.Entity is null)
                 return await _feedbackService.SendContextualErrorAsync("That outfit does not exist.", ct: CancellationToken).ConfigureAwait(false);
@@ -315,12 +338,20 @@ public class GreetingCommands : CommandGroup
 
     [Command("test")]
     [Description("Tests the greeting feature with your current setup.")]
-    public async Task<IResult> TestCommand()
+    public async Task<Result> TestCommand
+    (
+        [Description("Optional: the member to target with the greeting.")] IGuildMember? target = null
+    )
     {
         if (_context is not InteractionContext ictx)
             return await _feedbackService.SendContextualErrorAsync("This command can only be used as a slash command.", ct: CancellationToken).ConfigureAwait(false);
 
-        IResult greetingResult = await _greetingService.SendGreeting(_context.GuildID.Value, ictx.Member.Value, CancellationToken).ConfigureAwait(false);
+        Result greetingResult = await _greetingService.SendGreeting
+        (
+            _context.GuildID.Value,
+            target ?? ictx.Member.Value,
+            CancellationToken
+        ).ConfigureAwait(false);
 
         return !greetingResult.IsSuccess
             ? greetingResult

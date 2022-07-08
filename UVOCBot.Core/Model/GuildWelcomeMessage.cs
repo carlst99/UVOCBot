@@ -13,14 +13,9 @@ public class GuildWelcomeMessage : IGuildObject
     public ulong GuildId { get; set; }
 
     /// <summary>
-    /// Gets or sets the label that is shown on the button to assign the alternate roles.
-    /// </summary>
-    public string AlternateRoleLabel { get; set; }
-
-    /// <summary>
     /// Gets the list of alternate roles that can be assigned.
     /// </summary>
-    public List<ulong> AlternateRoles { get; set; }
+    public List<GuildGreetingAlternateRoleSet> AlternateRolesets { get; }
 
     /// <summary>
     /// Gets or sets the channel in which to send the welcome message.
@@ -48,11 +43,6 @@ public class GuildWelcomeMessage : IGuildObject
     public string Message { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating if the alternate roles should be offered.
-    /// </summary>
-    public bool OfferAlternateRoles { get; set; }
-
-    /// <summary>
     /// Gets or sets the tag to use for making nickname guesses.
     /// </summary>
     public ulong OutfitId { get; set; }
@@ -67,8 +57,7 @@ public class GuildWelcomeMessage : IGuildObject
 
     public GuildWelcomeMessage(ulong guildId)
     {
-        AlternateRoleLabel = string.Empty;
-        AlternateRoles = new List<ulong>();
+        AlternateRolesets = new List<GuildGreetingAlternateRoleSet>();
         DefaultRoles = new List<ulong>();
         DoIngameNameGuess = false;
         GuildId = guildId;
@@ -76,3 +65,10 @@ public class GuildWelcomeMessage : IGuildObject
         Message = "Welcome <name>!";
     }
 }
+
+public record GuildGreetingAlternateRoleSet
+(
+    ulong ID,
+    string Description,
+    IReadOnlyList<ulong> RoleIDs
+);

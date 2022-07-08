@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UVOCBot.Core;
 
@@ -10,9 +11,10 @@ using UVOCBot.Core;
 namespace UVOCBot.Core.Migrations
 {
     [DbContext(typeof(DiscordContext))]
-    partial class BotContextModelSnapshot : ModelSnapshot
+    [Migration("20220708014304_MultipleAlternateRolesets")]
+    partial class MultipleAlternateRolesets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

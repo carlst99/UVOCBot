@@ -21,8 +21,9 @@ public static class IServiceCollectionExtensions
         services.AddScoped<IGreetingService, GreetingService>();
         services.AddResponder<GuildMemberAddGreetingResponder>();
         services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.NoNicknameMatches);
-        services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.SetAlternateRoles);
+        services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.SetAlternateRoleset);
         services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.SetGuessedNickname);
+        services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.DeleteAlternateRolesets);
 
         services.AddCommandTree()
                 .WithCommandGroup<GreetingCommands>()

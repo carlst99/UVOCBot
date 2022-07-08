@@ -199,7 +199,7 @@ public class WorldCommands : CommandGroup
         if (_cache.TryGetValue(cacheKey, out IMetagameEvent? metagameEvent) && metagameEvent!.MetagameEventState is MetagameEventState.Started)
         {
             TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
-            TimeSpan remainingTime = MetagameEventDefinitionToDuration.GetDuration(metagameEvent.MetagameEventID) - currentEventDuration;
+            TimeSpan remainingTime = metagameEvent.MetagameEventID.GetAlertDuration() - currentEventDuration;
             title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
         }
         else if (isLocked)

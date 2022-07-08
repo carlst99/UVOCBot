@@ -23,6 +23,7 @@ public static class IServiceCollectionExtensions
         services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.NoNicknameMatches);
         services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.SetAlternateRoleset);
         services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.SetGuessedNickname);
+        services.AddComponentResponder<GreetingComponentResponder>(GreetingComponentKeys.DeleteAlternateRolesets);
 
         services.AddCommandTree()
                 .WithCommandGroup<GreetingCommands>()

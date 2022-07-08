@@ -121,7 +121,7 @@ public class GreetingCommands : CommandGroup
     [Command("delete-alternate-rolesets")]
     [Description("Allows a selection of alternate rolesets to be deleted.")]
     [RequireGuildPermission(DiscordPermission.ManageRoles)]
-    public async Task<Result> RemoveAlternateRolesetsCommandAsync()
+    public async Task<Result> DeleteAlternateRolesetsCommandAsync()
     {
         GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
         if (welcomeMessage.AlternateRolesets.Count == 0)

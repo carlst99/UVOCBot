@@ -1,11 +1,23 @@
 # Changelog
 
-## Release 1.4.1
+## Release v1.5.0
 
-- Fixed the `population` and `status` failing to respond.
-- Updated in-app release notes
+**Additions**
+- BREAKING CHANGE: The **Alternate Role** feature of the greeting message has been refactored
+  to allow up to five 'rolesets' to be added. These rolesets are exclusive of each other, such
+  that if a user selects one and then another, they'll lose any roles granted by the first set.
+  This change means that you'll need to re-setup any alternate roles you wish to offer, by using
+  the `add-alternate-roleset` and `delete-alternate-rolesets` commands.
 
-## Release 1.4.0
+**Fixes**
+- *Actually* fixed the `population` and `status` commands failing to respond.
+
+## Release v1.4.1
+
+- Fixed the `population` and `status` commands failing to respond.
+- Updated in-app release notes.
+
+## Release v1.4.0
 
 **Additions**
 - Added the `online-friends` command.

@@ -51,7 +51,7 @@ public sealed class DiscordContext : DbContext
                 v => JsonSerializer.Serialize(v, JSON_OPTIONS),
                 v => v.Length == 0
                     ? new List<GuildGreetingAlternateRoleSet>()
-                    : JsonSerializer.Deserialize<List<GuildGreetingAlternateRoleSet>>(v, JSON_OPTIONS),
+                    : JsonSerializer.Deserialize<List<GuildGreetingAlternateRoleSet>>(v, JSON_OPTIONS)!,
                 garsComparer
             );
 

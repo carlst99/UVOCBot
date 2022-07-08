@@ -95,7 +95,7 @@ public class RoleMenuService : IRoleMenuService
             },
             components: menu.Roles.Count > 0
                 ? CreateRoleMenuMessageComponents(menu)
-                : new Optional<IReadOnlyList<IMessageComponent>>(),
+                : new Optional<IReadOnlyList<IMessageComponent>?>(),
             ct: ct
         );
 

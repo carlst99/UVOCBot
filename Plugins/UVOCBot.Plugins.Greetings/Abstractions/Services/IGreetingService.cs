@@ -4,6 +4,7 @@ using Remora.Results;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Core.Model;
 
 namespace UVOCBot.Plugins.Greetings.Abstractions.Services;
 
@@ -18,8 +19,8 @@ public interface IGreetingService
     /// <param name="guildID">The ID of the guild in which to send the greeting.</param>
     /// <param name="member">The guild member.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
-    /// <returns>The greeting message, if one was sent.</returns>
-    Task<Result<IMessage?>> SendGreeting
+    /// <returns>A <see cref="Result"/> representing the outcome of the operation.</returns>
+    Task<Result> SendGreeting
     (
         Snowflake guildID,
         IGuildMember member,
@@ -45,12 +46,22 @@ public interface IGreetingService
     /// </summary>
     /// <param name="guildID">The ID of the guild in which the request originated.</param>
     /// <param name="member">The member to apply the alternate role set to.</param>
+    /// <param name="rolesetID">The ID of the roleset.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A list of the role IDs that were applied.</returns>
-    Task<Result<IReadOnlyList<ulong>>> SetAlternateRoles
+    Task<Result<IReadOnlyList<ulong>>> SetAlternateRolesetAsync
     (
         Snowflake guildID,
         IGuildMember member,
+        ulong rolesetID,
         CancellationToken ct = default
     );
+
+    /// <summary>
+    /// Gets an array of <see cref="ISelectOption"/>s that can be used to
+    /// build a select menu for alternate rolesets.
+    /// </summary>
+    /// <param name="alternateRolesets">The alternate rolesets to include in the menu.</param>
+    /// <returns>A <see cref="Result"/> representing the outcome of the operation, and the array of select options upon success.</returns>
+    ISelectOption[] CreateAlternateRoleSelectOptions(IReadOnlyList<GuildGreetingAlternateRoleSet> alternateRolesets);
 }

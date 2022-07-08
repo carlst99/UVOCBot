@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+// ReSharper disable once CheckNamespace
 namespace Remora.Discord.API.Abstractions.Rest;
 
 public static class IDiscordRestGuildAPIExtensions
@@ -28,7 +29,7 @@ public static class IDiscordRestGuildAPIExtensions
         [EnumeratorCancellation] CancellationToken ct = default
     )
     {
-        await foreach (Result<IReadOnlyList<IGuildMember>> element in GetAllMembersAsync(guildApi, guildID, (_) => true, ct).ConfigureAwait(false))
+        await foreach (Result<IReadOnlyList<IGuildMember>> element in GetAllMembersAsync(guildApi, guildID, _ => true, ct).ConfigureAwait(false))
             yield return element;
     }
 
@@ -67,7 +68,7 @@ public static class IDiscordRestGuildAPIExtensions
             (
                 member => member.User.HasValue
                     ? member.User.Value.ID
-                    : new Snowflake(0, Constants.DiscordEpoch)
+                    : DiscordSnowflake.New(0)
             );
         }
         while (members.Entity.Count == MAX_MEMBER_PAGE_SIZE);
@@ -114,7 +115,7 @@ public static class IDiscordRestGuildAPIExtensions
         {
             foreach (ulong roleId in rolesToAdd)
             {
-                Snowflake snowflake = new(roleId);
+                Snowflake snowflake = DiscordSnowflake.New(roleId);
                 if (!newRoles.Contains(snowflake))
                     newRoles.Add(snowflake);
             }
@@ -124,7 +125,7 @@ public static class IDiscordRestGuildAPIExtensions
         {
             foreach (ulong roleId in rolesToRemove)
             {
-                Snowflake snowflake = new(roleId);
+                Snowflake snowflake = DiscordSnowflake.New(roleId);
                 if (newRoles.Contains(snowflake))
                     newRoles.Remove(snowflake);
             }

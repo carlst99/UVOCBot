@@ -42,28 +42,22 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         => key switch
         {
             GreetingComponentKeys.NoNicknameMatches => await NoNicknameMatches(ct).ConfigureAwait(false),
-            GreetingComponentKeys.SetAlternateRoles => await SetAlternateRoles(dataFragment, ct).ConfigureAwait(false),
+            GreetingComponentKeys.SetAlternateRoleset => await SetAlternateRolesAsync(dataFragment, ct).ConfigureAwait(false),
             GreetingComponentKeys.SetGuessedNickname => await SetGuessedNickname(dataFragment, ct).ConfigureAwait(false),
             _ => Result.FromError(new GenericCommandError())
         };
 
-    private async Task<Result> NoNicknameMatches(CancellationToken ct = default)
-    {
-        IResult alertResponse = await _feedbackService.SendContextualSuccessAsync
+    private async Task<Result> NoNicknameMatches(CancellationToken ct)
+        => await _feedbackService.SendContextualSuccessAsync
         (
             "Please set your nickname to the name of your PlanetSide 2 character!",
             ct: ct
         ).ConfigureAwait(false);
 
-        return !alertResponse.IsSuccess
-            ? Result.FromError(alertResponse.Error!)
-            : Result.FromSuccess();
-    }
-
     private async Task<Result> SetGuessedNickname
     (
         string? dataFragment,
-        CancellationToken ct = default
+        CancellationToken ct
     )
     {
         if (dataFragment is null)
@@ -97,10 +91,10 @@ internal sealed class GreetingComponentResponder : IComponentResponder
             : Result.FromError(alertResponse.Error!);
     }
 
-    private async Task<Result> SetAlternateRoles
+    private async Task<Result> SetAlternateRolesAsync
     (
         string? dataFragment,
-        CancellationToken ct = default
+        CancellationToken ct
     )
     {
         if (dataFragment is null)
@@ -115,22 +109,30 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         if (!member.User.IsDefined())
             return Result.FromSuccess();
 
+        string[] fragmentComponents = dataFragment.Split('|');
+        ulong userID = ulong.Parse(fragmentComponents[0]);
+        ulong rolesetID = ulong.Parse(fragmentComponents[1]);
+
         // Check that the user who clicked the button is the focus of the welcome message
-        ulong userId = ulong.Parse(dataFragment);
-        if (_context.User.ID.Value != userId)
+        if (_context.User.ID.Value != userID)
         {
             await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
             return Result.FromSuccess();
         }
 
-        // Remove the default roles and add the alternate roles
-        Result<IReadOnlyList<ulong>> roleChangeResult = await _greetingService.SetAlternateRoles(guildID, member, ct).ConfigureAwait(false);
+        Result<IReadOnlyList<ulong>> roleChangeResult = await _greetingService.SetAlternateRolesetAsync
+        (
+            guildID,
+            member,
+            rolesetID,
+            ct
+        ).ConfigureAwait(false);
 
         if (!roleChangeResult.IsDefined(out IReadOnlyList<ulong>? newRoles))
             return Result.FromError(roleChangeResult);
 
         // Inform the user of their role change
-        string rolesStringList = string.Join(' ', newRoles.Select(r => Formatter.RoleMention(r)));
+        string rolesStringList = string.Join(' ', newRoles.Select(Formatter.RoleMention));
         IResult alertResponse = await _feedbackService.SendContextualSuccessAsync
         (
             $"You've been given the following roles: { rolesStringList }",

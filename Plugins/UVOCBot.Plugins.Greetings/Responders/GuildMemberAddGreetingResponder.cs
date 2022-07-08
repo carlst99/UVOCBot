@@ -8,7 +8,7 @@ using UVOCBot.Plugins.Greetings.Abstractions.Services;
 namespace UVOCBot.Plugins.Greetings.Responders;
 
 /// <summary>
-/// Represents a responder for sending a greeting when an <see cref="IGuildMemberAdd"/> event occurs.
+/// Responsible for sending a greeting message when a new member joins a guild.
 /// </summary>
 internal sealed class GuildMemberAddGreetingResponder : IResponder<IGuildMemberAdd>
 {
@@ -21,11 +21,5 @@ internal sealed class GuildMemberAddGreetingResponder : IResponder<IGuildMemberA
 
     /// <inheritdoc />
     public async Task<Result> RespondAsync(IGuildMemberAdd gatewayEvent, CancellationToken ct = default)
-    {
-        IResult res = await _greetingService.SendGreeting(gatewayEvent.GuildID, gatewayEvent, ct).ConfigureAwait(false);
-
-        return !res.IsSuccess
-            ? Result.FromError(res.Error!)
-            : Result.FromSuccess();
-    }
+        => await _greetingService.SendGreeting(gatewayEvent.GuildID, gatewayEvent, ct).ConfigureAwait(false);
 }

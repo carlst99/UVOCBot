@@ -4,12 +4,15 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using UVOCBot.Core.Model;
 
 namespace UVOCBot.Core;
 
 public sealed class DiscordContext : DbContext
 {
+    private static readonly JsonSerializerOptions JSON_OPTIONS = new();
+
     public DbSet<GuildAdminSettings> GuildAdminSettings { get; set; }
     public DbSet<GuildFeedsSettings> GuildFeedsSettings { get; set; }
     public DbSet<GuildWelcomeMessage> GuildWelcomeMessages { get; set; }
@@ -34,14 +37,23 @@ public sealed class DiscordContext : DbContext
             l => l
         );
 
+        ValueComparer<List<GuildGreetingAlternateRoleSet>> garsComparer = new
+        (
+            (l1, l2) => l1 != null && l2 != null && l1.SequenceEqual(l2),
+            l => l.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+            l => l
+        );
+
         modelBuilder.Entity<GuildWelcomeMessage>()
-                    .Property(p => p.AlternateRoles)
-                    .HasConversion
-                    (
-                        v => IdListToBytes(v),
-                        v => BytesToIdList(v),
-                        idListComparer
-                    );
+            .Property(p => p.AlternateRolesets)
+            .HasConversion
+            (
+                v => JsonSerializer.Serialize(v, JSON_OPTIONS),
+                v => v.Length == 0
+                    ? new List<GuildGreetingAlternateRoleSet>()
+                    : JsonSerializer.Deserialize<List<GuildGreetingAlternateRoleSet>>(v, JSON_OPTIONS),
+                garsComparer
+            );
 
         modelBuilder.Entity<GuildWelcomeMessage>()
                     .Property(p => p.DefaultRoles)
@@ -62,7 +74,7 @@ public sealed class DiscordContext : DbContext
                     );
     }
 
-    private static byte[] IdListToBytes(List<ulong> idList)
+    private static byte[] IdListToBytes(IReadOnlyList<ulong> idList)
     {
         byte[] buffer = new byte[idList.Count * sizeof(ulong)];
 

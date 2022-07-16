@@ -78,11 +78,14 @@ public class CensusStateWorker : BackgroundService
 
             // Assume this to be caching
             foreach (ValidWorldDefinition world in ValidWorlds)
-                await _populationService.GetWorldPopulationAsync(world, ct, true);
+                await _populationService.GetWorldPopulationAsync(world, true, ct);
 
             // Cache Honu's facilities
             if (_lastHonuFacilitiesRetrieval.AddHours(12) < DateTimeOffset.UtcNow)
+            {
                 await _censusApi.GetHonuFacilitiesAsync(ct).ConfigureAwait(false);
+                _lastHonuFacilitiesRetrieval = DateTimeOffset.UtcNow;
+            }
 
             await Task.Delay(popUpdateFrequency.Value, ct);
         }

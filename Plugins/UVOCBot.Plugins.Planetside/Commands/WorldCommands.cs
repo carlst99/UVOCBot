@@ -218,9 +218,10 @@ public class WorldCommands : CommandGroup
 
     private async Task<Result<(List<EmbedField> EmbedFields, int TotalPop)>> GetPopulationEmbedFields(ValidWorldDefinition world)
     {
-        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken);
+        // We don't return this result if it fails, as the CensusStateWorker will be reporting any retrieval errors
+        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, ct: CancellationToken);
         if (!populationResult.IsDefined(out IPopulation? population))
-            return Result<(List<EmbedField>, int)>.FromError(populationResult);
+            return new GenericCommandError("Failed to get population data! This could mean that Honu is down.");
 
         List<EmbedField> fields = new()
         {

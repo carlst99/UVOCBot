@@ -262,7 +262,7 @@ public class WorldCommands : CommandGroup
 
         string stringPercentage = ((double)factionPopulation / totalPopulation * 100).ToString("F1");
         sb.Append(Formatter.Bold("   "));
-        sb.Append('(').Append(stringPercentage).Append(")%");
+        sb.Append('(').Append(stringPercentage).Append("%)");
 
         return new EmbedField(title, sb.ToString());
     }

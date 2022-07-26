@@ -124,9 +124,9 @@ public class PatchManifestWorker : BackgroundService
     {
         string message = updatedManifest switch
         {
-            Manifest.Live => "An update has been detected for the live client",
+            Manifest.Live => "An update has been released for the live client",
             Manifest.LiveNext => $"An {Formatter.Italic("upcoming")} update has been detected for the live client",
-            Manifest.PTS => "An update has been detected for the PTS client",
+            Manifest.PTS => "An update has been released for the PTS client",
             Manifest.PTSNext => $"An {Formatter.Italic("upcoming")} update has been detected for the PTS client",
             _ => throw new ArgumentException("Invalid manifest type", nameof(updatedManifest))
         };

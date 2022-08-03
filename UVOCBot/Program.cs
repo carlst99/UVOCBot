@@ -114,19 +114,17 @@ public static class Program
 
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
-        ILogger? logger = null;
-
         return Host.CreateDefaultBuilder(args)
+            .UseSystemd()
             .UseDefaultServiceProvider(s => s.ValidateScopes = true)
             .ConfigureServices((c, _) =>
             {
                 string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
                 string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
-                logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
+                SetupLogging(seqIngestionEndpoint, seqApiKey);
             })
-            .UseSerilog(logger)
+            .UseSerilog()
             .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-            .UseSystemd()
             .ConfigureServices((c, services) =>
             {
                 // Setup configuration bindings
@@ -188,10 +186,8 @@ public static class Program
             : directory;
     }
 
-#pragma warning disable RCS1163 // Unused parameter.
     // ReSharper disable twice UnusedParameter.Local
-    private static ILogger SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
-#pragma warning restore RCS1163 // Unused parameter.
+    private static void SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
     {
         LoggerConfiguration logConfig = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -211,23 +207,10 @@ public static class Program
             logConfig.MinimumLevel.ControlledBy(levelSwitch)
                     .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
         }
-        else
-        {
-            logConfig.MinimumLevel.Information()
-                .WriteTo.File
-                (
-                    GetAppdataFilePath("log.log"),
-                    LogEventLevel.Warning,
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
-                    rollingInterval: RollingInterval.Day
-                );
-        }
 #endif
 
         Log.Logger = logConfig.CreateLogger();
         Log.Information("Appdata stored at {Path}", GetAppdataFilePath(null));
-
-        return Log.Logger;
     }
 
     private static IServiceCollection AddRemoraServices(this IServiceCollection services)
@@ -262,7 +245,6 @@ public static class Program
         return services;
     }
 
-#pragma warning disable RCS1213 // Remove unused member declaration.
     // ReSharper disable once UnusedMember.Local
     private static async Task<IResult> RemoveExistingGlobalCommandsAsync(IServiceProvider services)
     {
@@ -288,5 +270,4 @@ public static class Program
         Log.Fatal("Could not get delete existing app commands: {Error}", deleteResult.Error);
         return deleteResult;
     }
-#pragma warning restore RCS1213 // Remove unused member declaration.
 }

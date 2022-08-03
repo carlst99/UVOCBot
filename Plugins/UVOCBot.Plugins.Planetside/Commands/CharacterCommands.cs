@@ -209,6 +209,7 @@ public class CharacterCommands : CommandGroup
     [Command("online-friends")]
     [Description("Gets friends of the given character that are currently online.")]
     [Deferred]
+    [Ephemeral]
     public async Task<Result> GetOnlineFriendsCommandAsync(string characterName)
     {
         IQueryBuilder query = _queryService.CreateQuery()

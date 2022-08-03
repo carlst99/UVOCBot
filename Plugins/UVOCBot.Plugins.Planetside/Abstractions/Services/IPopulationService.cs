@@ -21,7 +21,7 @@ public interface IPopulationService
     Task<Result<IPopulation>> GetWorldPopulationAsync
     (
         ValidWorldDefinition world,
-        CancellationToken ct = default,
-        bool skipCacheRetrieval = false
+        bool skipCacheRetrieval = false,
+        CancellationToken ct = default
     );
 }

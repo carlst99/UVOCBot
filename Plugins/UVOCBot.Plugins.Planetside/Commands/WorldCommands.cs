@@ -1,5 +1,8 @@
 ﻿using DbgCensus.Core.Objects;
 using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
+using DbgCensus.Rest;
+using DbgCensus.Rest.Abstractions;
+using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Caching.Memory;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
@@ -18,12 +21,15 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
+using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 
@@ -32,23 +38,28 @@ public class WorldCommands : CommandGroup
     private static readonly ValidZoneDefinition[] ValidZones = Enum.GetValues<ValidZoneDefinition>();
 
     private readonly ICommandContext _context;
+    private readonly IQueryService _queryService;
     private readonly ICensusApiService _censusApi;
     private readonly IPopulationService _populationApi;
     private readonly IMemoryCache _cache;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
-    public WorldCommands(
+    public WorldCommands
+    (
         ICommandContext context,
+        IQueryService queryService,
         ICensusApiService censusApi,
-        IPopulationService fisuApi,
+        IPopulationService populationApi,
         IMemoryCache cache,
         DiscordContext dbContext,
-        FeedbackService feedbackService)
+        FeedbackService feedbackService
+    )
     {
         _context = context;
+        _queryService = queryService;
         _censusApi = censusApi;
-        _populationApi = fisuApi;
+        _populationApi = populationApi;
         _cache = cache;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
@@ -139,6 +150,58 @@ public class WorldCommands : CommandGroup
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
+    }
+
+    [Command("ow-registrations")]
+    [Description("Gets the outfits that have registered for outfit wars on a particular server.")]
+    [Deferred]
+    public async Task<Result> GetOutfitRegistrationsCommandAsync
+    (
+        [Description("The server to get the registered outfits of")]
+        ValidWorldDefinition world
+    )
+    {
+        try
+        {
+            IQueryBuilder query = _queryService.CreateQuery(new CensusQueryOptions {
+                Limit = 1000, RootEndpoint = "https://census.lithafalcon.cc"
+            });
+
+            query.OnCollection("outfit_war_registration")
+                .Where("world_id", SearchModifier.Equals, (uint)world);
+
+            IReadOnlyList<OutfitWarRegistration>? regs = await _queryService
+                .GetAsync<IReadOnlyList<OutfitWarRegistration>>(query, CancellationToken)
+                .ConfigureAwait(false);
+
+            if (regs is null)
+                return new GenericCommandError();
+
+            Result<List<Outfit>> outfits = await _censusApi.GetOutfitsAsync(regs.Select(o => o.OutfitID), CancellationToken)
+                .ConfigureAwait(false);
+
+            if (!outfits.IsSuccess)
+                return (Result)outfits;
+
+            StringBuilder sb = new();
+            foreach (OutfitWarRegistration reg in regs.OrderByDescending(o => o.MemberSignupCount).ThenBy(o => o.RegistrationOrder))
+            {
+                Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
+                sb.Append(o?.Alias ?? reg.OutfitID.ToString())
+                    .Append(" - ")
+                    .Append(((FactionDefinition)reg.FactionID).ToString())
+                    .Append(": ")
+                    .Append(reg.MemberSignupCount)
+                    .AppendLine(" signups");
+            }
+
+            return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: CancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch
+        {
+            return new GenericCommandError();
+        }
     }
 
     private async Task<Result<ValidWorldDefinition>> CheckForDefaultServer()

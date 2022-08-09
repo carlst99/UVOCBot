@@ -6,6 +6,8 @@ using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
+using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Caching.Extensions;
 using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Commands.Responders;
@@ -248,20 +250,20 @@ public static class Program
     // ReSharper disable once UnusedMember.Local
     private static async Task<IResult> RemoveExistingGlobalCommandsAsync(IServiceProvider services)
     {
-        Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API oauth2Api = services.GetRequiredService<Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API>();
-        Remora.Discord.API.Abstractions.Rest.IDiscordRestApplicationAPI applicationApi = services.GetRequiredService<Remora.Discord.API.Abstractions.Rest.IDiscordRestApplicationAPI>();
+        IDiscordRestOAuth2API oauth2Api = services.GetRequiredService<IDiscordRestOAuth2API>();
+        IDiscordRestApplicationAPI applicationApi = services.GetRequiredService<IDiscordRestApplicationAPI>();
 
-        Result<Remora.Discord.API.Abstractions.Objects.IApplication> appDetails = await oauth2Api.GetCurrentBotApplicationInformationAsync();
+        Result<IApplication> appDetails = await oauth2Api.GetCurrentBotApplicationInformationAsync();
         if (!appDetails.IsSuccess)
         {
             Log.Fatal("Could not get application information: {Error}", appDetails.Error);
             return appDetails;
         }
 
-        Result<IReadOnlyList<Remora.Discord.API.Abstractions.Objects.IApplicationCommand>> deleteResult = await applicationApi.BulkOverwriteGlobalApplicationCommandsAsync
+        Result<IReadOnlyList<IApplicationCommand>> deleteResult = await applicationApi.BulkOverwriteGlobalApplicationCommandsAsync
         (
             appDetails.Entity.ID,
-            new List<Remora.Discord.API.Abstractions.Objects.IBulkApplicationCommandData>()
+            new List<IBulkApplicationCommandData>()
         );
 
         if (deleteResult.IsSuccess)

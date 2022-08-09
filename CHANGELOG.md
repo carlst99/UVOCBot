@@ -1,5 +1,10 @@
 # Changelog
 
+## Release vNext
+
+**Additions**
+- Added the `ow-registrations` command.
+
 ## Release v1.5.0
 
 **Additions**

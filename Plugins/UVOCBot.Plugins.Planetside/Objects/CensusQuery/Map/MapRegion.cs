@@ -14,8 +14,6 @@ namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 /// <param name="LocationX">The X-coordinate (left-to-right) of the facility on the map.</param>
 /// <param name="LocationY">The Y-coordinate (height) of the facility on the map.</param>
 /// <param name="LocationZ">The Z-coordinate (top-to-bottom) of the facility on the map.</param>
-/// <param name="RewardAmount">The amount of currency rewarded for owning this base.</param>
-/// <param name="RewardCurrencyID">The type of currency rewarded for owning this base.</param>
 public record MapRegion
 (
     uint MapRegionID,
@@ -26,7 +24,5 @@ public record MapRegion
     string? FacilityType,
     double? LocationX,
     double? LocationY,
-    double? LocationZ,
-    uint? RewardAmount,
-    uint? RewardCurrencyID
+    double? LocationZ
 );

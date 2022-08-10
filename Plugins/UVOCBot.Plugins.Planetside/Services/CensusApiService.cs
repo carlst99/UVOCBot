@@ -1,17 +1,16 @@
 ﻿using DbgCensus.Core.Exceptions;
 using DbgCensus.Core.Objects;
 using DbgCensus.EventStream.Objects.Events.Worlds;
+using DbgCensus.Rest;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
@@ -19,7 +18,6 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.Honu;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -37,12 +35,11 @@ public class CensusApiService : ICensusApiService, IDisposable
     /// </remarks>
     protected static readonly int ExpectedMetagameEventsPerFullCycle = Enum.GetValues<ValidZoneDefinition>().Length * 2 + 2;
 
+    private readonly CensusQueryOptions _sanctuaryOptions;
     private readonly SemaphoreSlim _queryLimiter;
 
     protected readonly ILogger<CensusApiService> _logger;
     protected readonly IQueryService _queryService;
-    protected readonly HttpClient _httpClient;
-    protected readonly JsonSerializerOptions _honuJsonOptions;
 
     private bool _isDisposed;
 
@@ -50,15 +47,19 @@ public class CensusApiService : ICensusApiService, IDisposable
     (
         ILogger<CensusApiService> logger,
         IQueryService queryService,
-        HttpClient httpClient
+        IOptions<CensusQueryOptions> queryOptions
     )
     {
         _logger = logger;
         _queryService = queryService;
-        _httpClient = httpClient;
+
+        _sanctuaryOptions = new CensusQueryOptions {
+            RootEndpoint = "https://census.lithafalcon.cc",
+            LanguageCode = queryOptions.Value.LanguageCode,
+            Limit = queryOptions.Value.Limit
+        };
 
         _queryLimiter = new SemaphoreSlim(8, 8);
-        _honuJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
     }
 
     /// <inheritdoc />
@@ -163,24 +164,9 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default)
-    {
-        try
-        {
-            Stream data = await _httpClient.GetStreamAsync("https://wt.honu.pw/api/map/facilities", ct).ConfigureAwait(false);
-            return await JsonSerializer.DeserializeAsync<List<Facility>>(data, _honuJsonOptions, ct).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get Honu facility data");
-            return ex;
-        }
-    }
-
-    /// <inheritdoc />
     public virtual async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
-        IQueryBuilder query = _queryService.CreateQuery()
+        IQueryBuilder query = _queryService.CreateQuery(_sanctuaryOptions)
             .OnCollection("map_region")
             .Where("facility_id", SearchModifier.Equals, facilityID);
 

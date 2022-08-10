@@ -14,6 +14,7 @@ using UVOCBot.Plugins.Planetside.Commands;
 using UVOCBot.Plugins.Planetside.Services;
 using UVOCBot.Plugins.Planetside.Workers;
 
+// ReSharper disable once CheckNamespace
 namespace UVOCBot.Plugins;
 
 public static class IServiceCollectionExtensions
@@ -25,7 +26,6 @@ public static class IServiceCollectionExtensions
         services.Configure<CensusQueryOptions>(config.GetSection(nameof(CensusQueryOptions)));
         services.Configure<CensusQueryOptions>(o => o.LanguageCode = CensusLanguage.English);
 
-        services.AddHttpClient();
         services.AddSingleton<IPopulationService, HonuPopulationService>();
 
         services.AddCensusRestServices();

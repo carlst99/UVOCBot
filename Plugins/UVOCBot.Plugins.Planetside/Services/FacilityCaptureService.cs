@@ -211,7 +211,7 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
             new EmbedField
             (
                 "Resources",
-                $"{region.RewardAmount} {resourceType}"
+                $"{resourceType}"
             )
         );
 

@@ -74,14 +74,6 @@ public interface ICensusApiService
     Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default);
 
     /// <summary>
-    /// Gets facility data from Honu.
-    /// <see href="https://wt.honu.pw/api/map/facilities"/>.
-    /// </summary>
-    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
-    /// <returns>A <see cref="Result{TEntity}"/> representing the facility list.</returns>
-    Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default);
-
-    /// <summary>
     /// Gets the most recent metagame events for a world.
     /// </summary>
     /// <param name="world">The world to query events for.</param>

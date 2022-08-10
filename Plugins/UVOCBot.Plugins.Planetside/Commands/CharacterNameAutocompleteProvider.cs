@@ -38,7 +38,7 @@ public class CharacterNameAutocompleteProvider : IAutocompleteProvider
 
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("character")
-            .Where("name.first_lower", SearchModifier.StartsWith, userInput)
+            .Where("name.first_lower", SearchModifier.StartsWith, userInput.ToLower())
             .WithSortOrder("times.last_login", SortOrder.Descending)
             .ShowFields("name.first")
             .WithLimit(10);

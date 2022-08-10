@@ -5,6 +5,9 @@
 **Additions**
 - Added the `ow-registrations` command.
 
+**Fixes**
+- Fixed Oshur status being calculated incorrectly.
+
 ## Release v1.5.0
 
 **Additions**

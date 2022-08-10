@@ -18,6 +18,7 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -244,6 +245,20 @@ public class CensusApiService : ICensusApiService, IDisposable
             .ShowFields("character_id", "name", "faction_id");
 
         return await GetListAsync<MinimalCharacter>(query, ct).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    (
+        ValidWorldDefinition world,
+        CancellationToken ct = default
+    )
+    {
+        IQueryBuilder query = _queryService.CreateQuery(_sanctuaryOptions)
+            .OnCollection("outfit_war_registration")
+            .Where("world_id", SearchModifier.Equals, (uint)world);
+
+        return await GetListAsync<OutfitWarRegistration>(query, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

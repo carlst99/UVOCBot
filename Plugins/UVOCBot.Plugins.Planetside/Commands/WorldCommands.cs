@@ -1,8 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
 using DbgCensus.EventStream.Abstractions.Objects.Events.Worlds;
-using DbgCensus.Rest;
-using DbgCensus.Rest.Abstractions;
-using DbgCensus.Rest.Abstractions.Queries;
 using Microsoft.Extensions.Caching.Memory;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
@@ -38,7 +35,6 @@ public class WorldCommands : CommandGroup
     private static readonly ValidZoneDefinition[] ValidZones = Enum.GetValues<ValidZoneDefinition>();
 
     private readonly ICommandContext _context;
-    private readonly IQueryService _queryService;
     private readonly ICensusApiService _censusApi;
     private readonly IPopulationService _populationApi;
     private readonly IMemoryCache _cache;
@@ -48,7 +44,6 @@ public class WorldCommands : CommandGroup
     public WorldCommands
     (
         ICommandContext context,
-        IQueryService queryService,
         ICensusApiService censusApi,
         IPopulationService populationApi,
         IMemoryCache cache,
@@ -57,7 +52,6 @@ public class WorldCommands : CommandGroup
     )
     {
         _context = context;
-        _queryService = queryService;
         _censusApi = censusApi;
         _populationApi = populationApi;
         _cache = cache;
@@ -157,51 +151,45 @@ public class WorldCommands : CommandGroup
     [Deferred]
     public async Task<Result> GetOutfitRegistrationsCommandAsync
     (
-        [Description("The server to get the registered outfits of")]
-        ValidWorldDefinition world
+        [Description("Set your default server with '/default-server'.")]
+        ValidWorldDefinition server = 0
     )
     {
-        try
+        if (server == 0)
         {
-            IQueryBuilder query = _queryService.CreateQuery(new CensusQueryOptions {
-                Limit = 1000, RootEndpoint = "https://census.lithafalcon.cc"
-            });
+            Result<ValidWorldDefinition> defaultWorld = await CheckForDefaultServer();
+            if (!defaultWorld.IsSuccess)
+                return (Result)defaultWorld;
 
-            query.OnCollection("outfit_war_registration")
-                .Where("world_id", SearchModifier.Equals, (uint)world);
-
-            IReadOnlyList<OutfitWarRegistration>? regs = await _queryService
-                .GetAsync<IReadOnlyList<OutfitWarRegistration>>(query, CancellationToken)
-                .ConfigureAwait(false);
-
-            if (regs is null)
-                return new GenericCommandError();
-
-            Result<List<Outfit>> outfits = await _censusApi.GetOutfitsAsync(regs.Select(o => o.OutfitID), CancellationToken)
-                .ConfigureAwait(false);
-
-            if (!outfits.IsSuccess)
-                return (Result)outfits;
-
-            StringBuilder sb = new();
-            foreach (OutfitWarRegistration reg in regs.OrderByDescending(o => o.MemberSignupCount).ThenBy(o => o.RegistrationOrder))
-            {
-                Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
-                sb.Append(o?.Alias ?? reg.OutfitID.ToString())
-                    .Append(" - ")
-                    .Append(((FactionDefinition)reg.FactionID).ToString())
-                    .Append(": ")
-                    .Append(reg.MemberSignupCount)
-                    .AppendLine(" signups");
-            }
-
-            return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: CancellationToken)
-                .ConfigureAwait(false);
+            server = defaultWorld.Entity;
         }
-        catch
+
+        Result<List<OutfitWarRegistration>> getRegs = await _censusApi.GetOutfitWarRegistrationsAsync(server, CancellationToken)
+            .ConfigureAwait(false);
+
+        if (!getRegs.IsDefined(out List<OutfitWarRegistration>? regs))
+            return (Result)getRegs;
+
+        Result<List<Outfit>> outfits = await _censusApi.GetOutfitsAsync(regs.Select(o => o.OutfitID), CancellationToken)
+            .ConfigureAwait(false);
+
+        if (!outfits.IsSuccess)
+            return (Result)outfits;
+
+        StringBuilder sb = new();
+        foreach (OutfitWarRegistration reg in regs.OrderByDescending(o => o.MemberSignupCount).ThenBy(o => o.RegistrationOrder))
         {
-            return new GenericCommandError();
+            Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
+            sb.Append(o?.Alias ?? reg.OutfitID.ToString())
+                .Append(" - ")
+                .Append(((FactionDefinition)reg.FactionID).ToString())
+                .Append(": ")
+                .Append(reg.MemberSignupCount)
+                .AppendLine(" signups");
         }
+
+        return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: CancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task<Result<ValidWorldDefinition>> CheckForDefaultServer()

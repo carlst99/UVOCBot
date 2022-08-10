@@ -7,7 +7,7 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.Honu;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 
@@ -101,4 +101,16 @@ public interface ICensusApiService
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation, and containing the minimal character records if successful.</returns>
     Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync(IEnumerable<ulong> characterIDs, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a collection of outfit war registrations for the given world.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation, and containing the outfit registrations if successful.</returns>
+    Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    (
+        ValidWorldDefinition world,
+        CancellationToken ct = default
+    );
 }

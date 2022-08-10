@@ -7,6 +7,7 @@
 
 **Fixes**
 - Fixed Oshur status being calculated incorrectly.
+- Fixed the character name autocomplete on the `character` command when not using all-lowercase letters.
 
 ## Release v1.5.0
 

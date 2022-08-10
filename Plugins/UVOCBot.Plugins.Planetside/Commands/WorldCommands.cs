@@ -177,15 +177,31 @@ public class WorldCommands : CommandGroup
             return (Result)outfits;
 
         StringBuilder sb = new();
+        sb.AppendLine(Formatter.Bold("Fully Registered"));
+        bool hasAddedCompleteOutfits = false;
+
         foreach (OutfitWarRegistration reg in regs.OrderByDescending(o => o.MemberSignupCount).ThenBy(o => o.RegistrationOrder))
         {
+            if (reg.MemberSignupCount < 48 && !hasAddedCompleteOutfits)
+            {
+                sb.AppendLine();
+                sb.AppendLine(Formatter.Bold("Partially Registered"));
+                hasAddedCompleteOutfits = true;
+            }
+
             Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
             sb.Append(o?.Alias ?? reg.OutfitID.ToString())
                 .Append(" - ")
-                .Append(((FactionDefinition)reg.FactionID).ToString())
-                .Append(": ")
-                .Append(reg.MemberSignupCount)
-                .AppendLine(" signups");
+                .Append(((FactionDefinition)reg.FactionID).ToString());
+
+            if (hasAddedCompleteOutfits)
+            {
+                sb.Append(": ")
+                    .Append(reg.MemberSignupCount)
+                    .Append(" signups");
+            }
+
+            sb.AppendLine();
         }
 
         return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: CancellationToken)

@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="DbgCensus.Core" Version="1.4.1" />
-    <PackageReference Include="DbgCensus.EventStream.EventHandlers" Version="3.1.2" />
-    <PackageReference Include="DbgCensus.Rest" Version="3.0.4" />
+    <PackageReference Include="DbgCensus.Core" Version="1.4.2" />
+    <PackageReference Include="DbgCensus.EventStream.EventHandlers" Version="3.1.3" />
+    <PackageReference Include="DbgCensus.Rest" Version="3.0.5" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />

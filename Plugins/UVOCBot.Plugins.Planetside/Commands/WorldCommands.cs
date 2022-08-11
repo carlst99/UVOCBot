@@ -178,30 +178,38 @@ public class WorldCommands : CommandGroup
 
         StringBuilder sb = new();
         sb.AppendLine(Formatter.Bold("Fully Registered"));
-        bool hasAddedCompleteOutfits = false;
-
-        foreach (OutfitWarRegistration reg in regs.OrderByDescending(o => o.MemberSignupCount).ThenBy(o => o.RegistrationOrder))
+        foreach (OutfitWarRegistration reg in regs.Where(o => o.Status == "Full").OrderBy(o => o.RegistrationOrder))
         {
-            if (reg.MemberSignupCount < 48 && !hasAddedCompleteOutfits)
-            {
-                sb.AppendLine();
-                sb.AppendLine(Formatter.Bold("Partially Registered"));
-                hasAddedCompleteOutfits = true;
-            }
-
             Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
             sb.Append(o?.Alias ?? reg.OutfitID.ToString())
                 .Append(" - ")
-                .Append(((FactionDefinition)reg.FactionID).ToString());
+                .AppendLine(((FactionDefinition)reg.FactionID).ToString());
+        }
 
-            if (hasAddedCompleteOutfits)
-            {
-                sb.Append(": ")
-                    .Append(reg.MemberSignupCount)
-                    .Append(" signups");
-            }
-
+        if (regs.Any(o => o.Status == "WaitingOnNextFullReg"))
+        {
             sb.AppendLine();
+            sb.Append(Formatter.Bold("Waiting")).AppendLine(" (an even number of full registrations is required)");
+            foreach (OutfitWarRegistration reg in regs.Where(o => o.Status == "WaitingOnNextFullReg"))
+            {
+                Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
+                sb.Append(o?.Alias ?? reg.OutfitID.ToString())
+                    .Append(" - ")
+                    .AppendLine(((FactionDefinition)reg.FactionID).ToString());
+            }
+        }
+
+        sb.AppendLine();
+        sb.Append(Formatter.Bold("Partially Registered")).AppendLine(" (48 members are required to signup)");
+        foreach (OutfitWarRegistration reg in regs.Where(o => o.Status == "Partial").OrderByDescending(o => o.MemberSignupCount))
+        {
+            Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
+            sb.Append(o?.Alias ?? reg.OutfitID.ToString())
+                .Append(" - ")
+                .Append(((FactionDefinition)reg.FactionID).ToString())
+                .Append(": ")
+                .Append(reg.MemberSignupCount)
+                .AppendLine(" signups");
         }
 
         return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: CancellationToken)

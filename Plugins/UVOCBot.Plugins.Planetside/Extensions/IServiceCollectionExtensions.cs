@@ -25,6 +25,12 @@ public static class IServiceCollectionExtensions
         services.Configure<EventStreamOptions>(config.GetSection(nameof(EventStreamOptions)));
         services.Configure<CensusQueryOptions>(config.GetSection(nameof(CensusQueryOptions)));
         services.Configure<CensusQueryOptions>(o => o.LanguageCode = CensusLanguage.English);
+        services.Configure<CensusQueryOptions>("sanctuary", config.GetSection(nameof(CensusQueryOptions)));
+        services.Configure<CensusQueryOptions>("sanctuary", o =>
+        {
+            o.LanguageCode = CensusLanguage.English;
+            o.RootEndpoint = "https://census.lithafalcon.cc";
+        });
 
         services.AddSingleton<IPopulationService, HonuPopulationService>();
 

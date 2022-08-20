@@ -48,17 +48,12 @@ public class CensusApiService : ICensusApiService, IDisposable
     (
         ILogger<CensusApiService> logger,
         IQueryService queryService,
-        IOptions<CensusQueryOptions> queryOptions
+        IOptionsMonitor<CensusQueryOptions> queryOptions
     )
     {
         _logger = logger;
         _queryService = queryService;
-
-        _sanctuaryOptions = new CensusQueryOptions {
-            RootEndpoint = "https://census.lithafalcon.cc",
-            LanguageCode = queryOptions.Value.LanguageCode,
-            Limit = queryOptions.Value.Limit
-        };
+        _sanctuaryOptions = queryOptions.Get("sanctuary");
 
         _queryLimiter = new SemaphoreSlim(8, 8);
     }

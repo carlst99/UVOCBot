@@ -28,7 +28,7 @@ public class CachingCensusApiService : CensusApiService
     (
         ILogger<CachingCensusApiService> logger,
         IQueryService queryService,
-        IOptions<CensusQueryOptions> queryOptions,
+        IOptionsMonitor<CensusQueryOptions> queryOptions,
         IMemoryCache cache
     ) : base(logger, queryService, queryOptions)
     {

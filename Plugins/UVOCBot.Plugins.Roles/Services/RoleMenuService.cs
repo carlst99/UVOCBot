@@ -116,7 +116,9 @@ public class RoleMenuService : IRoleMenuService
             if (role.Emoji is not null)
             {
                 string[] parts = role.Emoji.Split(':');
-                Snowflake id = DiscordSnowflake.New(ulong.Parse(parts[0]));
+                Snowflake? id = parts[0].Length > 0
+                    ? DiscordSnowflake.New(ulong.Parse(parts[0]))
+                    : null;
                 emoji = new Emoji(id, parts[1]);
             }
 

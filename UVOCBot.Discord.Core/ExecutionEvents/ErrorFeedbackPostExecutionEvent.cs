@@ -59,6 +59,7 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
             PermissionError pe => pe.ContextualToString(context),
             CommandNotFoundError => "That command doesn't exist.",
             ContextError ce => ce.ToString(),
+            ParameterParsingError ppe => $"You've entered an invalid value for the {Formatter.InlineQuote(ppe.Parameter.ParameterShape.HintName)} parameter",
             RoleManipulationError rme => "Failed to modify roles: " + rme.Message,
             GenericCommandError or ConditionNotSatisfiedError or InvalidOperationError => actualError.Message,
             RestResultError<RestError> rre when rre.Error.Code is DiscordError.MissingAccess => "I am not allowed to view this channel.",

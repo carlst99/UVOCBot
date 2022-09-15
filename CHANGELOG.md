@@ -11,6 +11,10 @@
 - Fixed Oshur status being calculated incorrectly.
 - Fixed the character name autocomplete on the `character` command when not using all-lowercase letters.
 
+**Miscellaneous**
+- The `online-friends` command is now only visible to the user.
+- The client update tracking message now says '...update has been released' rather than 'detected' when updates are released.
+
 ## Release v1.5.0
 
 **Additions**

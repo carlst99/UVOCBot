@@ -1,4 +1,5 @@
-﻿using Remora.Commands.Attributes;
+﻿using Microsoft.EntityFrameworkCore;
+using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -7,16 +8,18 @@ using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Feedback.Messages;
+using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
-using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
@@ -28,7 +31,6 @@ namespace UVOCBot.Plugins.Roles.Commands;
 [Description("Commands to create and edit role menus.")]
 [RequireContext(ChannelContext.Guild)]
 [RequireGuildPermission(DiscordPermission.ManageRoles)]
-[Ephemeral]
 [Deferred]
 public class RoleMenuCommands : CommandGroup
 {
@@ -63,6 +65,7 @@ public class RoleMenuCommands : CommandGroup
     [Command("create")]
     [Description("Creates a new role menu.")]
     [SuppressInteractionResponse(true)]
+    [Ephemeral]
     public async Task<Result> CreateCommand
     (
         [Description("The channel to post the role menu in.")][ChannelTypes(ChannelType.GuildText)] IChannel channel
@@ -114,12 +117,44 @@ public class RoleMenuCommands : CommandGroup
         if (addedCount < 1)
             return new GenericCommandError();
 
-        return await _feedbackService.SendContextualSuccessAsync
+        return (Result)await _feedbackService.SendContextualSuccessAsync
         (
             $"A placeholder rolemenu has been created! Please run the {Formatter.InlineQuote("/rolemenu edit")}"
             + $"command, with the {Formatter.InlineQuote("messageID")} set to {Formatter.InlineQuote(messageID.Value.ToString())}",
             ct: CancellationToken
         );
+    }
+
+    [Command("list-menus")]
+    [Description("Lists all the menus that have been created for this guild")]
+    [Ephemeral]
+    public async Task<Result> ListMenusCommandAsync()
+    {
+        List<GuildRoleMenu> guildMenus = await _dbContext.RoleMenus
+            .Where(m => m.GuildId == _context.GuildID.Value.Value)
+            .ToListAsync();
+
+        int pageCount = 1;
+        foreach (IEnumerable<GuildRoleMenu> menuPage in guildMenus.Chunk(25)) // Max fields allowed per embed
+        {
+            List<EmbedField> fields = menuPage.Select(menu => new EmbedField
+            (
+                menu.Title,
+                $"Channel: {Formatter.ChannelMention(menu.ChannelId)}"
+                + $"\nMessage ID: {Formatter.InlineQuote(menu.MessageId.ToString())}"
+            )).ToList();
+
+            Embed page = new
+            (
+                Title: $"Role Menu List (Page {pageCount++})",
+                Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
+                Fields: fields
+            );
+
+            await _feedbackService.SendContextualEmbedAsync(page, ct: CancellationToken);
+        }
+
+        return Result.FromSuccess();
     }
 
     [Command("edit")]
@@ -192,7 +227,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID
     )
     {
-        if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? _))
+        if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);
 
         ButtonComponent confirmationComponent = new
@@ -204,7 +239,8 @@ public class RoleMenuCommands : CommandGroup
 
         return await _feedbackService.SendContextualWarningAsync
         (
-            "Are you sure that you want to delete this role menu?",
+            $"Are you sure that you want to delete the {Formatter.Bold(menu.Title)} " +
+            $"role menu in {Formatter.ChannelMention(menu.ChannelId)}?",
             options: new FeedbackMessageOptions
             (
                 MessageComponents: new[] { new ActionRowComponent(new[] { confirmationComponent }) }
@@ -216,11 +252,13 @@ public class RoleMenuCommands : CommandGroup
     [Command("add-role")]
     [Description("Adds a role to a menu. If the role already exists on the message it will be updated.")]
     [Deferred]
+    [Ephemeral]
     public async Task<IResult> AddRole
     (
         [Description("The ID of the role menu message.")] Snowflake messageID,
         [Description("The role to add.")] IRole roleToAdd,
-        [Description("The label of the role selection item. Leave empty to use the name of the role as the label.")] string? roleItemLabel = null
+        [Description("The label of the role selection item. Leave empty to use the name of the role as the label.")] string? roleItemLabel = null,
+        [Description("An emoji to show on the role label")] IEmoji? emoji = null
     )
     {
         if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
@@ -266,7 +304,8 @@ public class RoleMenuCommands : CommandGroup
         {
             return await _feedbackService.SendContextualWarningAsync
             (
-                $"The menu was updated internally, but I couldn't update the corresponding message. Please use the {Formatter.InlineQuote("rolemenu update")} command.",
+                $"The menu was updated internally, but I couldn't update the corresponding message. " +
+                $"Please use the {Formatter.InlineQuote("rolemenu update")} command.",
                 ct: CancellationToken
             ).ConfigureAwait(false);
         }
@@ -282,6 +321,7 @@ public class RoleMenuCommands : CommandGroup
     [Command("remove-role")]
     [Description("Removes a role from a menu.")]
     [Deferred]
+    [Ephemeral]
     public async Task<IResult> RemoveRole
     (
         [Description("The ID of the role menu message.")] Snowflake messageID,
@@ -302,7 +342,13 @@ public class RoleMenuCommands : CommandGroup
 
         GuildRoleMenuRole? dbRole = menu.Roles.Find(r => r.RoleId == roleToRemove.ID.Value);
         if (dbRole is null)
-            return await _feedbackService.SendContextualErrorAsync("That role does not exist on the given menu.", ct: CancellationToken).ConfigureAwait(false);
+        {
+            return await _feedbackService.SendContextualErrorAsync
+            (
+                "That role does not exist on the given menu.",
+                ct: CancellationToken
+            ).ConfigureAwait(false);
+        }
 
         menu.Roles.Remove(dbRole);
         _dbContext.Update(menu);
@@ -317,7 +363,8 @@ public class RoleMenuCommands : CommandGroup
         {
             return await _feedbackService.SendContextualWarningAsync
             (
-                $"The menu was updated internally, but I couldn't update the corresponding message. Please use the {Formatter.InlineQuote("rolemenu update")} command.",
+                $"The menu was updated internally, but I couldn't update the corresponding message. " +
+                $"Please use the {Formatter.InlineQuote("rolemenu update")} command.",
                 ct: CancellationToken
             ).ConfigureAwait(false);
         }
@@ -333,6 +380,7 @@ public class RoleMenuCommands : CommandGroup
     [Command("update")]
     [Description("Forces an update on a role menu message. This should seldom be needed.")]
     [Deferred]
+    [Ephemeral]
     public async Task<IResult> UpdateMenuCommandAsync
     (
         [Description("The ID of the role menu message.")] Snowflake messageID

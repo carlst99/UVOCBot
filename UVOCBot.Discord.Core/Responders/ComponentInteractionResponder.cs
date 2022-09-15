@@ -12,7 +12,6 @@ using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core.Abstractions.Services;
@@ -28,6 +27,7 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
     private readonly IServiceProvider _services;
     private readonly ContextInjectionService _contextInjectionService;
     private readonly ExecutionEventCollectorService _eventCollector;
+    private readonly Dictionary<string, IReadOnlyList<Attribute[]>> _componentKeyResponseAttributes;
 
     public ComponentInteractionResponder
     (
@@ -45,6 +45,7 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         _services = services;
         _contextInjectionService = contextInjectionService;
         _eventCollector = eventCollector;
+        _componentKeyResponseAttributes = new Dictionary<string, IReadOnlyList<Attribute[]>>();
     }
 
     public async Task<Result> RespondAsync(IInteractionCreate gatewayEvent, CancellationToken ct = default)
@@ -99,8 +100,14 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         }
 
         IInteractionResponseService interactionResponseService = _services.GetRequiredService<IInteractionResponseService>();
+        List<IComponentResponder> responders = responderList.Select
+            (
+                responderType => (IComponentResponder)_services.GetRequiredService(responderType)
+            )
+            .ToList();
 
-        if (responderList.Any(r => r.GetCustomAttribute<EphemeralAttribute>() is not null))
+        IReadOnlyList<Attribute[]> componentAttributes = GetKeyAttributes(key, responders);
+        if (componentAttributes.SelectMany(x => x).Any(x => x.GetType() == typeof(EphemeralAttribute)))
             interactionResponseService.WillDefaultToEphemeral = true;
 
         if (!_interactionResponderOptions.SuppressAutomaticResponses)
@@ -111,9 +118,8 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         }
 
         // Naively run sequentially, this could be improved
-        foreach (Type responderType in responderList)
+        foreach (IComponentResponder responder in responders)
         {
-            IComponentResponder responder = (IComponentResponder)_services.GetRequiredService(responderType);
             IResult responderResult = await responder.RespondAsync(key, payload, ct).ConfigureAwait(false);
 
             await _eventCollector.RunPostExecutionEvents
@@ -126,5 +132,23 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         }
 
         return Result.FromSuccess();
+    }
+
+    private IReadOnlyList<Attribute[]> GetKeyAttributes(string key, IEnumerable<IComponentResponder> participatingResponders)
+    {
+        if (_componentKeyResponseAttributes.TryGetValue(key, out IReadOnlyList<Attribute[]>? retrievedAttributeList))
+            return retrievedAttributeList;
+
+        List<Attribute[]> builtAttributeList = new();
+        foreach (IComponentResponder resp in participatingResponders)
+        {
+            if (!resp.GetResponseAttributes(key).IsDefined(out Attribute[]? attributes))
+                continue;
+
+            builtAttributeList.Add(attributes);
+        }
+        _componentKeyResponseAttributes.Add(key, builtAttributeList);
+
+        return builtAttributeList;
     }
 }

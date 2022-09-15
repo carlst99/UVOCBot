@@ -7,6 +7,7 @@ using UVOCBot.Plugins.Roles.Commands;
 using UVOCBot.Plugins.Roles.Responders;
 using UVOCBot.Plugins.Roles.Services;
 
+// ReSharper disable once CheckNamespace
 namespace UVOCBot.Plugins;
 
 public static class IServiceCollectionExtensions
@@ -16,8 +17,8 @@ public static class IServiceCollectionExtensions
         services.AddScoped<IRoleMenuService, RoleMenuService>();
 
         services.AddComponentResponder<EditMenuModalResponder>(RoleComponentKeys.ModalEditMenu);
-        services.AddComponentResponder<ToggleRoleComponentResponder>(RoleComponentKeys.ConfirmDeletion);
-        services.AddComponentResponder<ToggleRoleComponentResponder>(RoleComponentKeys.ToggleRole);
+        services.AddComponentResponder<RolesComponentResponders>(RoleComponentKeys.ConfirmDeletion);
+        services.AddComponentResponder<RolesComponentResponders>(RoleComponentKeys.ToggleRole);
 
         services.AddCommandTree()
                 .WithCommandGroup<RoleCommands>()

@@ -36,6 +36,11 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
         _feedbackService = feedbackService;
     }
 
+    /// <inheritdoc />
+    public Result<Attribute[]> GetResponseAttributes(string key)
+        => Array.Empty<Attribute>();
+
+    /// <inheritdoc />
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
     {
         if (key != FeedComponentKeys.ToggleFeed)

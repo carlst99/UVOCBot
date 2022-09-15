@@ -5,6 +5,7 @@ using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Results;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -38,6 +39,11 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         _feedbackService = feedbackService;
     }
 
+    /// <inheritdoc />
+    public Result<Attribute[]> GetResponseAttributes(string key)
+        => Array.Empty<Attribute>();
+
+    /// <inheritdoc />
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
         => key switch
         {

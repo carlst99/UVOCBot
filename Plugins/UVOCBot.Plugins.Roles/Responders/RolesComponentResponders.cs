@@ -9,6 +9,7 @@ using Remora.Discord.Commands.Feedback.Messages;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Results;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,8 +21,7 @@ using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Plugins.Roles.Responders;
 
-[Ephemeral]
-internal sealed class ToggleRoleComponentResponder : IComponentResponder
+internal sealed class RolesComponentResponders : IComponentResponder
 {
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IDiscordRestGuildAPI _guildApi;
@@ -29,7 +29,7 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
     private readonly InteractionContext _context;
     private readonly FeedbackService _feedbackService;
 
-    public ToggleRoleComponentResponder
+    public RolesComponentResponders
     (
         IDiscordRestChannelAPI channelApi,
         IDiscordRestGuildAPI guildApi,
@@ -44,6 +44,13 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         _context = context;
         _feedbackService = feedbackService;
     }
+
+    public Result<Attribute[]> GetResponseAttributes(string key)
+        => key switch
+        {
+            RoleComponentKeys.ToggleRole => Result<Attribute[]>.FromSuccess(new Attribute[] { new EphemeralAttribute() }),
+            _ => Array.Empty<Attribute>()
+        };
 
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
         => key switch

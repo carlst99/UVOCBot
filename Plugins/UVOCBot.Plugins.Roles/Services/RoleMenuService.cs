@@ -109,15 +109,25 @@ public class RoleMenuService : IRoleMenuService
 
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
     {
-        List<ButtonComponent> roleButtons = menu.Roles.ConvertAll
-        (
-            r => new ButtonComponent
+        List<ButtonComponent> roleButtons = new();
+        foreach (GuildRoleMenuRole role in menu.Roles)
+        {
+            Optional<IPartialEmoji> emoji = default;
+            if (role.Emoji is not null)
+            {
+                string[] parts = role.Emoji.Split(':');
+                Snowflake id = DiscordSnowflake.New(ulong.Parse(parts[0]));
+                emoji = new Emoji(id, parts[1]);
+            }
+
+            roleButtons.Add(new ButtonComponent
             (
                 ButtonComponentStyle.Secondary,
-                r.Label,
-                CustomID: ComponentIDFormatter.GetId(RoleComponentKeys.ToggleRole, r.RoleId.ToString())
-            )
-        );
+                role.Label,
+                emoji,
+                ComponentIDFormatter.GetId(RoleComponentKeys.ToggleRole, role.RoleId.ToString())
+            ));
+        }
 
         return new List<IMessageComponent>
         (

@@ -277,7 +277,12 @@ public class RoleMenuCommands : CommandGroup
 
         if (dbRole is null)
         {
-            dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name);
+            dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name)
+            {
+                Emoji = emoji is null
+                    ? null
+                    : $"{emoji.ID}:{emoji.Name}"
+            };
 
             menu.Roles.Add(dbRole);
             menu.Roles.Sort
@@ -290,6 +295,9 @@ public class RoleMenuCommands : CommandGroup
         else
         {
             dbRole.Label = roleItemLabel ?? roleToAdd.Name;
+            dbRole.Emoji = emoji is null
+                ? null
+                : $"{emoji.ID}:{emoji.Name}";
 
             _dbContext.Update(dbRole);
         }

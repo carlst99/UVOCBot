@@ -4,6 +4,8 @@
 
 **Additions**
 - Added the `ow-registrations` command.
+- Added the `rolemenu list-menus` command.
+- Spiffed up the role menu commands, and added support for emojis on role labels.
 
 **Fixes**
 - Fixed Oshur status being calculated incorrectly.

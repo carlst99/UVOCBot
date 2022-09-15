@@ -87,7 +87,7 @@ public class FeedCommands : CommandGroup
     [Description("Selects the channel to which feeds will be relayed")]
     public async Task<IResult> SetFeedChannelCommandAsync
     (
-        [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)] IChannel channel
+        [ChannelTypes(ChannelType.GuildText, ChannelType.PublicThread)] IChannel channel
     )
     {
         Result canPostToChannel = await CheckFeedChannelPermissionsAsync(channel.ID).ConfigureAwait(false);

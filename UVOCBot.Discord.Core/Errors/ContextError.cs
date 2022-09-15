@@ -14,12 +14,11 @@ public record ContextError
 ) : ResultError(string.Empty)
 {
     public static readonly IReadOnlyList<ChannelType> GuildTextChannels = new[] {
-        ChannelType.GuildNews,
+        ChannelType.AnnouncementThread,
+        ChannelType.GuildAnnouncement,
         ChannelType.GuildText,
-        ChannelType.GuildNewsThread,
-        ChannelType.GuildPrivateThread,
-        ChannelType.GuildPublicThread,
-        ChannelType.GuildNewsThread
+        ChannelType.PrivateThread,
+        ChannelType.PublicThread
     };
 
     public override string ToString()

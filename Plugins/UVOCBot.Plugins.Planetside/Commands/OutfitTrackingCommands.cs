@@ -139,7 +139,7 @@ public class OutfitTrackingCommands : CommandGroup
     public async Task<IResult> SetBaseCaptureChannelCommandAsync
     (
         [Description("The channel. Leave empty to disable base capture notifications.")]
-        [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)]
+        [ChannelTypes(ChannelType.GuildText, ChannelType.PublicThread)]
         IChannel? channel = null
     )
     {

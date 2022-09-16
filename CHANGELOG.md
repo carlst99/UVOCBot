@@ -3,7 +3,8 @@
 ## Release vNext
 
 **Additions**
-- Added the `ow-registrations` command.
+- Added the `outfit-wars registrations` command.
+- Added the `outfit-wars matches` command.
 - Added the `rolemenu list-menus` command.
 - Spiffed up the role menu commands, and added support for emojis on role labels.
 

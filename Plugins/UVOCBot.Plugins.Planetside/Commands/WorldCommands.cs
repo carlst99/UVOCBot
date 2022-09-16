@@ -18,15 +18,12 @@ using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
-using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 
@@ -144,76 +141,6 @@ public class WorldCommands : CommandGroup
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
-    }
-
-    [Command("ow-registrations")]
-    [Description("Gets the outfits that have registered for outfit wars on a particular server.")]
-    [Deferred]
-    public async Task<Result> GetOutfitRegistrationsCommandAsync
-    (
-        [Description("Set your default server with '/default-server'.")]
-        ValidWorldDefinition server = 0
-    )
-    {
-        if (server == 0)
-        {
-            Result<ValidWorldDefinition> defaultWorld = await CheckForDefaultServer();
-            if (!defaultWorld.IsSuccess)
-                return (Result)defaultWorld;
-
-            server = defaultWorld.Entity;
-        }
-
-        Result<List<OutfitWarRegistration>> getRegs = await _censusApi.GetOutfitWarRegistrationsAsync(server, CancellationToken)
-            .ConfigureAwait(false);
-
-        if (!getRegs.IsDefined(out List<OutfitWarRegistration>? regs))
-            return (Result)getRegs;
-
-        Result<List<Outfit>> outfits = await _censusApi.GetOutfitsAsync(regs.Select(o => o.OutfitID), CancellationToken)
-            .ConfigureAwait(false);
-
-        if (!outfits.IsSuccess)
-            return (Result)outfits;
-
-        StringBuilder sb = new();
-        sb.AppendLine(Formatter.Bold("Fully Registered"));
-        foreach (OutfitWarRegistration reg in regs.Where(o => o.Status == "Full").OrderBy(o => o.RegistrationOrder))
-        {
-            Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
-            sb.Append(o?.Alias ?? reg.OutfitID.ToString())
-                .Append(" - ")
-                .AppendLine(((FactionDefinition)reg.FactionID).ToString());
-        }
-
-        if (regs.Any(o => o.Status == "WaitingOnNextFullReg"))
-        {
-            sb.AppendLine();
-            sb.Append(Formatter.Bold("Waiting")).AppendLine(" (an even number of full registrations is required)");
-            foreach (OutfitWarRegistration reg in regs.Where(o => o.Status == "WaitingOnNextFullReg"))
-            {
-                Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
-                sb.Append(o?.Alias ?? reg.OutfitID.ToString())
-                    .Append(" - ")
-                    .AppendLine(((FactionDefinition)reg.FactionID).ToString());
-            }
-        }
-
-        sb.AppendLine();
-        sb.Append(Formatter.Bold("Partially Registered")).AppendLine(" (48 members are required to signup)");
-        foreach (OutfitWarRegistration reg in regs.Where(o => o.Status == "Partial").OrderByDescending(o => o.MemberSignupCount))
-        {
-            Outfit? o = outfits.Entity.FirstOrDefault(o => o.OutfitId == reg.OutfitID);
-            sb.Append(o?.Alias ?? reg.OutfitID.ToString())
-                .Append(" - ")
-                .Append(((FactionDefinition)reg.FactionID).ToString())
-                .Append(": ")
-                .Append(reg.MemberSignupCount)
-                .AppendLine(" signups");
-        }
-
-        return await _feedbackService.SendContextualSuccessAsync(sb.ToString(), ct: CancellationToken)
-            .ConfigureAwait(false);
     }
 
     private async Task<Result<ValidWorldDefinition>> CheckForDefaultServer()

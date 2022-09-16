@@ -5,6 +5,7 @@ using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
@@ -50,4 +51,10 @@ public static class CacheKeyHelpers
 
     public static object GetPopulationKey(WorldDefinition world)
         => (typeof(IPopulation), (int)world);
+
+    public static object GetOutfitWarRegistrationsKey(uint outfitWarID)
+        => (typeof(OutfitWarRegistration), outfitWarID);
+
+    public static object GetOutfitWarKey(ValidWorldDefinition world)
+        => (typeof(OutfitWar), world);
 }

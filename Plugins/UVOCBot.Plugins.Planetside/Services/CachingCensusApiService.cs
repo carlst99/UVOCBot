@@ -13,6 +13,7 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -178,5 +179,54 @@ public class CachingCensusApiService : CensusApiService
         }
 
         return Result<List<MinimalCharacter>>.FromSuccess(characters);
+    }
+
+    public override async Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    )
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRegistrationsKey(outfitWarID), out List<OutfitWarRegistration> registrations))
+            return registrations;
+
+        Result<List<OutfitWarRegistration>> getRegistrations = await base.GetOutfitWarRegistrationsAsync(outfitWarID, ct)
+            .ConfigureAwait(false);
+
+        if (getRegistrations.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetOutfitWarRegistrationsKey(outfitWarID),
+                getRegistrations.Entity,
+                CacheEntryHelpers.OutfitWarRegistrationsOptions
+            );
+        }
+
+        return getRegistrations;
+    }
+
+    public override async Task<Result<OutfitWar?>> GetCurrentOutfitWar
+    (
+        ValidWorldDefinition world,
+        CancellationToken ct = default
+    )
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarKey(world), out OutfitWar war))
+            return war;
+
+        Result<OutfitWar?> getWar = await base.GetCurrentOutfitWar(world, ct).ConfigureAwait(false);
+
+        if (getWar.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetOutfitWarKey(world),
+                getWar.Entity,
+                CacheEntryHelpers.OutfitWarOptions
+            );
+        }
+
+        return getWar;
     }
 }

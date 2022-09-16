@@ -105,10 +105,22 @@ public interface ICensusApiService
     /// <summary>
     /// Gets a collection of outfit war registrations for the given world.
     /// </summary>
-    /// <param name="world">The world.</param>
+    /// <param name="outfitWarID">The ID of the war to retrieve registrations for.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation, and containing the outfit registrations if successful.</returns>
     Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
+    /// Gets information about the current outfit war for the given world.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>The current <see cref="OutfitWar"/>, or <c>null</c> if there is none.</returns>
+    Task<Result<OutfitWar?>> GetCurrentOutfitWar
     (
         ValidWorldDefinition world,
         CancellationToken ct = default

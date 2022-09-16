@@ -48,6 +48,7 @@ public static class IServiceCollectionExtensions
                 .WithCommandGroup<CharacterCommands>()
                 .WithCommandGroup<OtherCommands>()
                 .WithCommandGroup<OutfitTrackingCommands>()
+                .WithCommandGroup<OutfitWarCommands>()
                 .WithCommandGroup<WorldCommands>()
                 .Finish()
                 .AddAutocompleteProvider<CharacterNameAutocompleteProvider>();

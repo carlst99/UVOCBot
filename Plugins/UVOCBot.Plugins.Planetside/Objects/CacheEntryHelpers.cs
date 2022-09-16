@@ -33,8 +33,8 @@ public static class CacheEntryHelpers
     public static readonly MemoryCacheEntryOptions MapRegionOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7),
-        Priority = CacheItemPriority.Low,
-        Size = 2
+        Priority = CacheItemPriority.High,
+        Size = 1
     };
 
     /// <summary>
@@ -53,6 +53,26 @@ public static class CacheEntryHelpers
     public static readonly MemoryCacheEntryOptions PopulationOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(3),
+        Priority = CacheItemPriority.Normal,
+        Size = 1
+    };
+
+    /// <summary>
+    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// </summary>
+    public static readonly MemoryCacheEntryOptions OutfitWarRegistrationsOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30),
+        Priority = CacheItemPriority.Normal,
+        Size = 3
+    };
+
+    /// <summary>
+    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// </summary>
+    public static readonly MemoryCacheEntryOptions OutfitWarOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
         Priority = CacheItemPriority.Normal,
         Size = 1
     };

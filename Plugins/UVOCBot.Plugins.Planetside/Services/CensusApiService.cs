@@ -272,6 +272,27 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
+    public virtual async Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    )
+    {
+        IQueryBuilder query = _queryService.CreateQuery(_sanctuaryOptions)
+            .OnCollection("outfit_war_round")
+            .Where("outfit_war_id", SearchModifier.Equals, outfitWarID)
+            .Where("start_time", SearchModifier.LessThanOrEqual, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            .Where("end_time", SearchModifier.GreaterThanOrEqual, DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            .AddJoin("outfit_war_match", j =>
+            {
+                j.IsList()
+                    .InjectAt("matches");
+            });
+
+        return await GetAsync<OutfitWarRoundWithMatches>(query, ct).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);

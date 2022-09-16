@@ -57,4 +57,7 @@ public static class CacheKeyHelpers
 
     public static object GetOutfitWarKey(ValidWorldDefinition world)
         => (typeof(OutfitWar), world);
+
+    public static object GetOutfitWarRoundWithMatchesKey(uint outfitWarID)
+        => (typeof(OutfitWarRoundWithMatches), outfitWarID);
 }

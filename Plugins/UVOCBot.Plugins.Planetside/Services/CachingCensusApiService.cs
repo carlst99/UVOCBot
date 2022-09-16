@@ -229,4 +229,29 @@ public class CachingCensusApiService : CensusApiService
 
         return getWar;
     }
+
+    public override async Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    )
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRoundWithMatchesKey(outfitWarID), out OutfitWarRoundWithMatches round))
+            return round;
+
+        Result<OutfitWarRoundWithMatches?> getRound = await base.GetCurrentOutfitWarMatches(outfitWarID, ct)
+            .ConfigureAwait(false);
+
+        if (getRound.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetOutfitWarRoundWithMatchesKey(outfitWarID),
+                getRound.Entity,
+                CacheEntryHelpers.GetOutfitWarRoundWithMatchesOptions(getRound.Entity)
+            );
+        }
+
+        return getRound;
+    }
 }

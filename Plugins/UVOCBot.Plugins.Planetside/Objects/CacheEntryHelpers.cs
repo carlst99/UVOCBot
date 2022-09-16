@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using System;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
@@ -76,4 +77,15 @@ public static class CacheEntryHelpers
         Priority = CacheItemPriority.Normal,
         Size = 1
     };
+
+    /// <summary>
+    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// </summary>
+    public static MemoryCacheEntryOptions GetOutfitWarRoundWithMatchesOptions(OutfitWarRoundWithMatches round) =>
+        new()
+        {
+            AbsoluteExpiration = round.EndTime,
+            Priority = CacheItemPriority.Normal,
+            Size = 1
+        };
 }

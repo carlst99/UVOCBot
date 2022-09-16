@@ -125,4 +125,16 @@ public interface ICensusApiService
         ValidWorldDefinition world,
         CancellationToken ct = default
     );
+
+    /// <summary>
+    /// Gets the matches of the current round of the given outfit war.
+    /// </summary>
+    /// <param name="outfitWarID">The ID of the war to retrieve the current matches of.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>The current matches, or <c>null</c> if the war does not have a round in progress.</returns>
+    Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    );
 }

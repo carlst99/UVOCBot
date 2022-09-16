@@ -52,7 +52,7 @@ public class OutfitWarCommands : CommandGroup
         _feedbackService = feedbackService;
     }
 
-    //[Command("matches")]
+    [Command("matches")]
     [Description("Gets the matches for the current outfit war on a particular server.")]
     [Deferred]
     public async Task<Result> GetActiveWarMatchesCommandAsync
@@ -73,14 +73,88 @@ public class OutfitWarCommands : CommandGroup
         Result<OutfitWar?> getCurrentWar = await _censusApi.GetCurrentOutfitWar(server, CancellationToken);
         if (!getCurrentWar.IsDefined(out OutfitWar? currentWar))
         {
-            return await _feedbackService.SendContextualWarningAsync
+            await _feedbackService.SendContextualWarningAsync
             (
                 $"There is no active outfit war on {server} at this time",
                 ct: CancellationToken
             );
+            return (Result)getCurrentWar;
         }
 
-        throw new NotImplementedException();
+        Result<OutfitWarRoundWithMatches?> getCurrentRound = await _censusApi.GetCurrentOutfitWarMatches
+        (
+            currentWar.OutfitWarID,
+            CancellationToken
+        );
+
+        if (!getCurrentRound.IsDefined(out OutfitWarRoundWithMatches? round))
+        {
+            await _feedbackService.SendContextualWarningAsync
+            (
+                $"There is no active round for the war: {currentWar.Title.English}",
+                ct: CancellationToken
+            );
+            return (Result)getCurrentRound;
+        }
+
+        List<OutfitWarMatch> matches = round.Matches
+            .Where(x => x.StartTime > DateTimeOffset.UtcNow)
+            .OrderBy(x => x.StartTime)
+            .ThenBy(x => x.Order)
+            .ToList();
+
+        ulong[] outfitIDs = new ulong[matches.Count * 2];
+        for (int i = 0; i < matches.Count; i++)
+        {
+            outfitIDs[i * 2] = matches[i].OutfitAId;
+            outfitIDs[(i * 2) + 1] = matches[i].OutfitBId;
+        }
+        Result<List<Outfit>> outfits = await _censusApi.GetOutfitsAsync(outfitIDs, CancellationToken)
+            .ConfigureAwait(false);
+        if (!outfits.IsSuccess)
+            return (Result)outfits;
+
+        List<IEmbedField> fields = new();
+        StringBuilder sb = new();
+
+        foreach (IGrouping<DateTimeOffset, OutfitWarMatch> value in matches.GroupBy(x => x.StartTime))
+        {
+            sb.Clear();
+
+            foreach (OutfitWarMatch match in value)
+            {
+                Outfit? outfitA = outfits.Entity.FirstOrDefault(o => o.OutfitId == match.OutfitAId);
+                Outfit? outfitB = outfits.Entity.FirstOrDefault(o => o.OutfitId == match.OutfitBId);
+
+                sb.Append(FactionToEmoji(match.OutfitAFactionID))
+                    .Append(" [")
+                    .Append(outfitA?.Alias ?? match.OutfitAId.ToString())
+                    .Append("] ")
+                    .Append(outfitA?.Name ?? "<Unknown>")
+                    .Append(" vs. ")
+                    .Append(FactionToEmoji(match.OutfitBFactionID))
+                    .Append(" [")
+                    .Append(outfitB?.Alias ?? match.OutfitBId.ToString())
+                    .Append("] ")
+                    .AppendLine(outfitB?.Name ?? "<Unknown>");
+            }
+
+            fields.Add(new EmbedField
+            (
+                Formatter.Timestamp(value.Key, TimestampStyle.LongDateTime),
+                sb.ToString()
+            ));
+        }
+
+        Embed embed = new
+        (
+            $"Upcoming matches for Round {round.Order}",
+            Description: $"{round.Stage} round, ending {Formatter.Timestamp(round.EndTime, TimestampStyle.RelativeTime)}",
+            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
+            Fields: fields
+        );
+
+        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
     }
 
     [Command("registrations")]

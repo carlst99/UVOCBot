@@ -17,7 +17,6 @@ using UVOCBot.Plugins.Greetings.Abstractions.Services;
 
 namespace UVOCBot.Plugins.Greetings.Responders;
 
-[Ephemeral]
 internal sealed class GreetingComponentResponder : IComponentResponder
 {
     private readonly IGreetingService _greetingService;
@@ -41,7 +40,7 @@ internal sealed class GreetingComponentResponder : IComponentResponder
 
     /// <inheritdoc />
     public Result<Attribute[]> GetResponseAttributes(string key)
-        => Array.Empty<Attribute>();
+        => Result<Attribute[]>.FromSuccess(new Attribute[] { new EphemeralAttribute() });
 
     /// <inheritdoc />
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)

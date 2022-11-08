@@ -2,15 +2,16 @@
 
 ## Release vNext
 
-**Additions**
+✨ **Additions**
 - Added the `outfit-wars registrations` command.
 - Added the `outfit-wars matches` command.
 - Added the `rolemenu list-menus` command.
 - Spiffed up the role menu commands, and added support for emojis on role labels.
 
-**Fixes**
+🐛 **Fixes**
 - Fixed Oshur status being calculated incorrectly.
 - Fixed the character name autocomplete on the `character` command when not using all-lowercase letters.
+- Fixed the `character` command failing on players without an outfit.
 
 **Miscellaneous**
 - The `online-friends` command is now only visible to the user.

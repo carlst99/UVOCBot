@@ -19,7 +19,7 @@ public record CharacterInfo
     CharacterInfo.CharacterStatHistory Deaths,
     CharacterInfo.CharacterStatHistory Kills,
     CharacterInfo.CharacterStatHistory Time,
-    CharacterInfo.OutfitMemberExtended OutfitMember
+    CharacterInfo.OutfitMemberExtended? OutfitMember
 )
 {
     public record CharacterTimes

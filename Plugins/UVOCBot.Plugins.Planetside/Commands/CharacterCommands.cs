@@ -136,14 +136,17 @@ public class CharacterCommands : CommandGroup
             true
         );
 
-        CharacterInfo.OutfitMemberExtended outfit = character.OutfitMember;
-        EmbedField outfitField = new
-        (
-            "Outfit",
-            Formatter.MaskedLink($"[{outfit.Alias}] {outfit.Name}", $"https://wt.honu.pw/o/{outfit.OutfitID}")
-            + $"\nRank: {outfit.MemberRankOrdinal}. {outfit.MemberRank}",
-            true
-        );
+        EmbedField outfitField = new("Outfit", "None");
+        if (character.OutfitMember is { } outfit)
+        {
+            outfitField = new EmbedField
+            (
+                "Outfit",
+                Formatter.MaskedLink($"[{outfit.Alias}] {outfit.Name}", $"https://wt.honu.pw/o/{outfit.OutfitID}")
+                + $"\nRank: {outfit.MemberRankOrdinal}. {outfit.MemberRank}",
+                true
+            );
+        }
 
         Embed embed = new
         (

@@ -16,6 +16,7 @@
 **Miscellaneous**
 - The `online-friends` command is now only visible to the user.
 - The client update tracking message now says '...update has been released' rather than 'detected' when updates are released.
+- Upcoming updates will now be sent before active updates, for cases where both channels have received updates since they were last checked.
 
 ## Release v1.5.0
 

@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Plugins\UVOCBot.Plugins.ApexLegends\UVOCBot.Plugins.ApexLegends.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Feeds\UVOCBot.Plugins.Feeds.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Greetings\UVOCBot.Plugins.Greetings.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Planetside\UVOCBot.Plugins.Planetside.csproj" />

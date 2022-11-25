@@ -163,7 +163,8 @@ public static class Program
                         .AddScoped<IAdminLogService, AdminLogService>();
 
                 // Plugin registration
-                services.AddFeedsPlugin(c.Configuration)
+                services.AddApexLegendsPlugin(c.Configuration)
+                        .AddFeedsPlugin(c.Configuration)
                         .AddGreetingsPlugin()
                         .AddPlanetsidePlugin(c.Configuration)
                         .AddRolesPlugin();

@@ -6,4 +6,7 @@ public static class CacheKeyHelpers
 {
     public static object GetMapRotationBundleKey()
         => typeof(MapRotationBundle);
+
+    public static object GetCraftingBundleKey()
+        => typeof(CraftingBundle);
 }

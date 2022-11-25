@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Remora.Results;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,5 +38,26 @@ public sealed class CachingApexApiService : ApexApiService
         }
 
         return getRotations;
+    }
+
+    public override async Task<Result<List<CraftingBundle>>> GetCraftingBundlesAsync(CancellationToken ct = default)
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetCraftingBundleKey(), out List<CraftingBundle> bundles))
+            return bundles;
+
+        Result<List<CraftingBundle>> getBundles = await base.GetCraftingBundlesAsync(ct)
+            .ConfigureAwait(false);
+
+        if (getBundles.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetCraftingBundleKey(),
+                getBundles.Entity,
+                CacheEntryHelpers.GetCraftingBundlesOptions(getBundles.Entity)
+            );
+        }
+
+        return getBundles;
     }
 }

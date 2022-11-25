@@ -4,12 +4,12 @@ namespace UVOCBot.Plugins.ApexLegends.Objects.ApexQuery;
 
 public record MapRotation
 (
-    [property: JsonPropertyName("start")] long Start,
-    [property: JsonPropertyName("end")] long End,
-    [property: JsonPropertyName("map")] string Map,
-    int DurationInSecs,
-    [property: JsonPropertyName("asset")] string? Asset,
-    [property: JsonPropertyName("remianingSecs")] int? RemainingSecs
+    long Start,
+    long End,
+    string Map,
+    [property: JsonPropertyName("DurationInSecs")] int DurationInSecs,
+    string? Asset,
+    int? RemainingSecs
 );
 
 public record MapRotationBundle

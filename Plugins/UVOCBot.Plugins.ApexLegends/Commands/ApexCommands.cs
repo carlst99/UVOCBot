@@ -269,7 +269,7 @@ public class ApexCommands : CommandGroup
         if (realtimeData.CurrentStateSecsAgo is { } stateForSecs)
             result += $" ({TimeSpan.FromSeconds(stateForSecs):mm\\:ss})";
 
-        if (realtimeData.CanJoin == 0)
+        if (realtimeData is { CanJoin: 0, PartyFull: 0 })
             result += " (invite only)";
 
         if (realtimeData.PartyFull > 0)

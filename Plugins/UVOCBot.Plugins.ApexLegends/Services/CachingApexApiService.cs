@@ -60,4 +60,30 @@ public sealed class CachingApexApiService : ApexApiService
 
         return getBundles;
     }
+
+    public override async Task<Result<StatsBridge>> GetPlayerStatisticsAsync
+    (
+        string playerName,
+        PlayerPlatform platform,
+        CancellationToken ct = default
+    )
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetStatsBridgeKey(playerName, platform), out StatsBridge stats))
+            return stats;
+
+        Result<StatsBridge> getStats = await base.GetPlayerStatisticsAsync(playerName, platform, ct)
+            .ConfigureAwait(false);
+
+        if (getStats.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetStatsBridgeKey(playerName, platform),
+                getStats.Entity,
+                CacheEntryHelpers.GetStatsBridgeOptions()
+            );
+        }
+
+        return getStats;
+    }
 }

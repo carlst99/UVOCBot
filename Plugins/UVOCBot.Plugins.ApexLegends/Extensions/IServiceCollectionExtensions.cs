@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.IO;
 using Remora.Commands.Extensions;
 using System;
 using UVOCBot.Plugins.ApexLegends.Abstractions.Services;
@@ -24,6 +25,9 @@ public static class IServiceCollectionExtensions
             c.BaseAddress = new Uri(options.ApexLegendsApiEndpoint);
             c.DefaultRequestHeaders.Add("Authorization", options.ApexLegendsApiKey);
         });
+        services.AddHttpClient<IApexImageGenerationService, ApexImageGenerationService>();
+
+        services.AddSingleton<RecyclableMemoryStreamManager>();
 
         services.AddCommandTree()
                 .WithCommandGroup<ApexCommands>()

@@ -10,4 +10,5 @@ public interface IApexApiService
 {
     Task<Result<MapRotationBundle>> GetMapRotationsAsync(CancellationToken ct = default);
     Task<Result<List<CraftingBundle>>> GetCraftingBundlesAsync(CancellationToken ct = default);
+    Task<Result<StatsBridge>> GetPlayerStatisticsAsync(string playerName, PlayerPlatform platform, CancellationToken ct = default);
 }

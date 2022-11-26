@@ -1,8 +1,8 @@
 using Remora.Results;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -28,16 +28,17 @@ public class ApexApiService : IApexApiService
     {
         try
         {
-            Dictionary<string, MapRotation>? rotations = await _client
-                .GetFromJsonAsync<Dictionary<string, MapRotation>>("maprotation", _jsonOptions, ct)
+            HttpResponseMessage result = await _client.GetAsync("maprotation", ct)
                 .ConfigureAwait(false);
 
-            if (rotations is null)
-                return new ApexApiError("Failed to retrieve map rotations");
+            Result<Dictionary<string, MapRotation>> getRotations = await ParseApiResult<Dictionary<string, MapRotation>>(result, ct)
+                .ConfigureAwait(false);
+
+            if (!getRotations.IsDefined(out Dictionary<string, MapRotation>? rotations))
+                return Result<MapRotationBundle>.FromError(getRotations);
 
             if (!rotations.TryGetValue("current", out MapRotation? currentRotation))
                 return new ApexApiError("Result did not contain the current map rotation");
-
             rotations.TryGetValue("next", out MapRotation? nextRotation);
 
             return new MapRotationBundle(currentRotation, nextRotation);
@@ -52,18 +53,59 @@ public class ApexApiService : IApexApiService
     {
         try
         {
-            List<CraftingBundle>? bundles = await _client
-                .GetFromJsonAsync<List<CraftingBundle>>("crafting", _jsonOptions, ct)
+            HttpResponseMessage result = await _client.GetAsync("crafting", ct)
                 .ConfigureAwait(false);
 
-            if (bundles is null)
-                return new ApexApiError("Failed to retrieve crafting information");
-
-            return bundles;
+            return await ParseApiResult<List<CraftingBundle>>(result, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             return new ExceptionError(ex);
         }
+    }
+
+    public virtual async Task<Result<StatsBridge>> GetPlayerStatisticsAsync
+    (
+        string playerName,
+        PlayerPlatform platform,
+        CancellationToken ct = default
+    )
+    {
+        try
+        {
+            string platformString = platform switch {
+                PlayerPlatform.Origin => "PC",
+                PlayerPlatform.PS4 => "PS4",
+                PlayerPlatform.Xbox => "X1",
+                _ => throw new ArgumentException("Invalid platform", nameof(platform))
+            };
+
+            HttpResponseMessage response = await _client
+                .GetAsync($"bridge?player={playerName}&platform={platformString}", ct)
+                .ConfigureAwait(false);
+
+            return await ParseApiResult<StatsBridge>(response, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new ExceptionError(ex);
+        }
+    }
+
+    private async Task<Result<T>> ParseApiResult<T>(HttpResponseMessage response, CancellationToken ct)
+    {
+        response.EnsureSuccessStatusCode();
+
+        Stream contentStream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        JsonDocument document = await JsonDocument.ParseAsync(contentStream, default, ct).ConfigureAwait(false);
+
+        JsonElement errorElement = default;
+        bool hasErrorValue = document.RootElement.ValueKind is JsonValueKind.Object
+            && document.RootElement.TryGetProperty("Error", out errorElement);
+
+        if (hasErrorValue)
+            return new ApexApiError(errorElement.GetString() ?? "Unknown error response");
+
+        return document.Deserialize<T>(_jsonOptions);
     }
 }

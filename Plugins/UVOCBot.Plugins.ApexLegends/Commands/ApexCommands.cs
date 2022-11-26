@@ -1,11 +1,15 @@
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
+using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
+using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,15 +27,18 @@ namespace UVOCBot.Plugins.ApexLegends.Commands;
 public class ApexCommands : CommandGroup
 {
     private readonly IApexApiService _apexApi;
+    private readonly IApexImageGenerationService _imageGenerationService;
     private readonly FeedbackService _feedbackService;
 
     public ApexCommands
     (
         IApexApiService apexApi,
+        IApexImageGenerationService imageGenerationService,
         FeedbackService feedbackService
     )
     {
         _apexApi = apexApi;
+        _imageGenerationService = imageGenerationService;
         _feedbackService = feedbackService;
     }
 
@@ -75,18 +82,20 @@ public class ApexCommands : CommandGroup
         Result<List<CraftingBundle>> getBundles = await _apexApi.GetCraftingBundlesAsync(CancellationToken)
             .ConfigureAwait(false);
 
-        if (!getBundles.IsDefined(out List<CraftingBundle>? bundles))
+        if (!getBundles.IsSuccess)
             return await NotifyOfApiRetrievalError((Result)getBundles).ConfigureAwait(false);
 
         List<EmbedField> fields = new();
         long dailyRotationEnd = 0;
 
-        foreach (CraftingBundle bundle in bundles.OrderBy(x => x.BundleType))
+        List<CraftingBundle> bundles = getBundles.Entity
+            .Where(x => x.BundleType is CraftingBundleType.Daily or CraftingBundleType.Weekly)
+            .OrderBy(x => x.BundleType)
+            .ToList();
+
+        foreach (CraftingBundle bundle in bundles)
         {
             if (DateTimeOffset.FromUnixTimeSeconds(bundle.Start) >= DateTimeOffset.UtcNow)
-                continue;
-
-            if (bundle.BundleType is not (CraftingBundleType.Daily or CraftingBundleType.Weekly))
                 continue;
 
             if (bundle.BundleType is CraftingBundleType.Daily)
@@ -95,15 +104,108 @@ public class ApexCommands : CommandGroup
             fields.Add(CreateBundleEmbedField(bundle));
         }
 
+        using MemoryStream imageStream = await _imageGenerationService.GenerateCraftingBundleImageAsync(bundles, CancellationToken)
+            .ConfigureAwait(false);
+
         Embed embed = new
         (
             "Current Crafting Bundles",
             Description: $"Daily rotations change {Formatter.Timestamp(dailyRotationEnd, TimestampStyle.RelativeTime)}",
             Colour: Color.Gold,
+            Image: new EmbedImage("attachment://craftables.png"),
             Fields: fields
         );
 
-        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualEmbedAsync
+        (
+            embed,
+            new FeedbackMessageOptions
+            (
+                Attachments: new OneOf.OneOf<FileData, IPartialAttachment>[]
+                {
+                    new FileData("craftables.png", imageStream, "A visualisation of the current crafting bundles")
+                }
+            ),
+            ct: CancellationToken
+        ).ConfigureAwait(false);
+    }
+
+    [Command("player")]
+    public async Task<Result> GetPlayerStatisticsCommandAsync(string playerName, PlayerPlatform platform = PlayerPlatform.Origin)
+    {
+        Result<StatsBridge> getStats = await _apexApi.GetPlayerStatisticsAsync(playerName, platform, CancellationToken)
+            .ConfigureAwait(false);
+
+        if (!getStats.IsDefined(out StatsBridge? stats))
+        {
+            if (getStats.Error is ApexApiError apexError && apexError.Message.Contains("not found"))
+            {
+                return await _feedbackService.SendContextualWarningAsync
+                (
+                    "That player could not be found. Ensure you are using their Origin name.",
+                    ct: CancellationToken
+                ).ConfigureAwait(false);
+            }
+
+            return await NotifyOfApiRetrievalError((Result)getStats).ConfigureAwait(false);
+        }
+
+        List<EmbedField> fields = new();
+
+        if (stats.Global.Bans.IsActive)
+        {
+            fields.Add(new EmbedField
+            (
+                $"Banned for {TimeSpan.FromSeconds(stats.Global.Bans.RemainingSeconds):hh\\h\\ mm\\m}",
+                $"Reason: {stats.Global.Bans.LastBanReason}"
+            ));
+        }
+
+        fields.Add(new EmbedField
+        (
+            "Status",
+            CreateStatusText(stats.Realtime),
+            true
+        ));
+
+        fields.Add(new EmbedField
+        (
+            $"Level {stats.Global.Level}",
+            $"Prestige count: {stats.Global.LevelPrestige}\n"
+                + $"Percent to next level: {stats.Global.ToNextLevelPercent}"
+        ));
+
+        StatsBridgeGlobal.RankInfo rank = stats.Global.Rank;
+        fields.Add(new EmbedField
+        (
+            $"Ranked: {rank.RankName} {RankDivisionToString(rank.RankDiv)}",
+            $"Score: {rank.RankScore}",
+            true
+        ));
+
+        StatsBridgeGlobal.RankInfo arenaRank = stats.Global.Arena;
+        fields.Add(new EmbedField
+        (
+            $"Arenas Ranked: {arenaRank.RankName} {RankDivisionToString(arenaRank.RankDiv)}",
+            $"Score: {arenaRank.RankScore}",
+            true
+        ));
+
+        string statusEmoji = stats.Realtime.IsOnline == 1
+            ? Formatter.Emoji("green_circle")
+            : Formatter.Emoji("red_circle");
+
+        Embed embed = new
+        (
+            $"Statistics for {stats.Global.Name} ({stats.Global.Platform}) {statusEmoji}",
+            Colour: Color.Gold,
+            Thumbnail: new EmbedThumbnail(stats.Global.Rank.RankImg),
+            Image: new EmbedImage(stats.Legends.Selected.ImgAssets.Banner),
+            Fields: fields
+        );
+
+        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static EmbedField CreateBundleEmbedField(CraftingBundle bundle)
@@ -154,6 +256,40 @@ public class ApexCommands : CommandGroup
 
         return new string(toBuf);
     }
+
+    private static string CreateStatusText(StatsBridgeRealtime realtimeData)
+    {
+        if (realtimeData.IsOnline == 0)
+            return "Offline";
+
+        string result = realtimeData.IsInGame == 0
+            ? "In lobby"
+            : "In match";
+
+        if (realtimeData.CurrentStateSecsAgo is { } stateForSecs)
+            result += $" ({TimeSpan.FromSeconds(stateForSecs):mm\\:ss})";
+
+        if (realtimeData.CanJoin == 0)
+            result += " (invite only)";
+
+        if (realtimeData.PartyFull > 0)
+            result += " (party full)";
+
+        if (realtimeData.IsOnline > 0)
+            result += $"\nCurrent legend: {realtimeData.SelectedLegend}";
+
+        return result;
+    }
+
+    private static string RankDivisionToString(int division)
+        => division switch
+        {
+            1 => "I",
+            2 => "II",
+            3 => "III",
+            4 => "IV",
+            _ => string.Empty
+        };
 
     private async Task<Result> NotifyOfApiRetrievalError(Result apiResult)
     {

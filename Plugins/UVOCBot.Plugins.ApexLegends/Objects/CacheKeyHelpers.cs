@@ -9,4 +9,7 @@ public static class CacheKeyHelpers
 
     public static object GetCraftingBundleKey()
         => typeof(CraftingBundle);
+
+    public static object GetStatsBridgeKey(string playerName, PlayerPlatform platform)
+        => (typeof(StatsBridge), playerName, platform);
 }

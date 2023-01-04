@@ -34,7 +34,7 @@ namespace UVOCBot.Plugins.Roles.Commands;
 [Deferred]
 public class RoleMenuCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IInteractionResponseService _interactionResponseService;
     private readonly IPermissionChecksService _permissionChecksService;
@@ -44,7 +44,7 @@ public class RoleMenuCommands : CommandGroup
 
     public RoleMenuCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestChannelAPI channelApi,
         IInteractionResponseService interactionResponseService,
         IPermissionChecksService permissionChecksService,
@@ -53,7 +53,7 @@ public class RoleMenuCommands : CommandGroup
         FeedbackService replyService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _channelApi = channelApi;
         _interactionResponseService = interactionResponseService;
         _permissionChecksService = permissionChecksService;
@@ -87,12 +87,15 @@ public class RoleMenuCommands : CommandGroup
         if (!permissionsResult.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
             return new PermissionError(DiscordPermission.SendMessages, DiscordConstants.UserId, channel.ID);
 
+        if (!_context.TryGetUser(out IUser? user))
+            return new GenericCommandError();
+
         GuildRoleMenu menu = new
         (
             _context.GuildID.Value.Value,
             0,
             channel.ID.Value,
-            _context.User.ID.Value,
+            user.ID.Value,
             "Placeholder"
         );
 
@@ -166,9 +169,6 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID
     )
     {
-        if (_context is not InteractionContext)
-            return new GenericCommandError("This command must be executed as a slash command.");
-
         if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
         {
             IResult sendResult = await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);

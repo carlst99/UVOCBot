@@ -15,6 +15,7 @@ using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
+using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Commands;
 
@@ -22,20 +23,20 @@ namespace UVOCBot.Commands;
 [RequireGuildPermission(DiscordPermission.MoveMembers)]
 public class MovementCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestGuildAPI _guildAPI;
     private readonly IVoiceStateCacheService _voiceStateCache;
     private readonly FeedbackService _feedbackService;
 
     public MovementCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestGuildAPI guildAPI,
         IVoiceStateCacheService voiceStateCache,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _guildAPI = guildAPI;
         _voiceStateCache = voiceStateCache;
         _feedbackService = feedbackService;
@@ -93,23 +94,10 @@ public class MovementCommands : CommandGroup
 
     private async Task<Result<Snowflake>> GetMoveFromChannelIdAsync(IChannel? moveFromChannel = null)
     {
-        if (moveFromChannel is null)
-        {
-            Optional<IVoiceState> memberState = _voiceStateCache.GetUserVoiceState(_context.User.ID);
-            if (!memberState.HasValue)
-            {
-                await _feedbackService.SendContextualErrorAsync
-                (
-                    "You must be in a voice channel to omit the " + Formatter.InlineQuote("moveFrom") + "parameter.",
-                    ct: CancellationToken
-                ).ConfigureAwait(false);
+        if (!_context.TryGetUser(out IUser? user))
+            return new ArgumentInvalidError("user", "No user was present");
 
-                return new InvalidOperationError();
-            }
-
-            return memberState.Value.ChannelID!.Value;
-        }
-        else
+        if (moveFromChannel is not null)
         {
             bool isValid = await CheckAndNotifyValidVoiceChannel(moveFromChannel, true).ConfigureAwait(false);
             if (!isValid)
@@ -117,6 +105,17 @@ public class MovementCommands : CommandGroup
 
             return moveFromChannel.ID;
         }
+
+        Optional<IVoiceState> memberState = _voiceStateCache.GetUserVoiceState(user.ID);
+        if (!memberState.HasValue)
+        {
+            return new GenericCommandError
+            (
+                "You must be in a voice channel to omit the " + Formatter.InlineQuote("moveFrom") + "parameter."
+            );
+        }
+
+        return memberState.Value.ChannelID!.Value;
     }
 
     private async Task<bool> CheckAndNotifyValidVoiceChannel(IChannel channel, bool from)

@@ -22,20 +22,20 @@ namespace UVOCBot.Plugins.Roles.Services;
 /// <inheritdoc cref="IRoleMenuService"/>
 public class RoleMenuService : IRoleMenuService
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
     public RoleMenuService
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestChannelAPI channelApi,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _channelApi = channelApi;
         _dbContext = dbContext;
         _feedbackService = feedbackService;

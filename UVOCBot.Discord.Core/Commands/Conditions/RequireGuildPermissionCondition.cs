@@ -18,16 +18,16 @@ namespace UVOCBot.Discord.Core.Commands.Conditions;
 /// </summary>
 public class RequireGuildPermissionCondition : ICondition<RequireGuildPermissionAttribute>
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IPermissionChecksService _permissionChecksService;
 
     public RequireGuildPermissionCondition
     (
-        ICommandContext context,
+        IInteractionContext context,
         IPermissionChecksService permissionChecksService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _permissionChecksService = permissionChecksService;
     }
 
@@ -37,21 +37,33 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
         if (!_context.GuildID.HasValue)
             return new ContextError(ContextError.GuildTextChannels);
 
+        if (!_context.ChannelID.HasValue)
+            return new ArgumentInvalidError("channel", "No channel was present");
+
+        if (!_context.TryGetUser(out IUser? user))
+            return new ArgumentInvalidError("user", "No user was present");
+
         if (attribute.IncludeSelf)
         {
-            Result selfPermissionCheck = await DoPermissionCheck(attribute.RequiredPermissions, DiscordConstants.UserId, ct).ConfigureAwait(false);
+            Result selfPermissionCheck = await DoPermissionCheck(attribute.RequiredPermissions, DiscordConstants.UserId, ct)
+                .ConfigureAwait(false);
             if (!selfPermissionCheck.IsSuccess)
                 return selfPermissionCheck;
         }
 
-        return await DoPermissionCheck(attribute.RequiredPermissions, _context.User.ID, ct).ConfigureAwait(false);
+        return await DoPermissionCheck(attribute.RequiredPermissions, user.ID, ct);
     }
 
-    private async Task<Result> DoPermissionCheck(IEnumerable<DiscordPermission> permissions, Snowflake userID, CancellationToken ct = default)
+    private async Task<Result> DoPermissionCheck
+    (
+        IEnumerable<DiscordPermission> permissions,
+        Snowflake userID,
+        CancellationToken ct = default
+    )
     {
         Result<IDiscordPermissionSet> getPermissions = await _permissionChecksService.GetPermissionsInChannel
         (
-            _context.ChannelID,
+            _context.ChannelID.Value,
             userID,
             ct
         ).ConfigureAwait(false);
@@ -64,7 +76,7 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
             .ToList();
 
         return missingPermissions.Count > 0
-            ? new PermissionError(missingPermissions, userID, _context.ChannelID)
+            ? new PermissionError(missingPermissions, userID, _context.ChannelID.Value)
             : Result.FromSuccess();
     }
 }

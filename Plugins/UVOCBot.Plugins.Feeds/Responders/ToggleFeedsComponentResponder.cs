@@ -19,20 +19,20 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
 {
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly DiscordContext _dbContext;
-    private readonly InteractionContext _context;
+    private readonly IInteraction _context;
     private readonly FeedbackService _feedbackService;
 
     public ToggleFeedComponentResponder
     (
         IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
-        InteractionContext context,
+        IInteractionContext context,
         FeedbackService feedbackService
     )
     {
         _permissionChecksService = permissionChecksService;
         _dbContext = dbContext;
-        _context = context;
+        _context = context.Interaction;
         _feedbackService = feedbackService;
     }
 
@@ -46,24 +46,31 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
         if (key != FeedComponentKeys.ToggleFeed)
             return Result.FromError(new GenericCommandError());
 
-        if (!_context.Data.TryPickT1(out IMessageComponentData componentData, out _)
-            || !componentData.Values.IsDefined(out IReadOnlyList<string>? values))
+        if (!_context.Data.HasValue)
+            return Result.FromSuccess();
+
+        if (!_context.Data.Value.TryPickT1(out IMessageComponentData componentData, out _)
+            || !componentData.Values.IsDefined(out IReadOnlyList<ISelectOption>? values))
             return Result.FromError(new GenericCommandError());
 
-        Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService.GetPermissionsInChannel(_context.ChannelID, _context.User.ID, ct);
+        if (!_context.TryGetUser(out IUser? user))
+            return Result.FromSuccess();
+
+        Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService
+            .GetPermissionsInChannel(_context.ChannelID.Value, user.ID, ct);
         if (!permissionsResult.IsDefined(out IDiscordPermissionSet? permissions))
             return permissionsResult;
 
         if (!permissions.HasAdminOrPermission(DiscordPermission.ManageGuild))
-            return Result.FromError(new PermissionError(DiscordPermission.ManageGuild, _context.User.ID, _context.ChannelID));
+            return Result.FromError(new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID.Value));
 
         GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct).ConfigureAwait(false);
         Feed selectedFeeds = 0;
         string message = "The following feeds have been enabled:";
 
-        foreach (string value in values)
+        foreach (ISelectOption value in values)
         {
-            if (!Enum.TryParse(value, out Feed feed))
+            if (!Enum.TryParse(value.Value, out Feed feed))
                 continue;
 
             selectedFeeds |= feed;

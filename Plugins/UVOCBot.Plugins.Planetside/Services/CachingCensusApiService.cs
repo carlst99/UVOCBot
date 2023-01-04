@@ -44,7 +44,7 @@ public class CachingCensusApiService : CensusApiService
 
         foreach (ulong id in outfitIDs)
         {
-            if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit outfit))
+            if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit? outfit) && outfit is not null)
                 outfits.Add(outfit);
             else
                 toQuery.Add(id);
@@ -72,7 +72,7 @@ public class CachingCensusApiService : CensusApiService
     /// <inheritdoc />
     public override async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetFacilityMapRegionKey(facilityID), out MapRegion region))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetFacilityMapRegionKey(facilityID), out MapRegion? region))
             return region;
 
         Result<MapRegion?> getMapRegionResult = await base.GetFacilityRegionAsync(facilityID, ct).ConfigureAwait(false);
@@ -103,8 +103,8 @@ public class CachingCensusApiService : CensusApiService
 
         foreach (ValidZoneDefinition zone in zones)
         {
-            if (_cache.TryGetValue(CacheKeyHelpers.GetMapKey((WorldDefinition)world, (ZoneDefinition)zone), out Map region))
-                maps.Add(region);
+            if (_cache.TryGetValue(CacheKeyHelpers.GetMapKey((WorldDefinition)world, (ZoneDefinition)zone), out Map? region))
+                maps.Add(region!);
             else
                 toRetrieve.Add(zone);
         }
@@ -136,7 +136,7 @@ public class CachingCensusApiService : CensusApiService
     /// <inheritdoc />
     public override async Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, (ZoneDefinition)zone), out MetagameEvent found))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, (ZoneDefinition)zone), out MetagameEvent? found))
             return found;
 
         // Note that we don't cache the result here
@@ -156,8 +156,8 @@ public class CachingCensusApiService : CensusApiService
 
         foreach (ulong id in characterIDs)
         {
-            if (_cache.TryGetValue(CacheKeyHelpers.GetMinimalCharacterKey(id), out MinimalCharacter character))
-                characters.Add(character);
+            if (_cache.TryGetValue(CacheKeyHelpers.GetMinimalCharacterKey(id), out MinimalCharacter? character))
+                characters.Add(character!);
             else
                 toQuery.Add(id);
         }
@@ -187,7 +187,7 @@ public class CachingCensusApiService : CensusApiService
         CancellationToken ct = default
     )
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRegistrationsKey(outfitWarID), out List<OutfitWarRegistration> registrations))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRegistrationsKey(outfitWarID), out List<OutfitWarRegistration>? registrations))
             return registrations;
 
         Result<List<OutfitWarRegistration>> getRegistrations = await base.GetOutfitWarRegistrationsAsync(outfitWarID, ct)
@@ -212,7 +212,7 @@ public class CachingCensusApiService : CensusApiService
         CancellationToken ct = default
     )
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarKey(world), out OutfitWar war))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarKey(world), out OutfitWar? war))
             return war;
 
         Result<OutfitWar?> getWar = await base.GetCurrentOutfitWar(world, ct).ConfigureAwait(false);
@@ -236,7 +236,7 @@ public class CachingCensusApiService : CensusApiService
         CancellationToken ct = default
     )
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRoundWithMatchesKey(outfitWarID), out OutfitWarRoundWithMatches round))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRoundWithMatchesKey(outfitWarID), out OutfitWarRoundWithMatches? round))
             return round;
 
         Result<OutfitWarRoundWithMatches?> getRound = await base.GetCurrentOutfitWarMatches(outfitWarID, ct)

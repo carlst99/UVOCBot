@@ -24,20 +24,20 @@ namespace UVOCBot.Commands;
 [Deferred]
 public class TeamGenerationCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
-    private readonly IDiscordRestGuildAPI _guildAPI;
+    private readonly IInteraction _context;
+    private readonly IDiscordRestGuildAPI _guildApi;
     private readonly FeedbackService _feedbackService;
 
     public TeamGenerationCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestGuildAPI guildAPI,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _feedbackService = feedbackService;
-        _guildAPI = guildAPI;
+        _guildApi = guildAPI;
     }
 
     [Command("random-from-role")]
@@ -53,12 +53,23 @@ public class TeamGenerationCommands : CommandGroup
 
         List<ulong> roleMembers = new();
 
-        await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildAPI.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
+        IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> allGuildMembers = _guildApi.GetAllMembersAsync
+        (
+            _context.GuildID.Value,
+            m => m.Roles.Contains(role.ID),
+            CancellationToken
+        );
+        await foreach (Result<IReadOnlyList<IGuildMember>> users in allGuildMembers)
         {
             if (!users.IsDefined())
                 return users;
 
-            roleMembers.AddRange(users.Entity.Select(m => m.User.Value.ID.Value));
+            foreach (IGuildMember member in users.Entity)
+            {
+                if (!member.User.IsDefined(out IUser? user))
+                    continue;
+                roleMembers.Add(user.ID.Value);
+            }
         }
 
         return await SendRandomTeams(roleMembers, numberOfTeams, $"Build from the role { Formatter.RoleMention(role.ID)  }").ConfigureAwait(false);

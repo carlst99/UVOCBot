@@ -1,5 +1,4 @@
 using DbgCensus.Core.Objects;
-using Microsoft.Extensions.Caching.Memory;
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
@@ -28,26 +27,21 @@ namespace UVOCBot.Plugins.Planetside.Commands;
 [Group("outfit-wars")]
 public class OutfitWarCommands : CommandGroup
 {
-    private static readonly ValidZoneDefinition[] ValidZones = Enum.GetValues<ValidZoneDefinition>();
-
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly ICensusApiService _censusApi;
-    private readonly IMemoryCache _cache;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
     public OutfitWarCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         ICensusApiService censusApi,
-        IMemoryCache cache,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _censusApi = censusApi;
-        _cache = cache;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
     }

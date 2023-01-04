@@ -21,7 +21,7 @@ public sealed class CachingApexApiService : ApexApiService
 
     public override async Task<Result<MapRotationBundle>> GetMapRotationsAsync(CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetMapRotationBundleKey(), out MapRotationBundle bundle))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetMapRotationBundleKey(), out MapRotationBundle? bundle))
             return bundle;
 
         Result<MapRotationBundle> getRotations = await base.GetMapRotationsAsync(ct)
@@ -42,7 +42,7 @@ public sealed class CachingApexApiService : ApexApiService
 
     public override async Task<Result<List<CraftingBundle>>> GetCraftingBundlesAsync(CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetCraftingBundleKey(), out List<CraftingBundle> bundles))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetCraftingBundleKey(), out List<CraftingBundle>? bundles))
             return bundles;
 
         Result<List<CraftingBundle>> getBundles = await base.GetCraftingBundlesAsync(ct)
@@ -68,7 +68,7 @@ public sealed class CachingApexApiService : ApexApiService
         CancellationToken ct = default
     )
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetStatsBridgeKey(playerName, platform), out StatsBridge stats))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetStatsBridgeKey(playerName, platform), out StatsBridge? stats))
             return stats;
 
         Result<StatsBridge> getStats = await base.GetPlayerStatisticsAsync(playerName, platform, ct)

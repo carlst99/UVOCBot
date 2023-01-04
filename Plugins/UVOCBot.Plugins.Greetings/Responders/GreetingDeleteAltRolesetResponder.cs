@@ -20,20 +20,20 @@ namespace UVOCBot.Plugins.Greetings.Responders;
 
 internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
 {
-    private readonly InteractionContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly FeedbackService _feedbackService;
     private readonly DiscordContext _dbContext;
 
     public GreetingDeleteAltRolesetResponder
     (
-        InteractionContext context,
+        IInteractionContext context,
         IDiscordRestChannelAPI channelApi,
         FeedbackService feedbackService,
         DiscordContext dbContext
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _channelApi = channelApi;
         _feedbackService = feedbackService;
         _dbContext = dbContext;
@@ -66,21 +66,21 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
             return new GenericCommandError();
 
         if (!memberPerms.HasPermission(DiscordPermission.ManageGuild))
-            return new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID);
+            return new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID.Value);
         if (!memberPerms.HasPermission(DiscordPermission.ManageRoles))
-            return new PermissionError(DiscordPermission.ManageRoles, user.ID, _context.ChannelID);
+            return new PermissionError(DiscordPermission.ManageRoles, user.ID, _context.ChannelID.Value);
 
-        if (!_context.Data.TryPickT1(out IMessageComponentData componentData, out _))
+        if (!_context.Data.Value.TryPickT1(out IMessageComponentData componentData, out _))
             return new GenericCommandError();
 
-        if (!componentData.Values.IsDefined(out IReadOnlyList<string>? selectedValues))
+        if (!componentData.Values.IsDefined(out IReadOnlyList<ISelectOption>? selectedValues))
             return new GenericCommandError();
 
         GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct)
             .ConfigureAwait(false);
 
         List<GuildGreetingAlternateRoleSet> removedRolesets = new();
-        foreach (ulong rolesetID in selectedValues.Select(ulong.Parse))
+        foreach (ulong rolesetID in selectedValues.Select(x => ulong.Parse(x.Value)))
         {
             int removeIndex = welcomeMessage.AlternateRolesets.FindIndex(rs => rs.ID == rolesetID);
             removedRolesets.Add(welcomeMessage.AlternateRolesets[removeIndex]);
@@ -97,7 +97,7 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
 
         await _channelApi.DeleteMessageAsync
         (
-            _context.ChannelID,
+            _context.ChannelID.Value,
             _context.Message.Value.ID,
             ct: ct
         ).ConfigureAwait(false);

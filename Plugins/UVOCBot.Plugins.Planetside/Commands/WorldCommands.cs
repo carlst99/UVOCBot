@@ -31,7 +31,7 @@ public class WorldCommands : CommandGroup
 {
     private static readonly ValidZoneDefinition[] ValidZones = Enum.GetValues<ValidZoneDefinition>();
 
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly ICensusApiService _censusApi;
     private readonly IPopulationService _populationApi;
     private readonly IMemoryCache _cache;
@@ -40,7 +40,7 @@ public class WorldCommands : CommandGroup
 
     public WorldCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         ICensusApiService censusApi,
         IPopulationService populationApi,
         IMemoryCache cache,
@@ -48,7 +48,7 @@ public class WorldCommands : CommandGroup
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _censusApi = censusApi;
         _populationApi = populationApi;
         _cache = cache;

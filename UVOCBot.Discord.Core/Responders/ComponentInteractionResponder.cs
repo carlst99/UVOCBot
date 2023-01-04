@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OneOf;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Attributes;
@@ -53,7 +54,7 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         if (gatewayEvent.Type is not (InteractionType.MessageComponent or InteractionType.ModalSubmit))
             return Result.FromSuccess();
 
-        if (!gatewayEvent.Data.IsDefined(out OneOf.OneOf<IApplicationCommandData, IMessageComponentData, IModalSubmitData> data))
+        if (!gatewayEvent.Data.IsDefined(out OneOf<IApplicationCommandData, IMessageComponentData, IModalSubmitData> data))
             return Result.FromSuccess();
 
         if (data.IsT0)
@@ -69,19 +70,20 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
             return Result.FromSuccess();
 
         // Provide the created context to any services inside this scope
-        Result<InteractionContext> context = gatewayEvent.ToInteractionContext();
-        if (!context.IsSuccess)
-            return Result.FromError(context);
-        _contextInjectionService.Context = context.Entity;
+        Result<InteractionContext> getContext = gatewayEvent.ToInteractionContext();
+        if (!getContext.IsDefined(out InteractionContext? operationContext))
+            return Result.FromError(getContext);
+        _contextInjectionService.Context = operationContext;
+
+        // Update the available context
+        var commandContext = new InteractionCommandContext(operationContext.Interaction, null!)
+        {
+            HasRespondedToInteraction = operationContext.HasRespondedToInteraction
+        };
+        _contextInjectionService.Context = commandContext;
 
         // Run any user-provided pre-execution events
-        Result preExecution = await _eventCollector.RunPreExecutionEvents
-        (
-            _services,
-            context.Entity,
-            ct
-        ).ConfigureAwait(false);
-
+        Result preExecution = await _eventCollector.RunPreExecutionEvents(_services, commandContext, ct);
         if (!preExecution.IsSuccess)
             return preExecution;
 
@@ -125,7 +127,7 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
             await _eventCollector.RunPostExecutionEvents
             (
                 _services,
-                context.Entity,
+                commandContext,
                 responderResult,
                 ct
             ).ConfigureAwait(false);

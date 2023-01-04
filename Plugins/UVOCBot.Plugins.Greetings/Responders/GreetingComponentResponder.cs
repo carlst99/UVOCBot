@@ -21,20 +21,20 @@ internal sealed class GreetingComponentResponder : IComponentResponder
 {
     private readonly IGreetingService _greetingService;
     private readonly IDiscordRestGuildAPI _guildApi;
-    private readonly InteractionContext _context;
+    private readonly IInteraction _context;
     private readonly FeedbackService _feedbackService;
 
     public GreetingComponentResponder
     (
         IGreetingService greetingService,
         IDiscordRestGuildAPI guildApi,
-        InteractionContext context,
+        IInteractionContext context,
         FeedbackService feedbackService
     )
     {
         _greetingService = greetingService;
         _guildApi = guildApi;
-        _context = context;
+        _context = context.Interaction;
         _feedbackService = feedbackService;
     }
 
@@ -71,17 +71,27 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         if (!_context.GuildID.IsDefined(out Snowflake guildID))
             return Result.FromSuccess();
 
+        if (!_context.TryGetUser(out IUser? user))
+            return Result.FromSuccess();
+
         string[] fragmentComponents = dataFragment.Split('@');
         ulong userId = ulong.Parse(fragmentComponents[0]);
 
         // Check that the user who clicked the button is the focus of the welcome message
-        if (_context.User.ID.Value != userId)
+        if (user.ID.Value != userId)
         {
             await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
             return Result.FromSuccess();
         }
 
-        Result setNickResult = await _guildApi.ModifyGuildMemberAsync(guildID, _context.User.ID, fragmentComponents[1], ct: ct).ConfigureAwait(false);
+        Result setNickResult = await _guildApi.ModifyGuildMemberAsync
+        (
+            guildID,
+            user.ID,
+            fragmentComponents[1],
+            ct: ct
+        ).ConfigureAwait(false);
+
         if (!setNickResult.IsSuccess)
             return setNickResult;
 
@@ -111,7 +121,7 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         if (!_context.Member.IsDefined(out IGuildMember? member))
             return Result.FromSuccess();
 
-        if (!member.User.IsDefined())
+        if (!_context.TryGetUser(out IUser? user))
             return Result.FromSuccess();
 
         string[] fragmentComponents = dataFragment.Split('|');
@@ -119,7 +129,7 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         ulong rolesetID = ulong.Parse(fragmentComponents[1]);
 
         // Check that the user who clicked the button is the focus of the welcome message
-        if (_context.User.ID.Value != userID)
+        if (user.ID.Value != userID)
         {
             await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
             return Result.FromSuccess();

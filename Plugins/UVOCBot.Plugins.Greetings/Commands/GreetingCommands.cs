@@ -35,7 +35,7 @@ namespace UVOCBot.Plugins.Greetings.Commands;
 [Deferred]
 public class GreetingCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly ICensusQueryService _censusService;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IGreetingService _greetingService;
@@ -45,7 +45,7 @@ public class GreetingCommands : CommandGroup
 
     public GreetingCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         ICensusQueryService censusService,
         IDiscordRestChannelAPI channelApi,
         IGreetingService greetingService,
@@ -54,7 +54,7 @@ public class GreetingCommands : CommandGroup
         FeedbackService responder
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _censusService = censusService;
         _feedbackService = responder;
         _channelApi = channelApi;
@@ -128,7 +128,7 @@ public class GreetingCommands : CommandGroup
             return new GenericCommandError("You must add at least one roleset before you can remove any.");
 
         ISelectOption[] selectOptions = _greetingService.CreateAlternateRoleSelectOptions(welcomeMessage.AlternateRolesets);
-        SelectMenuComponent alternateRoleSelectMenu = new
+        StringSelectComponent alternateRoleSelectMenu = new
         (
             GreetingComponentKeys.DeleteAlternateRolesets,
             selectOptions,
@@ -317,7 +317,13 @@ public class GreetingCommands : CommandGroup
             ).ConfigureAwait(false);
         }
 
-        Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync(_context.ChannelID, (Snowflake)messageId, CancellationToken).ConfigureAwait(false);
+        Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync
+        (
+            _context.ChannelID.Value,
+            (Snowflake)messageId,
+            CancellationToken
+        ).ConfigureAwait(false);
+
         if (!getMessageResult.IsSuccess)
         {
             return new GenericCommandError
@@ -343,13 +349,10 @@ public class GreetingCommands : CommandGroup
         [Description("Optional: the member to target with the greeting.")] IGuildMember? target = null
     )
     {
-        if (_context is not InteractionContext ictx)
-            return await _feedbackService.SendContextualErrorAsync("This command can only be used as a slash command.", ct: CancellationToken).ConfigureAwait(false);
-
         Result greetingResult = await _greetingService.SendGreeting
         (
             _context.GuildID.Value,
-            target ?? ictx.Member.Value,
+            target ?? _context.Member.Value,
             CancellationToken
         ).ConfigureAwait(false);
 

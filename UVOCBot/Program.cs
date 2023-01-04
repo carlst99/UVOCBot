@@ -63,13 +63,6 @@ public static class Program
 
             IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(DiscordSnowflake.New);
 
-            Result slashCommandsSupported = slashService.SupportsSlashCommands();
-            if (!slashCommandsSupported.IsSuccess)
-            {
-                Log.Fatal("The registered commands of the bot aren't supported as slash commands: {Reason}", slashCommandsSupported.Error);
-                return 2;
-            }
-
 #if DEBUG
             foreach (Snowflake guild in debugServerSnowflakes)
             {

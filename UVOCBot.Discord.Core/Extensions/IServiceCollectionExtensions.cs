@@ -32,7 +32,7 @@ public static class IServiceCollectionExtensions
 
         services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();
 
-        services.AddResponder<CommandInteractionResponder>();
+        services.AddResponder<InteractionResponder>();
         services.AddResponder<ComponentInteractionResponder>();
         services.AddResponder<VoiceStateUpdateResponder>();
 

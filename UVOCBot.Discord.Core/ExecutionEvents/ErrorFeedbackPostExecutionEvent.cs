@@ -56,15 +56,15 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
 
         string errorMessage = actualError switch
         {
-            PermissionError pe => pe.ContextualToString(context),
+            PermissionError pe when context is IInteractionContext ic => pe.ContextualToString(ic.Interaction),
             CommandNotFoundError => "That command doesn't exist.",
             ContextError ce => ce.ToString(),
             ParameterParsingError ppe => $"You've entered an invalid value for the {Formatter.InlineQuote(ppe.Parameter.ParameterShape.HintName)} parameter",
             RoleManipulationError rme => "Failed to modify roles: " + rme.Message,
             GenericCommandError or ConditionNotSatisfiedError or InvalidOperationError => actualError.Message,
-            RestResultError<RestError> rre when rre.Error.Code is DiscordError.MissingAccess => "I am not allowed to view this channel.",
-            RestResultError<RestError> rre when rre.Error.Code is DiscordError.MissingPermission => "I do not have permission to do that.",
-            RestResultError<RestError> rre when rre.Error.Code is DiscordError.OwnerOnly => "Only the owner can do that!",
+            RestResultError<RestError> { Error.Code: DiscordError.MissingAccess } => "I am not allowed to view this channel.",
+            RestResultError<RestError> { Error.Code: DiscordError.MissingPermission } => "I do not have permission to do that.",
+            RestResultError<RestError> { Error.Code: DiscordError.OwnerOnly } => "Only the owner can do that!",
             _ => LogUnknownError()
         };
 

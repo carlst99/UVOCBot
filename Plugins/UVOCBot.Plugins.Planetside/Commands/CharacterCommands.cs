@@ -20,6 +20,7 @@ using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+using SortOrder = DbgCensus.Rest.Abstractions.Queries.SortOrder;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 

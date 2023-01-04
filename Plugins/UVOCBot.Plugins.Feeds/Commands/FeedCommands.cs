@@ -36,7 +36,7 @@ namespace UVOCBot.Plugins.Feeds.Commands;
 [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
 public class FeedCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestGuildAPI _guildApi;
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly DiscordContext _dbContext;
@@ -44,14 +44,14 @@ public class FeedCommands : CommandGroup
 
     public FeedCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestGuildAPI guildApi,
         IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _guildApi = guildApi;
         _permissionChecksService = permissionChecksService;
         _dbContext = dbContext;
@@ -163,7 +163,7 @@ public class FeedCommands : CommandGroup
             )
             .ToList();
 
-        SelectMenuComponent menu = new
+        StringSelectComponent menu = new
         (
             FeedComponentKeys.ToggleFeed,
             selectOptions,

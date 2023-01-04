@@ -27,20 +27,20 @@ namespace UVOCBot.Commands;
 [Ephemeral]
 public class AdminCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly DiscordContext _dbContext;
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly FeedbackService _feedbackService;
 
     public AdminCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         DiscordContext dbContext,
         IPermissionChecksService permissionsCheckService,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _dbContext = dbContext;
         _permissionChecksService = permissionsCheckService;
         _feedbackService = feedbackService;

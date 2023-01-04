@@ -19,20 +19,20 @@ namespace UVOCBot.Plugins.Roles.Responders;
 internal sealed class EditMenuModalResponder : IComponentResponder
 {
     private readonly IRoleMenuService _roleMenuService;
-    private readonly InteractionContext _context;
+    private readonly IInteraction _context;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
     public EditMenuModalResponder
     (
         IRoleMenuService roleMenuService,
-        InteractionContext context,
+        IInteractionContext context,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
         _roleMenuService = roleMenuService;
-        _context = context;
+        _context = context.Interaction;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
     }
@@ -86,7 +86,7 @@ internal sealed class EditMenuModalResponder : IComponentResponder
         titleText = string.Empty;
         descriptionText = null;
 
-        if (!_context.Data.TryPickT2(out IModalSubmitData modalData, out _))
+        if (!_context.Data.Value.TryPickT2(out IModalSubmitData modalData, out _))
             return Result.FromError(new GenericCommandError());
 
         List<IPartialTextInputComponent> textInputs = modalData.Components

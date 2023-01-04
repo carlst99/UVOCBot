@@ -26,7 +26,7 @@ internal sealed class RolesComponentResponders : IComponentResponder
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IDiscordRestGuildAPI _guildApi;
     private readonly DiscordContext _dbContext;
-    private readonly InteractionContext _context;
+    private readonly IInteraction _context;
     private readonly FeedbackService _feedbackService;
 
     public RolesComponentResponders
@@ -34,14 +34,14 @@ internal sealed class RolesComponentResponders : IComponentResponder
         IDiscordRestChannelAPI channelApi,
         IDiscordRestGuildAPI guildApi,
         DiscordContext dbContext,
-        InteractionContext context,
+        IInteractionContext context,
         FeedbackService feedbackService
     )
     {
         _channelApi = channelApi;
         _guildApi = guildApi;
         _dbContext = dbContext;
-        _context = context;
+        _context = context.Interaction;
         _feedbackService = feedbackService;
     }
 
@@ -69,6 +69,9 @@ internal sealed class RolesComponentResponders : IComponentResponder
             return Result.FromSuccess();
 
         if (!_context.Message.IsDefined(out IMessage? message))
+            return Result.FromSuccess();
+
+        if (!_context.TryGetUser(out IUser? user))
             return Result.FromSuccess();
 
         if (dataFragment is null)
@@ -102,7 +105,7 @@ internal sealed class RolesComponentResponders : IComponentResponder
             roleManipulationResult = await _guildApi.RemoveGuildMemberRoleAsync
             (
                 guildID,
-                _context.User.ID,
+                user.ID,
                 roleID.Value,
                 "User self-removed via role menu",
                 ct
@@ -113,7 +116,7 @@ internal sealed class RolesComponentResponders : IComponentResponder
             roleManipulationResult = await _guildApi.AddGuildMemberRoleAsync
             (
                 guildID,
-                _context.User.ID,
+                user.ID,
                 roleID.Value,
                 "User self-added via role menu",
                 ct
@@ -147,6 +150,9 @@ internal sealed class RolesComponentResponders : IComponentResponder
         if (!DiscordSnowflake.TryParse(dataFragment, out Snowflake? menuID))
             return Result.FromSuccess();
 
+        if (!_context.TryGetUser(out IUser? user))
+            return Result.FromSuccess();
+
         GuildRoleMenu? menu = GetGuildRoleMenu(menuID.Value.Value);
         if (menu is null)
             return Result.FromError(new GenericCommandError());
@@ -161,7 +167,7 @@ internal sealed class RolesComponentResponders : IComponentResponder
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
-            "Role menu deletion requested by " + _context.User.Username,
+            "Role menu deletion requested by " + user.Username,
             ct
         ).ConfigureAwait(false);
 

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+using SortOrder = DbgCensus.Rest.Abstractions.Queries.SortOrder;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 

@@ -81,7 +81,7 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
             {
                 // Wait for player facility captures to be processed,
                 // and also back off Census
-                await Task.Delay(200, ct).ConfigureAwait(false);
+                await Task.Delay(50, ct).ConfigureAwait(false);
                 if (facilityControl.Timestamp.AddSeconds(10) > DateTimeOffset.UtcNow)
                 {
                     await _facilityControls.Writer.WriteAsync(facilityControl, ct).ConfigureAwait(false);
@@ -239,10 +239,10 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
 
     private void UpdateMapCache(IFacilityControl controlEvent, MapRegion facility)
     {
-        if (!_cache.TryGetValue(CacheKeyHelpers.GetMapKey(controlEvent.WorldID, controlEvent.ZoneID.Definition), out Map map))
+        if (!_cache.TryGetValue(CacheKeyHelpers.GetMapKey(controlEvent.WorldID, controlEvent.ZoneID.Definition), out Map? map))
             return;
 
-        int index = map.Regions.Row.FindIndex(r => r.RowData.RegionID == facility.MapRegionID);
+        int index = map!.Regions.Row.FindIndex(r => r.RowData.RegionID == facility.MapRegionID);
         if (index == -1)
             return;
 

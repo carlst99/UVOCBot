@@ -20,7 +20,6 @@ using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
-using SortOrder = DbgCensus.Rest.Abstractions.Queries.SortOrder;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 
@@ -46,8 +45,6 @@ public class CharacterCommands : CommandGroup
         CharacterInfo? character = await GetCharacter(characterName);
         if (character is null)
             return new GenericCommandError("That character doesn't exist");
-
-        CharactersWeaponStat? favWeapon = await GetMostUsedWeapon(character);
 
         string title = character.OnlineStatus
             ? Formatter.Emoji("green_circle")
@@ -109,13 +106,6 @@ public class CharacterCommands : CommandGroup
             true
         );
 
-        EmbedField mostUsedWeaponField = new
-        (
-            "Most Used Weapon",
-            favWeapon is null ? "Unknown" : favWeapon.Info.Name.English,
-            true
-        );
-
         EmbedField lastLoginField = new
         (
             "Last Login",
@@ -166,7 +156,6 @@ public class CharacterCommands : CommandGroup
                 kdRatioField,
                 kpmField,
                 killCountField,
-                mostUsedWeaponField,
                 lastLoginField,
                 playtimeField,
                 createdAtField,
@@ -293,23 +282,5 @@ public class CharacterCommands : CommandGroup
             .InjectAt("time");
 
         return await _queryService.GetAsync<CharacterInfo>(characterQuery, CancellationToken);
-    }
-
-    private async Task<CharactersWeaponStat?> GetMostUsedWeapon(CharacterInfo character)
-    {
-        IQueryBuilder favWeaponQuery = _queryService.CreateQuery()
-            .OnCollection("characters_weapon_stat")
-            .Where("character_id", SearchModifier.Equals, character.CharacterID)
-            .Where("stat_name", SearchModifier.Equals, "weapon_play_time")
-            .Where("item_id", SearchModifier.NotEquals, 0)
-            .WithSortOrder("value", SortOrder.Descending)
-            .ShowFields("item_id")
-            .AddJoin("item", j =>
-            {
-                j.InjectAt("info")
-                    .ShowFields("name");
-            });
-
-        return await _queryService.GetAsync<CharactersWeaponStat>(favWeaponQuery, CancellationToken);
     }
 }

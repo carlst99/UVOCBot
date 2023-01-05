@@ -1,3 +1,5 @@
+using Mandible.Abstractions.Manifest;
+using Mandible.Manifest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -7,11 +9,8 @@ using Remora.Discord.API.Objects;
 using Remora.Rest.Core;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
@@ -24,7 +23,7 @@ public class PatchManifestWorker : BackgroundService
     private static readonly Manifest[] ManifestTypes = Enum.GetValues<Manifest>();
 
     private readonly ILogger<PatchManifestWorker> _logger;
-    private readonly HttpClient _httpClient;
+    private readonly IManifestService _manifestService;
     private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
     private readonly IDiscordRestChannelAPI _channelApi;
 
@@ -33,13 +32,13 @@ public class PatchManifestWorker : BackgroundService
     public PatchManifestWorker
     (
         ILogger<PatchManifestWorker> logger,
-        HttpClient httpClient,
+        IManifestService manifestService,
         IDbContextFactory<DiscordContext> dbContextFactory,
         IDiscordRestChannelAPI channelApi
     )
     {
         _logger = logger;
-        _httpClient = httpClient;
+        _manifestService = manifestService;
         _dbContextFactory = dbContextFactory;
         _channelApi = channelApi;
 
@@ -55,17 +54,13 @@ public class PatchManifestWorker : BackgroundService
         {
             foreach (Manifest manifest in ManifestTypes)
             {
-                string resourceUrl = manifest.GetUrl();
-
                 try
                 {
-                    string manifestXml = await _httpClient.GetStringAsync(resourceUrl, ct).ConfigureAwait(false);
-
-                    DateTimeOffset manifestUpdateTime = GetManifestUpdateTime(manifestXml);
-                    if (manifestUpdateTime <= _manifestLastUpdateTimes[manifest])
+                    Digest digest = await _manifestService.GetDigestAsync(manifest.GetUrl(), ct);
+                    if (digest.Timestamp <= _manifestLastUpdateTimes[manifest])
                         continue;
 
-                    _manifestLastUpdateTimes[manifest] = manifestUpdateTime;
+                    _manifestLastUpdateTimes[manifest] = digest.Timestamp;
 
                     await using DiscordContext dbContext = await _dbContextFactory.CreateDbContextAsync(ct);
                     foreach (GuildFeedsSettings feedsSettings in dbContext.GuildFeedsSettings)
@@ -89,30 +84,6 @@ public class PatchManifestWorker : BackgroundService
 
             await Task.Delay(TimeSpan.FromMinutes(5), ct).ConfigureAwait(false);
         }
-    }
-
-    private static DateTimeOffset GetManifestUpdateTime(string manifestXml)
-    {
-        using StringReader sr = new(manifestXml);
-        using XmlReader reader = XmlReader.Create(sr);
-
-        while (reader.Read())
-        {
-            if (reader.NodeType is not XmlNodeType.Element)
-                continue;
-
-            if (reader.Name != "digest")
-                continue;
-
-            string? timestampAttribute = reader.GetAttribute("timestamp");
-
-            if (ulong.TryParse(timestampAttribute, out ulong timestamp))
-                return new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero).AddSeconds(timestamp);
-
-            throw new Exception("Timestamp attribute contained an invalid value: " + timestampAttribute);
-        }
-
-        throw new Exception("Failed to find the timestamp");
     }
 
     private async Task PostManifestToChannelAsync

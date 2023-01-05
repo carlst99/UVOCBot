@@ -7,13 +7,14 @@
 - Added the `outfit-wars matches` command.
 - Added the `rolemenu list-menus` command.
 - Spiffed up the role menu commands, and added support for emojis on role labels.
+- Base capture notifications now show the amount of outfit resource earned.
 
 **Fixes**
 - Fixed Oshur status being calculated incorrectly.
-- Fixed the character name autocomplete on the `character` command when not using all-lowercase letters.
+- Fixed the character name autocomplete on the `character` command failing when not using all-lowercase letters.
 
 **Miscellaneous**
-- The `online-friends` command is now only visible to the user.
+- The response of the `online-friends` command is now only visible to the user.
 - The client update tracking message now says '...update has been released' rather than 'detected' when updates are released.
 
 ## Release v1.5.0

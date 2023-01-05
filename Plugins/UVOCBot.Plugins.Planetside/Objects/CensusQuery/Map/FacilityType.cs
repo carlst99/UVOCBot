@@ -16,5 +16,10 @@ public enum FacilityType
     ConstructionOutpost = 9,
     RelicOutpost = 10,
     ContainmentSite = 11,
-    TridentSpire = 12
+    Trident = 12,
+    Seapost = 13,
+    CTFLargeOutpost = 14,
+    CTFSmallOutpost = 15,
+    CTFAmpStation = 16,
+    CTFConstructionOutpost = 17
 }

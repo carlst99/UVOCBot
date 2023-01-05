@@ -1,6 +1,4 @@
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
-
-namespace UVOCBot.Plugins.Planetside.Commands;
+namespace UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 
 public record CharactersWeaponStat
 (

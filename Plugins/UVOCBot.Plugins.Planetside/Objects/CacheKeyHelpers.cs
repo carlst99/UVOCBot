@@ -31,10 +31,10 @@ public static class CacheKeyHelpers
 
     public static object GetFacilityMapRegionKey(MapRegion facilityRegion)
     {
-        if (facilityRegion.FacilityID is null)
-            throw new ArgumentNullException(nameof(facilityRegion.FacilityID), "Facility ID must not be null.");
+        if (facilityRegion.FacilityId is null)
+            throw new ArgumentNullException(nameof(facilityRegion.FacilityId), "Facility ID must not be null.");
 
-        return GetFacilityMapRegionKey(facilityRegion.FacilityID.Value);
+        return GetFacilityMapRegionKey(facilityRegion.FacilityId.Value);
     }
 
     public static object GetFacilityMapRegionKey(ulong facilityID)

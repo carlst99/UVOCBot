@@ -175,6 +175,9 @@ public class InteractionResponseService : IInteractionResponseService
             ct
         );
 
+        if (responseResult.IsSuccess)
+            HasResponded = true;
+
         return responseResult.IsSuccess
             ? Result.FromSuccess()
             : Result.FromError(responseResult);

@@ -145,7 +145,11 @@ public class FeedCommands : CommandGroup
     [Description("Enable or disable particular feeds.")]
     public async Task<IResult> ToggleFeedCommandAsync()
     {
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>
+        (
+            _context.GuildID.Value.Value,
+            CancellationToken
+        ).ConfigureAwait(false);
 
         Result validChannel = await CheckValidFeedChannelAsync(settings);
         if (!validChannel.IsSuccess)

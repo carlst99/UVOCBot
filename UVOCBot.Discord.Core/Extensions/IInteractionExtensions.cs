@@ -9,15 +9,13 @@ namespace Remora.Discord.API.Abstractions.Objects;
 public static class IInteractionExtensions
 {
     /// <summary>
-    /// Attempts to retrieve a <see cref="IUser"/> from an interaction.
+    /// Attempts to retrieve an <see cref="IUser"/> from an interaction.
     /// </summary>
     /// <param name="interaction">The interaction.</param>
     /// <param name="user">The user, or <c>null</c> if none was present.</param>
     /// <returns><c>True</c> if a user was present on the interaction.</returns>
     public static bool TryGetUser(this IInteraction interaction, [NotNullWhen(true)] out IUser? user)
     {
-        user = null;
-
         if (interaction.User.IsDefined(out user))
             return true;
 

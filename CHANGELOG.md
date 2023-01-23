@@ -19,6 +19,7 @@
 **Miscellaneous**
 - The response of the `online-friends` command is now only visible to the user.
 - The client update tracking message now says '...update has been released' rather than 'detected' when updates are released.
+- Updated to .NET 7.0
 
 ## Release v1.5.0
 

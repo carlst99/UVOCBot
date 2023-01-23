@@ -73,14 +73,14 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
         if (!_context.Data.Value.TryPickT1(out IMessageComponentData componentData, out _))
             return new GenericCommandError();
 
-        if (!componentData.Values.IsDefined(out IReadOnlyList<ISelectOption>? selectedValues))
+        if (!componentData.Values.IsDefined(out IReadOnlyList<string>? selectedValues))
             return new GenericCommandError();
 
         GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct)
             .ConfigureAwait(false);
 
         List<GuildGreetingAlternateRoleSet> removedRolesets = new();
-        foreach (ulong rolesetID in selectedValues.Select(x => ulong.Parse(x.Value)))
+        foreach (ulong rolesetID in selectedValues.Select(ulong.Parse))
         {
             int removeIndex = welcomeMessage.AlternateRolesets.FindIndex(rs => rs.ID == rolesetID);
             removedRolesets.Add(welcomeMessage.AlternateRolesets[removeIndex]);

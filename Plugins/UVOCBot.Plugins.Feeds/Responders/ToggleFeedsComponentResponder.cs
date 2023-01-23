@@ -50,7 +50,7 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
             return Result.FromSuccess();
 
         if (!_context.Data.Value.TryPickT1(out IMessageComponentData componentData, out _)
-            || !componentData.Values.IsDefined(out IReadOnlyList<ISelectOption>? values))
+            || !componentData.Values.IsDefined(out IReadOnlyList<string>? values))
             return Result.FromError(new GenericCommandError());
 
         if (!_context.TryGetUser(out IUser? user))
@@ -68,9 +68,9 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
         Feed selectedFeeds = 0;
         string message = "The following feeds have been enabled:";
 
-        foreach (ISelectOption value in values)
+        foreach (string value in values)
         {
-            if (!Enum.TryParse(value.Value, out Feed feed))
+            if (!Enum.TryParse(value, out Feed feed))
                 continue;
 
             selectedFeeds |= feed;

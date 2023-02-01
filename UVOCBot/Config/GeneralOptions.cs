@@ -2,7 +2,7 @@
 
 namespace UVOCBot.Config;
 
-public record GeneralOptions
+public class GeneralOptions
 {
     /// <summary>
     /// Gets or sets the Discord bot token.

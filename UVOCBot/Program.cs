@@ -52,7 +52,7 @@ namespace UVOCBot;
 
 public static class Program
 {
-    public static async Task<int> Main(string[] args)
+    public static async Task Main(string[] args)
     {
         try
         {
@@ -71,35 +71,30 @@ public static class Program
                     continue;
 
                 Log.Fatal("Could not update slash commands for the debug guild {ID}: {Error}", guild.Value, updateSlashCommandsResult.Error);
-                return 2;
+                return;
             }
-
-            Console.WriteLine("==========> DEBUG");
 #else
             //IResult removeOldResult = await RemoveExistingGlobalCommandsAsync(host.Services);
             //if (!removeOldResult.IsSuccess)
-            //    return 3;
+            //    return;
 
             Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync().ConfigureAwait(false);
             if (!updateSlashCommandsResult.IsSuccess)
             {
                 Log.Fatal("Could not update global application commands: {Error}", updateSlashCommandsResult.Error);
-                return 2;
+                return;
             }
-
-            Console.WriteLine("==========> RELEASE");
 #endif
 
-            await host.RunAsync().ConfigureAwait(false);
-            return 0;
+            await host.RunAsync();
         }
         catch (Exception ex)
         {
+            // Just in case the logger hasn't been configured yet
             Console.WriteLine("Host terminated unexpectedly:");
             Console.WriteLine(ex);
 
             Log.Fatal(ex, "Host terminated unexpectedly");
-            return 1;
         }
         finally
         {
@@ -216,9 +211,9 @@ public static class Program
             o =>
             {
                 o.Intents |= GatewayIntents.DirectMessages
-                             | GatewayIntents.GuildMessages
-                             | GatewayIntents.Guilds
-                             | GatewayIntents.GuildMembers;
+                    | GatewayIntents.GuildMessages
+                    | GatewayIntents.Guilds
+                    | GatewayIntents.GuildMembers;
             }
         );
 

@@ -113,7 +113,7 @@ public sealed class ForumRssWorker : BackgroundService
         return validItems;
     }
 
-    private async Task PostItemsToChannelAsync(GuildFeedsSettings settings, IReadOnlyList<FeedItem> tweets, CancellationToken ct)
+    private async Task PostItemsToChannelAsync(GuildFeedsSettings settings, IReadOnlyCollection<FeedItem> tweets, CancellationToken ct)
     {
         if (tweets.Count == 0)
             return;
@@ -166,7 +166,7 @@ public sealed class ForumRssWorker : BackgroundService
     private static bool TryFindFirstImageLink(string html, [NotNullWhen(true)] out string? imgLink)
     {
         imgLink = null;
-        
+
         int imgElementIndex = html.IndexOf("<img", StringComparison.OrdinalIgnoreCase);
         if (imgElementIndex < 0)
             return false;

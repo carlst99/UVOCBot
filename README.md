@@ -1,4 +1,4 @@
-<img title="UVOCBot Icon" alt="UVOCBot Icon" src="https://github.com/carlst99/UVOCBot/blob/main/assets/Icon.png?raw=true" height="120" style="float: left" />
+<img title="UVOCBot Icon" alt="UVOCBot Icon" src="https://github.com/carlst99/UVOCBot/blob/main/assets/Icon.png?raw=true" height="120" align="left" />
 
 # UVOCBot
 

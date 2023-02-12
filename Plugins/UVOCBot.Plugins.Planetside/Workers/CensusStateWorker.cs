@@ -75,9 +75,20 @@ public class CensusStateWorker : BackgroundService
                 _facilityCaptureServiceTask = _facilityCaptureService.RunAsync(ct);
             }
 
-            // Assume this to be caching
-            foreach (ValidWorldDefinition world in ValidWorlds)
-                await _populationService.GetWorldPopulationAsync(world, true, ct);
+            try
+            {
+                // Assume this to be caching
+                foreach (ValidWorldDefinition world in ValidWorlds)
+                    await _populationService.GetWorldPopulationAsync(world, true, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                // This is fine
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to run iteration of CensusStateWorker");
+            }
 
             await Task.Delay(popUpdateFrequency.Value, ct);
         }

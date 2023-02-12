@@ -27,14 +27,15 @@ public sealed class ForumRssWorker : BackgroundService
     {
         { Feed.ForumAnnouncement, "https://forums.daybreakgames.com/ps2/index.php?forums/official-news-and-announcements.19/index.rss" },
         { Feed.ForumPatchNotes, "https://forums.daybreakgames.com/ps2/index.php?forums/game-update-notes.73/index.rss" },
-        { Feed.ForumPTSAnnouncement, "https://forums.daybreakgames.com/ps2/index.php?forums/test-server-announcements.69/index.rss" }
+        { Feed.ForumPTSAnnouncement, "https://forums.daybreakgames.com/ps2/index.php?forums/test-server-announcements.69/index.rss" },
+        { Feed.News, "https://www.planetside2.com/rss" }
     };
 
     private readonly ILogger<ForumRssWorker> _logger;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IDbContextFactory<DiscordContext> _dbContextFactory;
 
-    private readonly Dictionary<Feed, int> _lastRelayedPosts;
+    private readonly Dictionary<Feed, DateTime> _lastRelayedPosts;
 
     public ForumRssWorker
     (
@@ -47,7 +48,7 @@ public sealed class ForumRssWorker : BackgroundService
         _channelApi = channelApi;
         _dbContextFactory = dbContextFactory;
 
-        _lastRelayedPosts = new Dictionary<Feed, int>();
+        _lastRelayedPosts = new Dictionary<Feed, DateTime>();
     }
 
     /// <inheritdoc />
@@ -57,7 +58,7 @@ public sealed class ForumRssWorker : BackgroundService
 
         while (!ct.IsCancellationRequested)
         {
-            Dictionary<Feed, IReadOnlyList<FeedItem>> unseenPosts = new();
+            Dictionary<Feed, FeedBundle> unseenPosts = new();
             foreach (Feed feed in ForumRssFeeds.Keys)
                 unseenPosts[feed] = await GetUnseenPostsAsync(feed, ct);
 
@@ -86,36 +87,43 @@ public sealed class ForumRssWorker : BackgroundService
             if (feed is null || feed.Items.Count == 0)
                 continue;
 
-            _lastRelayedPosts[fType] = GetItemId(feed.Items[0]);
+            if (feed.Items.Count is 0)
+                _lastRelayedPosts[fType] = DateTime.MinValue;
+            else
+                _lastRelayedPosts[fType] = GetItemPublishingDate(feed.Items[0]);
         }
     }
 
-    private async Task<IReadOnlyList<FeedItem>> GetUnseenPostsAsync(Feed fType, CancellationToken ct)
+    private async Task<FeedBundle> GetUnseenPostsAsync(Feed fType, CancellationToken ct)
     {
         List<FeedItem> validItems = new();
 
         CodeHollow.FeedReader.Feed? feed = await TryGetFeedAsync(fType, ct);
         if (feed is null || feed.Items.Count == 0)
-            return validItems;
+            return new FeedBundle(feed?.Title, validItems);
 
         foreach (FeedItem item in feed.Items)
         {
-            if (GetItemId(item) > _lastRelayedPosts[fType])
+            if (GetItemPublishingDate(item) > _lastRelayedPosts[fType])
                 validItems.Add(item);
         }
 
         if (validItems.Count > 0)
         {
-            validItems.Sort((x, y) => GetItemId(x) - GetItemId(y));
-            _lastRelayedPosts[fType] = GetItemId(validItems[0]);
+            validItems.Sort
+            (
+                (x, y) => GetItemPublishingDate(x).CompareTo(GetItemPublishingDate(y))
+            );
+            _lastRelayedPosts[fType] = GetItemPublishingDate(validItems[0]);
         }
 
-        return validItems;
+        return new FeedBundle(feed.Title, validItems);
     }
 
-    private async Task PostItemsToChannelAsync(GuildFeedsSettings settings, IReadOnlyCollection<FeedItem> tweets, CancellationToken ct)
+    private async Task PostItemsToChannelAsync(GuildFeedsSettings settings, FeedBundle bundle, CancellationToken ct)
     {
-        if (tweets.Count == 0)
+        IReadOnlyList<FeedItem> posts = bundle.Posts;
+        if (posts.Count == 0)
             return;
 
         if (!settings.IsEnabled || settings.FeedChannelID is null)
@@ -123,7 +131,7 @@ public sealed class ForumRssWorker : BackgroundService
 
         Snowflake channelID = DiscordSnowflake.New(settings.FeedChannelID.Value);
 
-        foreach (FeedItem item in tweets)
+        foreach (FeedItem item in posts)
         {
             bool couldParseDate = DateTimeOffset.TryParse(item.PublishingDateString, out DateTimeOffset pubDate);
             bool couldFindImage = TryFindFirstImageLink(item.Description, out string? imageUrl);
@@ -135,7 +143,10 @@ public sealed class ForumRssWorker : BackgroundService
                 Url: item.Link,
                 Image: couldFindImage ? new EmbedImage(imageUrl!) : new Optional<IEmbedImage>(),
                 Author: new EmbedAuthor(item.Author),
-                Timestamp: couldParseDate ? pubDate : default
+                Timestamp: couldParseDate ? pubDate : default,
+                Footer: bundle.ChannelName is null
+                    ? default(Optional<IEmbedFooter>)
+                    : new EmbedFooter(bundle.ChannelName)
             );
 
             await _channelApi.CreateMessageAsync
@@ -188,9 +199,8 @@ public sealed class ForumRssWorker : BackgroundService
         return true;
     }
 
-    private static int GetItemId(FeedItem item)
-    {
-        string idPart = item.Id.Split('.')[^1];
-        return int.Parse(idPart.Trim('/'));
-    }
+    private static DateTime GetItemPublishingDate(FeedItem item)
+        => item.PublishingDate ?? DateTime.Now;
+
+    private record FeedBundle(string? ChannelName, IReadOnlyList<FeedItem> Posts);
 }

@@ -3,9 +3,11 @@
 ## Release vNext
 
 **Additions**
-- Added the `outfit-wars registrations` command.
-- Added the `outfit-wars matches` command.
-- Added the `rolemenu list-menus` command.
+- Added the following commands:
+  - `outfit-wars registrations`
+  - `outfit-wars matches`
+  - `rolemenu list-menus`
+- Added the `News` feed.
 - Spiffed up the role menu commands, and added support for emojis on role labels.
 - Base capture notifications now show the amount of outfit resource earned.
 

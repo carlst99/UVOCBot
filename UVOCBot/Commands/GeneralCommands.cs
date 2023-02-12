@@ -21,9 +21,19 @@ namespace UVOCBot.Commands;
 public class GeneralCommands : CommandGroup
 {
     public const string RELEASE_NOTES =
-        @"• BREAKING CHANGE to alternate role assignments in the Greeting message.
-            Please re-setup any alternate role assignments you had.
-          • Fixed the `population` and `status` commands failing to respond.";
+        @"**Additions**
+          • Added the following commands: `outfit-wars registrations`, `outfit-wars matches`, `rolemenu list-menus`
+          • Added the `News` feed.
+          • Spiffed up the role menu commands, and added support for emojis on role labels.
+          • Base capture notifications now show the amount of outfit resource earned.
+
+          **Changes**
+          • The response of the `online-friends` command is now only visible to the user.
+          • Removed the 'most used weapon' field from the `character` command. It rarely displayed a relevant weapon.
+
+          **Fixes**
+          • Fixed Oshur status being calculated incorrectly.
+          • Fixed the character name autocomplete on the `character` command failing when not using all-lowercase letters.";
 
     private readonly IDiscordRestUserAPI _userAPI;
     private readonly FeedbackService _feedbackService;
@@ -106,7 +116,7 @@ public class GeneralCommands : CommandGroup
             Title = "UVOCBot",
             Description = "A general-purpose bot built to assist the UVOC Discord server",
             Thumbnail = botAvatar is not null ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96) : new Optional<IEmbedThumbnail>(),
-            Footer = new EmbedFooter("Developed by FalconEye#1153", authorAvatar),
+            Footer = new EmbedFooter("Developed by LithaFalcon#1153", authorAvatar),
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Url = "https://github.com/carlst99/UVOCBot",
             Fields = new List<IEmbedField>

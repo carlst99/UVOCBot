@@ -12,7 +12,11 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
     - Online outfit members.
     - Online friends.
     - Outfit base capture tracking, including members involved in any captures.
-- Tweet relaying - posts tweets from PlanetSide 2 developers into a channel.
+    - Outfit Wars information (registrations, match times).
+- Dev post relaying - posts tweets and forum/news posts from PlanetSide 2 developers into a channel.
+- - Apex Legends Queries:
+    - Current map rotation
+    - Current crafting rotation
 - Role menus.
 - Bulk voice channel movement - never drag people one-at-a-time again!
 - Welcome messages - assign default roles, let users pick an alternate role set, and make guesses at their in-game name for easy nickname changes.

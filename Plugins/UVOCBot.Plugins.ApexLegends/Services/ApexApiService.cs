@@ -64,34 +64,6 @@ public class ApexApiService : IApexApiService
         }
     }
 
-    public virtual async Task<Result<StatsBridge>> GetPlayerStatisticsAsync
-    (
-        string playerName,
-        PlayerPlatform platform,
-        CancellationToken ct = default
-    )
-    {
-        try
-        {
-            string platformString = platform switch {
-                PlayerPlatform.Origin => "PC",
-                PlayerPlatform.PS4 => "PS4",
-                PlayerPlatform.Xbox => "X1",
-                _ => throw new ArgumentException("Invalid platform", nameof(platform))
-            };
-
-            HttpResponseMessage response = await _client
-                .GetAsync($"bridge?player={playerName}&platform={platformString}", ct)
-                .ConfigureAwait(false);
-
-            return await ParseApiResult<StatsBridge>(response, ct).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            return new ExceptionError(ex);
-        }
-    }
-
     private async Task<Result<T>> ParseApiResult<T>(HttpResponseMessage response, CancellationToken ct)
     {
         response.EnsureSuccessStatusCode();

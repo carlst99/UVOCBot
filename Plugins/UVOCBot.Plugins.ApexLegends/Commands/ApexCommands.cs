@@ -130,84 +130,6 @@ public class ApexCommands : CommandGroup
         ).ConfigureAwait(false);
     }
 
-    [Command("player")]
-    public async Task<Result> GetPlayerStatisticsCommandAsync(string playerName, PlayerPlatform platform = PlayerPlatform.Origin)
-    {
-        Result<StatsBridge> getStats = await _apexApi.GetPlayerStatisticsAsync(playerName, platform, CancellationToken)
-            .ConfigureAwait(false);
-
-        if (!getStats.IsDefined(out StatsBridge? stats))
-        {
-            if (getStats.Error is ApexApiError apexError && apexError.Message.Contains("not found"))
-            {
-                return await _feedbackService.SendContextualWarningAsync
-                (
-                    "That player could not be found. Ensure you are using their Origin name.",
-                    ct: CancellationToken
-                ).ConfigureAwait(false);
-            }
-
-            return await NotifyOfApiRetrievalError((Result)getStats).ConfigureAwait(false);
-        }
-
-        List<EmbedField> fields = new();
-
-        if (stats.Global.Bans.IsActive)
-        {
-            fields.Add(new EmbedField
-            (
-                $"Banned for {TimeSpan.FromSeconds(stats.Global.Bans.RemainingSeconds):hh\\h\\ mm\\m}",
-                $"Reason: {stats.Global.Bans.LastBanReason}"
-            ));
-        }
-
-        fields.Add(new EmbedField
-        (
-            "Status",
-            CreateStatusText(stats.Realtime),
-            true
-        ));
-
-        fields.Add(new EmbedField
-        (
-            $"Level {stats.Global.Level}",
-            $"Prestige count: {stats.Global.LevelPrestige}\n"
-                + $"Percent to next level: {stats.Global.ToNextLevelPercent}"
-        ));
-
-        StatsBridgeGlobal.RankInfo rank = stats.Global.Rank;
-        fields.Add(new EmbedField
-        (
-            $"Ranked: {rank.RankName} {RankDivisionToString(rank.RankDiv)}",
-            $"Score: {rank.RankScore}",
-            true
-        ));
-
-        StatsBridgeGlobal.RankInfo arenaRank = stats.Global.Arena;
-        fields.Add(new EmbedField
-        (
-            $"Arenas Ranked: {arenaRank.RankName} {RankDivisionToString(arenaRank.RankDiv)}",
-            $"Score: {arenaRank.RankScore}",
-            true
-        ));
-
-        string statusEmoji = stats.Realtime.IsOnline == 1
-            ? Formatter.Emoji("green_circle")
-            : Formatter.Emoji("red_circle");
-
-        Embed embed = new
-        (
-            $"Statistics for {stats.Global.Name} ({stats.Global.Platform}) {statusEmoji}",
-            Colour: Color.Gold,
-            Thumbnail: new EmbedThumbnail(stats.Global.Rank.RankImg),
-            Image: new EmbedImage(stats.Legends.Selected.ImgAssets.Banner),
-            Fields: fields
-        );
-
-        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken)
-            .ConfigureAwait(false);
-    }
-
     private static EmbedField CreateBundleEmbedField(CraftingBundle bundle)
     {
         StringBuilder sb = new();
@@ -256,40 +178,6 @@ public class ApexCommands : CommandGroup
 
         return new string(toBuf);
     }
-
-    private static string CreateStatusText(StatsBridgeRealtime realtimeData)
-    {
-        if (realtimeData.IsOnline == 0)
-            return "Offline";
-
-        string result = realtimeData.IsInGame == 0
-            ? "In lobby"
-            : "In match";
-
-        if (realtimeData.CurrentStateSecsAgo is { } stateForSecs)
-            result += $" ({TimeSpan.FromSeconds(stateForSecs):mm\\:ss})";
-
-        if (realtimeData is { CanJoin: 0, PartyFull: 0 })
-            result += " (invite only)";
-
-        if (realtimeData.PartyFull > 0)
-            result += " (party full)";
-
-        if (realtimeData.IsOnline > 0)
-            result += $"\nCurrent legend: {realtimeData.SelectedLegend}";
-
-        return result;
-    }
-
-    private static string RankDivisionToString(int division)
-        => division switch
-        {
-            1 => "I",
-            2 => "II",
-            3 => "III",
-            4 => "IV",
-            _ => string.Empty
-        };
 
     private async Task<Result> NotifyOfApiRetrievalError(Result apiResult)
     {

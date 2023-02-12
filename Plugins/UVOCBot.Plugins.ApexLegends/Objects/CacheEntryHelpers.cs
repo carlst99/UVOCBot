@@ -23,11 +23,4 @@ public static class CacheEntryHelpers
             Priority = CacheItemPriority.Normal,
             Size = 1
         };
-
-    public static MemoryCacheEntryOptions GetStatsBridgeOptions()
-        => new() {
-            SlidingExpiration = TimeSpan.FromSeconds(30),
-            Priority = CacheItemPriority.Normal,
-            Size = 2
-        };
 }

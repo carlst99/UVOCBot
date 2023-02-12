@@ -1,6 +1,6 @@
 # Changelog
 
-## Release vNext
+## Release v1.6.0
 
 **Additions**
 - Added the following commands:

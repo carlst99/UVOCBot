@@ -1,4 +1,4 @@
-<img title="UVOCBot Icon" alt="UVOCBot Icon" src="https://github.com/carlst99/UVOCBot/blob/main/assets/Icon.png?raw=true" height="120" align="left" />
+<img title="UVOCBot Icon" alt="UVOCBot Icon" src="https://github.com/carlst99/UVOCBot/blob/main/assets/Icon.png?raw=true" height="120" style="float: left" />
 
 # UVOCBot
 
@@ -14,7 +14,7 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
     - Outfit base capture tracking, including members involved in any captures.
     - Outfit Wars information (registrations, match times).
 - Dev post relaying - posts tweets and forum/news posts from PlanetSide 2 developers into a channel.
-- - Apex Legends Queries:
+- Apex Legends Queries:
     - Current map rotation
     - Current crafting rotation
 - Role menus.

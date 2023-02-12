@@ -2,6 +2,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Results;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -18,24 +19,29 @@ namespace UVOCBot.Plugins.Roles.Responders;
 internal sealed class EditMenuModalResponder : IComponentResponder
 {
     private readonly IRoleMenuService _roleMenuService;
-    private readonly InteractionContext _context;
+    private readonly IInteraction _context;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
     public EditMenuModalResponder
     (
         IRoleMenuService roleMenuService,
-        InteractionContext context,
+        IInteractionContext context,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
         _roleMenuService = roleMenuService;
-        _context = context;
+        _context = context.Interaction;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
     }
 
+    /// <inheritdoc />
+    public Result<Attribute[]> GetResponseAttributes(string key)
+        => Array.Empty<Attribute>();
+
+    /// <inheritdoc />
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
     {
         if (!ulong.TryParse(dataFragment, out ulong roleMenuMessageID))
@@ -62,7 +68,8 @@ internal sealed class EditMenuModalResponder : IComponentResponder
         {
             return await _feedbackService.SendContextualWarningAsync
             (
-                $"The menu was updated internally, but I couldn't update the corresponding message. Please use the {Formatter.InlineQuote("rolemenu update")} command.",
+                "The menu was updated internally, but I couldn't update the corresponding message. " +
+                $"Please use the {Formatter.InlineQuote("rolemenu update")} command.",
                 ct: ct
             );
         }
@@ -79,7 +86,7 @@ internal sealed class EditMenuModalResponder : IComponentResponder
         titleText = string.Empty;
         descriptionText = null;
 
-        if (!_context.Data.TryPickT2(out IModalSubmitData modalData, out _))
+        if (!_context.Data.Value.TryPickT2(out IModalSubmitData modalData, out _))
             return Result.FromError(new GenericCommandError());
 
         List<IPartialTextInputComponent> textInputs = modalData.Components

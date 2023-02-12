@@ -6,6 +6,8 @@ using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Gateway.Commands;
+using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Caching.Extensions;
 using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Commands.Responders;
@@ -50,7 +52,7 @@ namespace UVOCBot;
 
 public static class Program
 {
-    public static async Task<int> Main(string[] args)
+    public static async Task Main(string[] args)
     {
         try
         {
@@ -61,13 +63,6 @@ public static class Program
 
             IEnumerable<Snowflake> debugServerSnowflakes = options.Value.DebugGuildIds.Select(DiscordSnowflake.New);
 
-            Result slashCommandsSupported = slashService.SupportsSlashCommands();
-            if (!slashCommandsSupported.IsSuccess)
-            {
-                Log.Fatal("The registered commands of the bot aren't supported as slash commands: {Reason}", slashCommandsSupported.Error);
-                return 2;
-            }
-
 #if DEBUG
             foreach (Snowflake guild in debugServerSnowflakes)
             {
@@ -76,57 +71,50 @@ public static class Program
                     continue;
 
                 Log.Fatal("Could not update slash commands for the debug guild {ID}: {Error}", guild.Value, updateSlashCommandsResult.Error);
-                return 2;
+                return;
             }
-
-            Console.WriteLine("==========> DEBUG");
 #else
             //IResult removeOldResult = await RemoveExistingGlobalCommandsAsync(host.Services);
             //if (!removeOldResult.IsSuccess)
-            //    return 3;
+            //    return;
 
             Result updateSlashCommandsResult = await slashService.UpdateSlashCommandsAsync().ConfigureAwait(false);
             if (!updateSlashCommandsResult.IsSuccess)
             {
                 Log.Fatal("Could not update global application commands: {Error}", updateSlashCommandsResult.Error);
-                return 2;
+                return;
             }
-
-            Console.WriteLine("==========> RELEASE");
 #endif
 
-            await host.RunAsync().ConfigureAwait(false);
-            return 0;
+            await host.RunAsync();
         }
         catch (Exception ex)
         {
+            // Just in case the logger hasn't been configured yet
             Console.WriteLine("Host terminated unexpectedly:");
             Console.WriteLine(ex);
 
             Log.Fatal(ex, "Host terminated unexpectedly");
-            return 1;
         }
         finally
         {
-            Log.CloseAndFlush();
+            await Log.CloseAndFlushAsync();
         }
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
-        ILogger? logger = null;
-
         return Host.CreateDefaultBuilder(args)
+            .UseSystemd()
             .UseDefaultServiceProvider(s => s.ValidateScopes = true)
             .ConfigureServices((c, _) =>
             {
                 string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
                 string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
-                logger = SetupLogging(seqIngestionEndpoint, seqApiKey);
+                SetupLogging(seqIngestionEndpoint, seqApiKey);
             })
-            .UseSerilog(logger)
+            .UseSerilog()
             .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-            .UseSystemd()
             .ConfigureServices((c, services) =>
             {
                 // Setup configuration bindings
@@ -163,7 +151,8 @@ public static class Program
                         .AddScoped<IAdminLogService, AdminLogService>();
 
                 // Plugin registration
-                services.AddFeedsPlugin(c.Configuration)
+                services.AddApexLegendsPlugin(c.Configuration)
+                        .AddFeedsPlugin(c.Configuration)
                         .AddGreetingsPlugin()
                         .AddPlanetsidePlugin(c.Configuration)
                         .AddRolesPlugin();
@@ -188,10 +177,8 @@ public static class Program
             : directory;
     }
 
-#pragma warning disable RCS1163 // Unused parameter.
     // ReSharper disable twice UnusedParameter.Local
-    private static ILogger SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
-#pragma warning restore RCS1163 // Unused parameter.
+    private static void SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
     {
         LoggerConfiguration logConfig = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -211,23 +198,10 @@ public static class Program
             logConfig.MinimumLevel.ControlledBy(levelSwitch)
                     .WriteTo.Seq(seqIngestionEndpoint, apiKey: seqApiKey, controlLevelSwitch: levelSwitch);
         }
-        else
-        {
-            logConfig.MinimumLevel.Information()
-                .WriteTo.File
-                (
-                    GetAppdataFilePath("log.log"),
-                    LogEventLevel.Warning,
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
-                    rollingInterval: RollingInterval.Day
-                );
-        }
 #endif
 
         Log.Logger = logConfig.CreateLogger();
         Log.Information("Appdata stored at {Path}", GetAppdataFilePath(null));
-
-        return Log.Logger;
     }
 
     private static IServiceCollection AddRemoraServices(this IServiceCollection services)
@@ -237,9 +211,9 @@ public static class Program
             o =>
             {
                 o.Intents |= GatewayIntents.DirectMessages
-                             | GatewayIntents.GuildMessages
-                             | GatewayIntents.Guilds
-                             | GatewayIntents.GuildMembers;
+                    | GatewayIntents.GuildMessages
+                    | GatewayIntents.Guilds
+                    | GatewayIntents.GuildMembers;
             }
         );
 
@@ -262,24 +236,23 @@ public static class Program
         return services;
     }
 
-#pragma warning disable RCS1213 // Remove unused member declaration.
     // ReSharper disable once UnusedMember.Local
     private static async Task<IResult> RemoveExistingGlobalCommandsAsync(IServiceProvider services)
     {
-        Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API oauth2Api = services.GetRequiredService<Remora.Discord.API.Abstractions.Rest.IDiscordRestOAuth2API>();
-        Remora.Discord.API.Abstractions.Rest.IDiscordRestApplicationAPI applicationApi = services.GetRequiredService<Remora.Discord.API.Abstractions.Rest.IDiscordRestApplicationAPI>();
+        IDiscordRestOAuth2API oauth2Api = services.GetRequiredService<IDiscordRestOAuth2API>();
+        IDiscordRestApplicationAPI applicationApi = services.GetRequiredService<IDiscordRestApplicationAPI>();
 
-        Result<Remora.Discord.API.Abstractions.Objects.IApplication> appDetails = await oauth2Api.GetCurrentBotApplicationInformationAsync();
+        Result<IApplication> appDetails = await oauth2Api.GetCurrentBotApplicationInformationAsync();
         if (!appDetails.IsSuccess)
         {
             Log.Fatal("Could not get application information: {Error}", appDetails.Error);
             return appDetails;
         }
 
-        Result<IReadOnlyList<Remora.Discord.API.Abstractions.Objects.IApplicationCommand>> deleteResult = await applicationApi.BulkOverwriteGlobalApplicationCommandsAsync
+        Result<IReadOnlyList<IApplicationCommand>> deleteResult = await applicationApi.BulkOverwriteGlobalApplicationCommandsAsync
         (
             appDetails.Entity.ID,
-            new List<Remora.Discord.API.Abstractions.Objects.IBulkApplicationCommandData>()
+            new List<IBulkApplicationCommandData>()
         );
 
         if (deleteResult.IsSuccess)
@@ -288,5 +261,4 @@ public static class Program
         Log.Fatal("Could not get delete existing app commands: {Error}", deleteResult.Error);
         return deleteResult;
     }
-#pragma warning restore RCS1213 // Remove unused member declaration.
 }

@@ -31,24 +31,26 @@ public class WorldCommands : CommandGroup
 {
     private static readonly ValidZoneDefinition[] ValidZones = Enum.GetValues<ValidZoneDefinition>();
 
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly ICensusApiService _censusApi;
     private readonly IPopulationService _populationApi;
     private readonly IMemoryCache _cache;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
-    public WorldCommands(
-        ICommandContext context,
+    public WorldCommands
+    (
+        IInteractionContext context,
         ICensusApiService censusApi,
-        IPopulationService fisuApi,
+        IPopulationService populationApi,
         IMemoryCache cache,
         DiscordContext dbContext,
-        FeedbackService feedbackService)
+        FeedbackService feedbackService
+    )
     {
-        _context = context;
+        _context = context.Interaction;
         _censusApi = censusApi;
-        _populationApi = fisuApi;
+        _populationApi = populationApi;
         _cache = cache;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
@@ -218,9 +220,10 @@ public class WorldCommands : CommandGroup
 
     private async Task<Result<(List<EmbedField> EmbedFields, int TotalPop)>> GetPopulationEmbedFields(ValidWorldDefinition world)
     {
-        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, CancellationToken);
+        // We don't return this result if it fails, as the CensusStateWorker will be reporting any retrieval errors
+        Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, ct: CancellationToken);
         if (!populationResult.IsDefined(out IPopulation? population))
-            return Result<(List<EmbedField>, int)>.FromError(populationResult);
+            return new GenericCommandError("Failed to get population data! This could mean that Honu is down.");
 
         List<EmbedField> fields = new()
         {
@@ -261,7 +264,7 @@ public class WorldCommands : CommandGroup
 
         string stringPercentage = ((double)factionPopulation / totalPopulation * 100).ToString("F1");
         sb.Append(Formatter.Bold("   "));
-        sb.Append('(').Append(stringPercentage).Append(")%");
+        sb.Append('(').Append(stringPercentage).Append("%)");
 
         return new EmbedField(title, sb.ToString());
     }

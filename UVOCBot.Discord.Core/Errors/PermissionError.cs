@@ -1,5 +1,5 @@
-﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.Commands.Contexts;
+﻿using Remora.Discord.API;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Rest.Core;
 using Remora.Results;
 using System.Collections.Generic;
@@ -55,9 +55,15 @@ public record PermissionError
         return message + ".";
     }
 
-    public string ContextualToString(ICommandContext context)
+    public string ContextualToString(IInteraction context)
     {
-        string userMention = UserID == context.User.ID ? "You don't" : Formatter.UserMention(UserID) + " doesn't";
+        Snowflake contextUserId = context.TryGetUser(out IUser? user)
+            ? user.ID
+            : DiscordSnowflake.New(0);
+
+        string userMention = UserID == contextUserId
+            ? "You don't"
+            : Formatter.UserMention(UserID) + " doesn't";
         string permissionMention = Formatter.InlineQuote(string.Join(", ", Permissions));
 
         string message = $"{ userMention } have the required permission/s ({permissionMention})";

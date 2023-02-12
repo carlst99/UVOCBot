@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using System;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
@@ -33,8 +34,8 @@ public static class CacheEntryHelpers
     public static readonly MemoryCacheEntryOptions MapRegionOptions = new()
     {
         AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7),
-        Priority = CacheItemPriority.Low,
-        Size = 2
+        Priority = CacheItemPriority.High,
+        Size = 1
     };
 
     /// <summary>
@@ -56,4 +57,35 @@ public static class CacheEntryHelpers
         Priority = CacheItemPriority.Normal,
         Size = 1
     };
+
+    /// <summary>
+    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// </summary>
+    public static readonly MemoryCacheEntryOptions OutfitWarRegistrationsOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30),
+        Priority = CacheItemPriority.Normal,
+        Size = 3
+    };
+
+    /// <summary>
+    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// </summary>
+    public static readonly MemoryCacheEntryOptions OutfitWarOptions = new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
+        Priority = CacheItemPriority.Normal,
+        Size = 1
+    };
+
+    /// <summary>
+    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// </summary>
+    public static MemoryCacheEntryOptions GetOutfitWarRoundWithMatchesOptions(OutfitWarRoundWithMatches round) =>
+        new()
+        {
+            AbsoluteExpiration = round.EndTime,
+            Priority = CacheItemPriority.Normal,
+            Size = 1
+        };
 }

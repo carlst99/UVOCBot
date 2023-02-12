@@ -36,7 +36,7 @@ namespace UVOCBot.Plugins.Feeds.Commands;
 [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
 public class FeedCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestGuildAPI _guildApi;
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly DiscordContext _dbContext;
@@ -44,14 +44,14 @@ public class FeedCommands : CommandGroup
 
     public FeedCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestGuildAPI guildApi,
         IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _guildApi = guildApi;
         _permissionChecksService = permissionChecksService;
         _dbContext = dbContext;
@@ -87,7 +87,7 @@ public class FeedCommands : CommandGroup
     [Description("Selects the channel to which feeds will be relayed")]
     public async Task<IResult> SetFeedChannelCommandAsync
     (
-        [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)] IChannel channel
+        [ChannelTypes(ChannelType.GuildText, ChannelType.PublicThread)] IChannel channel
     )
     {
         Result canPostToChannel = await CheckFeedChannelPermissionsAsync(channel.ID).ConfigureAwait(false);
@@ -145,7 +145,11 @@ public class FeedCommands : CommandGroup
     [Description("Enable or disable particular feeds.")]
     public async Task<IResult> ToggleFeedCommandAsync()
     {
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>
+        (
+            _context.GuildID.Value.Value,
+            CancellationToken
+        ).ConfigureAwait(false);
 
         Result validChannel = await CheckValidFeedChannelAsync(settings);
         if (!validChannel.IsSuccess)
@@ -163,7 +167,7 @@ public class FeedCommands : CommandGroup
             )
             .ToList();
 
-        SelectMenuComponent menu = new
+        StringSelectComponent menu = new
         (
             FeedComponentKeys.ToggleFeed,
             selectOptions,

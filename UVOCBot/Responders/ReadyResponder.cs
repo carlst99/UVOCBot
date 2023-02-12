@@ -48,7 +48,7 @@ public class ReadyResponder : IResponder<IReady>
         (
             new UpdatePresence
             (
-                ClientStatus.Online,
+                UserStatus.Online,
                 false,
                 null,
                 new Activity[] { new (_options.DiscordPresence, ActivityType.Game) }

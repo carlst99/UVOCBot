@@ -21,13 +21,16 @@ public class GuildCreateResponder : IResponder<IGuildCreate>
 
     public Task<Result> RespondAsync(IGuildCreate gatewayEvent, CancellationToken ct = default)
     {
-        foreach (IPartialVoiceState voiceState in gatewayEvent.VoiceStates.Where(v => v.ChannelID.HasValue))
+        if (!gatewayEvent.Guild.TryPickT0(out IGuildCreate.IAvailableGuild guild, out _))
+            return Task.FromResult(Result.FromSuccess());
+
+        foreach (IPartialVoiceState voiceState in guild.VoiceStates.Where(v => v.ChannelID.HasValue))
         {
             // We can assume each value is present because the IGuildCreate event
             // is guaranteed to contain complete voice state payloads.
             VoiceState trueState = new
             (
-                gatewayEvent.ID,
+                guild.ID,
                 voiceState.ChannelID.Value,
                 voiceState.UserID.Value,
                 voiceState.Member,

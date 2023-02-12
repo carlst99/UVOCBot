@@ -1,18 +1,19 @@
 ﻿using DbgCensus.Core.Objects;
 using DbgCensus.EventStream.Objects.Events.Worlds;
+using DbgCensus.Rest;
 using DbgCensus.Rest.Abstractions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Remora.Results;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.Honu;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
@@ -28,9 +29,9 @@ public class CachingCensusApiService : CensusApiService
     (
         ILogger<CachingCensusApiService> logger,
         IQueryService queryService,
-        HttpClient httpClient,
+        IOptionsMonitor<CensusQueryOptions> queryOptions,
         IMemoryCache cache
-    ) : base(logger, queryService, httpClient)
+    ) : base(logger, queryService, queryOptions)
     {
         _cache = cache;
     }
@@ -43,7 +44,7 @@ public class CachingCensusApiService : CensusApiService
 
         foreach (ulong id in outfitIDs)
         {
-            if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit outfit))
+            if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitKey(id), out Outfit? outfit) && outfit is not null)
                 outfits.Add(outfit);
             else
                 toQuery.Add(id);
@@ -69,44 +70,9 @@ public class CachingCensusApiService : CensusApiService
     }
 
     /// <inheritdoc />
-    public override async Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default)
-    {
-        Result<List<Facility>> getFacilities = await base.GetHonuFacilitiesAsync(ct).ConfigureAwait(false);
-        if (!getFacilities.IsDefined(out List<Facility>? facilities))
-            return getFacilities;
-
-        foreach (Facility f in facilities)
-        {
-            MapRegion m = new
-            (
-                f.RegionID,
-                new ZoneID(f.ZoneID),
-                f.FacilityID,
-                f.Name,
-                (FacilityType)f.TypeID,
-                f.TypeName,
-                f.LocationX,
-                f.LocationY,
-                f.LocationZ,
-                null,
-                null
-            );
-
-            _cache.Set
-            (
-                CacheKeyHelpers.GetFacilityMapRegionKey(m),
-                m,
-                CacheEntryHelpers.MapRegionOptions
-            );
-        }
-
-        return facilities;
-    }
-
-    /// <inheritdoc />
     public override async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetFacilityMapRegionKey(facilityID), out MapRegion region))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetFacilityMapRegionKey(facilityID), out MapRegion? region))
             return region;
 
         Result<MapRegion?> getMapRegionResult = await base.GetFacilityRegionAsync(facilityID, ct).ConfigureAwait(false);
@@ -137,8 +103,8 @@ public class CachingCensusApiService : CensusApiService
 
         foreach (ValidZoneDefinition zone in zones)
         {
-            if (_cache.TryGetValue(CacheKeyHelpers.GetMapKey((WorldDefinition)world, (ZoneDefinition)zone), out Map region))
-                maps.Add(region);
+            if (_cache.TryGetValue(CacheKeyHelpers.GetMapKey((WorldDefinition)world, (ZoneDefinition)zone), out Map? region))
+                maps.Add(region!);
             else
                 toRetrieve.Add(zone);
         }
@@ -170,7 +136,7 @@ public class CachingCensusApiService : CensusApiService
     /// <inheritdoc />
     public override async Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, (ZoneDefinition)zone), out MetagameEvent found))
+        if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, (ZoneDefinition)zone), out MetagameEvent? found))
             return found;
 
         // Note that we don't cache the result here
@@ -190,8 +156,8 @@ public class CachingCensusApiService : CensusApiService
 
         foreach (ulong id in characterIDs)
         {
-            if (_cache.TryGetValue(CacheKeyHelpers.GetMinimalCharacterKey(id), out MinimalCharacter character))
-                characters.Add(character);
+            if (_cache.TryGetValue(CacheKeyHelpers.GetMinimalCharacterKey(id), out MinimalCharacter? character))
+                characters.Add(character!);
             else
                 toQuery.Add(id);
         }
@@ -213,5 +179,79 @@ public class CachingCensusApiService : CensusApiService
         }
 
         return Result<List<MinimalCharacter>>.FromSuccess(characters);
+    }
+
+    public override async Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    )
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRegistrationsKey(outfitWarID), out List<OutfitWarRegistration>? registrations))
+            return registrations;
+
+        Result<List<OutfitWarRegistration>> getRegistrations = await base.GetOutfitWarRegistrationsAsync(outfitWarID, ct)
+            .ConfigureAwait(false);
+
+        if (getRegistrations.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetOutfitWarRegistrationsKey(outfitWarID),
+                getRegistrations.Entity,
+                CacheEntryHelpers.OutfitWarRegistrationsOptions
+            );
+        }
+
+        return getRegistrations;
+    }
+
+    public override async Task<Result<OutfitWar?>> GetCurrentOutfitWar
+    (
+        ValidWorldDefinition world,
+        CancellationToken ct = default
+    )
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarKey(world), out OutfitWar? war))
+            return war;
+
+        Result<OutfitWar?> getWar = await base.GetCurrentOutfitWar(world, ct).ConfigureAwait(false);
+
+        if (getWar.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetOutfitWarKey(world),
+                getWar.Entity,
+                CacheEntryHelpers.OutfitWarOptions
+            );
+        }
+
+        return getWar;
+    }
+
+    public override async Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    )
+    {
+        if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRoundWithMatchesKey(outfitWarID), out OutfitWarRoundWithMatches? round))
+            return round;
+
+        Result<OutfitWarRoundWithMatches?> getRound = await base.GetCurrentOutfitWarMatches(outfitWarID, ct)
+            .ConfigureAwait(false);
+
+        if (getRound.IsDefined())
+        {
+            _cache.Set
+            (
+                CacheKeyHelpers.GetOutfitWarRoundWithMatchesKey(outfitWarID),
+                getRound.Entity,
+                CacheEntryHelpers.GetOutfitWarRoundWithMatchesOptions(getRound.Entity)
+            );
+        }
+
+        return getRound;
     }
 }

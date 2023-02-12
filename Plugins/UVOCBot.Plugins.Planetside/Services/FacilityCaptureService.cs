@@ -25,6 +25,7 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 using Channel = System.Threading.Channels.Channel;
 
 namespace UVOCBot.Plugins.Planetside.Services;
@@ -81,7 +82,7 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
             {
                 // Wait for player facility captures to be processed,
                 // and also back off Census
-                await Task.Delay(200, ct).ConfigureAwait(false);
+                await Task.Delay(50, ct).ConfigureAwait(false);
                 if (facilityControl.Timestamp.AddSeconds(10) > DateTimeOffset.UtcNow)
                 {
                     await _facilityControls.Writer.WriteAsync(facilityControl, ct).ConfigureAwait(false);
@@ -203,22 +204,22 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
             }
         }
 
-        FacilityResource resourceType = FacilityTypeToBaseResource(region.FacilityTypeID);
-        Uri? thumbnailUri = BaseResourceToImageUri(resourceType);
+        Uri? thumbnailUri = BaseResourceToImageUri(region.OutfitResourceRewardTypeDescription);
 
         embedFields.Add
         (
             new EmbedField
             (
-                "Resources",
-                $"{region.RewardAmount} {resourceType}"
+                "Outfit Rewards",
+                $"{region.OutfitResourceRewardAmount} {region.OutfitResourceRewardTypeDescription}"
             )
         );
 
         Embed embed = new
         (
             "Base Captured",
-            Description: $"{Formatter.Bold(outfit.Alias)} has captured {Formatter.Italic(region.FacilityName)} from the {facilityControl.OldFactionID}",
+            Description: $"{Formatter.Bold(outfit.Alias)} has captured " +
+                $"{Formatter.Italic(region.FacilityName ?? "Unknown")} from the {facilityControl.OldFactionID}",
             Colour: facilityControl.NewFactionID.ToColor(),
             Thumbnail: thumbnailUri is null
                 ? default(Remora.Rest.Core.Optional<IEmbedThumbnail>)
@@ -239,10 +240,10 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
 
     private void UpdateMapCache(IFacilityControl controlEvent, MapRegion facility)
     {
-        if (!_cache.TryGetValue(CacheKeyHelpers.GetMapKey(controlEvent.WorldID, controlEvent.ZoneID.Definition), out Map map))
+        if (!_cache.TryGetValue(CacheKeyHelpers.GetMapKey(controlEvent.WorldID, controlEvent.ZoneID.Definition), out Map? map))
             return;
 
-        int index = map.Regions.Row.FindIndex(r => r.RowData.RegionID == facility.MapRegionID);
+        int index = map!.Regions.Row.FindIndex(r => r.RowData.RegionID == facility.MapRegionId);
         if (index == -1)
             return;
 
@@ -261,30 +262,12 @@ public sealed class FacilityCaptureService : IFacilityCaptureService
     private static Uri GetResourceImageUri(string assetID)
         => CDN.GetApplicationAssetUrl(DiscordSnowflake.New(747683069737041970), assetID, CDNImageFormat.PNG, 128).Entity;
 
-    private static Uri? BaseResourceToImageUri(FacilityResource resource)
+    private static Uri? BaseResourceToImageUri(string? resource)
         => resource switch
         {
-            FacilityResource.Auraxium => AuraxiumImageUri,
-            FacilityResource.Synthium => SynthiumImageUri,
-            FacilityResource.Polystellarite => PolystellariteImageUri,
-            _ => default
-        };
-
-    private static FacilityResource FacilityTypeToBaseResource(FacilityType? type)
-        => type switch
-        {
-            FacilityType.SmallOutpost => FacilityResource.Auraxium,
-            FacilityType.ConstructionOutpost => FacilityResource.Synthium,
-            FacilityType.LargeOutpost => FacilityResource.Synthium,
-            FacilityType.AmpStation => FacilityResource.Polystellarite,
-            FacilityType.BioLab => FacilityResource.Polystellarite,
-            FacilityType.InterlinkFacility => FacilityResource.Polystellarite,
-            FacilityType.TechPlant => FacilityResource.Polystellarite,
-            FacilityType.Default => FacilityResource.None,
-            FacilityType.RelicOutpost => FacilityResource.None,
-            FacilityType.Warpgate => FacilityResource.None,
-            FacilityType.ContainmentSite => FacilityResource.Synthium,
-            FacilityType.TridentSpire => FacilityResource.Polystellarite,
-            _ => FacilityResource.None
+            "Auraxium" => AuraxiumImageUri,
+            "Synthium" => SynthiumImageUri,
+            "Polystellarite" => PolystellariteImageUri,
+            _ => null
         };
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Mandible.Abstractions.Manifest;
+using Mandible.Manifest;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
@@ -10,6 +12,7 @@ using UVOCBot.Plugins.Feeds.Commands;
 using UVOCBot.Plugins.Feeds.Responders;
 using UVOCBot.Plugins.Feeds.Workers;
 
+// ReSharper disable once CheckNamespace
 namespace UVOCBot.Plugins;
 
 public static class IServiceCollectionExtensions
@@ -19,7 +22,7 @@ public static class IServiceCollectionExtensions
         services.Configure<FeedsPluginOptions>(config.GetSection(nameof(FeedsPluginOptions)));
 
         services.AddTransient(TwitterClientFactory);
-        services.AddHttpClient<PatchManifestWorker>();
+        services.AddHttpClient<IManifestService, ManifestService>();
 
         services.AddComponentResponder<ToggleFeedComponentResponder>(FeedComponentKeys.ToggleFeed);
 

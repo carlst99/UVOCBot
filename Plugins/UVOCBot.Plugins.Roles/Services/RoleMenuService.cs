@@ -22,20 +22,20 @@ namespace UVOCBot.Plugins.Roles.Services;
 /// <inheritdoc cref="IRoleMenuService"/>
 public class RoleMenuService : IRoleMenuService
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
     public RoleMenuService
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestChannelAPI channelApi,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _channelApi = channelApi;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
@@ -95,7 +95,7 @@ public class RoleMenuService : IRoleMenuService
             },
             components: menu.Roles.Count > 0
                 ? CreateRoleMenuMessageComponents(menu)
-                : new Optional<IReadOnlyList<IMessageComponent>>(),
+                : new Optional<IReadOnlyList<IMessageComponent>?>(),
             ct: ct
         );
 
@@ -109,15 +109,27 @@ public class RoleMenuService : IRoleMenuService
 
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
     {
-        List<ButtonComponent> roleButtons = menu.Roles.ConvertAll
-        (
-            r => new ButtonComponent
+        List<ButtonComponent> roleButtons = new();
+        foreach (GuildRoleMenuRole role in menu.Roles)
+        {
+            Optional<IPartialEmoji> emoji = default;
+            if (role.Emoji is not null)
+            {
+                string[] parts = role.Emoji.Split(':');
+                Snowflake? id = parts[0].Length > 0
+                    ? DiscordSnowflake.New(ulong.Parse(parts[0]))
+                    : null;
+                emoji = new Emoji(id, parts[1]);
+            }
+
+            roleButtons.Add(new ButtonComponent
             (
                 ButtonComponentStyle.Secondary,
-                r.Label,
-                CustomID: ComponentIDFormatter.GetId(RoleComponentKeys.ToggleRole, r.RoleId.ToString())
-            )
-        );
+                role.Label,
+                emoji,
+                ComponentIDFormatter.GetId(RoleComponentKeys.ToggleRole, role.RoleId.ToString())
+            ));
+        }
 
         return new List<IMessageComponent>
         (

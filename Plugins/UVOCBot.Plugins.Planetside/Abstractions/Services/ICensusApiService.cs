@@ -7,7 +7,7 @@ using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
-using UVOCBot.Plugins.Planetside.Objects.Honu;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Abstractions.Services;
 
@@ -74,14 +74,6 @@ public interface ICensusApiService
     Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default);
 
     /// <summary>
-    /// Gets facility data from Honu.
-    /// <see href="https://wt.honu.pw/api/map/facilities"/>.
-    /// </summary>
-    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
-    /// <returns>A <see cref="Result{TEntity}"/> representing the facility list.</returns>
-    Task<Result<List<Facility>>> GetHonuFacilitiesAsync(CancellationToken ct = default);
-
-    /// <summary>
     /// Gets the most recent metagame events for a world.
     /// </summary>
     /// <param name="world">The world to query events for.</param>
@@ -109,4 +101,40 @@ public interface ICensusApiService
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation, and containing the minimal character records if successful.</returns>
     Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync(IEnumerable<ulong> characterIDs, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets a collection of outfit war registrations for the given world.
+    /// </summary>
+    /// <param name="outfitWarID">The ID of the war to retrieve registrations for.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation, and containing the outfit registrations if successful.</returns>
+    Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
+    /// Gets information about the current outfit war for the given world.
+    /// </summary>
+    /// <param name="world">The world.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>The current <see cref="OutfitWar"/>, or <c>null</c> if there is none.</returns>
+    Task<Result<OutfitWar?>> GetCurrentOutfitWar
+    (
+        ValidWorldDefinition world,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
+    /// Gets the matches of the current round of the given outfit war.
+    /// </summary>
+    /// <param name="outfitWarID">The ID of the war to retrieve the current matches of.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>The current matches, or <c>null</c> if the war does not have a round in progress.</returns>
+    Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
+    (
+        uint outfitWarID,
+        CancellationToken ct = default
+    );
 }

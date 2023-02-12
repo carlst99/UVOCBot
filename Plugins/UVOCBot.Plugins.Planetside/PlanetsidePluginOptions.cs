@@ -1,6 +1,6 @@
 ﻿namespace UVOCBot.Plugins.Planetside;
 
-public record PlanetsidePluginOptions
+public class PlanetsidePluginOptions
 {
     /// <summary>
     /// Gets the endpoint at which the fisu API can be found.

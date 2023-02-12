@@ -515,7 +515,7 @@ public class FeedbackService
         {
             case MessageContext messageContext:
             {
-                return await SendEmbedsAsync(messageContext.ChannelID, embeds, options, ct);
+                return await SendEmbedsAsync(messageContext.Message.ChannelID.Value, embeds, options, ct);
             }
             case InteractionContext:
             {

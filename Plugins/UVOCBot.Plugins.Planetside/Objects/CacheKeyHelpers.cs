@@ -5,6 +5,7 @@ using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Outfit;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Objects;
 
@@ -30,10 +31,10 @@ public static class CacheKeyHelpers
 
     public static object GetFacilityMapRegionKey(MapRegion facilityRegion)
     {
-        if (facilityRegion.FacilityID is null)
-            throw new ArgumentNullException(nameof(facilityRegion.FacilityID), "Facility ID must not be null.");
+        if (facilityRegion.FacilityId is null)
+            throw new ArgumentNullException(nameof(facilityRegion.FacilityId), "Facility ID must not be null.");
 
-        return GetFacilityMapRegionKey(facilityRegion.FacilityID.Value);
+        return GetFacilityMapRegionKey(facilityRegion.FacilityId.Value);
     }
 
     public static object GetFacilityMapRegionKey(ulong facilityID)
@@ -50,4 +51,13 @@ public static class CacheKeyHelpers
 
     public static object GetPopulationKey(WorldDefinition world)
         => (typeof(IPopulation), (int)world);
+
+    public static object GetOutfitWarRegistrationsKey(uint outfitWarID)
+        => (typeof(OutfitWarRegistration), outfitWarID);
+
+    public static object GetOutfitWarKey(ValidWorldDefinition world)
+        => (typeof(OutfitWar), world);
+
+    public static object GetOutfitWarRoundWithMatchesKey(uint outfitWarID)
+        => (typeof(OutfitWarRoundWithMatches), outfitWarID);
 }

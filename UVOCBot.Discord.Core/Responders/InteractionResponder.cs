@@ -22,13 +22,13 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Remora.Commands;
 using Remora.Commands.Services;
 using Remora.Commands.Tokenization;
 using Remora.Commands.Trees;
 using Remora.Discord.API.Abstractions.Gateway.Events;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Attributes;
+using Remora.Discord.Commands.Contexts;
 using Remora.Discord.Commands.Extensions;
 using Remora.Discord.Commands.Responders;
 using Remora.Discord.Commands.Services;
@@ -46,7 +46,7 @@ namespace UVOCBot.Discord.Core.Responders;
 /// <summary>
 /// Responds to interactions.
 /// </summary>
-public class CommandInteractionResponder : IResponder<IInteractionCreate>
+public class InteractionResponder : IResponder<IInteractionCreate>
 {
     private readonly CommandService _commandService;
     private readonly InteractionResponderOptions _options;
@@ -60,7 +60,7 @@ public class CommandInteractionResponder : IResponder<IInteractionCreate>
     private readonly ITreeNameResolver? _treeNameResolver;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InteractionResponder"/> class.
+    /// Initializes a new instance of the <see cref="Remora.Discord.Commands.Responders.InteractionResponder"/> class.
     /// </summary>
     /// <param name="commandService">The command service.</param>
     /// <param name="options">The options.</param>
@@ -70,7 +70,7 @@ public class CommandInteractionResponder : IResponder<IInteractionCreate>
     /// <param name="tokenizerOptions">The tokenizer options.</param>
     /// <param name="treeSearchOptions">The tree search options.</param>
     /// <param name="treeNameResolver">The tree name resolver, if available.</param>
-    public CommandInteractionResponder
+    public InteractionResponder
     (
         CommandService commandService,
         IOptions<InteractionResponderOptions> options,
@@ -106,75 +106,36 @@ public class CommandInteractionResponder : IResponder<IInteractionCreate>
             return Result.FromSuccess();
         }
 
-        var createContext = gatewayEvent.CreateContext();
-        if (!createContext.IsSuccess)
+        if (!gatewayEvent.Data.TryGet(out var data) || !data.TryPickT0(out var commandData, out _))
         {
-            return Result.FromError(createContext);
-        }
-
-        var context = createContext.Entity;
-
-        if (!context.Data.IsT0)
             return Result.FromSuccess();
+        }
 
         // Provide the created context to any services inside this scope
-        _contextInjection.Context = context;
+        var operationContext = new InteractionContext(gatewayEvent);
+        _contextInjection.Context = operationContext;
 
-        context.Data.AsT0.UnpackInteraction(out var commandPath, out var parameters);
+        commandData.UnpackInteraction(out var commandPath, out var parameters);
 
-        // Run any user-provided pre-execution events
-        var preExecution = await _eventCollector.RunPreExecutionEvents(_services, context, ct);
-        if (!preExecution.IsSuccess)
+        if (_treeNameResolver is null)
         {
-            return preExecution;
+            return await TryExecuteCommandAsync(operationContext, commandPath, parameters, null, ct);
         }
 
-        string? treeName = null;
-        var allowDefaultTree = false;
-        if (_treeNameResolver is not null)
+        var getTreeName = await _treeNameResolver.GetTreeNameAsync(operationContext, ct);
+        if (!getTreeName.IsSuccess)
         {
-            var getTreeName = await _treeNameResolver.GetTreeNameAsync(context, ct);
-            if (!getTreeName.IsSuccess)
-            {
-                return Result.FromError(getTreeName);
-            }
-
-            (treeName, allowDefaultTree) = getTreeName.Entity;
+            return (Result)getTreeName;
         }
 
-        var executeResult = await TryExecuteCommand(commandPath, parameters, treeName, ct);
+        var treeName = getTreeName.Entity;
 
-        var tryDefaultTree = allowDefaultTree && (treeName is not null || treeName != Constants.DefaultTreeName);
-        if (executeResult.IsSuccess || !tryDefaultTree)
-        {
-            return await _eventCollector.RunPostExecutionEvents
-            (
-                _services,
-                context,
-                executeResult.IsSuccess ? executeResult.Entity : executeResult,
-                ct
-            );
-        }
-
-        var oldResult = executeResult;
-        executeResult = await TryExecuteCommand(commandPath, parameters, treeName, ct);
-
-        if (!executeResult.IsSuccess)
-        {
-            executeResult = new AggregateError(oldResult, executeResult);
-        }
-
-        return await _eventCollector.RunPostExecutionEvents
-        (
-            _services,
-            context,
-            executeResult.IsSuccess ? executeResult.Entity : executeResult,
-            ct
-        );
+        return await TryExecuteCommandAsync(operationContext, commandPath, parameters, treeName, ct);
     }
 
-    private async Task<Result<IResult>> TryExecuteCommand
+    private async Task<Result> TryExecuteCommandAsync
     (
+        InteractionContext operationContext,
         IReadOnlyList<string> commandPath,
         IReadOnlyDictionary<string, IReadOnlyList<string>> parameters,
         string? treeName,
@@ -194,19 +155,41 @@ public class CommandInteractionResponder : IResponder<IInteractionCreate>
 
         if (!prepareCommand.IsSuccess)
         {
-            return Result.FromError(prepareCommand);
+            var preparationError = await _eventCollector.RunPreparationErrorEvents
+            (
+                _services,
+                operationContext,
+                prepareCommand,
+                ct
+            );
+
+            if (!preparationError.IsSuccess)
+            {
+                return preparationError;
+            }
+
+            if (prepareCommand.Error.IsUserOrEnvironmentError())
+            {
+                // We've done our part and notified whoever might be interested; job well done
+                return Result.FromSuccess();
+            }
+
+            return (Result)prepareCommand;
         }
 
         var preparedCommand = prepareCommand.Entity;
 
-        var ephemeralAttribute = preparedCommand.Command.Node
-            .FindCustomAttributeOnLocalTree<EphemeralAttribute>();
+        // Update the available context
+        var commandContext = new InteractionCommandContext
+        (
+            operationContext.Interaction,
+            preparedCommand
+        )
+        {
+            HasRespondedToInteraction = operationContext.HasRespondedToInteraction
+        };
 
-        var sendEphemeral = (ephemeralAttribute is null && _options.UseEphemeralResponses) ||
-                            ephemeralAttribute?.IsEphemeral == true;
-
-        IInteractionResponseService interactionResponseService = _services.GetRequiredService<IInteractionResponseService>();
-        interactionResponseService.WillDefaultToEphemeral = sendEphemeral;
+        _contextInjection.Context = commandContext;
 
         var suppressResponseAttribute = preparedCommand.Command.Node
             .FindCustomAttributeOnLocalTree<SuppressInteractionResponseAttribute>();
@@ -217,18 +200,40 @@ public class CommandInteractionResponder : IResponder<IInteractionCreate>
         var shouldSendResponse = !(suppressResponseAttribute?.Suppress ?? _options.SuppressAutomaticResponses);
         if (shouldSendResponse || (deferredResponseAttribute?.IsDeferred ?? false))
         {
+            var ephemeralAttribute = preparedCommand.Command.Node
+                .FindCustomAttributeOnLocalTree<EphemeralAttribute>();
+
+            var sendEphemeral = (ephemeralAttribute is null && _options.UseEphemeralResponses) ||
+                ephemeralAttribute?.IsEphemeral == true;
+
+            IInteractionResponseService interactionResponseService = _services.GetRequiredService<IInteractionResponseService>();
+            interactionResponseService.WillDefaultToEphemeral = sendEphemeral;
+
             var interactionResponse = await interactionResponseService.CreateDeferredMessageResponse(ct);
             if (!interactionResponse.IsSuccess)
             {
                 return interactionResponse;
             }
+
+            operationContext.HasRespondedToInteraction = true;
+            commandContext.HasRespondedToInteraction = true;
         }
 
-        // Run the actual command
-        return await _commandService.TryExecuteAsync
+        // Run any user-provided pre-execution events
+        var preExecution = await _eventCollector.RunPreExecutionEvents(_services, commandContext, ct);
+        if (!preExecution.IsSuccess)
+        {
+            return preExecution;
+        }
+
+        var executionResult = await _commandService.TryExecuteAsync(preparedCommand, _services, ct);
+
+        // Run any user-provided post-execution events
+        return await _eventCollector.RunPostExecutionEvents
         (
-            preparedCommand,
             _services,
+            commandContext,
+            executionResult.IsSuccess ? executionResult.Entity : executionResult,
             ct
         );
     }

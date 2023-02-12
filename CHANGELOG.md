@@ -1,5 +1,31 @@
 # Changelog
 
+## Release v1.6.0
+
+**Additions**
+- Added the following commands:
+  - `outfit-wars registrations`
+  - `outfit-wars matches`
+  - `rolemenu list-menus`
+  - `apex craftables`
+  - `apex maps`
+  - `apex player`
+- Added the `News` feed.
+- Spiffed up the role menu commands, and added support for emojis on role labels.
+- Base capture notifications now show the amount of outfit resource earned.
+
+**Deprecations**
+- Removed the 'most used weapon' field from the `character` command. It rarely displayed a relevant weapon.
+
+**Fixes**
+- Fixed Oshur status being calculated incorrectly.
+- Fixed the character name autocomplete on the `character` command failing when not using all-lowercase letters.
+
+**Miscellaneous**
+- The response of the `online-friends` command is now only visible to the user.
+- The client update tracking message now says '...update has been released' rather than 'detected' when updates are released.
+- Updated to .NET 7.0
+
 ## Release v1.5.0
 
 **Additions**

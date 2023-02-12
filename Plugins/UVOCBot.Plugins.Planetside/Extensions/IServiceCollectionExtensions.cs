@@ -14,6 +14,7 @@ using UVOCBot.Plugins.Planetside.Commands;
 using UVOCBot.Plugins.Planetside.Services;
 using UVOCBot.Plugins.Planetside.Workers;
 
+// ReSharper disable once CheckNamespace
 namespace UVOCBot.Plugins;
 
 public static class IServiceCollectionExtensions
@@ -24,8 +25,13 @@ public static class IServiceCollectionExtensions
         services.Configure<EventStreamOptions>(config.GetSection(nameof(EventStreamOptions)));
         services.Configure<CensusQueryOptions>(config.GetSection(nameof(CensusQueryOptions)));
         services.Configure<CensusQueryOptions>(o => o.LanguageCode = CensusLanguage.English);
+        services.Configure<CensusQueryOptions>("sanctuary", config.GetSection(nameof(CensusQueryOptions)));
+        services.Configure<CensusQueryOptions>("sanctuary", o =>
+        {
+            o.LanguageCode = CensusLanguage.English;
+            o.RootEndpoint = "https://census.lithafalcon.cc";
+        });
 
-        services.AddHttpClient();
         services.AddSingleton<IPopulationService, HonuPopulationService>();
 
         services.AddCensusRestServices();
@@ -42,6 +48,7 @@ public static class IServiceCollectionExtensions
                 .WithCommandGroup<CharacterCommands>()
                 .WithCommandGroup<OtherCommands>()
                 .WithCommandGroup<OutfitTrackingCommands>()
+                .WithCommandGroup<OutfitWarCommands>()
                 .WithCommandGroup<WorldCommands>()
                 .Finish()
                 .AddAutocompleteProvider<CharacterNameAutocompleteProvider>();

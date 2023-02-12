@@ -16,10 +16,14 @@ namespace UVOCBot.Discord.Core.Services;
 public class InteractionResponseService : IInteractionResponseService
 {
     private readonly IDiscordRestInteractionAPI _interactionApi;
-    private readonly InteractionContext _context;
+    private readonly IInteractionContext _context;
 
     /// <inheritdoc />
-    public bool HasResponded { get; protected set; }
+    public bool HasResponded
+    {
+        get => _context.HasRespondedToInteraction;
+        set => _context.HasRespondedToInteraction = value;
+    }
 
     /// <inheritdoc />
     public bool WillDefaultToEphemeral { get; set; }
@@ -27,7 +31,7 @@ public class InteractionResponseService : IInteractionResponseService
     public InteractionResponseService
     (
         IDiscordRestInteractionAPI interactionApi,
-        InteractionContext context
+        IInteractionContext context
     )
     {
         _interactionApi = interactionApi;
@@ -46,8 +50,8 @@ public class InteractionResponseService : IInteractionResponseService
 
         Result responseResult = await _interactionApi.CreateInteractionResponseAsync
         (
-            _context.ID,
-            _context.Token,
+            _context.Interaction.ID,
+            _context.Interaction.Token,
             new InteractionResponse
             (
                 InteractionCallbackType.Modal,
@@ -78,8 +82,8 @@ public class InteractionResponseService : IInteractionResponseService
 
         Result responseResult = await _interactionApi.CreateInteractionResponseAsync
         (
-            _context.ID,
-            _context.Token,
+            _context.Interaction.ID,
+            _context.Interaction.Token,
             new InteractionResponse
             (
                 InteractionCallbackType.ChannelMessageWithSource,
@@ -107,8 +111,8 @@ public class InteractionResponseService : IInteractionResponseService
 
         Result responseResult = await _interactionApi.CreateInteractionResponseAsync
         (
-            _context.ID,
-            _context.Token,
+            _context.Interaction.ID,
+            _context.Interaction.Token,
             new InteractionResponse
             (
                 InteractionCallbackType.DeferredChannelMessageWithSource,
@@ -160,7 +164,7 @@ public class InteractionResponseService : IInteractionResponseService
         Result<IMessage> responseResult = await _interactionApi.CreateFollowupMessageAsync
         (
             DiscordConstants.ApplicationId,
-            _context.Token,
+            _context.Interaction.Token,
             content,
             isTTS,
             embeds,
@@ -170,6 +174,9 @@ public class InteractionResponseService : IInteractionResponseService
             flags,
             ct
         );
+
+        if (responseResult.IsSuccess)
+            HasResponded = true;
 
         return responseResult.IsSuccess
             ? Result.FromSuccess()

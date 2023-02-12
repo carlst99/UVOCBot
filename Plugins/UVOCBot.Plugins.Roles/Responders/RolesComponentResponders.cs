@@ -9,6 +9,7 @@ using Remora.Discord.Commands.Feedback.Messages;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Results;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,30 +21,36 @@ using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Plugins.Roles.Responders;
 
-[Ephemeral]
-internal sealed class ToggleRoleComponentResponder : IComponentResponder
+internal sealed class RolesComponentResponders : IComponentResponder
 {
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IDiscordRestGuildAPI _guildApi;
     private readonly DiscordContext _dbContext;
-    private readonly InteractionContext _context;
+    private readonly IInteraction _context;
     private readonly FeedbackService _feedbackService;
 
-    public ToggleRoleComponentResponder
+    public RolesComponentResponders
     (
         IDiscordRestChannelAPI channelApi,
         IDiscordRestGuildAPI guildApi,
         DiscordContext dbContext,
-        InteractionContext context,
+        IInteractionContext context,
         FeedbackService feedbackService
     )
     {
         _channelApi = channelApi;
         _guildApi = guildApi;
         _dbContext = dbContext;
-        _context = context;
+        _context = context.Interaction;
         _feedbackService = feedbackService;
     }
+
+    public Result<Attribute[]> GetResponseAttributes(string key)
+        => key switch
+        {
+            RoleComponentKeys.ToggleRole => Result<Attribute[]>.FromSuccess(new Attribute[] { new EphemeralAttribute() }),
+            _ => Array.Empty<Attribute>()
+        };
 
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
         => key switch
@@ -62,6 +69,9 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
             return Result.FromSuccess();
 
         if (!_context.Message.IsDefined(out IMessage? message))
+            return Result.FromSuccess();
+
+        if (!_context.TryGetUser(out IUser? user))
             return Result.FromSuccess();
 
         if (dataFragment is null)
@@ -95,7 +105,7 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
             roleManipulationResult = await _guildApi.RemoveGuildMemberRoleAsync
             (
                 guildID,
-                _context.User.ID,
+                user.ID,
                 roleID.Value,
                 "User self-removed via role menu",
                 ct
@@ -106,7 +116,7 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
             roleManipulationResult = await _guildApi.AddGuildMemberRoleAsync
             (
                 guildID,
-                _context.User.ID,
+                user.ID,
                 roleID.Value,
                 "User self-added via role menu",
                 ct
@@ -140,6 +150,9 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         if (!DiscordSnowflake.TryParse(dataFragment, out Snowflake? menuID))
             return Result.FromSuccess();
 
+        if (!_context.TryGetUser(out IUser? user))
+            return Result.FromSuccess();
+
         GuildRoleMenu? menu = GetGuildRoleMenu(menuID.Value.Value);
         if (menu is null)
             return Result.FromError(new GenericCommandError());
@@ -154,7 +167,7 @@ internal sealed class ToggleRoleComponentResponder : IComponentResponder
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
-            "Role menu deletion requested by " + _context.User.Username,
+            "Role menu deletion requested by " + user.Username,
             ct
         ).ConfigureAwait(false);
 

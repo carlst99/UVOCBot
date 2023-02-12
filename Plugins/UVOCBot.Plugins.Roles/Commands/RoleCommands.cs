@@ -36,7 +36,7 @@ public class RoleCommands : CommandGroup
     /// </summary>
     private const int MAX_USERNAMES_IN_LIST = 100;
 
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IDiscordRestGuildAPI _guildApi;
     private readonly IPermissionChecksService _permissionChecksService;
@@ -44,14 +44,14 @@ public class RoleCommands : CommandGroup
 
     public RoleCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         IDiscordRestChannelAPI channelApi,
         IDiscordRestGuildAPI guildApi,
         IPermissionChecksService permissionsChecksService,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _channelApi = channelApi;
         _guildApi = guildApi;
         _permissionChecksService = permissionsChecksService;
@@ -137,23 +137,46 @@ public class RoleCommands : CommandGroup
         int userCount = 0;
 
         // Ensure that we can manipulate this role
-        IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles(_context.GuildID.Value, new List<ulong> { role.ID.Value }, CancellationToken).ConfigureAwait(false);
+        IResult canManipulateRoles = await _permissionChecksService.CanManipulateRoles
+        (
+            _context.GuildID.Value,
+            new List<ulong> { role.ID.Value },
+            CancellationToken
+        ).ConfigureAwait(false);
+
         if (!canManipulateRoles.IsSuccess)
             return canManipulateRoles;
 
-        await foreach (Result<IReadOnlyList<IGuildMember>> users in _guildApi.GetAllMembersAsync(_context.GuildID.Value, (m) => m.Roles.Contains(role.ID), CancellationToken))
+        IAsyncEnumerable<Result<IReadOnlyList<IGuildMember>>> allGuildMembers = _guildApi.GetAllMembersAsync
+        (
+            _context.GuildID.Value,
+            m => m.Roles.Contains(role.ID),
+            CancellationToken
+        );
+        await foreach (Result<IReadOnlyList<IGuildMember>> users in allGuildMembers)
         {
             if (!users.IsDefined())
                 return users;
 
             foreach (IGuildMember member in users.Entity)
             {
-                Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync(_context.GuildID.Value, member.User.Value.ID, role.ID, default, CancellationToken).ConfigureAwait(false);
+                if (!member.User.IsDefined(out IUser? user))
+                    continue;
+
+                Result roleRemoveResult = await _guildApi.RemoveGuildMemberRoleAsync
+                (
+                    _context.GuildID.Value,
+                    user.ID,
+                    role.ID,
+                    default,
+                    CancellationToken
+                ).ConfigureAwait(false);
+
                 if (!roleRemoveResult.IsSuccess)
                     continue;
 
                 if (userCount < MAX_USERNAMES_IN_LIST)
-                    userListBuilder.Append(Formatter.UserMention(member.User.Value.ID)).Append(", ");
+                    userListBuilder.Append(Formatter.UserMention(user.ID)).Append(", ");
 
                 userCount++;
             }

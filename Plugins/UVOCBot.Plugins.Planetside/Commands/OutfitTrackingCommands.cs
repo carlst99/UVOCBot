@@ -25,7 +25,7 @@ namespace UVOCBot.Plugins.Planetside.Commands;
 [RequireContext(ChannelContext.Guild)]
 public class OutfitTrackingCommands : CommandGroup
 {
-    private readonly ICommandContext _context;
+    private readonly IInteraction _context;
     private readonly DiscordContext _dbContext;
     private readonly ICensusApiService _censusApi;
     private readonly IPermissionChecksService _permissionChecksService;
@@ -33,14 +33,14 @@ public class OutfitTrackingCommands : CommandGroup
 
     public OutfitTrackingCommands
     (
-        ICommandContext context,
+        IInteractionContext context,
         DiscordContext dbContext,
         ICensusApiService censusApi,
         IPermissionChecksService permissionChecksService,
         FeedbackService feedbackService
     )
     {
-        _context = context;
+        _context = context.Interaction;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
         _censusApi = censusApi;
@@ -139,7 +139,7 @@ public class OutfitTrackingCommands : CommandGroup
     public async Task<IResult> SetBaseCaptureChannelCommandAsync
     (
         [Description("The channel. Leave empty to disable base capture notifications.")]
-        [ChannelTypes(ChannelType.GuildText, ChannelType.GuildPublicThread)]
+        [ChannelTypes(ChannelType.GuildText, ChannelType.PublicThread)]
         IChannel? channel = null
     )
     {

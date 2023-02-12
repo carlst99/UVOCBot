@@ -22,7 +22,7 @@ public class GeneralCommands : CommandGroup
 {
     public const string RELEASE_NOTES =
         @"**Additions**
-          • Added the following commands: `outfit-wars registrations`, `outfit-wars matches`, `rolemenu list-menus`
+          • Added the following commands: `outfit-wars registrations`, `outfit-wars matches`, `rolemenu list-menus`, `apex craftables`, `apex maps`, `apex player`
           • Added the `News` feed.
           • Spiffed up the role menu commands, and added support for emojis on role labels.
           • Base capture notifications now show the amount of outfit resource earned.

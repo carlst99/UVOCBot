@@ -1,5 +1,10 @@
 # Changelog
 
+## vNext
+
+**Fixes**
+- A.S.P 3 characters will no longer break the `character` command.
+
 ## Release v1.6.0
 
 **Additions**

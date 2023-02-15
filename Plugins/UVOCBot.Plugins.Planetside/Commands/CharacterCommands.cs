@@ -59,12 +59,13 @@ public class CharacterCommands : CommandGroup
 
         string? iconUrl = "https://census.daybreakgames.com" + character.PrestigeLevel switch
         {
-            0 when character.FactionID is FactionDefinition.NC => character.BattleRank.Icons.NCImagePath,
-            0 when character.FactionID is FactionDefinition.TR => character.BattleRank.Icons.TRImagePath,
-            0 when character.FactionID is FactionDefinition.VS => character.BattleRank.Icons.VSImagePath,
-            0 => string.Empty,
             1 => "/files/ps2/images/static/88685.png",
-            2 => "/files/ps2/images/static/94469.png"
+            2 => "/files/ps2/images/static/94469.png",
+            3 => "/files/ps2/images/static/95504.png",
+            _ when character.FactionID is FactionDefinition.NC => character.BattleRank.Icons.NCImagePath,
+            _ when character.FactionID is FactionDefinition.TR => character.BattleRank.Icons.TRImagePath,
+            _ when character.FactionID is FactionDefinition.VS => character.BattleRank.Icons.VSImagePath,
+            _ => string.Empty
         };
 
         if (character.FactionID is FactionDefinition.NSO && character.PrestigeLevel == 0)

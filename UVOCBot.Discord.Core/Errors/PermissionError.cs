@@ -62,7 +62,7 @@ public record PermissionError
             : DiscordSnowflake.New(0);
 
         string userMention = UserID == contextUserId
-            ? "You don't"
+            ? Formatter.UserMention(UserID) + ", you don't"
             : Formatter.UserMention(UserID) + " doesn't";
         string permissionMention = Formatter.InlineQuote(string.Join(", ", Permissions));
 

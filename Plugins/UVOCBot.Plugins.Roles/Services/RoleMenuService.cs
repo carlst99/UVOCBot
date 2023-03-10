@@ -7,6 +7,7 @@ using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Results;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -86,18 +87,23 @@ public class RoleMenuService : IRoleMenuService
 
     /// <inheritdoc />
     public async Task<Result<IMessage>> UpdateRoleMenuMessageAsync(GuildRoleMenu menu, CancellationToken ct = default)
-        => await _channelApi.EditMessageAsync
+    {
+        menu.Roles.Sort
+        (
+            (r1, r2) => string.Compare(r1.Label, r2.Label, StringComparison.Ordinal)
+        );
+
+        return await _channelApi.EditMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
-            embeds: new[] {
-                CreateRoleMenuEmbed(menu)
-            },
+            embeds: new[] { CreateRoleMenuEmbed(menu) },
             components: menu.Roles.Count > 0
                 ? CreateRoleMenuMessageComponents(menu)
                 : new Optional<IReadOnlyList<IMessageComponent>?>(),
             ct: ct
         );
+    }
 
     public IEmbed CreateRoleMenuEmbed(GuildRoleMenu menu)
         => new Embed

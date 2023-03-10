@@ -285,11 +285,6 @@ public class RoleMenuCommands : CommandGroup
             };
 
             menu.Roles.Add(dbRole);
-            menu.Roles.Sort
-            (
-                (r1, r2) => string.Compare(r1.Label, r2.Label, StringComparison.Ordinal)
-            );
-
             _dbContext.Update(menu);
         }
         else

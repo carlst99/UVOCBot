@@ -11,7 +11,6 @@ using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;

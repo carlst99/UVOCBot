@@ -1,5 +1,6 @@
 ﻿using DbgCensus.Core.Objects;
 using System.Collections.Generic;
+using System.Linq;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 using static UVOCBot.Plugins.Planetside.Objects.FisuPopulation;
 
@@ -14,27 +15,27 @@ public record FisuPopulation
     public record ApiResult
     (
         WorldDefinition WorldID,
-        int NC,
-        int NS,
-        int TR,
-        int VS
+        short NC,
+        short NS,
+        short TR,
+        short VS
     );
 
-    /// <inheritdoc />
-    public WorldDefinition WorldID => Result[0].WorldID;
+    private Dictionary<FactionDefinition, int>? _population;
 
     /// <inheritdoc />
-    public int NC => Result[0].NC;
+    public Dictionary<FactionDefinition, int> Population
+        => _population ??= new Dictionary<FactionDefinition, int>
+            {
+                { FactionDefinition.VS, Result[0].VS },
+                { FactionDefinition.NC, Result[0].NC },
+                { FactionDefinition.TR, Result[0].TR },
+                { FactionDefinition.NSO, Result[0].NS },
+            };
 
     /// <inheritdoc />
-    public int? NS => Result[0].NS;
+    public WorldDefinition WorldId => Result[0].WorldID;
 
     /// <inheritdoc />
-    public int VS => Result[0].VS;
-
-    /// <inheritdoc />
-    public int TR => Result[0].TR;
-
-    /// <inheritdoc />
-    public int Total => VS + NC + TR + (int)NS!;
+    public int Total => Population.Values.Sum();
 }

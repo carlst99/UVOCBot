@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using System.Collections.Generic;
 
 namespace UVOCBot.Plugins.Planetside.Abstractions.Objects;
 
@@ -10,28 +11,12 @@ public interface IPopulation
     /// <summary>
     /// Gets the world that this population measure is for.
     /// </summary>
-    WorldDefinition WorldID { get; }
+    WorldDefinition WorldId { get; }
 
     /// <summary>
-    /// Gets the NC player count.
+    /// Gets the per-faction population count.
     /// </summary>
-    int NC { get; }
-
-    /// <summary>
-    /// Gets the NS player count. Can be null, depending on whether the data source
-    /// identifies which faction the NS characters are playing with.
-    /// </summary>
-    int? NS { get; }
-
-    /// <summary>
-    /// Gets the TR player count.
-    /// </summary>
-    int TR { get; }
-
-    /// <summary>
-    /// Gets the VS player count.
-    /// </summary>
-    int VS { get; }
+    Dictionary<FactionDefinition, int> Population { get; }
 
     /// <summary>
     /// Gets the total player count.

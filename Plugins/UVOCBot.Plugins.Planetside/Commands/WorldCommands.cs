@@ -106,8 +106,7 @@ public class WorldCommands : CommandGroup
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Title = $"{server} - {populationFields.Entity.TotalPop}",
-            Fields = fields,
-            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw")
+            Fields = fields
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
@@ -225,12 +224,12 @@ public class WorldCommands : CommandGroup
         if (!populationResult.IsDefined(out IPopulation? population))
             return new GenericCommandError("Failed to get population data! This could mean that Honu is down.");
 
-        List<EmbedField> fields = new()
+        List<EmbedField> fields = new();
+        foreach ((FactionDefinition faction, int popValue) in population.Population)
         {
-            GetPopulationEmbedField(population.NC, population.Total, FactionDefinition.NC),
-            GetPopulationEmbedField(population.TR, population.Total, FactionDefinition.TR),
-            GetPopulationEmbedField(population.VS, population.Total, FactionDefinition.VS)
-        };
+            if (popValue > 0)
+                fields.Add(GetPopulationEmbedField(popValue, population.Total, faction));
+        }
 
         return (fields, population.Total);
     }

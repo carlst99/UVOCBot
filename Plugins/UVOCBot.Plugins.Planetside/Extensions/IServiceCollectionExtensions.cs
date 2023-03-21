@@ -32,7 +32,8 @@ public static class IServiceCollectionExtensions
             o.RootEndpoint = "https://census.lithafalcon.cc";
         });
 
-        services.AddSingleton<IPopulationService, HonuPopulationService>();
+        services.AddSingleton<HonuPopulationService>();
+        services.AddSingleton<IPopulationService, SanctuaryPopulationService>();
 
         services.AddCensusRestServices();
         services.AddSingleton<ICensusApiService, CachingCensusApiService>();

@@ -155,7 +155,8 @@ public static class Program
                         .AddFeedsPlugin(c.Configuration)
                         .AddGreetingsPlugin()
                         .AddPlanetsidePlugin(c.Configuration)
-                        .AddRolesPlugin();
+                        .AddRolesPlugin()
+                        .AddSpaceEngineersPlugin();
             });
     }
 

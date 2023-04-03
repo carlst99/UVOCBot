@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UVOCBot.Plugins.Feeds", "Pl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Plugins.ApexLegends", "Plugins\UVOCBot.Plugins.ApexLegends\UVOCBot.Plugins.ApexLegends.csproj", "{C4B8D7CB-4E25-4EBA-AD76-DF5D22E557E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UVOCBot.Plugins.SpaceEngineers", "Plugins\UVOCBot.Plugins.SpaceEngineers\UVOCBot.Plugins.SpaceEngineers.csproj", "{D5457363-3941-4461-91DA-F4C83F265C3A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,6 +67,10 @@ Global
 		{C4B8D7CB-4E25-4EBA-AD76-DF5D22E557E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4B8D7CB-4E25-4EBA-AD76-DF5D22E557E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4B8D7CB-4E25-4EBA-AD76-DF5D22E557E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5457363-3941-4461-91DA-F4C83F265C3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5457363-3941-4461-91DA-F4C83F265C3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5457363-3941-4461-91DA-F4C83F265C3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5457363-3941-4461-91DA-F4C83F265C3A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -75,6 +81,7 @@ Global
 		{1D4A65CD-0201-4711-A53A-99ABCEC767CA} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 		{07D01238-4E4E-4AB8-A22C-BAE8F4FF8BB0} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 		{C4B8D7CB-4E25-4EBA-AD76-DF5D22E557E2} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
+		{D5457363-3941-4461-91DA-F4C83F265C3A} = {9A010CFF-90E5-4CCD-9B13-D4782016A02D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3298591-9482-4E35-A1C5-B0B88D4C57A9}

@@ -29,6 +29,7 @@
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Greetings\UVOCBot.Plugins.Greetings.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Planetside\UVOCBot.Plugins.Planetside.csproj" />
     <ProjectReference Include="..\Plugins\UVOCBot.Plugins.Roles\UVOCBot.Plugins.Roles.csproj" />
+    <ProjectReference Include="..\Plugins\UVOCBot.Plugins.SpaceEngineers\UVOCBot.Plugins.SpaceEngineers.csproj" />
     <ProjectReference Include="..\UVOCBot.Discord.Core\UVOCBot.Discord.Core.csproj" />
   </ItemGroup>
 </Project>

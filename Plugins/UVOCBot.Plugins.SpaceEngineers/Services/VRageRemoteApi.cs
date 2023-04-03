@@ -33,7 +33,10 @@ public class VRageRemoteApi : IVRageRemoteApi
 
     public async Task<Result<bool>> PingAsync(CancellationToken ct = default)
     {
-        Result<RemoteResponseBase<PingData>?> result = await GetAsync<PingData>("v1/server/ping", ct);
+        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(3));
+
+        Result<RemoteResponseBase<PingData>?> result = await GetAsync<PingData>("v1/server/ping", cts.Token);
         if (!result.IsSuccess)
             return Result<bool>.FromError(result);
 
@@ -65,6 +68,11 @@ public class VRageRemoteApi : IVRageRemoteApi
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync<RemoteResponseBase<T>>(cancellationToken: ct);
+        }
+        catch (OperationCanceledException)
+        {
+            // This is fine
+            return Result<RemoteResponseBase<T>?>.FromSuccess(null);
         }
         catch (Exception ex)
         {

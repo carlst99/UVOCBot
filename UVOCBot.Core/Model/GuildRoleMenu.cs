@@ -13,7 +13,7 @@ public class GuildRoleMenu : IGuildObject
     /// <summary>
     /// Gets or sets the ID of the guild that this role menu belongs to.
     /// </summary>
-    public ulong GuildId { get; set; }
+    public ulong GuildId { get; init; }
 
     /// <summary>
     /// Gets or sets the ID of the person who created the role menu.

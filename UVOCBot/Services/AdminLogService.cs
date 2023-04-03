@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Abstractions.Services;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Model;

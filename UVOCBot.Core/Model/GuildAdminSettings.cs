@@ -6,7 +6,7 @@ public class GuildAdminSettings : IGuildObject
 {
     /// <inheritdoc />
     [Key]
-    public ulong GuildId { get; set; }
+    public ulong GuildId { get; init; }
 
     /// <summary>
     /// Gets or sets a value indicating if admin logging is enabled.

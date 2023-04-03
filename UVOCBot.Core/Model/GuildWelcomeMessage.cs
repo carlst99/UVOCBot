@@ -10,7 +10,7 @@ public class GuildWelcomeMessage : IGuildObject
 {
     /// <inheritdoc />
     [Key]
-    public ulong GuildId { get; set; }
+    public ulong GuildId { get; init; }
 
     /// <summary>
     /// Gets the list of alternate roles that can be assigned.

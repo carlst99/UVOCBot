@@ -8,5 +8,5 @@ public interface IGuildObject
     /// Gets or sets the ID of the guild that this entry belongs to.
     /// </summary>
     [Key]
-    ulong GuildId { get; set; }
+    ulong GuildId { get; init; }
 }

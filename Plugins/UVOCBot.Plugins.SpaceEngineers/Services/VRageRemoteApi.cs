@@ -18,7 +18,7 @@ namespace UVOCBot.Plugins.SpaceEngineers.Services;
 
 public class VRageRemoteApi : IVRageRemoteApi
 {
-    private const string ADDRESS = "***REMOVED***";
+    private const string ADDRESS = "**REMOVED**";
     private const int PORT = 9898;
     private static readonly byte[] KEY = Convert.FromBase64String("**REMOVED**");
 

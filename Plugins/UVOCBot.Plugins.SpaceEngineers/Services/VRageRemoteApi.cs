@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Remora.Results;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -37,6 +38,17 @@ public class VRageRemoteApi : IVRageRemoteApi
             return Result<bool>.FromError(result);
 
         return result.Entity?.Data.Result is "Pong";
+    }
+
+    public async Task<Result<IReadOnlyList<Player>>> GetPlayersAsync(CancellationToken ct = default)
+    {
+        Result<RemoteResponseBase<WorldPlayersData>?> result = await GetAsync<WorldPlayersData>("v1/session/players", ct);
+        if (!result.IsSuccess)
+            return Result<IReadOnlyList<Player>>.FromError(result);
+
+        return result.IsDefined(out RemoteResponseBase<WorldPlayersData>? data)
+            ? Result<IReadOnlyList<Player>>.FromSuccess(data.Data.Players)
+            : Array.Empty<Player>();
     }
 
     private async Task<Result<RemoteResponseBase<T>?>> GetAsync<T>

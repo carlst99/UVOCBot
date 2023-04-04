@@ -18,6 +18,7 @@ using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands.Attributes;
+using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.SpaceEngineers.Abstractions.Services;
 using UVOCBot.Plugins.SpaceEngineers.Extensions;
@@ -55,7 +56,7 @@ public class SpaceEngineersCommands : CommandGroup
     }
 
     [Command("connect")]
-    [RequireDiscordPermission(DiscordPermission.ManageGuild)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild)]
     [Ephemeral]
     public async Task<Result> ConnectToServerCommandAsync(string serverAddress, int serverPort, string serverKey)
     {
@@ -167,10 +168,11 @@ public class SpaceEngineersCommands : CommandGroup
 
     [Command("status-message")]
     [Description("Creates an auto-updating server status message")]
-    [RequireDiscordPermission(DiscordPermission.ManageGuild)]
+    [RequireGuildPermission(DiscordPermission.ManageGuild)]
+    [Ephemeral]
     public async Task<Result> CreateStatusMessageCommandAsync
     (
-        [ChannelTypes(ChannelType.GuildText)] IChannel channel
+        [ChannelTypes(ChannelType.GuildText, ChannelType.PublicThread, ChannelType.PrivateThread)] IChannel channel
     )
     {
         Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel

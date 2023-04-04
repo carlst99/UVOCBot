@@ -19,6 +19,7 @@ namespace UVOCBot.Plugins.SpaceEngineers.Services;
 
 public class VRageRemoteApi : IVRageRemoteApi
 {
+    private const string NEWLINE = "\r\n";
     private static readonly TimeSpan API_TIMEOUT = TimeSpan.FromSeconds(3);
 
     private readonly ILogger<VRageRemoteApi> _logger;
@@ -130,9 +131,9 @@ public class VRageRemoteApi : IVRageRemoteApi
         if (parameters.Length > 0)
             message.Append('?').Append(parameters);
 
-        message.AppendLine();
-        message.AppendLine(nonce);
-        message.AppendLine(date.ToString("R", CultureInfo.InvariantCulture));
+        message.Append(NEWLINE);
+        message.Append(nonce).Append(NEWLINE);
+        message.Append(date.ToString("R", CultureInfo.InvariantCulture)).Append(NEWLINE);
 
         byte[] messageBuffer = Encoding.UTF8.GetBytes(message.ToString());
         byte[] key = Convert.FromBase64String(connectionDetails.Key);

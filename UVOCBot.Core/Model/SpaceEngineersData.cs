@@ -24,6 +24,11 @@ public class SpaceEngineersData : IGuildObject
     public string? ServerKey { get; set; }
 
     /// <summary>
+    /// The ID of the channel in which the status message is posted.
+    /// </summary>
+    public ulong? StatusMessageChannelId { get; set; }
+
+    /// <summary>
     /// The ID of the status message.
     /// </summary>
     public ulong? StatusMessageId { get; set; }

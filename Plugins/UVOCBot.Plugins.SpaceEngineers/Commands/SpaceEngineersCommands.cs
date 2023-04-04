@@ -16,6 +16,7 @@ using UVOCBot.Core;
 using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
+using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.SpaceEngineers.Abstractions.Services;
@@ -33,6 +34,7 @@ public class SpaceEngineersCommands : CommandGroup
 {
     private readonly IInteraction _context;
     private readonly IVRageRemoteApi _remoteApi;
+    private readonly IPermissionChecksService _permissionChecksService;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
 
@@ -40,12 +42,14 @@ public class SpaceEngineersCommands : CommandGroup
     (
         IInteractionContext context,
         IVRageRemoteApi remoteApi,
+        IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
         FeedbackService feedbackService
     )
     {
         _context = context.Interaction;
         _remoteApi = remoteApi;
+        _permissionChecksService = permissionChecksService;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
     }
@@ -159,5 +163,58 @@ public class SpaceEngineersCommands : CommandGroup
         );
 
         return (Result)await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
+    }
+
+    [Command("status-message")]
+    [Description("Creates an auto-updating server status message")]
+    [RequireDiscordPermission(DiscordPermission.Administrator)]
+    public async Task<Result> CreateStatusMessageCommandAsync
+    (
+        [ChannelTypes(ChannelType.GuildText)] IChannel channel
+    )
+    {
+        Result<IDiscordPermissionSet> getPermissionSet = await _permissionChecksService.GetPermissionsInChannel
+        (
+            channel,
+            DiscordConstants.UserId,
+            CancellationToken
+        ).ConfigureAwait(false);
+
+        if (!getPermissionSet.IsSuccess)
+            return (Result)getPermissionSet;
+
+        if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.ViewChannel))
+            return new PermissionError(DiscordPermission.ViewChannel, DiscordConstants.UserId, channel.ID);
+
+        if (!getPermissionSet.Entity.HasAdminOrPermission(DiscordPermission.SendMessages))
+            return new PermissionError(DiscordPermission.SendMessages, DiscordConstants.UserId, channel.ID);
+
+        SpaceEngineersData? data = await _dbContext.SpaceEngineersDatas
+            .FindAsync(_context.GuildID.Value.Value, CancellationToken);
+
+        if (data is null || !data.TryGetConnectionDetails(out _))
+            return new GenericCommandError("Please connect to a Space Engineers server before using this command");
+
+        Result<IMessage> createMessage = await _feedbackService.SendEmbedAsync
+        (
+            channel.ID,
+            new Embed("Server State: Unknown"),
+            ct: CancellationToken
+        );
+
+        if (!createMessage.IsDefined(out IMessage? message))
+            return (Result)createMessage;
+
+        data.StatusMessageId = message.ID.Value;
+        data.StatusMessageChannelId = channel.ID.Value;
+
+        _dbContext.Update(data);
+        await _dbContext.SaveChangesAsync(CancellationToken);
+
+        return (Result)await _feedbackService.SendContextualSuccessAsync
+        (
+            "Status message created!",
+            ct: CancellationToken
+        );
     }
 }

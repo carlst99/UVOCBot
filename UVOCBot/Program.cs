@@ -86,7 +86,10 @@ public class Program
             }
 #endif
 
-            await host.RunAsync();
+            bool dbInitialized = InitializeDatabase(host.Services);
+
+            if (dbInitialized)
+                await host.RunAsync();
         }
         catch (Exception ex)
         {
@@ -179,6 +182,25 @@ public class Program
         return fileName is not null
             ? Path.Combine(directory, fileName)
             : directory;
+    }
+
+    private static bool InitializeDatabase(IServiceProvider serviceProvider)
+    {
+        using IServiceScope scope = serviceProvider.CreateScope();
+
+        try
+        {
+            scope.ServiceProvider
+                .GetRequiredService<DiscordContext>()
+                .Database.Migrate();
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to migrate database");
+            return false;
+        }
     }
 
     // ReSharper disable twice UnusedParameter.Local

@@ -21,7 +21,10 @@ public static class DbContextExtensions
 
         value = new TEntity { GuildId = guildId };
         if (addIfNotPresent)
+        {
             context.Add(value);
+            await context.SaveChangesAsync(ct);
+        }
 
         return value;
     }

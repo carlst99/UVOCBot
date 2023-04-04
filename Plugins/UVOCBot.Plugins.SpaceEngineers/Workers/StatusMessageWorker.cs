@@ -26,6 +26,7 @@ public class StatusMessageWorker : BackgroundService
 {
     private readonly ILogger<StatusMessageWorker> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly HashSet<ulong> _editFailures;
 
     public StatusMessageWorker
     (
@@ -35,6 +36,7 @@ public class StatusMessageWorker : BackgroundService
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _editFailures = new HashSet<ulong>();
     }
 
     /// <inheritdoc />
@@ -121,20 +123,34 @@ public class StatusMessageWorker : BackgroundService
                         playerCount++;
                     }
 
-                    embed = embed with
-                    {
+                    embed = embed with {
                         Title = Formatter.Emoji("green_circle") + $" Players Online: {playerCount}",
                         Description = message.ToString()
                     };
                 }
 
-                await channelApi.EditMessageAsync
+                ulong channelId = data.StatusMessageChannelId!.Value;
+                ulong messageId = data.StatusMessageId!.Value;
+
+                Result<IMessage> editResult = await channelApi.EditMessageAsync
                 (
-                    DiscordSnowflake.New(data.StatusMessageChannelId!.Value),
-                    DiscordSnowflake.New(data.StatusMessageId!.Value),
+                    DiscordSnowflake.New(channelId),
+                    DiscordSnowflake.New(messageId),
                     embeds: new IEmbed[] { embed },
                     ct: ct
                 );
+
+                // Check if we've failed to edit the message twice in a row. Probably deleted
+                if (!editResult.IsSuccess && !_editFailures.Add(messageId))
+                {
+                    data.StatusMessageChannelId = null;
+                    data.StatusMessageId = null;
+
+                    dbContext.Update(data);
+                    await dbContext.SaveChangesAsync(ct);
+                }
+
+                _editFailures.Remove(messageId);
             }
 
             await timer.WaitForNextTickAsync(ct);

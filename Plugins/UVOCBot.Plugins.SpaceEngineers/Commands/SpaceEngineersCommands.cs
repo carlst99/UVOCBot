@@ -55,7 +55,7 @@ public class SpaceEngineersCommands : CommandGroup
     }
 
     [Command("connect")]
-    [RequireDiscordPermission(DiscordPermission.Administrator)]
+    [RequireDiscordPermission(DiscordPermission.ManageGuild)]
     [Ephemeral]
     public async Task<Result> ConnectToServerCommandAsync(string serverAddress, int serverPort, string serverKey)
     {

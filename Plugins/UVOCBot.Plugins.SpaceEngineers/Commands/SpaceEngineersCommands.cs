@@ -167,7 +167,7 @@ public class SpaceEngineersCommands : CommandGroup
 
     [Command("status-message")]
     [Description("Creates an auto-updating server status message")]
-    [RequireDiscordPermission(DiscordPermission.Administrator)]
+    [RequireDiscordPermission(DiscordPermission.ManageGuild)]
     public async Task<Result> CreateStatusMessageCommandAsync
     (
         [ChannelTypes(ChannelType.GuildText)] IChannel channel

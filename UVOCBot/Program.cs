@@ -50,7 +50,7 @@ namespace UVOCBot;
 // - Move Members
 // OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands
 
-public static class Program
+public class Program
 {
     public static async Task Main(string[] args)
     {
@@ -114,6 +114,13 @@ public static class Program
                 SetupLogging(seqIngestionEndpoint, seqApiKey);
             })
             .UseSerilog()
+            #if DEBUG // Used for EF core migrations
+            .ConfigureAppConfiguration((c, builder) =>
+            {
+                builder.AddConfiguration(c.Configuration)
+                    .AddUserSecrets<Program>();
+            })
+            #endif
             .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
             .ConfigureServices((c, services) =>
             {
@@ -125,30 +132,26 @@ public static class Program
                 services.Configure<DatabaseOptions>(dbConfigSection)
                         .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
 
-                services.AddDbContext<DiscordContext>
-                (
-                    options =>
-                    {
-                        options.UseMySql
+                // Setup the database
+                void DbOptionsBuilder(DbContextOptionsBuilder options)
+                {
+                    options.UseMySql
                         (
                             dbOptions.ConnectionString,
-                            new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion))
+                            new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)),
+                            b => b.MigrationsAssembly("UVOCBot")
                         )
-#if DEBUG
-                        .EnableSensitiveDataLogging()
-                        .EnableDetailedErrors()
-#endif
-                        ;
-                    },
-                    optionsLifetime: ServiceLifetime.Singleton
-                );
+                        .EnableSensitiveDataLogging(c.HostingEnvironment.IsDevelopment())
+                        .EnableDetailedErrors(c.HostingEnvironment.IsDevelopment());
+                }
 
-                services.AddDbContextFactory<DiscordContext>();
+                services.AddDbContext<DiscordContext>(DbOptionsBuilder, optionsLifetime: ServiceLifetime.Singleton)
+                    .AddDbContextFactory<DiscordContext>(DbOptionsBuilder);
 
                 // Add Discord-related services
-                services.AddRemoraServices()
-                        .AddCoreDiscordServices()
-                        .AddScoped<IAdminLogService, AdminLogService>();
+                AddRemoraServices(services)
+                    .AddCoreDiscordServices()
+                    .AddScoped<IAdminLogService, AdminLogService>();
 
                 // Plugin registration
                 services.AddApexLegendsPlugin(c.Configuration)
@@ -205,7 +208,7 @@ public static class Program
         Log.Information("Appdata stored at {Path}", GetAppdataFilePath(null));
     }
 
-    private static IServiceCollection AddRemoraServices(this IServiceCollection services)
+    private static IServiceCollection AddRemoraServices(IServiceCollection services)
     {
         services.Configure<DiscordGatewayClientOptions>
         (

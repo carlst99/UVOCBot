@@ -125,7 +125,7 @@ public class Program
             .ConfigureServices((c, services) =>
             {
                 // Setup configuration bindings
-                IConfigurationSection dbConfigSection = c.Configuration.GetSection(nameof(DatabaseOptions));
+                IConfigurationSection dbConfigSection = c.Configuration.GetSection(DatabaseOptions.ConfigSectionName);
                 DatabaseOptions dbOptions = new();
                 dbConfigSection.Bind(dbOptions);
 

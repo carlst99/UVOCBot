@@ -1,0 +1,2 @@
+﻿dotnet ef --startup-project "..\UVOCBot\UVOCBot.csproj" migrations Add "AddSpaceEngineersData"
+dotnet ef --startup-project "..\UVOCBot\UVOCBot.csproj" database update

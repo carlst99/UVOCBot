@@ -13,9 +13,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
+using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands.Attributes;
+using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.SpaceEngineers.Abstractions.Services;
+using UVOCBot.Plugins.SpaceEngineers.Extensions;
+using UVOCBot.Plugins.SpaceEngineers.Objects;
 using UVOCBot.Plugins.SpaceEngineers.Objects.SEModels;
 
 namespace UVOCBot.Plugins.SpaceEngineers.Commands;
@@ -45,12 +50,56 @@ public class SpaceEngineersCommands : CommandGroup
         _feedbackService = feedbackService;
     }
 
+    [Command("connect")]
+    [RequireDiscordPermission(DiscordPermission.Administrator)]
+    [Ephemeral]
+    public async Task<Result> ConnectToServerCommandAsync(string serverAddress, int serverPort, string serverKey)
+    {
+        serverAddress = serverAddress.Replace("http://", string.Empty);
+        SEServerConnectionDetails connectionDetails = new(serverAddress, serverPort, serverKey);
+        Result<bool> pingResult = await _remoteApi.PingAsync(connectionDetails, CancellationToken);
+
+        if (!pingResult.IsSuccess || !pingResult.Entity)
+        {
+            return new GenericCommandError
+            (
+                "Could not connect to the server. Ensure you have entered the correct details"
+            );
+        }
+
+        SpaceEngineersData data = await _dbContext.FindOrDefaultAsync<SpaceEngineersData>
+        (
+            _context.GuildID.Value.Value,
+            addIfNotPresent: true,
+            ct: CancellationToken
+        );
+
+        data.ServerAddress = serverAddress;
+        data.ServerPort = serverPort;
+        data.ServerKey = serverKey;
+
+        _dbContext.Update(data);
+        await _dbContext.SaveChangesAsync(CancellationToken);
+
+        return (Result)await _feedbackService.SendContextualSuccessAsync
+        (
+            "Successfully connected to the Space Engineers server",
+            ct: CancellationToken
+        );
+    }
+
     [Command("ping")]
     [Description("Pings the server")]
     [Ephemeral]
     public async Task<Result> PingCommandAsync()
     {
-        Result<bool> pingResult = await _remoteApi.PingAsync(CancellationToken);
+        SpaceEngineersData? data = await _dbContext.SpaceEngineersDatas
+            .FindAsync(_context.GuildID.Value.Value, CancellationToken);
+
+        if (data is null || !data.TryGetConnectionDetails(out SEServerConnectionDetails connectionDetails))
+            return new GenericCommandError("Please connect to a Space Engineers server before using this command");
+
+        Result<bool> pingResult = await _remoteApi.PingAsync(connectionDetails, CancellationToken);
 
         string message = pingResult is { IsSuccess: true, Entity: true }
             ? "online"
@@ -68,7 +117,13 @@ public class SpaceEngineersCommands : CommandGroup
     [Ephemeral]
     public async Task<Result> OnlineCommandAsync()
     {
-        Result<IReadOnlyList<Player>> playersResult = await _remoteApi.GetPlayersAsync(CancellationToken);
+        SpaceEngineersData? data = await _dbContext.SpaceEngineersDatas
+            .FindAsync(_context.GuildID.Value.Value, CancellationToken);
+
+        if (data is null || !data.TryGetConnectionDetails(out SEServerConnectionDetails connectionDetails))
+            return new GenericCommandError("Please connect to a Space Engineers server before using this command");
+
+        Result<IReadOnlyList<Player>> playersResult = await _remoteApi.GetPlayersAsync(connectionDetails, CancellationToken);
         if (!playersResult.IsDefined(out IReadOnlyList<Player>? players))
             return Result.FromError(playersResult);
 

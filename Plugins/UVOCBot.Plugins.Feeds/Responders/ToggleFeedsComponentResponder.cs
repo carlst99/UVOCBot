@@ -65,7 +65,7 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
         if (!permissions.HasAdminOrPermission(DiscordPermission.ManageGuild))
             return Result.FromError(new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID.Value));
 
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct: ct).ConfigureAwait(false);
         Feed selectedFeeds = 0;
         string message = "The following feeds have been enabled:";
 

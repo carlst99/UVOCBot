@@ -51,7 +51,11 @@ public class AdminCommands : CommandGroup
     [Description("Enables or disables admin logging.")]
     public async Task<IResult> EnabledCommand(bool isEnabled)
     {
-        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>
+        (
+            _context.GuildID.Value.Value,
+            ct: CancellationToken
+        ).ConfigureAwait(false);
 
         if (isEnabled)
         {
@@ -91,9 +95,13 @@ public class AdminCommands : CommandGroup
         if (!canLogToChannel.IsSuccess)
             return canLogToChannel;
 
-        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
-        settings.LoggingChannelId = channel.ID.Value;
+        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>
+        (
+            _context.GuildID.Value.Value,
+            ct: CancellationToken
+        ).ConfigureAwait(false);
 
+        settings.LoggingChannelId = channel.ID.Value;
         _dbContext.Update(settings);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
@@ -110,7 +118,11 @@ public class AdminCommands : CommandGroup
         [Description("The type of log to toggle.")] AdminLogTypes logType,
         [Description("Enables or disabled this log.")] bool isEnabled)
     {
-        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>
+        (
+            _context.GuildID.Value.Value,
+            ct: CancellationToken
+        ).ConfigureAwait(false);
 
         if (isEnabled)
             settings.LogTypes |= (ulong)logType;

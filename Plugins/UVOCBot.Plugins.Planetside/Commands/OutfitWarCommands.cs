@@ -12,7 +12,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
-using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
@@ -268,10 +267,20 @@ public class OutfitWarCommands : CommandGroup
         if (!_context.GuildID.HasValue)
             return new GenericCommandError("To use this command in a DM you must provide a server.");
 
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings? settings = await _dbContext.FindAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            CancellationToken
+        ).ConfigureAwait(false);
 
-        if (settings.DefaultWorld is null)
-            return new GenericCommandError($"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.");
+        if (settings?.DefaultWorld is null)
+        {
+            return new GenericCommandError
+            (
+                "You haven't set a default server! Please do so using the " +
+                $"{Formatter.InlineQuote("/default-server")} command."
+            );
+        }
 
         return (ValidWorldDefinition)settings.DefaultWorld;
     }

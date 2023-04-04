@@ -182,7 +182,7 @@ public class GreetingCommands : CommandGroup
         GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>
         (
             _context.GuildID.Value.Value,
-            CancellationToken
+            ct: CancellationToken
         ).ConfigureAwait(false);
 
         welcomeMessage.ChannelId = channel.ID.Value;
@@ -378,5 +378,5 @@ public class GreetingCommands : CommandGroup
     }
 
     private async Task<GuildWelcomeMessage> GetWelcomeMessage()
-        => await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        => await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, ct: CancellationToken).ConfigureAwait(false);
 }

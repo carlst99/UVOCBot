@@ -63,7 +63,11 @@ public class WorldCommands : CommandGroup
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> DefaultWorldCommandAsync(ValidWorldDefinition server)
     {
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            ct: CancellationToken
+        ).ConfigureAwait(false);
 
         settings.DefaultWorld = (int)server;
 
@@ -148,10 +152,20 @@ public class WorldCommands : CommandGroup
         if (!_context.GuildID.HasValue)
             return new GenericCommandError("To use this command in a DM you must provide a server.");
 
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings? settings = await _dbContext.FindAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            CancellationToken
+        ).ConfigureAwait(false);
 
-        if (settings.DefaultWorld is null)
-            return new GenericCommandError($"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.");
+        if (settings?.DefaultWorld is null)
+        {
+            return new GenericCommandError
+            (
+                "You haven't set a default server! Please do so using the " +
+                $"{Formatter.InlineQuote("/default-server")} command."
+            );
+        }
 
         return (ValidWorldDefinition)settings.DefaultWorld;
     }

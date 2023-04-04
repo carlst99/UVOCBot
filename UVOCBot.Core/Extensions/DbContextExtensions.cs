@@ -11,16 +11,17 @@ public static class DbContextExtensions
     (
         this DbContext context,
         ulong guildId,
+        bool addIfNotPresent = true,
         CancellationToken ct = default
     ) where TEntity : class, IGuildObject, new()
     {
         TEntity? value = await context.FindAsync<TEntity>(new object[] { guildId }, ct).ConfigureAwait(false);
+        if (value is not null)
+            return value;
 
-        if (value is null)
-        {
-            value = new TEntity { GuildId = guildId };
+        value = new TEntity { GuildId = guildId };
+        if (addIfNotPresent)
             context.Add(value);
-        }
 
         return value;
     }

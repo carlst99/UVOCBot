@@ -12,7 +12,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core;
-using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Errors;
@@ -57,8 +56,8 @@ public class GreetingService : IGreetingService
         if (!member.User.IsDefined(out IUser? user))
             return new ArgumentNullError(nameof(user));
 
-        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct).ConfigureAwait(false);
-        if (!welcomeMessage.IsEnabled)
+        GuildWelcomeMessage? welcomeMessage = await _dbContext.FindAsync<GuildWelcomeMessage>(guildID.Value, ct).ConfigureAwait(false);
+        if (welcomeMessage is not { IsEnabled: true })
             return Result.FromSuccess();
 
         List<IMessageComponent> messageComponents = new();
@@ -167,8 +166,11 @@ public class GreetingService : IGreetingService
         if (!member.User.IsDefined(out IUser? user))
             return new ArgumentNullError(nameof(user));
 
-        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct)
+        GuildWelcomeMessage? welcomeMessage = await _dbContext.FindAsync<GuildWelcomeMessage>(guildID.Value, ct)
             .ConfigureAwait(false);
+
+        if (welcomeMessage is null)
+            return Result<IReadOnlyList<ulong>>.FromSuccess(Array.Empty<ulong>());
 
         GuildGreetingAlternateRoleSet? roleset = welcomeMessage.AlternateRolesets
             .FirstOrDefault(rs => rs.ID == rolesetID);

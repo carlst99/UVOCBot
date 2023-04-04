@@ -10,7 +10,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core;
-using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
@@ -77,8 +76,17 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
         if (!componentData.Values.IsDefined(out IReadOnlyList<string>? selectedValues))
             return new GenericCommandError();
 
-        GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(guildID.Value, ct)
+        GuildWelcomeMessage? welcomeMessage = await _dbContext.FindAsync<GuildWelcomeMessage>(guildID.Value, ct)
             .ConfigureAwait(false);
+
+        if (welcomeMessage is null)
+        {
+            return await _feedbackService.SendContextualWarningAsync
+            (
+                "A guild administrator has removed this role menu",
+                ct: ct
+            );
+        }
 
         List<GuildGreetingAlternateRoleSet> removedRolesets = new();
         foreach (ulong rolesetID in selectedValues.Select(ulong.Parse))

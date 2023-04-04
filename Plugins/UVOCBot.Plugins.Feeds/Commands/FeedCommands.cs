@@ -63,7 +63,7 @@ public class FeedCommands : CommandGroup
     [Description("Enables or disables the feed functionality.")]
     public async Task<IResult> EnabledCommandAsync(bool isEnabled)
     {
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct: CancellationToken).ConfigureAwait(false);
 
         if (isEnabled)
         {
@@ -95,7 +95,7 @@ public class FeedCommands : CommandGroup
         if (!canPostToChannel.IsSuccess)
             return canPostToChannel;
 
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct: CancellationToken).ConfigureAwait(false);
         settings.FeedChannelID = channel.ID.Value; _dbContext.Update(settings);
 
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
@@ -116,7 +116,7 @@ public class FeedCommands : CommandGroup
                    ? ":ballot_box_with_check:"
                    : ":x:";
 
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, false, CancellationToken).ConfigureAwait(false);
         Feed[] values = Enum.GetValues<Feed>();
 
         string message = Formatter.Bold("Globally enabled: ") + GetEnabledEmoji(settings.IsEnabled);
@@ -149,7 +149,7 @@ public class FeedCommands : CommandGroup
         GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>
         (
             _context.GuildID.Value.Value,
-            CancellationToken
+            ct: CancellationToken
         ).ConfigureAwait(false);
 
         Result validChannel = await CheckValidFeedChannelAsync(settings);

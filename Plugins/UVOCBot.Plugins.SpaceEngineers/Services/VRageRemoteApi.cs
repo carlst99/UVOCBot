@@ -95,7 +95,7 @@ public class VRageRemoteApi : IVRageRemoteApi
         catch (OperationCanceledException)
         {
             // This is fine
-            return Result<RemoteResponseBase<T>?>.FromSuccess(null);
+            return new VRageTimeoutError();
         }
         catch (Exception ex)
         {

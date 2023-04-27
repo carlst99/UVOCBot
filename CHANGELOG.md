@@ -2,8 +2,17 @@
 
 ## vNext
 
+**Removed Features**
+- Removed the `apex player` command. The underlying API was unstable.
+
+**Additions**
+- NSO battle rank images are now shown in the `character` command.
+- Added integration with Space Engineers servers, to show currently online players.
+
 **Fixes**
 - A.S.P 3 characters will no longer break the `character` command.
+- Twitter feeds are no longer shown to users when disabled by the bot host.
+- NSO population will no longer present as an 'Unknown' faction.
 
 ## Release v1.6.0
 

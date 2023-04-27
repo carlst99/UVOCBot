@@ -19,7 +19,9 @@ using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Errors;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Commands;
 
@@ -28,11 +30,18 @@ public class CharacterCommands : CommandGroup
     private const string FirstMonthKey = "m01";
 
     private readonly IQueryService _queryService;
+    private readonly ICensusApiService _censusApiService;
     private readonly FeedbackService _feedbackService;
 
-    public CharacterCommands(IQueryService queryService, FeedbackService feedbackService)
+    public CharacterCommands
+    (
+        IQueryService queryService,
+        ICensusApiService censusApiService,
+        FeedbackService feedbackService
+    )
     {
         _queryService = queryService;
+        _censusApiService = censusApiService;
         _feedbackService = feedbackService;
     }
 
@@ -56,20 +65,24 @@ public class CharacterCommands : CommandGroup
             : character.TitleInfo.Name.English + " " + character.Name.First;
 
         string description = $"Of {character.WorldID}'s {character.FactionID}";
+        string? iconUrl = null;
 
-        string? iconUrl = "https://census.daybreakgames.com" + character.PrestigeLevel switch
+        Result<ExperienceRank?> getExpRank = await _censusApiService.GetExperienceRankAsync
+        (
+            (int)character.BattleRank.Value,
+            character.PrestigeLevel,
+            CancellationToken
+        );
+        if (getExpRank.IsDefined(out ExperienceRank? expRank))
         {
-            1 => "/files/ps2/images/static/88685.png",
-            2 => "/files/ps2/images/static/94469.png",
-            3 => "/files/ps2/images/static/95504.png",
-            _ when character.FactionID is FactionDefinition.NC => character.BattleRank.Icons.NCImagePath,
-            _ when character.FactionID is FactionDefinition.TR => character.BattleRank.Icons.TRImagePath,
-            _ when character.FactionID is FactionDefinition.VS => character.BattleRank.Icons.VSImagePath,
-            _ => string.Empty
-        };
-
-        if (character.FactionID is FactionDefinition.NSO && character.PrestigeLevel == 0)
-            iconUrl = null;
+            iconUrl = "https://census.daybreakgames.com" + character.FactionID switch
+            {
+                FactionDefinition.VS => expRank.VsImagePath,
+                FactionDefinition.NC => expRank.NcImagePath,
+                FactionDefinition.TR => expRank.TrImagePath,
+                FactionDefinition.NSO => expRank.NsoImagePath
+            };
+        }
 
         EmbedField battleRankField = new
         (

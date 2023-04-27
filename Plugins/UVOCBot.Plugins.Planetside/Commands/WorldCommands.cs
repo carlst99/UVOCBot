@@ -259,7 +259,8 @@ public class WorldCommands : CommandGroup
             FactionDefinition.NC => $"{Formatter.Emoji("blue_circle")} NC - {factionPopulation}",
             FactionDefinition.TR => $"{Formatter.Emoji("red_circle")} TR - {factionPopulation}",
             FactionDefinition.VS => $"{Formatter.Emoji("purple_circle")} VS - {factionPopulation}",
-            _ => "Unknown"
+            FactionDefinition.NSO => $"{Formatter.Emoji("white_circle")} NSO - {factionPopulation}",
+            _ => $"Unknown - {factionPopulation}"
         };
 
         // Can't divide by zero!
@@ -302,6 +303,7 @@ public class WorldCommands : CommandGroup
             ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
             ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
             ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
+            ZoneDefinition.Nexus => $"{Formatter.Emoji("crossed_swords")} {ZoneDefinition.Nexus}",
             ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} {ZoneDefinition.Oshur}",
             _ => zone.ToString()
         };

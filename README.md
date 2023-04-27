@@ -17,6 +17,7 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
 - Apex Legends Queries:
     - Current map rotation
     - Current crafting rotation
+- Space Engineers server integration - track online players and server status.
 - Role menus.
 - Bulk voice channel movement - never drag people one-at-a-time again!
 - Welcome messages - assign default roles, let users pick an alternate role set, and make guesses at their in-game name for easy nickname changes.

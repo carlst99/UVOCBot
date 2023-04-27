@@ -60,4 +60,7 @@ public static class CacheKeyHelpers
 
     public static object GetOutfitWarRoundWithMatchesKey(uint outfitWarID)
         => (typeof(OutfitWarRoundWithMatches), outfitWarID);
+
+    public static object GetExperienceRankKey(int rank, int prestigeLevel)
+        => (typeof(ExperienceRank), rank, prestigeLevel);
 }

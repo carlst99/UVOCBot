@@ -29,7 +29,7 @@ public static class CacheEntryHelpers
     };
 
     /// <summary>
-    /// Gets the memory cache options for the <see cref="CensusQuery.Map.MapRegion"/> class.
+    /// Gets the memory cache options for the <see cref="SanctuaryCensus.MapRegion"/> class.
     /// </summary>
     public static readonly MemoryCacheEntryOptions MapRegionOptions = new()
     {
@@ -59,7 +59,7 @@ public static class CacheEntryHelpers
     };
 
     /// <summary>
-    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// Gets the memory cache options for the <see cref="SanctuaryCensus.OutfitWarRegistration"/> object.
     /// </summary>
     public static readonly MemoryCacheEntryOptions OutfitWarRegistrationsOptions = new()
     {
@@ -69,7 +69,7 @@ public static class CacheEntryHelpers
     };
 
     /// <summary>
-    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// Gets the memory cache options for the <see cref="SanctuaryCensus.OutfitWar"/> object.
     /// </summary>
     public static readonly MemoryCacheEntryOptions OutfitWarOptions = new()
     {
@@ -79,7 +79,7 @@ public static class CacheEntryHelpers
     };
 
     /// <summary>
-    /// Gets the memory cache options for the <see cref="Abstractions.Objects.IPopulation"/> interface.
+    /// Gets the memory cache options for the <see cref="SanctuaryCensus.OutfitWarRoundWithMatches"/> object.
     /// </summary>
     public static MemoryCacheEntryOptions GetOutfitWarRoundWithMatchesOptions(OutfitWarRoundWithMatches round) =>
         new()
@@ -88,4 +88,15 @@ public static class CacheEntryHelpers
             Priority = CacheItemPriority.Normal,
             Size = 1
         };
+
+    /// <summary>
+    /// Gets the memory cache options for the <see cref="SanctuaryCensus.ExperienceRank"/> object.
+    /// </summary>
+    /// <returns></returns>
+    public static MemoryCacheEntryOptions GetExperienceRankOptions() => new()
+    {
+        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7),
+        Priority = CacheItemPriority.Low,
+        Size = 1
+    };
 }

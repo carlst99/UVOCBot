@@ -23,7 +23,7 @@ using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 namespace UVOCBot.Plugins.Planetside.Services;
 
 /// <inheritdoc cref="ICensusApiService"/>
-public class CensusApiService : ICensusApiService, IDisposable
+public sealed class CensusApiService : ICensusApiService, IDisposable
 {
     /// <summary>
     /// Gets the number of metagame events that are expected to be
@@ -34,15 +34,12 @@ public class CensusApiService : ICensusApiService, IDisposable
     /// Also, adding 2 for resiliency.
     /// Hence, 2 * VALID_CONT_COUNT + 2.
     /// </remarks>
-    protected static readonly int ExpectedMetagameEventsPerFullCycle = Enum.GetValues<ValidZoneDefinition>().Length * 2 + 2;
+    private static readonly int ExpectedMetagameEventsPerFullCycle = Enum.GetValues<ValidZoneDefinition>().Length * 2 + 2;
 
     private readonly CensusQueryOptions _sanctuaryOptions;
     private readonly SemaphoreSlim _queryLimiter;
-
-    protected readonly ILogger<CensusApiService> _logger;
-    protected readonly IQueryService _queryService;
-
-    private bool _isDisposed;
+    private readonly ILogger<CensusApiService> _logger;
+    private readonly IQueryService _queryService;
 
     public CensusApiService
     (
@@ -59,7 +56,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default)
+    public async Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default)
     {
         IQueryBuilder query = _queryService.CreateQuery()
             .OnCollection("outfit")
@@ -68,7 +65,7 @@ public class CensusApiService : ICensusApiService, IDisposable
         return await GetAsync<Outfit>(query, ct).ConfigureAwait(false);
     }
 
-    public virtual async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
+    public async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
     {
         List<ulong> outfitIDList = outfitIDs.ToList();
         if (outfitIDList.Count == 0)
@@ -82,7 +79,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
+    public async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
     {
         Result<List<Outfit>> outfitsResult = await GetOutfitsAsync(new[] { id }, ct);
         if (!outfitsResult.IsSuccess)
@@ -94,7 +91,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc/>
-    public virtual async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default)
+    public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<string> outfitTags, CancellationToken ct = default)
     {
         List<ulong> outfitIds = new();
 
@@ -127,7 +124,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default)
+    public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync(IEnumerable<ulong> outfitIds, CancellationToken ct = default)
     {
         // https://census.daybreakgames.com/get/ps2/outfit?outfit_id=37562651025751157,37570391403474619&c:show=name,outfit_id,alias&c:join=outfit_member%5Einject_at:members%5Eshow:character_id%5Eouter:1%5Elist:1(character%5Eshow:name.first%5Einject_at:character%5Eouter:0%5Eon:character_id(characters_online_status%5Einject_at:online_status%5Eshow:online_status%5Eouter:0(world%5Eon:online_status%5Eto:world_id%5Eouter:0%5Eshow:world_id%5Einject_at:ignore_this))
 
@@ -160,7 +157,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
+    public async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
         IQueryBuilder query = _queryService.CreateQuery(_sanctuaryOptions)
             .OnCollection("map_region")
@@ -170,7 +167,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<Map>>> GetMapsAsync
+    public async Task<Result<List<Map>>> GetMapsAsync
     (
         ValidWorldDefinition world,
         IEnumerable<ValidZoneDefinition> zones,
@@ -186,7 +183,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
+    public async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
     (
         ValidWorldDefinition world,
         CancellationToken ct = default
@@ -203,7 +200,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<MetagameEvent>> GetMetagameEventAsync
+    public async Task<Result<MetagameEvent>> GetMetagameEventAsync
     (
         ValidWorldDefinition world,
         ValidZoneDefinition zone,
@@ -224,7 +221,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync
+    public async Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync
     (
         IEnumerable<ulong> characterIDs,
         CancellationToken ct = default
@@ -243,7 +240,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    public async Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
     (
         uint outfitWarID,
         CancellationToken ct = default
@@ -257,7 +254,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<OutfitWar?>> GetCurrentOutfitWar
+    public async Task<Result<OutfitWar?>> GetCurrentOutfitWar
     (
         ValidWorldDefinition world,
         CancellationToken ct = default
@@ -272,7 +269,7 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
+    public async Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
     (
         uint outfitWarID,
         CancellationToken ct = default
@@ -293,13 +290,32 @@ public class CensusApiService : ICensusApiService, IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose()
+    public async Task<Result<ExperienceRank?>> GetExperienceRankAsync
+    (
+        int rank,
+        int prestigeLevel,
+        CancellationToken ct = default
+    )
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        IQueryBuilder query = _queryService.CreateQuery(_sanctuaryOptions)
+            .OnCollection("experience_rank")
+            .Where("rank", SearchModifier.Equals, rank)
+            .Where("prestige_level", SearchModifier.Equals, prestigeLevel)
+            .WithLimit(1);
+
+        return await GetAsync<ExperienceRank>(query, ct);
     }
 
-    protected async Task<Result<T?>> GetAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
+    /// <inheritdoc />
+    public void Dispose()
+        => _queryLimiter.Dispose();
+
+    private async Task<Result<T?>> GetAsync<T>
+    (
+        IQueryBuilder query,
+        CancellationToken ct,
+        [CallerMemberName] string? callerName = null
+    )
     {
         bool enteredSemaphore = false;
 
@@ -328,7 +344,12 @@ public class CensusApiService : ICensusApiService, IDisposable
         }
     }
 
-    protected async Task<Result<List<T>>> GetListAsync<T>(IQueryBuilder query, CancellationToken ct = default, [CallerMemberName] string? callerName = null)
+    private async Task<Result<List<T>>> GetListAsync<T>
+    (
+        IQueryBuilder query,
+        CancellationToken ct,
+        [CallerMemberName] string? callerName = null
+    )
     {
         Result<List<T>?> result = await GetAsync<List<T>>(query, ct, callerName);
         if (!result.IsSuccess)
@@ -337,20 +358,5 @@ public class CensusApiService : ICensusApiService, IDisposable
         return result.Entity is null
             ? new CensusException($"Census returned no data for query {callerName}.")
             : result.Entity;
-    }
-
-    /// <summary>
-    /// Disposes of managed and unmanaged resources.
-    /// </summary>
-    /// <param name="disposeManaged">A value indicating whether or not to dispose of managed resources.</param>
-    protected virtual void Dispose(bool disposeManaged)
-    {
-        if (_isDisposed)
-            return;
-
-        if (disposeManaged)
-            _queryLimiter.Dispose();
-
-        _isDisposed = true;
     }
 }

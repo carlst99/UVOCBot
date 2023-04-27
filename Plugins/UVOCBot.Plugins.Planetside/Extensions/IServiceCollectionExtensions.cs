@@ -3,8 +3,10 @@ using DbgCensus.EventStream.EventHandlers.Extensions;
 using DbgCensus.Rest;
 using DbgCensus.Rest.Extensions;
 using DbgCensus.Rest.Objects;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Remora.Commands.Extensions;
 using Remora.Discord.Commands.Extensions;
 using UVOCBot.Plugins.Planetside;
@@ -36,7 +38,13 @@ public static class IServiceCollectionExtensions
         services.AddSingleton<IPopulationService, SanctuaryPopulationService>();
 
         services.AddCensusRestServices();
-        services.AddSingleton<ICensusApiService, CachingCensusApiService>();
+        services.AddSingleton<CensusApiService>();
+        services.AddSingleton<ICensusApiService, CachingCensusApiService>(s => new CachingCensusApiService
+        (
+            s.GetRequiredService<ILogger<CachingCensusApiService>>(),
+            s.GetRequiredService<CensusApiService>(),
+            s.GetRequiredService<IMemoryCache>()
+        ));
         services.AddSingleton<IFacilityCaptureService, FacilityCaptureService>();
 
         services.AddCensusEventHandlingServices();

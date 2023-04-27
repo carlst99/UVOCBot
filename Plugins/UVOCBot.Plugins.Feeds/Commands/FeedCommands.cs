@@ -1,4 +1,5 @@
-﻿using Remora.Commands.Attributes;
+﻿using Microsoft.Extensions.Options;
+using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
@@ -14,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
 using UVOCBot.Core.Extensions;
@@ -42,6 +44,7 @@ public class FeedCommands : CommandGroup
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
+    private readonly FeedsPluginOptions _options;
 
     public FeedCommands
     (
@@ -49,7 +52,8 @@ public class FeedCommands : CommandGroup
         IDiscordRestGuildAPI guildApi,
         IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
-        FeedbackService feedbackService
+        FeedbackService feedbackService,
+        IOptions<FeedsPluginOptions> options
     )
     {
         _context = context.Interaction;
@@ -57,6 +61,7 @@ public class FeedCommands : CommandGroup
         _permissionChecksService = permissionChecksService;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
+        _options = options.Value;
     }
 
     [Command("global-toggle")]
@@ -116,23 +121,41 @@ public class FeedCommands : CommandGroup
                    ? ":ballot_box_with_check:"
                    : ":x:";
 
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, false, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>
+            (
+                _context.GuildID.Value.Value,
+                false,
+                CancellationToken
+            ).ConfigureAwait(false);
         Feed[] values = Enum.GetValues<Feed>();
 
-        string message = Formatter.Bold("Globally enabled: ") + GetEnabledEmoji(settings.IsEnabled);
+        StringBuilder messageBuilder = new();
+        messageBuilder.Append(Formatter.Bold("Globally enabled: "))
+            .AppendLine(GetEnabledEmoji(settings.IsEnabled))
+            .Append(Formatter.Bold("Feed channel: "))
+            .AppendLine
+            (
+                settings.FeedChannelID.HasValue
+                    ? Formatter.ChannelMention(settings.FeedChannelID.Value)
+                    : "not set"
+            )
+            .AppendLine()
+            .AppendLine(Formatter.Bold("Feeds:"));
 
-        message += "\n\n" + Formatter.Bold("Feed channel: ") + (settings.FeedChannelID.HasValue ? Formatter.ChannelMention(settings.FeedChannelID.Value) : "not set");
-
-        message += "\n\n" + Formatter.Bold("Feeds:");
         foreach (Feed f in values)
         {
-            string emoji = GetEnabledEmoji(((Feed)settings.Feeds & f) != 0);
-            message += $"\n- {FeedDescriptions.Get[f]} {emoji}";
+            if (!_options.EnableTwitterFeed && IsTwitterFeed(f))
+                continue;
+
+            messageBuilder.Append("- ")
+                .Append(FeedDescriptions.Get[f])
+                .Append(' ')
+                .AppendLine(GetEnabledEmoji(((Feed)settings.Feeds & f) != 0));
         }
 
         return await _feedbackService.SendContextualInfoAsync
         (
-            message,
+            messageBuilder.ToString(),
             ct: CancellationToken
         );
     }
@@ -157,7 +180,9 @@ public class FeedCommands : CommandGroup
             return validChannel;
 
         Feed[] feedValues = Enum.GetValues<Feed>();
-        List<SelectOption> selectOptions = feedValues.Select
+        List<SelectOption> selectOptions = feedValues
+            .Where(f => !(!_options.EnableTwitterFeed && IsTwitterFeed(f)))
+            .Select
             (
                 f => new SelectOption
                 (
@@ -173,7 +198,7 @@ public class FeedCommands : CommandGroup
             FeedComponentKeys.ToggleFeed,
             selectOptions,
             MinValues: 0,
-            MaxValues: feedValues.Length
+            MaxValues: selectOptions.Count
         );
 
         return await _feedbackService.SendContextualInfoAsync
@@ -288,4 +313,7 @@ public class FeedCommands : CommandGroup
         imgLink = html.Substring(attrStartIndex, attrEndIndex - attrStartIndex);
         return true;
     }
+
+    private static bool IsTwitterFeed(Feed feed)
+        => feed is Feed.TwitterPlanetside or Feed.TwitterWrel or Feed.TwitterRPG;
 }

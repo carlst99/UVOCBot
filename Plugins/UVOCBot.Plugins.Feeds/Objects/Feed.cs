@@ -21,7 +21,7 @@ public enum Feed : ulong
 
 public static class FeedDescriptions
 {
-    public static IReadOnlyDictionary<Feed, string> Get => new Dictionary<Feed, string>
+    public static IReadOnlyDictionary<Feed, string> Get { get; } = new Dictionary<Feed, string>
     {
         { Feed.ForumAnnouncement, "📢 Forum Announcements" },
         { Feed.ForumPatchNotes, "🩹 Forum Patch Notes" },

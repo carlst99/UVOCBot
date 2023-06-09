@@ -11,4 +11,8 @@ public record WorldPopulation
     DateTimeOffset Timestamp,
     int Total,
     Dictionary<FactionDefinition, int> Population
-) : IPopulation;
+) : IPopulation
+{
+    /// <inheritdoc />
+    public string SourceName => "Sanctuary.Census";
+}

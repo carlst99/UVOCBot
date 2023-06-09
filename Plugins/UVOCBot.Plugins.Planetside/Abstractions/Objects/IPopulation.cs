@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using System;
 using System.Collections.Generic;
 
 namespace UVOCBot.Plugins.Planetside.Abstractions.Objects;
@@ -22,4 +23,14 @@ public interface IPopulation
     /// Gets the total player count.
     /// </summary>
     int Total { get; }
+
+    /// <summary>
+    /// Gets the time that the population counts were last updated.
+    /// </summary>
+    DateTimeOffset Timestamp { get; }
+
+    /// <summary>
+    /// Gets the name of the source of the population counts.
+    /// </summary>
+    string SourceName { get; }
 }

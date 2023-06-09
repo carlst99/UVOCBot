@@ -8,6 +8,7 @@
 **Additions**
 - NSO battle rank images are now shown in the `character` command.
 - Added integration with Space Engineers servers, to show currently online players.
+- Exposed the source and timestamp of population data.
 
 **Fixes**
 - A.S.P 3 characters will no longer break the `character` command.

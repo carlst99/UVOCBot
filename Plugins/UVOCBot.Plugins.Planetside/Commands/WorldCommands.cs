@@ -99,19 +99,21 @@ public class WorldCommands : CommandGroup
         if (!statusFields.IsSuccess)
             return statusFields;
 
-        Result<(List<EmbedField> Fields, int TotalPop)> populationFields = await GetPopulationEmbedFields(server);
-        if (!populationFields.IsSuccess)
-            return populationFields;
+        Result<PopulationDisplayBundle> getPopDisplayInfo = await GetPopulationEmbedFields(server);
+        if (!getPopDisplayInfo.IsDefined(out PopulationDisplayBundle popDisplayInfo))
+            return getPopDisplayInfo;
 
-        List<EmbedField> fields = new(populationFields.Entity.Fields);
+        List<EmbedField> fields = new(popDisplayInfo.EmbedFields);
         fields.Add(new EmbedField("Unlocked Continents", Formatter.Bold(" ")));
         fields.AddRange(statusFields.Entity);
 
         Embed embed = new()
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Title = $"{server} - {populationFields.Entity.TotalPop}",
-            Fields = fields
+            Title = $"{server} - {popDisplayInfo.TotalPop}",
+            Fields = fields,
+            Footer = new EmbedFooter($"Source: {popDisplayInfo.Source} | Last updated"),
+            Timestamp = popDisplayInfo.Timestamp
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
@@ -232,7 +234,7 @@ public class WorldCommands : CommandGroup
         return new EmbedField(title, popBarBuilder.ToString());
     }
 
-    private async Task<Result<(List<EmbedField> EmbedFields, int TotalPop)>> GetPopulationEmbedFields(ValidWorldDefinition world)
+    private async Task<Result<PopulationDisplayBundle>> GetPopulationEmbedFields(ValidWorldDefinition world)
     {
         // We don't return this result if it fails, as the CensusStateWorker will be reporting any retrieval errors
         Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, ct: CancellationToken);
@@ -246,7 +248,13 @@ public class WorldCommands : CommandGroup
                 fields.Add(GetPopulationEmbedField(popValue, population.Total, faction));
         }
 
-        return (fields, population.Total);
+        return new PopulationDisplayBundle
+        (
+            fields,
+            population.Total,
+            population.Timestamp,
+            population.SourceName
+        );
     }
 
     private static EmbedField GetPopulationEmbedField(int factionPopulation, int totalPopulation, FactionDefinition faction)
@@ -307,4 +315,12 @@ public class WorldCommands : CommandGroup
             ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} {ZoneDefinition.Oshur}",
             _ => zone.ToString()
         };
+
+    private readonly record struct PopulationDisplayBundle
+    (
+        List<EmbedField> EmbedFields,
+        int TotalPop,
+        DateTimeOffset Timestamp,
+        string Source
+    );
 }

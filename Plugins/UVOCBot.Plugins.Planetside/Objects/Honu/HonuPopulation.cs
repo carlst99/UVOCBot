@@ -1,5 +1,7 @@
 ﻿using DbgCensus.Core.Objects;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json.Serialization;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
@@ -24,7 +26,10 @@ public record HonuPopulation
     [property: JsonPropertyName("ns_vs")]
     int NSVS,
     int TR,
-    int VS
+    int VS,
+
+    [property: JsonPropertyName("timestamp")]
+    string HonuTimestamp
 ) : IPopulation
 {
     private Dictionary<FactionDefinition, int>? _population;
@@ -39,5 +44,13 @@ public record HonuPopulation
             { FactionDefinition.NSO, NS }
         };
 
+    /// <inheritdoc />
     public int Total => Population.Values.Sum();
+
+    /// <inheritdoc />
+    [JsonIgnore]
+    public DateTimeOffset Timestamp => DateTimeOffset.Parse(HonuTimestamp, null, DateTimeStyles.AssumeUniversal);
+
+    /// <inheritdoc />
+    public string SourceName => "Honu";
 }

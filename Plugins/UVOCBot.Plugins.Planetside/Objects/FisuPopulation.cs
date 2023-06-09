@@ -1,4 +1,5 @@
 ﻿using DbgCensus.Core.Objects;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
@@ -18,7 +19,8 @@ public record FisuPopulation
         short NC,
         short NS,
         short TR,
-        short VS
+        short VS,
+        long Timestamp
     );
 
     private Dictionary<FactionDefinition, int>? _population;
@@ -38,4 +40,10 @@ public record FisuPopulation
 
     /// <inheritdoc />
     public int Total => Population.Values.Sum();
+
+    /// <inheritdoc />
+    public DateTimeOffset Timestamp => DateTimeOffset.FromUnixTimeSeconds(Result[0].Timestamp);
+
+    /// <inheritdoc />
+    public string SourceName => "Fisu";
 }

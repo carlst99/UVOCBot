@@ -7,6 +7,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,6 @@ using UVOCBot.Core;
 using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
-using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
@@ -143,10 +143,54 @@ public class WorldCommands : CommandGroup
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Title = server.ToString(),
+            Description = "Bar dictates facility ownership.",
             Fields = embedFields.Entity
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
+    }
+
+    [Command("pop-all")]
+    [Description("Gets the population of every server.")]
+    public async Task<Result> GetAllPopulationsAsync()
+    {
+        List<EmbedField> fields = new();
+
+        foreach (ValidWorldDefinition world in Enum.GetValues<ValidWorldDefinition>())
+        {
+            Result<IPopulation> getPop = await _populationApi.GetWorldPopulationAsync(world, ct: CancellationToken);
+            if (!getPop.IsDefined(out IPopulation? pop))
+                continue;
+
+            StringBuilder sb = new();
+            foreach ((FactionDefinition faction, int pVal) in pop.Population)
+            {
+                string emoji = faction switch
+                {
+                    FactionDefinition.NC => "blue_circle",
+                    FactionDefinition.TR => "red_circle",
+                    FactionDefinition.VS => "purple_circle",
+                    FactionDefinition.NSO => "white_circle",
+                    _ => "black_circle"
+                };
+                sb.Append(' ').Append(Formatter.Emoji(emoji)).Append(' ').Append(pVal).Append("");
+            }
+
+            fields.Add(new EmbedField
+            (
+                $"{world} - {pop.Total} ({(DateTimeOffset.UtcNow - pop.Timestamp).TotalMinutes:F1}min ago)",
+                sb.ToString()
+            ));
+        }
+
+        Embed embed = new
+        (
+            "All Server Populations",
+            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
+            Fields: fields
+        );
+
+        return (Result)await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
     }
 
     private async Task<Result<ValidWorldDefinition>> CheckForDefaultServer()
@@ -202,14 +246,6 @@ public class WorldCommands : CommandGroup
 
     private EmbedField GetMapStatusEmbedField(Map map, ValidWorldDefinition world)
     {
-        static void ConstructPopBar(double percent, string emojiName, StringBuilder sb)
-        {
-            string name = Formatter.Emoji(emojiName);
-
-            for (int i = 0; i < Math.Round(percent / 10); i++)
-                sb.Append(name);
-        }
-
         (double ncPercent, double trPercent, double vsPercent) = GetMapTerritoryControl(map, out bool isLocked);
         string title = GetZoneName(map.ZoneID.Definition);
 
@@ -218,7 +254,7 @@ public class WorldCommands : CommandGroup
         {
             TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
             TimeSpan remainingTime = metagameEvent.MetagameEventID.GetAlertDuration() - currentEventDuration;
-            title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
+            title += $@" {Formatter.Emoji("rotating_light")} {remainingTime:%h\h\ %m\m}";
         }
         else if (isLocked)
         {
@@ -232,6 +268,14 @@ public class WorldCommands : CommandGroup
         ConstructPopBar(vsPercent, "purple_square", popBarBuilder);
 
         return new EmbedField(title, popBarBuilder.ToString());
+    }
+
+    private static void ConstructPopBar(double percent, string emojiName, StringBuilder sb)
+    {
+        string name = Formatter.Emoji(emojiName);
+
+        for (int i = 0; i < Math.Round(percent / 10); i++)
+            sb.Append(name);
     }
 
     private async Task<Result<PopulationDisplayBundle>> GetPopulationEmbedFields(ValidWorldDefinition world)

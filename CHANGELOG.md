@@ -6,6 +6,7 @@
 - Removed the `apex player` command. The underlying API was unstable.
 
 **Additions**
+- Added the `pop-all` command, to get the population of all servers.
 - NSO battle rank images are now shown in the `character` command.
 - Added integration with Space Engineers servers, to show currently online players.
 - Exposed the source and timestamp of population data.

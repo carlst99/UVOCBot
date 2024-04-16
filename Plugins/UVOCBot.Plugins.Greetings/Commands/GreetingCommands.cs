@@ -320,7 +320,7 @@ public class GreetingCommands : CommandGroup
 
         Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync
         (
-            _context.ChannelID.Value,
+            _context.Channel.Value.ID.Value,
             (Snowflake)messageId,
             CancellationToken
         ).ConfigureAwait(false);

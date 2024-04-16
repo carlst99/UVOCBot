@@ -65,10 +65,12 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
         if (!member.Permissions.IsDefined(out IDiscordPermissionSet? memberPerms))
             return new GenericCommandError();
 
+        Snowflake channelId = _context.Channel.Value.ID.Value;
+
         if (!memberPerms.HasPermission(DiscordPermission.ManageGuild))
-            return new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID.Value);
+            return new PermissionError(DiscordPermission.ManageGuild, user.ID, channelId);
         if (!memberPerms.HasPermission(DiscordPermission.ManageRoles))
-            return new PermissionError(DiscordPermission.ManageRoles, user.ID, _context.ChannelID.Value);
+            return new PermissionError(DiscordPermission.ManageRoles, user.ID, channelId);
 
         if (!_context.Data.Value.TryPickT1(out IMessageComponentData componentData, out _))
             return new GenericCommandError();
@@ -106,7 +108,7 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
 
         await _channelApi.DeleteMessageAsync
         (
-            _context.ChannelID.Value,
+            channelId,
             _context.Message.Value.ID,
             ct: ct
         ).ConfigureAwait(false);

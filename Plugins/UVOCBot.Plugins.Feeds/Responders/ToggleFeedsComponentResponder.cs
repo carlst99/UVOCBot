@@ -58,12 +58,12 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
             return Result.FromSuccess();
 
         Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService
-            .GetPermissionsInChannel(_context.ChannelID.Value, user.ID, ct);
+            .GetPermissionsInChannel(_context.Channel.Value.ID.Value, user.ID, ct);
         if (!permissionsResult.IsDefined(out IDiscordPermissionSet? permissions))
             return permissionsResult;
 
         if (!permissions.HasAdminOrPermission(DiscordPermission.ManageGuild))
-            return Result.FromError(new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID.Value));
+            return Result.FromError(new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.Channel.Value.ID.Value));
 
         GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct: ct).ConfigureAwait(false);
         Feed selectedFeeds = 0;

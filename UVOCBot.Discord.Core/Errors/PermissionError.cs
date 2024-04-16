@@ -68,9 +68,10 @@ public record PermissionError
 
         string message = $"{ userMention } have the required permission/s ({permissionMention})";
 
+        Snowflake? channelId = context.Channel.OrDefault()?.ID.OrDefault();
         if (ChannelID is not null)
         {
-            string channelMention = ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(ChannelID.Value);
+            string channelMention = ChannelID == channelId ? "this channel" : Formatter.ChannelMention(ChannelID.Value);
             message += $" in {channelMention}";
         }
 

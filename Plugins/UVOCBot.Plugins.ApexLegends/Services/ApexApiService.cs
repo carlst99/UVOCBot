@@ -49,21 +49,6 @@ public class ApexApiService : IApexApiService
         }
     }
 
-    public virtual async Task<Result<List<CraftingBundle>>> GetCraftingBundlesAsync(CancellationToken ct = default)
-    {
-        try
-        {
-            HttpResponseMessage result = await _client.GetAsync("crafting", ct)
-                .ConfigureAwait(false);
-
-            return await ParseApiResult<List<CraftingBundle>>(result, ct).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            return new ExceptionError(ex);
-        }
-    }
-
     private async Task<Result<T>> ParseApiResult<T>(HttpResponseMessage response, CancellationToken ct)
     {
         response.EnsureSuccessStatusCode();

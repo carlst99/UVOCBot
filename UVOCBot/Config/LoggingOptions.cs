@@ -2,6 +2,8 @@
 
 public record LoggingOptions
 {
+    public const string CONFIG_NAME = "LoggingOptions";
+
     /// <summary>
     /// An optional endpoint at which to ingest logs to a Seq instance.
     /// </summary>

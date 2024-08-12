@@ -106,60 +106,56 @@ public class Program
         }
     }
 
-    public static IHostBuilder CreateHostBuilder(string[] args)
+    public static HostApplicationBuilder CreateHostBuilder(string[] args)
     {
-        return Host.CreateDefaultBuilder(args)
-            .UseSystemd()
-            .UseDefaultServiceProvider(s => s.ValidateScopes = true)
-            .ConfigureServices((c, _) =>
-            {
-                string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
-                string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
-                SetupLogging(seqIngestionEndpoint, seqApiKey);
-            })
-            .UseSerilog()
-            #if DEBUG // Used for EF core migrations
-            .ConfigureAppConfiguration((c, builder) =>
-            {
-                builder.AddConfiguration(c.Configuration)
-                    .AddUserSecrets<Program>();
-            })
-            #endif
-            .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-            .ConfigureServices((c, services) =>
-            {
-                // Setup configuration bindings
-                IConfigurationSection dbConfigSection = c.Configuration.GetSection(DatabaseOptions.ConfigSectionName);
-                DatabaseOptions dbOptions = new();
-                dbConfigSection.Bind(dbOptions);
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+        builder.Services.AddSystemd();
 
-                services.Configure<DatabaseOptions>(dbConfigSection)
-                        .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
+        LoggingOptions? logOptions = builder.Configuration.GetSection(LoggingOptions.CONFIG_NAME)
+            .Get<LoggingOptions>();
+        SetupLogging(logOptions?.SeqIngestionEndpoint, logOptions?.SeqApiKey);
+        builder.Services.AddSerilog();
 
-                // Set up the database
-                void DbOptionsBuilder(DbContextOptionsBuilder options)
-                {
-                    options.UseNpgsql(dbOptions.ConnectionString, b => b.MigrationsAssembly("UVOCBot"))
-                        .EnableSensitiveDataLogging(c.HostingEnvironment.IsDevelopment())
-                        .EnableDetailedErrors(c.HostingEnvironment.IsDevelopment());
-                }
+            // #if DEBUG // Used for EF core migrations
+            // .ConfigureAppConfiguration((c, builder) =>
+            // {
+            //     builder.AddConfiguration(c.Configuration)
+            //         .AddUserSecrets<Program>();
+            // })
+            // #endif
 
-                services.AddDbContext<DiscordContext>(DbOptionsBuilder, optionsLifetime: ServiceLifetime.Singleton)
-                    .AddDbContextFactory<DiscordContext>(DbOptionsBuilder);
+        // Setup configuration bindings
+        DatabaseOptions dbOptions = builder.Configuration.GetRequiredSection(DatabaseOptions.CONFIG_NAME)
+            .Get<DatabaseOptions>()!;
 
-                // Add Discord-related services
-                AddRemoraServices(services)
-                    .AddCoreDiscordServices()
-                    .AddScoped<IAdminLogService, AdminLogService>();
+        builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.CONFIG_NAME))
+                .Configure<GeneralOptions>(builder.Configuration.GetSection(nameof(GeneralOptions)));
 
-                // Plugin registration
-                services.AddApexLegendsPlugin(c.Configuration)
-                        .AddFeedsPlugin(c.Configuration)
-                        .AddGreetingsPlugin()
-                        .AddPlanetsidePlugin(c.Configuration)
-                        .AddRolesPlugin()
-                        .AddSpaceEngineersPlugin();
-            });
+        // Set up the database
+        void DbOptionsBuilder(DbContextOptionsBuilder options)
+        {
+            options.UseNpgsql(dbOptions.ConnectionString, b => b.MigrationsAssembly("UVOCBot"))
+                .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
+                .EnableDetailedErrors(builder.Environment.IsDevelopment());
+        }
+
+        builder.Services.AddDbContext<DiscordContext>(DbOptionsBuilder, optionsLifetime: ServiceLifetime.Singleton)
+            .AddDbContextFactory<DiscordContext>(DbOptionsBuilder);
+
+        // Add Discord-related services
+        AddRemoraServices(builder.Services)
+            .AddCoreDiscordServices()
+            .AddScoped<IAdminLogService, AdminLogService>();
+
+        // Plugin registration
+        builder.Services.AddApexLegendsPlugin(builder.Configuration)
+                .AddFeedsPlugin(builder.Configuration)
+                .AddGreetingsPlugin()
+                .AddPlanetsidePlugin(builder.Configuration)
+                .AddRolesPlugin()
+                .AddSpaceEngineersPlugin();
+
+        return builder;
     }
 
     /// <summary>
@@ -209,6 +205,8 @@ public class Program
 
     private static IServiceCollection AddRemoraServices(IServiceCollection services)
     {
+        services.AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken);
+
         services.Configure<DiscordGatewayClientOptions>
         (
             o =>

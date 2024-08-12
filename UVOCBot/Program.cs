@@ -86,6 +86,10 @@ public class Program
             }
 #endif
 
+            using IServiceScope scope = host.Services.CreateScope();
+            await using DiscordContext dbContext = scope.ServiceProvider.GetRequiredService<DiscordContext>();
+            await dbContext.Database.MigrateAsync();
+
             await host.RunAsync();
         }
         catch (Exception ex)

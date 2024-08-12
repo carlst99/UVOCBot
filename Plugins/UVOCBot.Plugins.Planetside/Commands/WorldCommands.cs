@@ -74,9 +74,11 @@ public class WorldCommands : CommandGroup
         _dbContext.Update(settings);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-        return await _feedbackService.SendContextualNeutralAsync(
+        return await _feedbackService.SendContextualNeutralAsync
+        (
             $"{Formatter.Emoji("earth_asia")} Your default server has been set to {Formatter.InlineQuote(server.ToString())}",
-            ct: CancellationToken).ConfigureAwait(false);
+            ct: CancellationToken
+        );
     }
 
     [Command("population")]
@@ -103,9 +105,12 @@ public class WorldCommands : CommandGroup
         if (!getPopDisplayInfo.IsDefined(out PopulationDisplayBundle popDisplayInfo))
             return getPopDisplayInfo;
 
-        List<EmbedField> fields = new(popDisplayInfo.EmbedFields);
-        fields.Add(new EmbedField("Unlocked Continents", Formatter.Bold(" ")));
-        fields.AddRange(statusFields.Entity);
+        EmbedField[] fields =
+        [
+            ..popDisplayInfo.EmbedFields,
+            new EmbedField("Unlocked Continents", Formatter.Bold(" ")),
+            ..statusFields.Entity
+        ];
 
         Embed embed = new()
         {
@@ -223,7 +228,7 @@ public class WorldCommands : CommandGroup
         if (!getMapsResult.IsDefined())
             return Result<List<EmbedField>>.FromError(getMapsResult);
 
-        List<EmbedField> embedFields = new();
+        List<EmbedField> embedFields = [];
         getMapsResult.Entity.Sort
         (
             (m1, m2) => string.CompareOrdinal(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString())
@@ -285,7 +290,7 @@ public class WorldCommands : CommandGroup
         if (!populationResult.IsDefined(out IPopulation? population))
             return new GenericCommandError("Failed to get population data! This could mean that Honu is down.");
 
-        List<EmbedField> fields = new();
+        List<EmbedField> fields = [];
         foreach ((FactionDefinition faction, int popValue) in population.Population)
         {
             if (popValue > 0)

@@ -132,15 +132,10 @@ public class Program
                 services.Configure<DatabaseOptions>(dbConfigSection)
                         .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
 
-                // Setup the database
+                // Set up the database
                 void DbOptionsBuilder(DbContextOptionsBuilder options)
                 {
-                    options.UseMySql
-                        (
-                            dbOptions.ConnectionString,
-                            new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion)),
-                            b => b.MigrationsAssembly("UVOCBot")
-                        )
+                    options.UseNpgsql(dbOptions.ConnectionString, b => b.MigrationsAssembly("UVOCBot"))
                         .EnableSensitiveDataLogging(c.HostingEnvironment.IsDevelopment())
                         .EnableDetailedErrors(c.HostingEnvironment.IsDevelopment());
                 }

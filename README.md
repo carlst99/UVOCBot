@@ -45,8 +45,8 @@ Before continuing, you should note that UVOCBot is designed with a Linux host in
 
 # Building and Developing
 
-1. Install the [.NET 7 SDK](https://dotnet.microsoft.com/download/dotnet/7.0).
-2. Install [MariaDB](https://mariadb.org/) and create a database. The name is up to you.
+1. Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
+2. Install [PostgreSQL](https://www.postgresql.org) and create a database. The name is up to you.
 3. Modify the requisite `appsettings.json` files to include your API keys and database connection string
 4. Update the database to the latest migration. If you are using the .NET Core CLI, run the command:
     ```sh
@@ -73,7 +73,7 @@ UVOCBot is built on these amazing libraries:
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
 - [FuzzySharp](https://github.com/JakeBayer/FuzzySharp)
 - [ImageSharp](https://github.com/SixLabors/ImageSharp)
-- [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)
+- [Npgsql](https://www.npgsql.org)
 - [Remora.Discord](https://github.com/Remora/Remora.Discord)
 - [Serilog](https://github.com/serilog/serilog)
 - [Tweetinvi](https://github.com/linvi/tweetinvi)

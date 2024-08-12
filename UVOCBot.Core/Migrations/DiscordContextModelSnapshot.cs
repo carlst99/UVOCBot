@@ -2,8 +2,8 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using UVOCBot.Core;
 
 #nullable disable
@@ -11,31 +11,31 @@ using UVOCBot.Core;
 namespace UVOCBot.Core.Migrations
 {
     [DbContext(typeof(DiscordContext))]
-    [Migration("20230404005521_AddSEStatusMessageChannelId")]
-    partial class AddSEStatusMessageChannelId
+    partial class DiscordContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.2")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("ProductVersion", "8.0.7")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildAdminSettings", b =>
                 {
-                    b.Property<ulong>("GuildId")
+                    b.Property<decimal>("GuildId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<bool>("IsLoggingEnabled")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
-                    b.Property<ulong>("LogTypes")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("LogTypes")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("LoggingChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("LoggingChannelId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("GuildId");
 
@@ -44,18 +44,18 @@ namespace UVOCBot.Core.Migrations
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildFeedsSettings", b =>
                 {
-                    b.Property<ulong>("GuildId")
+                    b.Property<decimal>("GuildId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("FeedChannelID")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("FeedChannelID")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("Feeds")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("Feeds")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.HasKey("GuildId");
 
@@ -64,29 +64,29 @@ namespace UVOCBot.Core.Migrations
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildRoleMenu", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<decimal>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("AuthorId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("AuthorId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
-                    b.Property<ulong>("GuildId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong>("MessageId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("MessageId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -97,25 +97,25 @@ namespace UVOCBot.Core.Migrations
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildRoleMenuRole", b =>
                 {
-                    b.Property<ulong>("Id")
+                    b.Property<decimal>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("Emoji")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
-                    b.Property<ulong?>("GuildRoleMenuId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("GuildRoleMenuId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("Label")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
-                    b.Property<ulong>("RoleId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("RoleId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
@@ -128,33 +128,33 @@ namespace UVOCBot.Core.Migrations
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildWelcomeMessage", b =>
                 {
-                    b.Property<ulong>("GuildId")
+                    b.Property<decimal>("GuildId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("AlternateRolesets")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
-                    b.Property<ulong>("ChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("ChannelId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<byte[]>("DefaultRoles")
                         .IsRequired()
-                        .HasColumnType("longblob");
+                        .HasColumnType("bytea");
 
                     b.Property<bool>("DoIngameNameGuess")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsEnabled")
-                        .HasColumnType("tinyint(1)");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Message")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
-                    b.Property<ulong>("OutfitId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal>("OutfitId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("GuildId");
 
@@ -163,19 +163,19 @@ namespace UVOCBot.Core.Migrations
 
             modelBuilder.Entity("UVOCBot.Core.Model.PlanetsideSettings", b =>
                 {
-                    b.Property<ulong>("GuildId")
+                    b.Property<decimal>("GuildId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("BaseCaptureChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("BaseCaptureChannelId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<int?>("DefaultWorld")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<byte[]>("TrackedOutfits")
                         .IsRequired()
-                        .HasColumnType("longblob");
+                        .HasColumnType("bytea");
 
                     b.HasKey("GuildId");
 
@@ -184,24 +184,24 @@ namespace UVOCBot.Core.Migrations
 
             modelBuilder.Entity("UVOCBot.Core.Model.SpaceEngineersData", b =>
                 {
-                    b.Property<ulong>("GuildId")
+                    b.Property<decimal>("GuildId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint unsigned");
+                        .HasColumnType("numeric(20,0)");
 
                     b.Property<string>("ServerAddress")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("ServerKey")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<int?>("ServerPort")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    b.Property<ulong?>("StatusMessageChannelId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("StatusMessageChannelId")
+                        .HasColumnType("numeric(20,0)");
 
-                    b.Property<ulong?>("StatusMessageId")
-                        .HasColumnType("bigint unsigned");
+                    b.Property<decimal?>("StatusMessageId")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("GuildId");
 

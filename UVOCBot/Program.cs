@@ -134,7 +134,7 @@ public class Program
         // Set up the database
         void DbOptionsBuilder(DbContextOptionsBuilder options)
         {
-            options.UseNpgsql(dbOptions.ConnectionString, b => b.MigrationsAssembly("UVOCBot"))
+            options.UseNpgsql(dbOptions.ConnectionString, b => b.MigrationsAssembly("UVOCBot.Core"))
                 .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
                 .EnableDetailedErrors(builder.Environment.IsDevelopment());
         }

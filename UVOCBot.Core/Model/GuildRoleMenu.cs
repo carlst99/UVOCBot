@@ -8,7 +8,7 @@ namespace UVOCBot.Core.Model;
 public class GuildRoleMenu : IGuildObject
 {
     [Key]
-    public ulong Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the guild that this role menu belongs to.

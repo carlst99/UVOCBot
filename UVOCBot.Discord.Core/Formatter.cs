@@ -1,6 +1,10 @@
-﻿using Remora.Discord.API.Abstractions.Objects;
+﻿using Remora.Discord.API;
+using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Objects;
 using Remora.Rest.Core;
+using Remora.Results;
 using System;
+using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Discord.Core;
 
@@ -37,6 +41,31 @@ public static class Formatter
 
     public static string Timestamp(DateTime dateTime, TimestampStyle style)
         => Timestamp(new DateTimeOffset(dateTime).ToUnixTimeSeconds(), style);
+
+    public static Result<IEmoji> EmojiFromString(string value)
+    {
+        // Sometimes Discord will escape emojis
+        value = value.Trim('<', '>');
+        if (value.Length < 3) // At least two colons and a name/id
+            return new GenericCommandError("Emoji string was too short");
+
+        bool isAnimated = value[0] is 'a';
+        value = value.Trim('a');
+
+        string[] parts = value.Split(':', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length is 0)
+            return new GenericCommandError("Emoji string format was invalid");
+
+        Snowflake? id = null;
+        if (parts.Length > 1)
+        {
+            if (!ulong.TryParse(parts[1], out ulong emoId))
+                return new GenericCommandError("Emoji ID could not be parsed");
+            id = DiscordSnowflake.New(emoId);
+        }
+
+        return new Emoji(id, parts[0], IsAnimated: isAnimated);
+    }
 
     private static char TimestampStyleToCode(TimestampStyle style)
         => style switch

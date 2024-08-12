@@ -10,7 +10,7 @@ public class GuildRoleMenuRole
     /// Gets or sets the ID of the guild that this role belongs to.
     /// </summary>
     [Key]
-    public ulong Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>
     /// Gets or sets the optional label of the role.

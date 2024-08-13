@@ -5,6 +5,7 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["Directory.Build.props", ""]
 COPY ["UVOCBot/UVOCBot.csproj", "UVOCBot/"]
 COPY ["UVOCBot.Core/UVOCBot.Core.csproj", "UVOCBot.Core/"]
 COPY ["UVOCBot.Discord.Core/UVOCBot.Discord.Core.csproj", "UVOCBot.Discord.Core/"]

@@ -15,7 +15,7 @@ public static class DbContextExtensions
         CancellationToken ct = default
     ) where TEntity : class, IGuildObject, new()
     {
-        TEntity? value = await context.FindAsync<TEntity>(new object[] { guildId }, ct).ConfigureAwait(false);
+        TEntity? value = await context.FindAsync<TEntity>([ guildId ], ct).ConfigureAwait(false);
         if (value is not null)
             return value;
 

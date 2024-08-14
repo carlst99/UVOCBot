@@ -28,11 +28,6 @@ public class GuildWelcomeMessage : IGuildObject
     public List<ulong> DefaultRoles { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating if an attempt will be made to provide nickname options, based off the last few in-game joins.
-    /// </summary>
-    public bool DoIngameNameGuess { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating if this feature is enabled.
     /// </summary>
     public bool IsEnabled { get; set; }
@@ -41,11 +36,6 @@ public class GuildWelcomeMessage : IGuildObject
     /// Gets or sets the message to send when a new user joins the server.
     /// </summary>
     public string Message { get; set; }
-
-    /// <summary>
-    /// Gets or sets the tag to use for making nickname guesses.
-    /// </summary>
-    public ulong OutfitId { get; set; }
 
     /// <summary>
     /// Only use this constructor if you are setting the <see cref="GuildId"/> immediately after construction.
@@ -59,7 +49,6 @@ public class GuildWelcomeMessage : IGuildObject
     {
         AlternateRolesets = new List<GuildGreetingAlternateRoleSet>();
         DefaultRoles = new List<ulong>();
-        DoIngameNameGuess = false;
         GuildId = guildId;
         IsEnabled = false;
         Message = "Welcome <name>!";

@@ -1,5 +1,4 @@
 ﻿using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
@@ -20,91 +19,32 @@ namespace UVOCBot.Plugins.Greetings.Responders;
 internal sealed class GreetingComponentResponder : IComponentResponder
 {
     private readonly IGreetingService _greetingService;
-    private readonly IDiscordRestGuildAPI _guildApi;
     private readonly IInteraction _context;
     private readonly FeedbackService _feedbackService;
 
     public GreetingComponentResponder
     (
         IGreetingService greetingService,
-        IDiscordRestGuildAPI guildApi,
         IInteractionContext context,
         FeedbackService feedbackService
     )
     {
         _greetingService = greetingService;
-        _guildApi = guildApi;
         _context = context.Interaction;
         _feedbackService = feedbackService;
     }
 
     /// <inheritdoc />
     public Result<Attribute[]> GetResponseAttributes(string key)
-        => Result<Attribute[]>.FromSuccess(new Attribute[] { new EphemeralAttribute() });
+        => Result<Attribute[]>.FromSuccess([ new EphemeralAttribute() ]);
 
     /// <inheritdoc />
     public async Task<IResult> RespondAsync(string key, string? dataFragment, CancellationToken ct = default)
         => key switch
         {
-            GreetingComponentKeys.NoNicknameMatches => await NoNicknameMatches(ct).ConfigureAwait(false),
-            GreetingComponentKeys.SetAlternateRoleset => await SetAlternateRolesetAsync(dataFragment, ct).ConfigureAwait(false),
-            GreetingComponentKeys.SetGuessedNickname => await SetGuessedNickname(dataFragment, ct).ConfigureAwait(false),
+            GreetingComponentKeys.SetAlternateRoleset => await SetAlternateRolesetAsync(dataFragment, ct),
             _ => Result.FromError(new GenericCommandError())
         };
-
-    private async Task<Result> NoNicknameMatches(CancellationToken ct)
-        => await _feedbackService.SendContextualSuccessAsync
-        (
-            "Please set your nickname to the name of your PlanetSide 2 character!",
-            ct: ct
-        ).ConfigureAwait(false);
-
-    private async Task<Result> SetGuessedNickname
-    (
-        string? dataFragment,
-        CancellationToken ct
-    )
-    {
-        if (dataFragment is null)
-            return Result.FromSuccess();
-
-        if (!_context.GuildID.IsDefined(out Snowflake guildID))
-            return Result.FromSuccess();
-
-        if (!_context.TryGetUser(out IUser? user))
-            return Result.FromSuccess();
-
-        string[] fragmentComponents = dataFragment.Split('@');
-        ulong userId = ulong.Parse(fragmentComponents[0]);
-
-        // Check that the user who clicked the button is the focus of the welcome message
-        if (user.ID.Value != userId)
-        {
-            await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
-            return Result.FromSuccess();
-        }
-
-        Result setNickResult = await _guildApi.ModifyGuildMemberAsync
-        (
-            guildID,
-            user.ID,
-            fragmentComponents[1],
-            ct: ct
-        ).ConfigureAwait(false);
-
-        if (!setNickResult.IsSuccess)
-            return setNickResult;
-
-        IResult alertResponse = await _feedbackService.SendContextualSuccessAsync
-        (
-            $"Your nickname has been updated to { Formatter.Bold(fragmentComponents[1]) }!",
-            ct: ct
-        ).ConfigureAwait(false);
-
-        return alertResponse.IsSuccess
-            ? Result.FromSuccess()
-            : Result.FromError(alertResponse.Error!);
-    }
 
     private async Task<Result> SetAlternateRolesetAsync
     (
@@ -131,7 +71,7 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         // Check that the user who clicked the button is the focus of the welcome message
         if (user.ID.Value != userID)
         {
-            await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct).ConfigureAwait(false);
+            await _feedbackService.SendContextualErrorAsync("Hold it, bud. You can't do that!", ct: ct);
             return Result.FromSuccess();
         }
 
@@ -141,7 +81,7 @@ internal sealed class GreetingComponentResponder : IComponentResponder
             member,
             rolesetID,
             ct
-        ).ConfigureAwait(false);
+        );
 
         if (!roleChangeResult.IsDefined(out IReadOnlyList<ulong>? newRoles))
             return Result.FromError(roleChangeResult);
@@ -152,7 +92,7 @@ internal sealed class GreetingComponentResponder : IComponentResponder
         (
             $"You've been given the following roles: { rolesStringList }",
             ct: ct
-        ).ConfigureAwait(false);
+        );
 
         return alertResponse.IsSuccess
             ? Result.FromSuccess()

@@ -28,20 +28,6 @@ public interface IGreetingService
     );
 
     /// <summary>
-    /// Performs a fuzzy nickname guess using the character names of new outfit members.
-    /// </summary>
-    /// <param name="username">The Discord username.</param>
-    /// <param name="outfitId">The PlanetSide 2 outfit id.</param>
-    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
-    /// <returns>A list of potential nicknames.</returns>
-    Task<Result<IEnumerable<string>>> DoFuzzyNicknameGuess
-    (
-        string username,
-        ulong outfitId,
-        CancellationToken ct = default
-    );
-
-    /// <summary>
     /// Grants the alternate role set to a guild member.
     /// </summary>
     /// <param name="guildID">The ID of the guild in which the request originated.</param>

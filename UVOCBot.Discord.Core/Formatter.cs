@@ -22,9 +22,16 @@ public static class Formatter
     public static string UserMention(Snowflake userID) => UserMention(userID.Value);
     public static string UserMention(IUser user) => UserMention(user.ID);
 
+    public static string Emoji(string name) => $":{name}:";
+    public static string CustomEmoji(Snowflake emojiId, string name, bool isAnimated)
+    {
+        return isAnimated
+            ? $"a:{name}:{emojiId.Value}"
+            : $"{name}:{emojiId.Value}";
+    }
+
     public static string Bold(string content) => $"**{content}**";
     public static string CodeBlock(string content, string? language = null) => $"```{language}\n{content}\n```";
-    public static string Emoji(string content) => $":{content}:";
     public static string InlineQuote(string content) => $"`{content}`";
     public static string Italic(string content) => $"*{content}*";
     public static string Quote(string content) => $">{content}\n";

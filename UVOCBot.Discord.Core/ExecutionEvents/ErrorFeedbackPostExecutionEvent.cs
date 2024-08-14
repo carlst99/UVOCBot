@@ -3,12 +3,12 @@ using Remora.Commands.Results;
 using Remora.Discord.API.Abstractions.Results;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
-using UVOCBot.Discord.Core.Commands;
 using Remora.Discord.Commands.Services;
 using Remora.Rest.Results;
 using Remora.Results;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Errors;
 
 namespace UVOCBot.Discord.Core.ExecutionEvents;
@@ -48,12 +48,6 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
         if (actualError is null)
             return Result.FromSuccess();
 
-        string LogUnknownError()
-        {
-            _logger.LogError("A command failed to execute: {Error}", actualError);
-            return DiscordConstants.GENERIC_ERROR_MESSAGE;
-        }
-
         string errorMessage = actualError switch
         {
             PermissionError pe when context is IInteractionContext ic => pe.ContextualToString(ic.Interaction),
@@ -62,17 +56,23 @@ public class ErrorFeedbackPostExecutionEvent : IPostExecutionEvent
             ParameterParsingError ppe => $"You've entered an invalid value for the {Formatter.InlineQuote(ppe.Parameter.ParameterShape.HintName)} parameter",
             RoleManipulationError rme => "Failed to modify roles: " + rme.Message,
             GenericCommandError or ConditionNotSatisfiedError or InvalidOperationError => actualError.Message,
-            RestResultError<RestError> { Error.Code.HasValue: true, Error.Code.Value: DiscordError.MissingAccess } => "I am not allowed to view this channel.",
-            RestResultError<RestError> { Error.Code.HasValue: true, Error.Code.Value: DiscordError.MissingPermission } => "I do not have permission to do that.",
-            RestResultError<RestError> { Error.Code.HasValue: true, Error.Code.Value: DiscordError.OwnerOnly } => "Only the owner can do that!",
+            RestResultError<RestError> { Error.Code: { HasValue: true, Value: DiscordError.MissingAccess } } => "I am not allowed to view this channel.",
+            RestResultError<RestError> { Error.Code: { HasValue: true, Value: DiscordError.MissingPermission } } => "I do not have permission to do that.",
+            RestResultError<RestError> { Error.Code: { HasValue: true, Value: DiscordError.OwnerOnly } } => "Only the owner can do that!",
             _ => LogUnknownError()
         };
 
-        IResult sendErrorMessageResult = await _feedbackService.SendContextualErrorAsync(errorMessage, ct: ct).ConfigureAwait(false);
+        IResult sendErrorMessageResult = await _feedbackService.SendContextualErrorAsync(errorMessage, ct: ct);
 
         return !sendErrorMessageResult.IsSuccess
             ? Result.FromError(sendErrorMessageResult.Error!)
             : Result.FromSuccess();
+
+        string LogUnknownError()
+        {
+            _logger.LogError("A command failed to execute: {Error}", actualError);
+            return DiscordConstants.GENERIC_ERROR_MESSAGE;
+        }
     }
 
     private static IResultError? GetFirstInnerErrorOfNotTypeT<T>(IResult result)

@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Reflection;
 using System.Threading.Tasks;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Commands;
@@ -20,20 +21,15 @@ namespace UVOCBot.Commands;
 
 public class GeneralCommands : CommandGroup
 {
-    public const string RELEASE_NOTES =
-        @"**Additions**
-          • Added the following commands: `outfit-wars registrations`, `outfit-wars matches`, `rolemenu list-menus`, `apex craftables`, `apex maps`, `apex player`
-          • Added the `News` feed.
-          • Spiffed up the role menu commands, and added support for emojis on role labels.
-          • Base capture notifications now show the amount of outfit resource earned.
-
-          **Changes**
-          • The response of the `online-friends` command is now only visible to the user.
-          • Removed the 'most used weapon' field from the `character` command. It rarely displayed a relevant weapon.
-
-          **Fixes**
-          • Fixed Oshur status being calculated incorrectly.
-          • Fixed the character name autocomplete on the `character` command failing when not using all-lowercase letters.";
+    public const string HUMBLE_NOTES_OF_WISDOM =
+        """
+        - In order to grow, one must step outside their comfort zone.
+        - Always pick something to improve upon, at your own behest and pace.
+        - Your definition of a comfortable and successful life is far more fulfilling than money or status.
+        - Make time to step outside. Nature is beautiful, if you take a few minutes to watch.
+        - Learn to be bored. Creativity flows when you stop thinking.
+        - Stay fit. 'Nuff said.
+        """;
 
     private readonly IDiscordRestUserAPI _userAPI;
     private readonly FeedbackService _feedbackService;
@@ -111,17 +107,21 @@ public class GeneralCommands : CommandGroup
                 authorAvatar = authorAvatarURI.Entity.AbsoluteUri;
         }
 
+        string version = Assembly.GetExecutingAssembly().GetName().Version!.ToString(3);
         Embed embed = new()
         {
-            Title = "UVOCBot",
-            Description = "A general-purpose bot built to assist the UVOC Discord server",
-            Thumbnail = botAvatar is not null ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96) : new Optional<IEmbedThumbnail>(),
-            Footer = new EmbedFooter("Developed by LithaFalcon#1153", authorAvatar),
+            Title = $"UVOCBot v{version}",
+            Description = "A general-purpose bot with a primary focus on integration with PlanetSide 2 and "
+                + "basic administration features.",
+            Thumbnail = botAvatar is not null
+                ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96)
+                : new Optional<IEmbedThumbnail>(),
+            Footer = new EmbedFooter($"Developed by {authorUser.Entity.Username}", authorAvatar),
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Url = "https://github.com/carlst99/UVOCBot",
             Fields = new List<IEmbedField>
             {
-                new EmbedField("Release Notes", RELEASE_NOTES)
+                new EmbedField("Some Humble Notes of Wisdom", HUMBLE_NOTES_OF_WISDOM)
             }
         };
 

@@ -26,8 +26,8 @@ public static class Formatter
     public static string CustomEmoji(Snowflake emojiId, string name, bool isAnimated)
     {
         return isAnimated
-            ? $"a:{name}:{emojiId.Value}"
-            : $"{name}:{emojiId.Value}";
+            ? $"<a:{name}:{emojiId.Value}>"
+            : $"<{name}:{emojiId.Value}>";
     }
 
     public static string Bold(string content) => $"**{content}**";

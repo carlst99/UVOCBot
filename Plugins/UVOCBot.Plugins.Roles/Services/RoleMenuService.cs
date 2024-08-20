@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.API.Abstractions.Results;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
+using Remora.Rest.Results;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -93,7 +95,7 @@ public class RoleMenuService : IRoleMenuService
             (r1, r2) => string.Compare(r1.Label, r2.Label, StringComparison.Ordinal)
         );
 
-        return await _channelApi.EditMessageAsync
+        Result<IMessage> editResult = await _channelApi.EditMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
@@ -101,6 +103,31 @@ public class RoleMenuService : IRoleMenuService
             components: menu.Roles.Count > 0
                 ? CreateRoleMenuMessageComponents(menu)
                 : new Optional<IReadOnlyList<IMessageComponent>?>(),
+            ct: ct
+        );
+
+        // If we couldn't edit the message, it's quite possible it was deleted. Let's check if that was the case,
+        // and attempt to recreate the message if so
+
+        if (editResult.IsSuccess)
+            return editResult;
+
+        if (editResult.Error is not RestResultError<RestError> restError)
+            return editResult;
+
+        if (!restError.Error.Code.TryGet(out DiscordError discordError))
+            return editResult;
+
+        if (discordError is not DiscordError.UnknownMessage)
+            return editResult;
+
+        return await _channelApi.CreateMessageAsync
+        (
+            DiscordSnowflake.New(menu.ChannelId),
+            embeds: new[] { CreateRoleMenuEmbed(menu) },
+            components: menu.Roles.Count > 0
+                ? CreateRoleMenuMessageComponents(menu)
+                : new Optional<IReadOnlyList<IMessageComponent>>(),
             ct: ct
         );
     }

@@ -1,12 +1,14 @@
 ﻿using DbgCensus.EventStream;
 using DbgCensus.EventStream.EventHandlers.Extensions;
 using DbgCensus.Rest;
+using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Extensions;
 using DbgCensus.Rest.Objects;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using Remora.Discord.Commands.Extensions;
 using UVOCBot.Plugins.Planetside;
@@ -36,9 +38,20 @@ public static class IServiceCollectionExtensions
 
         // Register in order of consumption. Sanctuary pop service requires a fallback, caching pop service
         // requires a source-backed pop service
-        services.AddSingleton<IPopulationService, HonuPopulationService>();
-        services.AddSingleton<IPopulationService, SanctuaryPopulationService>();
-        services.AddSingleton<IPopulationService, CachingPopulationService>();
+        services.AddSingleton<HonuPopulationService>();
+        services.AddSingleton(s => new SanctuaryPopulationService
+        (
+            s.GetRequiredService<ILogger<SanctuaryPopulationService>>(),
+            s.GetRequiredService<IQueryService>(),
+            s.GetRequiredService<IOptionsMonitor<CensusQueryOptions>>(),
+            s.GetRequiredService<HonuPopulationService>()
+        ));
+        services.AddSingleton<IPopulationService>(s => new CachingPopulationService
+        (
+            s.GetRequiredService<ILogger<CachingPopulationService>>(),
+            s.GetRequiredService<SanctuaryPopulationService>(),
+            s.GetRequiredService<IMemoryCache>()
+        ));
 
         services.AddCensusRestServices();
         services.AddSingleton<CensusApiService>();

@@ -58,7 +58,7 @@ public class CensusStateWorker : BackgroundService
             throw new InvalidOperationException("Cache expiration for Population objects must be configured");
 
         using PeriodicTimer timer = new(popUpdateFrequency.Value.Subtract(TimeSpan.FromSeconds(15)));
-        while (await timer.WaitForNextTickAsync(ct))
+        do
         {
             // Check on and restart the facility capture task if required
             if (_facilityCaptureServiceTask.IsCompleted)
@@ -86,7 +86,7 @@ public class CensusStateWorker : BackgroundService
             {
                 _logger.LogError(ex, "Failed to run iteration of CensusStateWorker");
             }
-        }
+        } while (await timer.WaitForNextTickAsync(ct));
 
         await _facilityCaptureServiceTask;
     }

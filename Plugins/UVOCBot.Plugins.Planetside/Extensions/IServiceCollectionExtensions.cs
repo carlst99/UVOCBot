@@ -34,8 +34,11 @@ public static class IServiceCollectionExtensions
             o.RootEndpoint = "https://census.lithafalcon.cc";
         });
 
-        services.AddSingleton<HonuPopulationService>();
+        // Register in order of consumption. Sanctuary pop service requires a fallback, caching pop service
+        // requires a source-backed pop service
+        services.AddSingleton<IPopulationService, HonuPopulationService>();
         services.AddSingleton<IPopulationService, SanctuaryPopulationService>();
+        services.AddSingleton<IPopulationService, CachingPopulationService>();
 
         services.AddCensusRestServices();
         services.AddSingleton<CensusApiService>();

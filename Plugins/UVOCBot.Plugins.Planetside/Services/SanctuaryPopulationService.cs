@@ -1,7 +1,6 @@
 using DbgCensus.Rest;
 using DbgCensus.Rest.Abstractions;
 using DbgCensus.Rest.Abstractions.Queries;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remora.Results;
@@ -9,36 +8,38 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
 namespace UVOCBot.Plugins.Planetside.Services;
 
-public class SanctuaryPopulationService : BaseCachingPopulationService
+internal sealed class SanctuaryPopulationService : IPopulationService
 {
+    private readonly ILogger<SanctuaryPopulationService> _logger;
     private readonly IQueryService _queryService;
     private readonly CensusQueryOptions _sanctuaryOptions;
-    private readonly HonuPopulationService _honuPopulationService;
+    private readonly IPopulationService _fallbackPopService;
 
     public SanctuaryPopulationService
     (
         ILogger<SanctuaryPopulationService> logger,
-        IMemoryCache cache,
         IQueryService queryService,
         IOptionsMonitor<CensusQueryOptions> queryOptions,
-        HonuPopulationService honuPopulationService
-    ) : base(logger, cache)
+        IPopulationService fallbackPopService
+    )
     {
+        _logger = logger;
         _queryService = queryService;
         _sanctuaryOptions = queryOptions.Get("sanctuary");
-        _honuPopulationService = honuPopulationService;
+        _fallbackPopService = fallbackPopService;
     }
 
-    /// <inheritdoc />
-    protected override async Task<Result<IPopulation>> QueryPopulationAsync
+    public async Task<Result<IPopulation>> GetWorldPopulationAsync
     (
         ValidWorldDefinition world,
-        CancellationToken ct
+        bool skipCacheRetrieval = false,
+        CancellationToken ct = default
     )
     {
         IQueryBuilder query = _queryService.CreateQuery(_sanctuaryOptions)
@@ -46,11 +47,11 @@ public class SanctuaryPopulationService : BaseCachingPopulationService
             .Where("world_id", SearchModifier.Equals, (int)world);
 
         WorldPopulation? population = await _queryService.GetAsync<WorldPopulation>(query, ct);
-        if (population is null)
-            return await _honuPopulationService.GetWorldPopulationAsync(world, ct: ct);
+        if (population is not null && population.Timestamp.AddMinutes(5) >= DateTimeOffset.UtcNow)
+            return population;
 
-        return population.Timestamp.AddMinutes(5) < DateTimeOffset.UtcNow
-            ? await _honuPopulationService.GetWorldPopulationAsync(world, ct: ct)
-            : population;
+        _logger.LogWarning("Sanctuary population is out-of-date; using fallback pop service");
+        return await _fallbackPopService.GetWorldPopulationAsync(world, skipCacheRetrieval, ct: ct);
+
     }
 }

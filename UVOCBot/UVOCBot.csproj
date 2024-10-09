@@ -12,6 +12,7 @@
     <IsPublishable>true</IsPublishable>
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
     <ContainerRepository>uvocbot</ContainerRepository>
+    <ContainerFamily>alpine</ContainerFamily>
   </PropertyGroup>
 
   <ItemGroup>

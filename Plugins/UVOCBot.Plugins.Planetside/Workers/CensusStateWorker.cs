@@ -43,14 +43,11 @@ public class CensusStateWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        if (_censusApi is not Services.CachingCensusApiService)
-            throw new InvalidOperationException("Expected the " + nameof(Services.CachingCensusApiService) + " to be registered with the service provider.");
-
         _facilityCaptureServiceTask = _facilityCaptureService.RunAsync(ct);
 
+        // Assume these calls to be caching
         foreach (ValidWorldDefinition world in ValidWorlds)
         {
-            // Pre-cache map states
             await _censusApi.GetMapsAsync(world, Enum.GetValues<ValidZoneDefinition>(), ct);
             await PrecacheMetagameEvents(world, ct);
         }
@@ -58,12 +55,12 @@ public class CensusStateWorker : BackgroundService
         // Keep population data up-to-date
         TimeSpan? popUpdateFrequency = CacheEntryHelpers.PopulationOptions.AbsoluteExpirationRelativeToNow;
         if (popUpdateFrequency is null)
-            return;
+            throw new InvalidOperationException("Cache expiration for Population objects must be configured");
 
-        popUpdateFrequency = popUpdateFrequency.Value.Subtract(TimeSpan.FromSeconds(15));
-
-        while (!ct.IsCancellationRequested)
+        using PeriodicTimer timer = new(popUpdateFrequency.Value.Subtract(TimeSpan.FromSeconds(15)));
+        while (await timer.WaitForNextTickAsync(ct))
         {
+            // Check on and restart the facility capture task if required
             if (_facilityCaptureServiceTask.IsCompleted)
             {
                 if (_facilityCaptureServiceTask.Exception is not null)
@@ -77,7 +74,7 @@ public class CensusStateWorker : BackgroundService
 
             try
             {
-                // Assume this to be caching
+                // Assume this call to be caching
                 foreach (ValidWorldDefinition world in ValidWorlds)
                     await _populationService.GetWorldPopulationAsync(world, true, ct);
             }
@@ -89,16 +86,16 @@ public class CensusStateWorker : BackgroundService
             {
                 _logger.LogError(ex, "Failed to run iteration of CensusStateWorker");
             }
-
-            await Task.Delay(popUpdateFrequency.Value, ct);
         }
+
+        await _facilityCaptureServiceTask;
     }
 
     private async Task PrecacheMetagameEvents(ValidWorldDefinition world, CancellationToken ct)
     {
-        HashSet<ZoneDefinition> seenZones = new();
+        HashSet<ZoneDefinition> seenZones = [];
 
-        Result<List<MetagameEvent>> events = await _censusApi.GetMetagameEventsAsync(world, ct: ct).ConfigureAwait(false);
+        Result<List<MetagameEvent>> events = await _censusApi.GetMetagameEventsAsync(world, ct: ct);
         if (!events.IsDefined())
             return;
 

@@ -1,4 +1,5 @@
-﻿using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
+﻿using DbgCensus.Core.Objects;
+using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 
 namespace UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 
@@ -26,7 +27,7 @@ public record ExperienceRank
     /// <param name="ImageId">The ID of the rank's image.</param>
     public record FactionInfo
     (
-        GlobalisedString? Title,
+        GlobalizedString? Title,
         uint? ImageSetId,
         uint? ImageId
     );

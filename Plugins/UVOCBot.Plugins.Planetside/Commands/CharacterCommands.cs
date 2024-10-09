@@ -62,7 +62,7 @@ public class CharacterCommands : CommandGroup
         title += " ";
         title += character.TitleInfo is null
             ? character.Name.First
-            : character.TitleInfo.Name.English + " " + character.Name.First;
+            : character.TitleInfo.Name.English.GetValueOrDefault() + " " + character.Name.First;
 
         string description = $"Of {character.WorldID}'s {character.FactionID}";
         string? iconUrl = null;

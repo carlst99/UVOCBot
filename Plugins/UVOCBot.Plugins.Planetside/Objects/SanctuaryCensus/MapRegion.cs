@@ -1,3 +1,4 @@
+using DbgCensus.Core.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
 
@@ -24,7 +25,7 @@ public record MapRegion
     uint ZoneId,
     uint? FacilityId,
     string? FacilityName,
-    GlobalisedString? LocalizedFacilityName,
+    GlobalizedString? LocalizedFacilityName,
     FacilityType FacilityTypeId,
     string? FacilityType,
     decimal? LocationX,

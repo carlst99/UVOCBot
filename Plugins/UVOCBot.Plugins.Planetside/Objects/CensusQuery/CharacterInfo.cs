@@ -48,7 +48,7 @@ public record CharacterInfo
     public record CharacterTitleInfo
     (
         uint TitleID,
-        GlobalisedString Name
+        GlobalizedString Name
     );
 
     public record CharacterStatHistory

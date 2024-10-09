@@ -1,5 +1,4 @@
 ﻿using DbgCensus.Core.Objects;
-using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 
 namespace UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 

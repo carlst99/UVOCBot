@@ -21,7 +21,6 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Abstractions.Services;
@@ -158,24 +157,6 @@ public class Program
         return builder;
     }
 
-    /// <summary>
-    /// Gets the path to the specified file, assuming that it is in our appdata store.
-    /// </summary>
-    /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
-    /// <remarks>Data is stored in the local appdata.</remarks>
-    public static string GetAppdataFilePath(string? fileName)
-    {
-        string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        directory = Path.Combine(directory, "UVOCBot");
-
-        if (!Directory.Exists(directory))
-            Directory.CreateDirectory(directory);
-
-        return fileName is not null
-            ? Path.Combine(directory, fileName)
-            : directory;
-    }
-
     // ReSharper disable twice UnusedParameter.Local
     private static void SetupLogging(string? seqIngestionEndpoint, string? seqApiKey)
     {
@@ -200,7 +181,6 @@ public class Program
 #endif
 
         Log.Logger = logConfig.CreateLogger();
-        Log.Information("Appdata stored at {Path}", GetAppdataFilePath(null));
     }
 
     private static IServiceCollection AddRemoraServices(IServiceCollection services)

@@ -22,6 +22,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using OneOf;
 using Remora.Commands.Services;
 using Remora.Commands.Tokenization;
 using Remora.Commands.Trees;
@@ -102,33 +103,32 @@ public class InteractionResponder : IResponder<IInteractionCreate>
     )
     {
         if (gatewayEvent.Type != InteractionType.ApplicationCommand)
-        {
             return Result.FromSuccess();
-        }
 
-        if (!gatewayEvent.Data.TryGet(out var data) || !data.TryPickT0(out var commandData, out _))
-        {
+        if (!gatewayEvent.Data.TryGet(out OneOf<IApplicationCommandData, IMessageComponentData, IModalSubmitData> data))
             return Result.FromSuccess();
-        }
+
+        if (!data.TryPickT0(out IApplicationCommandData? commandData, out _))
+            return Result.FromSuccess();
 
         // Provide the created context to any services inside this scope
-        var operationContext = new InteractionContext(gatewayEvent);
+        InteractionContext operationContext = new(gatewayEvent);
         _contextInjection.Context = operationContext;
 
-        commandData.UnpackInteraction(out var commandPath, out var parameters);
+        commandData.UnpackInteraction
+        (
+            out IReadOnlyList<string>? commandPath,
+            out IReadOnlyDictionary<string, IReadOnlyList<string>>? parameters
+        );
 
         if (_treeNameResolver is null)
-        {
             return await TryExecuteCommandAsync(operationContext, commandPath, parameters, null, ct);
-        }
 
-        var getTreeName = await _treeNameResolver.GetTreeNameAsync(operationContext, ct);
+        Result<string> getTreeName = await _treeNameResolver.GetTreeNameAsync(operationContext, ct);
         if (!getTreeName.IsSuccess)
-        {
             return (Result)getTreeName;
-        }
 
-        var treeName = getTreeName.Entity;
+        string treeName = getTreeName.Entity;
 
         return await TryExecuteCommandAsync(operationContext, commandPath, parameters, treeName, ct);
     }
@@ -142,7 +142,7 @@ public class InteractionResponder : IResponder<IInteractionCreate>
         CancellationToken ct = default
     )
     {
-        var prepareCommand = await _commandService.TryPrepareCommandAsync
+        Result<PreparedCommand> prepareCommand = await _commandService.TryPrepareCommandAsync
         (
             commandPath,
             parameters,
@@ -155,7 +155,7 @@ public class InteractionResponder : IResponder<IInteractionCreate>
 
         if (!prepareCommand.IsSuccess)
         {
-            var preparationError = await _eventCollector.RunPreparationErrorEvents
+            Result preparationError = await _eventCollector.RunPreparationErrorEvents
             (
                 _services,
                 operationContext,
@@ -177,39 +177,34 @@ public class InteractionResponder : IResponder<IInteractionCreate>
             return (Result)prepareCommand;
         }
 
-        var preparedCommand = prepareCommand.Entity;
+        PreparedCommand preparedCommand = prepareCommand.Entity;
 
         // Update the available context
-        var commandContext = new InteractionCommandContext
-        (
-            operationContext.Interaction,
-            preparedCommand
-        )
+        InteractionCommandContext commandContext = new(operationContext.Interaction, preparedCommand)
         {
             HasRespondedToInteraction = operationContext.HasRespondedToInteraction
         };
-
         _contextInjection.Context = commandContext;
 
-        var suppressResponseAttribute = preparedCommand.Command.Node
+        SuppressInteractionResponseAttribute? suppressResponseAttribute = preparedCommand.Command.Node
             .FindCustomAttributeOnLocalTree<SuppressInteractionResponseAttribute>();
 
-        var deferredResponseAttribute = preparedCommand.Command.Node
+        DeferredAttribute? deferredResponseAttribute = preparedCommand.Command.Node
             .FindCustomAttributeOnLocalTree<DeferredAttribute>();
 
-        var shouldSendResponse = !(suppressResponseAttribute?.Suppress ?? _options.SuppressAutomaticResponses);
+        bool shouldSendResponse = !(suppressResponseAttribute?.Suppress ?? _options.SuppressAutomaticResponses);
         if (shouldSendResponse || (deferredResponseAttribute?.IsDeferred ?? false))
         {
-            var ephemeralAttribute = preparedCommand.Command.Node
+            EphemeralAttribute? ephemeralAttribute = preparedCommand.Command.Node
                 .FindCustomAttributeOnLocalTree<EphemeralAttribute>();
 
-            var sendEphemeral = (ephemeralAttribute is null && _options.UseEphemeralResponses) ||
+            bool sendEphemeral = (ephemeralAttribute is null && _options.UseEphemeralResponses) ||
                 ephemeralAttribute?.IsEphemeral == true;
 
             IInteractionResponseService interactionResponseService = _services.GetRequiredService<IInteractionResponseService>();
             interactionResponseService.WillDefaultToEphemeral = sendEphemeral;
 
-            var interactionResponse = await interactionResponseService.CreateDeferredMessageResponse(ct);
+            Result interactionResponse = await interactionResponseService.CreateDeferredMessageResponse(ct);
             if (!interactionResponse.IsSuccess)
             {
                 return interactionResponse;
@@ -220,13 +215,13 @@ public class InteractionResponder : IResponder<IInteractionCreate>
         }
 
         // Run any user-provided pre-execution events
-        var preExecution = await _eventCollector.RunPreExecutionEvents(_services, commandContext, ct);
+        Result preExecution = await _eventCollector.RunPreExecutionEvents(_services, commandContext, ct);
         if (!preExecution.IsSuccess)
         {
             return preExecution;
         }
 
-        var executionResult = await _commandService.TryExecuteAsync(preparedCommand, _services, ct);
+        Result<IResult> executionResult = await _commandService.TryExecuteAsync(preparedCommand, _services, ct);
 
         // Run any user-provided post-execution events
         return await _eventCollector.RunPostExecutionEvents

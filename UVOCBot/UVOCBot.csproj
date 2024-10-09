@@ -4,13 +4,14 @@
     <Version>1.6.1</Version>
     <UserSecretsId>dotnet-UVOCBot-BCEF48FF-ADA7-4525-8513-6E65E0B7D897</UserSecretsId>
     <Authors>Carl Stephens</Authors>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/carlst99/UVOCBot</PackageProjectUrl>
-    <PackageIcon>Icon.png</PackageIcon>
-    <PackageIconUrl />
-    <RepositoryUrl>https://github.com/carlst99/UVOCBot</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+  
+  <!-- Docker Support -->
+  <PropertyGroup>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <IsPublishable>true</IsPublishable>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+    <ContainerRepository>uvocbot</ContainerRepository>
   </PropertyGroup>
 
   <ItemGroup>

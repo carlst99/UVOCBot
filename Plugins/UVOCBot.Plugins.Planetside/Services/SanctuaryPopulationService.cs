@@ -50,7 +50,12 @@ internal sealed class SanctuaryPopulationService : IPopulationService
         if (population is not null && population.Timestamp.AddMinutes(5) >= DateTimeOffset.UtcNow)
             return population;
 
-        _logger.LogWarning("Sanctuary population is out-of-date; using fallback pop service");
+        _logger.LogWarning
+        (
+            "Sanctuary population for {World} is out-of-date (last updated at {Time}); using fallback pop service",
+            world,
+            population?.Timestamp
+        );
         return await _fallbackPopService.GetWorldPopulationAsync(world, skipCacheRetrieval, ct: ct);
 
     }

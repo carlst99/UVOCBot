@@ -9,7 +9,6 @@ public enum ValidWorldDefinition
 {
     Connery = WorldDefinition.Connery,
     Miller = WorldDefinition.Miller,
-    Cobalt = WorldDefinition.Cobalt,
     Emerald = WorldDefinition.Emerald,
     Jaeger = WorldDefinition.Jaeger,
     Soltech = WorldDefinition.Soltech

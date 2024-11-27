@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using Remora.Commands.Attributes;
+﻿using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
@@ -44,7 +43,6 @@ public class FeedCommands : CommandGroup
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly DiscordContext _dbContext;
     private readonly FeedbackService _feedbackService;
-    private readonly FeedsPluginOptions _options;
 
     public FeedCommands
     (
@@ -52,8 +50,7 @@ public class FeedCommands : CommandGroup
         IDiscordRestGuildAPI guildApi,
         IPermissionChecksService permissionChecksService,
         DiscordContext dbContext,
-        FeedbackService feedbackService,
-        IOptions<FeedsPluginOptions> options
+        FeedbackService feedbackService
     )
     {
         _context = context.Interaction;
@@ -61,7 +58,6 @@ public class FeedCommands : CommandGroup
         _permissionChecksService = permissionChecksService;
         _dbContext = dbContext;
         _feedbackService = feedbackService;
-        _options = options.Value;
     }
 
     [Command("global-toggle")]
@@ -144,9 +140,6 @@ public class FeedCommands : CommandGroup
 
         foreach (Feed f in values)
         {
-            if (!_options.EnableTwitterFeed && IsTwitterFeed(f))
-                continue;
-
             messageBuilder.Append("- ")
                 .Append(FeedDescriptions.Get[f])
                 .Append(' ')
@@ -180,9 +173,7 @@ public class FeedCommands : CommandGroup
             return validChannel;
 
         Feed[] feedValues = Enum.GetValues<Feed>();
-        List<SelectOption> selectOptions = feedValues
-            .Where(f => !(!_options.EnableTwitterFeed && IsTwitterFeed(f)))
-            .Select
+        List<SelectOption> selectOptions = feedValues.Select
             (
                 f => new SelectOption
                 (
@@ -313,7 +304,4 @@ public class FeedCommands : CommandGroup
         imgLink = html.Substring(attrStartIndex, attrEndIndex - attrStartIndex);
         return true;
     }
-
-    private static bool IsTwitterFeed(Feed feed)
-        => feed is Feed.TwitterPlanetside or Feed.TwitterWrel or Feed.TwitterRPG;
 }

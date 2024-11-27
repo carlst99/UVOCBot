@@ -148,7 +148,7 @@ public class Program
 
         // Plugin registration
         builder.Services.AddApexLegendsPlugin(builder.Configuration)
-                .AddFeedsPlugin(builder.Configuration)
+                .AddFeedsPlugin()
                 .AddGreetingsPlugin()
                 .AddPlanetsidePlugin(builder.Configuration)
                 .AddRolesPlugin()

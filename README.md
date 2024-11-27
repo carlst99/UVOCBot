@@ -45,7 +45,7 @@ Before continuing, you should note that UVOCBot is designed with a Linux host in
 
 # Building and Developing
 
-1. Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
+1. Install the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
 2. Install [PostgreSQL](https://www.postgresql.org) and create a database. The name is up to you.
 3. Modify the requisite `appsettings.json` files to include your API keys and database connection string
 4. Update the database to the latest migration. If you are using the .NET Core CLI, run the command:

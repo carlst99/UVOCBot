@@ -42,11 +42,11 @@ only provide Linux binaries. If you'd like support for running as a Windows serv
 please open an Issue.
 
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a
-2. name and icon and **add a bot** to the application.
+name and icon and **add a bot** to the application.
    1. :warning: Ensure that you enable the `Presence Intent` and `Server Members Intent`, found under the Bot tab of
    your application.
-3. Head on over to the wiki page [Hosting on Linux](https://github.com/carlst99/UVOCBot/wiki/Hosting-on-Linux) and follow the instructions there.
-4. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands).
+2. Head on over to the wiki page [Hosting on Linux](https://github.com/carlst99/UVOCBot/wiki/Hosting-on-Linux) and follow the instructions there.
+3. Invite the bot to your server using [https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands](https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands).
 
 # Building and Developing
 

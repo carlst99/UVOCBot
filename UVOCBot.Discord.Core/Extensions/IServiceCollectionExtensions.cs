@@ -31,6 +31,7 @@ public static class IServiceCollectionExtensions
         services.AddCondition<RequireGuildPermissionCondition>();
 
         services.AddPostExecutionEvent<ErrorFeedbackPostExecutionEvent>();
+        services.AddPreparationErrorEvent<ErrorFeedbackPreparationErrorEvent>();
 
         services.AddResponder<InteractionResponder>();
         services.AddResponder<ComponentInteractionResponder>();

@@ -1,8 +1,6 @@
-<img title="UVOCBot Icon" alt="UVOCBot Icon" src="https://github.com/carlst99/UVOCBot/blob/main/assets/Icon.png?raw=true" height="120" align="left" />
+<img title="UVOCBot Icon" alt="UVOCBot Icon" src="https://github.com/carlst99/UVOCBot/blob/main/assets/Icon.png?raw=true" height="120" style="float: left; margin-right: 1em" />
 
 # UVOCBot
-
-![Stable Release](https://github.com/carlst99/UVOCBot/workflows/Stable%20Release/badge.svg)
 
 Provides various functions to assist with the experience of the UVOC outfit Discord server. Current features include:
 
@@ -27,7 +25,7 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
 
 ![Picture of various UVOCBot commands](assets/Banner.webp)
 
-To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence if you'd like to use it in your own server, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#Setup) for more info.
+To my knowledge, there isn't a publicly hosted instance of UVOCBot available. Hence, if you'd like to use it in your own server, you'll have to host your own, or find someone kind enough to do it for you. See [Setup](#setup-for-hosting) for more info.
 
 Contrary to the above, if you know me through the PlanetSide 2 community, feel free to get in touch and ask for a private invite link. I might say yes :slightly_smiling_face:.
 

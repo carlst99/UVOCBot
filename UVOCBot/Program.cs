@@ -34,12 +34,13 @@ using UVOCBot.Services;
 
 namespace UVOCBot;
 
-// Permissions integer: 2570144848
+// Permissions integer: 277448051792
 // - Manage Roles
 // - Manage Channels
 // - Manage Nicknames
 // - View Channels
 // - Send Messages
+// - Send Messages in Threads
 // - Embed Links
 // - Read Message History
 // - Add Reactions
@@ -47,7 +48,7 @@ namespace UVOCBot;
 // - Connect
 // - Speak
 // - Move Members
-// OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands
+// OAuth2 URL: https://discord.com/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=277448051792&integration_type=0&scope=applications.commands+bot
 
 public class Program
 {

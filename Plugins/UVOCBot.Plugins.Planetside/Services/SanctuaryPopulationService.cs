@@ -50,7 +50,7 @@ internal sealed class SanctuaryPopulationService : IPopulationService
         if (population is not null && population.Timestamp.AddMinutes(5) >= DateTimeOffset.UtcNow)
             return population;
 
-        if (world is not ValidWorldDefinition.Jaeger) // Sanctuary doesn't read from Jaeger
+        if (world is not (ValidWorldDefinition.Jaeger or ValidWorldDefinition.Osprey)) // Sanctuary doesn't read from Jaeger
         {
             _logger.LogWarning
             (

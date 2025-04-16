@@ -2,6 +2,7 @@ using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Objects;
 using Remora.Results;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Threading.Tasks;
@@ -35,20 +36,38 @@ public class ApexCommands : CommandGroup
     [Description("Gets the current map rotation.")]
     public async Task<Result> GetMapRotationsCommandAsync()
     {
-        Result<MapRotationBundle> getRotations = await _apexApi.GetMapRotationsAsync(CancellationToken)
-            .ConfigureAwait(false);
+        Result<IReadOnlyDictionary<string, MapRotations>> getRotations
+            = await _apexApi.GetMapRotationsAsync(CancellationToken);
 
-        if (!getRotations.IsDefined(out MapRotationBundle? rotations))
+        if (!getRotations.IsDefined(out IReadOnlyDictionary<string, MapRotations>? rotations))
             return await NotifyOfApiRetrievalError((Result)getRotations).ConfigureAwait(false);
 
+        List<Embed> embeds = [];
+        if (rotations.TryGetValue("battle_royale", out MapRotations? brRotations))
+            embeds.Add(BuildMapRotationEmbed("Battle Royal", brRotations));
+        if (rotations.TryGetValue("ranked", out MapRotations? rankedRotations))
+            embeds.Add(BuildMapRotationEmbed("Ranked", rankedRotations));
+
+        if (embeds.Count > 0)
+            return await _feedbackService.SendContextualEmbedsAsync(embeds, ct: CancellationToken);
+
+        return await _feedbackService.SendContextualErrorAsync
+        (
+            "Map rotation data is currently unavailable",
+            ct: CancellationToken
+        );
+    }
+
+    private static Embed BuildMapRotationEmbed(string modeName, MapRotations rotations)
+    {
         Embed embed = new
         (
-            $"Current map rotation - {rotations.Current.Map}",
-            Description: $"Ends {Formatter.Timestamp(rotations.Current.End, TimestampStyle.RelativeTime)}",
+            $"Current {modeName} map rotation - {rotations.Current?.Map ?? "Unknown"}",
+            Description: $"Ends {Formatter.Timestamp(rotations.Current?.End ?? 0, TimestampStyle.RelativeTime)}",
             Colour: Color.Gold
         );
 
-        if (rotations.Current.Asset is not null)
+        if (rotations.Current?.Asset is not null)
             embed = embed with { Image = new EmbedImage(rotations.Current.Asset) };
 
         if (rotations.Next is not null)
@@ -57,12 +76,12 @@ public class ApexCommands : CommandGroup
             {
                 Fields = new EmbedField[]
                 {
-                    new($"Next - {rotations.Next.Map}", $"Will be open for {rotations.Next.DurationInSecs / 60} minutes")
+                    new($"Next - {rotations.Next.Map}", $"Will be open for {rotations.Next.DurationInSecs / 3600d} hours")
                 }
             };
         }
 
-        return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken).ConfigureAwait(false);
+        return embed;
     }
 
     private async Task<Result> NotifyOfApiRetrievalError(Result apiResult)

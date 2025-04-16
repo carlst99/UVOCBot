@@ -24,28 +24,21 @@ public class ApexApiService : IApexApiService
         _jsonOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
-    public virtual async Task<Result<MapRotationBundle>> GetMapRotationsAsync(CancellationToken ct = default)
+    public virtual async Task<Result<IReadOnlyDictionary<string, MapRotations>>> GetMapRotationsAsync
+    (
+        CancellationToken ct = default
+    )
     {
         try
         {
-            HttpResponseMessage result = await _client.GetAsync("maprotation", ct)
+            HttpResponseMessage result = await _client.GetAsync("maprotation?version=2", ct)
                 .ConfigureAwait(false);
 
-            Result<Dictionary<string, MapRotation>> getRotations = await ParseApiResult<Dictionary<string, MapRotation>>(result, ct)
-                .ConfigureAwait(false);
-
-            if (!getRotations.IsDefined(out Dictionary<string, MapRotation>? rotations))
-                return Result<MapRotationBundle>.FromError(getRotations);
-
-            if (!rotations.TryGetValue("current", out MapRotation? currentRotation))
-                return new ApexApiError("Result did not contain the current map rotation");
-            rotations.TryGetValue("next", out MapRotation? nextRotation);
-
-            return new MapRotationBundle(currentRotation, nextRotation);
+            return await ParseApiResult<IReadOnlyDictionary<string, MapRotations>>(result, ct);
         }
         catch (Exception ex)
         {
-            return Result<MapRotationBundle>.FromError(ex);
+            return Result<IReadOnlyDictionary<string, MapRotations>>.FromError(ex);
         }
     }
 

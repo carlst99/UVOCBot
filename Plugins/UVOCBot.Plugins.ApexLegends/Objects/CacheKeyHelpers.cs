@@ -5,5 +5,5 @@ namespace UVOCBot.Plugins.ApexLegends.Objects;
 public static class CacheKeyHelpers
 {
     public static object GetMapRotationBundleKey()
-        => typeof(MapRotationBundle);
+        => typeof(MapRotations);
 }

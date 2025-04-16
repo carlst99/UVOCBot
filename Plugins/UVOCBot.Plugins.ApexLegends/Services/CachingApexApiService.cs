@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Remora.Results;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,12 +19,17 @@ public sealed class CachingApexApiService : ApexApiService
         _cache = cache;
     }
 
-    public override async Task<Result<MapRotationBundle>> GetMapRotationsAsync(CancellationToken ct = default)
+    public override async Task<Result<IReadOnlyDictionary<string, MapRotations>>> GetMapRotationsAsync(CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetMapRotationBundleKey(), out MapRotationBundle? bundle))
-            return bundle;
+        _cache.TryGetValue
+        (
+            CacheKeyHelpers.GetMapRotationBundleKey(),
+            out IReadOnlyDictionary<string, MapRotations>? bundle
+        );
+        if (bundle is not null)
+            return Result<IReadOnlyDictionary<string, MapRotations>>.FromSuccess(bundle);
 
-        Result<MapRotationBundle> getRotations = await base.GetMapRotationsAsync(ct)
+        Result<IReadOnlyDictionary<string, MapRotations>> getRotations = await base.GetMapRotationsAsync(ct)
             .ConfigureAwait(false);
 
         if (getRotations.IsDefined())

@@ -111,7 +111,7 @@ public class GeneralCommands : CommandGroup
         Embed embed = new()
         {
             Title = $"UVOCBot v{version}",
-            Description = "A general-purpose bot with a primary focus on integration with PlanetSide 2 and "
+            Description = "A general-purpose bot with a primary focus on integration with various games and "
                 + "basic administration features.",
             Thumbnail = botAvatar is not null
                 ? new EmbedThumbnail(botAvatar, Height: 96, Width: 96)

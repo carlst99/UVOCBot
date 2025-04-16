@@ -28,6 +28,7 @@
 - Switch to using runtime database migrations.
 - Added support for containerisation.
 - Updated PlanetSide 2 valid worlds (Connery -> Osprey, remove Cobalt).
+- Upgraded to net9.0.
 
 ## Release v1.6.0
 

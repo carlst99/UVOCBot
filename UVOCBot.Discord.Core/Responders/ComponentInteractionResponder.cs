@@ -76,7 +76,7 @@ public class ComponentInteractionResponder : IResponder<IInteractionCreate>
         _contextInjectionService.Context = operationContext;
 
         // Update the available context
-        var commandContext = new InteractionCommandContext(operationContext.Interaction, null!)
+        InteractionCommandContext commandContext = new(operationContext.Interaction, null!)
         {
             HasRespondedToInteraction = operationContext.HasRespondedToInteraction
         };

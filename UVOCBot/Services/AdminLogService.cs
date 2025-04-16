@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Abstractions.Services;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Model;
@@ -121,7 +122,7 @@ public class AdminLogService : IAdminLogService
 
     private async Task<Result<Snowflake>> CheckCanLog(Snowflake guildId, AdminLogTypes logType, CancellationToken ct = default)
     {
-        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(guildId.Value, ct).ConfigureAwait(false);
+        GuildAdminSettings settings = await _dbContext.FindOrDefaultAsync<GuildAdminSettings>(guildId.Value, false, ct: ct).ConfigureAwait(false);
 
         if (settings.LoggingChannelId is null)
             return new Exception("No logging channel has been set.");

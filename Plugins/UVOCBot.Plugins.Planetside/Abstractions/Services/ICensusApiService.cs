@@ -137,4 +137,13 @@ public interface ICensusApiService
         uint outfitWarID,
         CancellationToken ct = default
     );
+
+    /// <summary>
+    /// Gets an experience rank.
+    /// </summary>
+    /// <param name="rank">The rank ordinal.</param>
+    /// <param name="prestigeLevel">The prestige level that the rank belongs to.</param>
+    /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
+    /// <returns>A result representing the outcome of the operation.</returns>
+    Task<Result<ExperienceRank?>> GetExperienceRankAsync(int rank, int prestigeLevel, CancellationToken ct = default);
 }

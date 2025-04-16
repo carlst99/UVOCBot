@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core.Abstractions.Services;
 using UVOCBot.Discord.Core.Components;
@@ -57,14 +58,14 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
             return Result.FromSuccess();
 
         Result<IDiscordPermissionSet> permissionsResult = await _permissionChecksService
-            .GetPermissionsInChannel(_context.ChannelID.Value, user.ID, ct);
+            .GetPermissionsInChannel(_context.Channel.Value.ID.Value, user.ID, ct);
         if (!permissionsResult.IsDefined(out IDiscordPermissionSet? permissions))
             return permissionsResult;
 
         if (!permissions.HasAdminOrPermission(DiscordPermission.ManageGuild))
-            return Result.FromError(new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.ChannelID.Value));
+            return Result.FromError(new PermissionError(DiscordPermission.ManageGuild, user.ID, _context.Channel.Value.ID.Value));
 
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct: ct).ConfigureAwait(false);
         Feed selectedFeeds = 0;
         string message = "The following feeds have been enabled:";
 

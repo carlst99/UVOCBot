@@ -19,12 +19,17 @@ public sealed class CachingApexApiService : ApexApiService
         _cache = cache;
     }
 
-    public override async Task<Result<MapRotationBundle>> GetMapRotationsAsync(CancellationToken ct = default)
+    public override async Task<Result<IReadOnlyDictionary<string, MapRotations>>> GetMapRotationsAsync(CancellationToken ct = default)
     {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetMapRotationBundleKey(), out MapRotationBundle? bundle))
-            return bundle;
+        _cache.TryGetValue
+        (
+            CacheKeyHelpers.GetMapRotationBundleKey(),
+            out IReadOnlyDictionary<string, MapRotations>? bundle
+        );
+        if (bundle is not null)
+            return Result<IReadOnlyDictionary<string, MapRotations>>.FromSuccess(bundle);
 
-        Result<MapRotationBundle> getRotations = await base.GetMapRotationsAsync(ct)
+        Result<IReadOnlyDictionary<string, MapRotations>> getRotations = await base.GetMapRotationsAsync(ct)
             .ConfigureAwait(false);
 
         if (getRotations.IsDefined())
@@ -38,52 +43,5 @@ public sealed class CachingApexApiService : ApexApiService
         }
 
         return getRotations;
-    }
-
-    public override async Task<Result<List<CraftingBundle>>> GetCraftingBundlesAsync(CancellationToken ct = default)
-    {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetCraftingBundleKey(), out List<CraftingBundle>? bundles))
-            return bundles;
-
-        Result<List<CraftingBundle>> getBundles = await base.GetCraftingBundlesAsync(ct)
-            .ConfigureAwait(false);
-
-        if (getBundles.IsDefined())
-        {
-            _cache.Set
-            (
-                CacheKeyHelpers.GetCraftingBundleKey(),
-                getBundles.Entity,
-                CacheEntryHelpers.GetCraftingBundlesOptions(getBundles.Entity)
-            );
-        }
-
-        return getBundles;
-    }
-
-    public override async Task<Result<StatsBridge>> GetPlayerStatisticsAsync
-    (
-        string playerName,
-        PlayerPlatform platform,
-        CancellationToken ct = default
-    )
-    {
-        if (_cache.TryGetValue(CacheKeyHelpers.GetStatsBridgeKey(playerName, platform), out StatsBridge? stats))
-            return stats;
-
-        Result<StatsBridge> getStats = await base.GetPlayerStatisticsAsync(playerName, platform, ct)
-            .ConfigureAwait(false);
-
-        if (getStats.IsDefined())
-        {
-            _cache.Set
-            (
-                CacheKeyHelpers.GetStatsBridgeKey(playerName, platform),
-                getStats.Entity,
-                CacheEntryHelpers.GetStatsBridgeOptions()
-            );
-        }
-
-        return getStats;
     }
 }

@@ -14,8 +14,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
@@ -62,7 +64,7 @@ public class FeedCommands : CommandGroup
     [Description("Enables or disables the feed functionality.")]
     public async Task<IResult> EnabledCommandAsync(bool isEnabled)
     {
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct: CancellationToken).ConfigureAwait(false);
 
         if (isEnabled)
         {
@@ -94,7 +96,7 @@ public class FeedCommands : CommandGroup
         if (!canPostToChannel.IsSuccess)
             return canPostToChannel;
 
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, ct: CancellationToken).ConfigureAwait(false);
         settings.FeedChannelID = channel.ID.Value; _dbContext.Update(settings);
 
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
@@ -115,23 +117,38 @@ public class FeedCommands : CommandGroup
                    ? ":ballot_box_with_check:"
                    : ":x:";
 
-        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>
+            (
+                _context.GuildID.Value.Value,
+                false,
+                CancellationToken
+            ).ConfigureAwait(false);
         Feed[] values = Enum.GetValues<Feed>();
 
-        string message = Formatter.Bold("Globally enabled: ") + GetEnabledEmoji(settings.IsEnabled);
+        StringBuilder messageBuilder = new();
+        messageBuilder.Append(Formatter.Bold("Globally enabled: "))
+            .AppendLine(GetEnabledEmoji(settings.IsEnabled))
+            .Append(Formatter.Bold("Feed channel: "))
+            .AppendLine
+            (
+                settings.FeedChannelID.HasValue
+                    ? Formatter.ChannelMention(settings.FeedChannelID.Value)
+                    : "not set"
+            )
+            .AppendLine()
+            .AppendLine(Formatter.Bold("Feeds:"));
 
-        message += "\n\n" + Formatter.Bold("Feed channel: ") + (settings.FeedChannelID.HasValue ? Formatter.ChannelMention(settings.FeedChannelID.Value) : "not set");
-
-        message += "\n\n" + Formatter.Bold("Feeds:");
         foreach (Feed f in values)
         {
-            string emoji = GetEnabledEmoji(((Feed)settings.Feeds & f) != 0);
-            message += $"\n- {FeedDescriptions.Get[f]} {emoji}";
+            messageBuilder.Append("- ")
+                .Append(FeedDescriptions.Get[f])
+                .Append(' ')
+                .AppendLine(GetEnabledEmoji(((Feed)settings.Feeds & f) != 0));
         }
 
         return await _feedbackService.SendContextualInfoAsync
         (
-            message,
+            messageBuilder.ToString(),
             ct: CancellationToken
         );
     }
@@ -148,7 +165,7 @@ public class FeedCommands : CommandGroup
         GuildFeedsSettings settings = await _dbContext.FindOrDefaultAsync<GuildFeedsSettings>
         (
             _context.GuildID.Value.Value,
-            CancellationToken
+            ct: CancellationToken
         ).ConfigureAwait(false);
 
         Result validChannel = await CheckValidFeedChannelAsync(settings);
@@ -172,7 +189,7 @@ public class FeedCommands : CommandGroup
             FeedComponentKeys.ToggleFeed,
             selectOptions,
             MinValues: 0,
-            MaxValues: feedValues.Length
+            MaxValues: selectOptions.Count
         );
 
         return await _feedbackService.SendContextualInfoAsync

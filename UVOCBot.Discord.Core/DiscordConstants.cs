@@ -14,7 +14,7 @@ public static class DiscordConstants
 
     public static Snowflake ApplicationId
     {
-        get => _applicationId == default
+        get => _applicationId == default(Snowflake)
             ? throw new InvalidOperationException("This value has not yet been set")
             : _applicationId;
         set => _applicationId = value;
@@ -22,7 +22,7 @@ public static class DiscordConstants
 
     public static Snowflake UserId
     {
-        get => _userId == default
+        get => _userId == default(Snowflake)
             ? throw new InvalidOperationException("This value has not yet been set")
             : _userId;
         set => _userId = value;

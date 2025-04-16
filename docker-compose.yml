@@ -1,0 +1,28 @@
+﻿name: uvocbot
+
+volumes:
+  postgres:
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: UVOCBot/Dockerfile
+    restart: unless-stopped
+    environment:
+      DatabaseOptions__ConnectionString: Host=db;Database=uvocbot;Username=uvocbot;Password=uvocbot
+    #volumes:
+    #  - ./config/appsettings.json:/app/appsettings.json
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # Postgres should have a shared memory limit when using docker-compose
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: uvocbot
+      POSTGRES_PASSWORD: uvocbot
+      POSTGRES_DB: uvocbot
+    volumes:
+      - postgres:/var/lib/postresql/data
+      #- ./data:/var/lib/postgresql/data

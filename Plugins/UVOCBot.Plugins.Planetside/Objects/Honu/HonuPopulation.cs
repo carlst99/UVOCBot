@@ -1,4 +1,8 @@
 ﻿using DbgCensus.Core.Objects;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text.Json.Serialization;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
 
@@ -7,11 +11,11 @@ namespace UVOCBot.Plugins.Planetside.Objects.Honu;
 /// <inheritdoc cref="IPopulation"/>
 public record HonuPopulation
 (
-    WorldDefinition WorldID,
+    WorldDefinition WorldId,
     int NC,
 
     [property: JsonPropertyName("nsOther")]
-    int? NS,
+    int NS,
 
     [property: JsonPropertyName("ns_nc")]
     int NSNC,
@@ -22,18 +26,31 @@ public record HonuPopulation
     [property: JsonPropertyName("ns_vs")]
     int NSVS,
     int TR,
-    int VS
+    int VS,
+
+    [property: JsonPropertyName("timestamp")]
+    string HonuTimestamp
 ) : IPopulation
 {
-    private readonly int _nc = NC;
-    private readonly int _tr = TR;
-    private readonly int _vs = VS;
+    private Dictionary<FactionDefinition, int>? _population;
 
-    public int NC => _nc + NSNC;
+    /// <inheritdoc />
+    public Dictionary<FactionDefinition, int> Population
+        => _population ??= new Dictionary<FactionDefinition, int>
+        {
+            { FactionDefinition.VS, VS + NSVS },
+            { FactionDefinition.NC, NC + NSNC },
+            { FactionDefinition.TR, TR + NSTR },
+            { FactionDefinition.NSO, NS }
+        };
 
-    public int TR => _tr + NSTR;
+    /// <inheritdoc />
+    public int Total => Population.Values.Sum();
 
-    public int VS => _vs + NSVS;
+    /// <inheritdoc />
+    [JsonIgnore]
+    public DateTimeOffset Timestamp => DateTimeOffset.Parse(HonuTimestamp, null, DateTimeStyles.AssumeUniversal);
 
-    public int Total => NC + TR + VS + NS ?? 0;
+    /// <inheritdoc />
+    public string SourceName => "Honu";
 }

@@ -7,6 +7,7 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Conditions;
 using Remora.Discord.Commands.Contexts;
+using Remora.Discord.Commands.Feedback.Services;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -15,9 +16,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
-using UVOCBot.Discord.Core.Commands;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Planetside.Abstractions.Objects;
@@ -62,16 +63,22 @@ public class WorldCommands : CommandGroup
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     public async Task<IResult> DefaultWorldCommandAsync(ValidWorldDefinition server)
     {
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            ct: CancellationToken
+        ).ConfigureAwait(false);
 
         settings.DefaultWorld = (int)server;
 
         _dbContext.Update(settings);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-        return await _feedbackService.SendContextualNeutralAsync(
+        return await _feedbackService.SendContextualNeutralAsync
+        (
             $"{Formatter.Emoji("earth_asia")} Your default server has been set to {Formatter.InlineQuote(server.ToString())}",
-            ct: CancellationToken).ConfigureAwait(false);
+            ct: CancellationToken
+        );
     }
 
     [Command("population")]
@@ -94,20 +101,24 @@ public class WorldCommands : CommandGroup
         if (!statusFields.IsSuccess)
             return statusFields;
 
-        Result<(List<EmbedField> Fields, int TotalPop)> populationFields = await GetPopulationEmbedFields(server);
-        if (!populationFields.IsSuccess)
-            return populationFields;
+        Result<PopulationDisplayBundle> getPopDisplayInfo = await GetPopulationEmbedFields(server);
+        if (!getPopDisplayInfo.IsDefined(out PopulationDisplayBundle popDisplayInfo))
+            return getPopDisplayInfo;
 
-        List<EmbedField> fields = new(populationFields.Entity.Fields);
-        fields.Add(new EmbedField("Unlocked Continents", Formatter.Bold(" ")));
-        fields.AddRange(statusFields.Entity);
+        EmbedField[] fields =
+        [
+            ..popDisplayInfo.EmbedFields,
+            new EmbedField("Unlocked Continents", Formatter.Bold(" ")),
+            ..statusFields.Entity
+        ];
 
         Embed embed = new()
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
-            Title = $"{server} - {populationFields.Entity.TotalPop}",
+            Title = $"{server} - {popDisplayInfo.TotalPop}",
             Fields = fields,
-            Footer = new EmbedFooter("Pop data from Varunda's wt.honu.pw")
+            Footer = new EmbedFooter($"Source: {popDisplayInfo.Source} | Last updated"),
+            Timestamp = popDisplayInfo.Timestamp
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
@@ -137,10 +148,54 @@ public class WorldCommands : CommandGroup
         {
             Colour = DiscordConstants.DEFAULT_EMBED_COLOUR,
             Title = server.ToString(),
+            Description = "Bar dictates facility ownership.",
             Fields = embedFields.Entity
         };
 
         return await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
+    }
+
+    [Command("pop-all")]
+    [Description("Gets the population of every server.")]
+    public async Task<Result> GetAllPopulationsAsync()
+    {
+        List<EmbedField> fields = new();
+
+        foreach (ValidWorldDefinition world in Enum.GetValues<ValidWorldDefinition>())
+        {
+            Result<IPopulation> getPop = await _populationApi.GetWorldPopulationAsync(world, ct: CancellationToken);
+            if (!getPop.IsDefined(out IPopulation? pop))
+                continue;
+
+            StringBuilder sb = new();
+            foreach ((FactionDefinition faction, int pVal) in pop.Population)
+            {
+                string emoji = faction switch
+                {
+                    FactionDefinition.NC => "blue_circle",
+                    FactionDefinition.TR => "red_circle",
+                    FactionDefinition.VS => "purple_circle",
+                    FactionDefinition.NSO => "white_circle",
+                    _ => "black_circle"
+                };
+                sb.Append(' ').Append(Formatter.Emoji(emoji)).Append(' ').Append(pVal).Append("");
+            }
+
+            fields.Add(new EmbedField
+            (
+                $"{world} - {pop.Total} ({(DateTimeOffset.UtcNow - pop.Timestamp).TotalMinutes:F1}min ago)",
+                sb.ToString()
+            ));
+        }
+
+        Embed embed = new
+        (
+            "All Server Populations",
+            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR,
+            Fields: fields
+        );
+
+        return (Result)await _feedbackService.SendContextualEmbedAsync(embed, ct: CancellationToken);
     }
 
     private async Task<Result<ValidWorldDefinition>> CheckForDefaultServer()
@@ -148,10 +203,20 @@ public class WorldCommands : CommandGroup
         if (!_context.GuildID.HasValue)
             return new GenericCommandError("To use this command in a DM you must provide a server.");
 
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings? settings = await _dbContext.FindAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            CancellationToken
+        ).ConfigureAwait(false);
 
-        if (settings.DefaultWorld is null)
-            return new GenericCommandError($"You haven't set a default server! Please do so using the { Formatter.InlineQuote("/default-server") } command.");
+        if (settings?.DefaultWorld is null)
+        {
+            return new GenericCommandError
+            (
+                "You haven't set a default server! Please do so using the " +
+                $"{Formatter.InlineQuote("/default-server")} command."
+            );
+        }
 
         return (ValidWorldDefinition)settings.DefaultWorld;
     }
@@ -163,7 +228,7 @@ public class WorldCommands : CommandGroup
         if (!getMapsResult.IsDefined())
             return Result<List<EmbedField>>.FromError(getMapsResult);
 
-        List<EmbedField> embedFields = new();
+        List<EmbedField> embedFields = [];
         getMapsResult.Entity.Sort
         (
             (m1, m2) => string.CompareOrdinal(m1.ZoneID.Definition.ToString(), m2.ZoneID.Definition.ToString())
@@ -186,14 +251,6 @@ public class WorldCommands : CommandGroup
 
     private EmbedField GetMapStatusEmbedField(Map map, ValidWorldDefinition world)
     {
-        static void ConstructPopBar(double percent, string emojiName, StringBuilder sb)
-        {
-            string name = Formatter.Emoji(emojiName);
-
-            for (int i = 0; i < Math.Round(percent / 10); i++)
-                sb.Append(name);
-        }
-
         (double ncPercent, double trPercent, double vsPercent) = GetMapTerritoryControl(map, out bool isLocked);
         string title = GetZoneName(map.ZoneID.Definition);
 
@@ -202,7 +259,7 @@ public class WorldCommands : CommandGroup
         {
             TimeSpan currentEventDuration = DateTimeOffset.UtcNow - metagameEvent.Timestamp;
             TimeSpan remainingTime = metagameEvent.MetagameEventID.GetAlertDuration() - currentEventDuration;
-            title += $" {Formatter.Emoji("rotating_light")} {remainingTime:%h\\h\\ %m\\m}";
+            title += $@" {Formatter.Emoji("rotating_light")} {remainingTime:%h\h\ %m\m}";
         }
         else if (isLocked)
         {
@@ -218,21 +275,35 @@ public class WorldCommands : CommandGroup
         return new EmbedField(title, popBarBuilder.ToString());
     }
 
-    private async Task<Result<(List<EmbedField> EmbedFields, int TotalPop)>> GetPopulationEmbedFields(ValidWorldDefinition world)
+    private static void ConstructPopBar(double percent, string emojiName, StringBuilder sb)
+    {
+        string name = Formatter.Emoji(emojiName);
+
+        for (int i = 0; i < Math.Round(percent / 10); i++)
+            sb.Append(name);
+    }
+
+    private async Task<Result<PopulationDisplayBundle>> GetPopulationEmbedFields(ValidWorldDefinition world)
     {
         // We don't return this result if it fails, as the CensusStateWorker will be reporting any retrieval errors
         Result<IPopulation> populationResult = await _populationApi.GetWorldPopulationAsync(world, ct: CancellationToken);
         if (!populationResult.IsDefined(out IPopulation? population))
             return new GenericCommandError("Failed to get population data! This could mean that Honu is down.");
 
-        List<EmbedField> fields = new()
+        List<EmbedField> fields = [];
+        foreach ((FactionDefinition faction, int popValue) in population.Population)
         {
-            GetPopulationEmbedField(population.NC, population.Total, FactionDefinition.NC),
-            GetPopulationEmbedField(population.TR, population.Total, FactionDefinition.TR),
-            GetPopulationEmbedField(population.VS, population.Total, FactionDefinition.VS)
-        };
+            if (popValue > 0)
+                fields.Add(GetPopulationEmbedField(popValue, population.Total, faction));
+        }
 
-        return (fields, population.Total);
+        return new PopulationDisplayBundle
+        (
+            fields,
+            population.Total,
+            population.Timestamp,
+            population.SourceName
+        );
     }
 
     private static EmbedField GetPopulationEmbedField(int factionPopulation, int totalPopulation, FactionDefinition faction)
@@ -245,7 +316,8 @@ public class WorldCommands : CommandGroup
             FactionDefinition.NC => $"{Formatter.Emoji("blue_circle")} NC - {factionPopulation}",
             FactionDefinition.TR => $"{Formatter.Emoji("red_circle")} TR - {factionPopulation}",
             FactionDefinition.VS => $"{Formatter.Emoji("purple_circle")} VS - {factionPopulation}",
-            _ => "Unknown"
+            FactionDefinition.NSO => $"{Formatter.Emoji("white_circle")} NSO - {factionPopulation}",
+            _ => $"Unknown - {factionPopulation}"
         };
 
         // Can't divide by zero!
@@ -288,7 +360,16 @@ public class WorldCommands : CommandGroup
             ZoneDefinition.Hossin => $"{Formatter.Emoji("deciduous_tree")} {ZoneDefinition.Hossin}",
             ZoneDefinition.Indar => $"{Formatter.Emoji("desert")} {ZoneDefinition.Indar}",
             ZoneDefinition.Koltyr => $"{Formatter.Emoji("radioactive")} {ZoneDefinition.Koltyr}",
+            ZoneDefinition.Nexus => $"{Formatter.Emoji("crossed_swords")} {ZoneDefinition.Nexus}",
             ZoneDefinition.Oshur => $"{Formatter.Emoji("ocean")} {ZoneDefinition.Oshur}",
             _ => zone.ToString()
         };
+
+    private readonly record struct PopulationDisplayBundle
+    (
+        List<EmbedField> EmbedFields,
+        int TotalPop,
+        DateTimeOffset Timestamp,
+        string Source
+    );
 }

@@ -47,7 +47,7 @@ public static class CacheKeyHelpers
         => (typeof(Map), (int)world, (int)zone);
 
     public static object GetPopulationKey(IPopulation population)
-        => GetPopulationKey(population.WorldID);
+        => GetPopulationKey(population.WorldId);
 
     public static object GetPopulationKey(WorldDefinition world)
         => (typeof(IPopulation), (int)world);
@@ -60,4 +60,7 @@ public static class CacheKeyHelpers
 
     public static object GetOutfitWarRoundWithMatchesKey(uint outfitWarID)
         => (typeof(OutfitWarRoundWithMatches), outfitWarID);
+
+    public static object GetExperienceRankKey(int rank, int prestigeLevel)
+        => (typeof(ExperienceRank), rank, prestigeLevel);
 }

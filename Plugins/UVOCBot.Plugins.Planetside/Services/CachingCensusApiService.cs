@@ -1,14 +1,12 @@
 ﻿using DbgCensus.Core.Objects;
 using DbgCensus.EventStream.Objects.Events.Worlds;
-using DbgCensus.Rest;
-using DbgCensus.Rest.Abstractions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Remora.Results;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.Objects;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery;
 using UVOCBot.Plugins.Planetside.Objects.CensusQuery.Map;
@@ -18,26 +16,57 @@ using UVOCBot.Plugins.Planetside.Objects.SanctuaryCensus;
 namespace UVOCBot.Plugins.Planetside.Services;
 
 /// <summary>
-/// <inheritdoc cref="CensusApiService" />
+/// <inheritdoc />
 /// Some queries performed through this service may be cached.
 /// </summary>
-public class CachingCensusApiService : CensusApiService
+public class CachingCensusApiService : ICensusApiService
 {
+    private readonly ILogger<CachingCensusApiService> _logger;
+    private readonly ICensusApiService _censusApiService;
     private readonly IMemoryCache _cache;
 
     public CachingCensusApiService
     (
         ILogger<CachingCensusApiService> logger,
-        IQueryService queryService,
-        IOptionsMonitor<CensusQueryOptions> queryOptions,
+        ICensusApiService censusApiService,
         IMemoryCache cache
-    ) : base(logger, queryService, queryOptions)
+    )
     {
+        _logger = logger;
+        _censusApiService = censusApiService;
         _cache = cache;
     }
 
     /// <inheritdoc />
-    public override async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
+    public async Task<Result<Outfit?>> GetOutfitAsync(ulong id, CancellationToken ct = default)
+    {
+        object cacheKey = CacheKeyHelpers.GetOutfitKey(id);
+        if (_cache.TryGetValue(cacheKey, out Outfit? outfit) && outfit is not null)
+            return outfit;
+
+        Result<Outfit?> getOutfit = await _censusApiService.GetOutfitAsync(id, ct);
+        if (getOutfit.IsDefined(out outfit))
+            _cache.Set(cacheKey, outfit, CacheEntryHelpers.OutfitOptions);
+
+        return getOutfit;
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<Outfit?>> GetOutfitAsync(string tag, CancellationToken ct = default)
+    {
+        object cacheKey = (typeof(Outfit), tag);
+        if (_cache.TryGetValue(cacheKey, out Outfit? outfit) && outfit is not null)
+            return outfit;
+
+        Result<Outfit?> getOutfit = await _censusApiService.GetOutfitAsync(tag, ct);
+        if (getOutfit.IsDefined(out outfit))
+            _cache.Set(cacheKey, outfit, CacheEntryHelpers.OutfitOptions);
+
+        return getOutfit;
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<Outfit>>> GetOutfitsAsync(IEnumerable<ulong> outfitIDs, CancellationToken ct = default)
     {
         List<Outfit> outfits = new();
         List<ulong> toQuery = new();
@@ -50,7 +79,7 @@ public class CachingCensusApiService : CensusApiService
                 toQuery.Add(id);
         }
 
-        Result<List<Outfit>> outfitsResult = await base.GetOutfitsAsync(toQuery, ct);
+        Result<List<Outfit>> outfitsResult = await _censusApiService.GetOutfitsAsync(toQuery, ct);
         if (!outfitsResult.IsDefined())
             return outfitsResult;
 
@@ -70,12 +99,26 @@ public class CachingCensusApiService : CensusApiService
     }
 
     /// <inheritdoc />
-    public override async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
+    public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync
+    (
+        IEnumerable<string> outfitTags,
+        CancellationToken ct = default
+    ) => await _censusApiService.GetOnlineMembersAsync(outfitTags, ct);
+
+    /// <inheritdoc />
+    public async Task<Result<List<OutfitOnlineMembers>>> GetOnlineMembersAsync
+    (
+        IEnumerable<ulong> outfitIds,
+        CancellationToken ct = default
+    ) => await _censusApiService.GetOnlineMembersAsync(outfitIds, ct);
+
+    /// <inheritdoc />
+    public async Task<Result<MapRegion?>> GetFacilityRegionAsync(ulong facilityID, CancellationToken ct = default)
     {
         if (_cache.TryGetValue(CacheKeyHelpers.GetFacilityMapRegionKey(facilityID), out MapRegion? region))
             return region;
 
-        Result<MapRegion?> getMapRegionResult = await base.GetFacilityRegionAsync(facilityID, ct).ConfigureAwait(false);
+        Result<MapRegion?> getMapRegionResult = await _censusApiService.GetFacilityRegionAsync(facilityID, ct).ConfigureAwait(false);
 
         if (getMapRegionResult.IsDefined())
         {
@@ -91,7 +134,7 @@ public class CachingCensusApiService : CensusApiService
     }
 
     ///<inheritdoc />
-    public override async Task<Result<List<Map>>> GetMapsAsync
+    public async Task<Result<List<Map>>> GetMapsAsync
     (
         ValidWorldDefinition world,
         IEnumerable<ValidZoneDefinition> zones,
@@ -113,7 +156,7 @@ public class CachingCensusApiService : CensusApiService
             return maps;
 
         _logger.LogWarning("Couldn't retrieve maps for {World} from cache! {Maps}", world, toRetrieve);
-        Result<List<Map>> getMapsResult = await base.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
+        Result<List<Map>> getMapsResult = await _censusApiService.GetMapsAsync(world, toRetrieve, ct).ConfigureAwait(false);
 
         if (!getMapsResult.IsDefined())
             return getMapsResult;
@@ -134,7 +177,12 @@ public class CachingCensusApiService : CensusApiService
     }
 
     /// <inheritdoc />
-    public override async Task<Result<MetagameEvent>> GetMetagameEventAsync(ValidWorldDefinition world, ValidZoneDefinition zone, CancellationToken ct = default)
+    public async Task<Result<MetagameEvent>> GetMetagameEventAsync
+    (
+        ValidWorldDefinition world,
+        ValidZoneDefinition zone,
+        CancellationToken ct = default
+    )
     {
         if (_cache.TryGetValue(CacheKeyHelpers.GetMetagameEventKey((WorldDefinition)world, (ZoneDefinition)zone), out MetagameEvent? found))
             return found;
@@ -142,10 +190,17 @@ public class CachingCensusApiService : CensusApiService
         // Note that we don't cache the result here
         // This is because we expect the MetagameEventResponder
         // to keep events up-to-date in a more reliable manner.
-        return await base.GetMetagameEventAsync(world, zone, ct);
+        return await _censusApiService.GetMetagameEventAsync(world, zone, ct);
     }
 
-    public override async Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync
+    /// <inheritdoc />
+    public async Task<Result<List<MetagameEvent>>> GetMetagameEventsAsync
+    (
+        ValidWorldDefinition world,
+        CancellationToken ct = default
+    ) => await _censusApiService.GetMetagameEventsAsync(world, ct);
+
+    public async Task<Result<List<MinimalCharacter>>> GetMinimalCharactersAsync
     (
         IEnumerable<ulong> characterIDs,
         CancellationToken ct = default
@@ -162,7 +217,7 @@ public class CachingCensusApiService : CensusApiService
                 toQuery.Add(id);
         }
 
-        Result<List<MinimalCharacter>> retrieveResult = await base.GetMinimalCharactersAsync(toQuery, ct).ConfigureAwait(false);
+        Result<List<MinimalCharacter>> retrieveResult = await _censusApiService.GetMinimalCharactersAsync(toQuery, ct).ConfigureAwait(false);
         if (!retrieveResult.IsSuccess)
             return retrieveResult;
 
@@ -181,7 +236,7 @@ public class CachingCensusApiService : CensusApiService
         return Result<List<MinimalCharacter>>.FromSuccess(characters);
     }
 
-    public override async Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
+    public async Task<Result<List<OutfitWarRegistration>>> GetOutfitWarRegistrationsAsync
     (
         uint outfitWarID,
         CancellationToken ct = default
@@ -190,7 +245,7 @@ public class CachingCensusApiService : CensusApiService
         if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRegistrationsKey(outfitWarID), out List<OutfitWarRegistration>? registrations))
             return registrations;
 
-        Result<List<OutfitWarRegistration>> getRegistrations = await base.GetOutfitWarRegistrationsAsync(outfitWarID, ct)
+        Result<List<OutfitWarRegistration>> getRegistrations = await _censusApiService.GetOutfitWarRegistrationsAsync(outfitWarID, ct)
             .ConfigureAwait(false);
 
         if (getRegistrations.IsDefined())
@@ -206,7 +261,7 @@ public class CachingCensusApiService : CensusApiService
         return getRegistrations;
     }
 
-    public override async Task<Result<OutfitWar?>> GetCurrentOutfitWar
+    public async Task<Result<OutfitWar?>> GetCurrentOutfitWar
     (
         ValidWorldDefinition world,
         CancellationToken ct = default
@@ -215,7 +270,7 @@ public class CachingCensusApiService : CensusApiService
         if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarKey(world), out OutfitWar? war))
             return war;
 
-        Result<OutfitWar?> getWar = await base.GetCurrentOutfitWar(world, ct).ConfigureAwait(false);
+        Result<OutfitWar?> getWar = await _censusApiService.GetCurrentOutfitWar(world, ct).ConfigureAwait(false);
 
         if (getWar.IsDefined())
         {
@@ -230,7 +285,7 @@ public class CachingCensusApiService : CensusApiService
         return getWar;
     }
 
-    public override async Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
+    public async Task<Result<OutfitWarRoundWithMatches?>> GetCurrentOutfitWarMatches
     (
         uint outfitWarID,
         CancellationToken ct = default
@@ -239,7 +294,7 @@ public class CachingCensusApiService : CensusApiService
         if (_cache.TryGetValue(CacheKeyHelpers.GetOutfitWarRoundWithMatchesKey(outfitWarID), out OutfitWarRoundWithMatches? round))
             return round;
 
-        Result<OutfitWarRoundWithMatches?> getRound = await base.GetCurrentOutfitWarMatches(outfitWarID, ct)
+        Result<OutfitWarRoundWithMatches?> getRound = await _censusApiService.GetCurrentOutfitWarMatches(outfitWarID, ct)
             .ConfigureAwait(false);
 
         if (getRound.IsDefined())
@@ -253,5 +308,24 @@ public class CachingCensusApiService : CensusApiService
         }
 
         return getRound;
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ExperienceRank?>> GetExperienceRankAsync
+    (
+        int rank,
+        int prestigeLevel,
+        CancellationToken ct = default
+    )
+    {
+        object cacheKey = CacheKeyHelpers.GetExperienceRankKey(rank, prestigeLevel);
+        if (_cache.TryGetValue(cacheKey, out ExperienceRank? expRank) && expRank is not null)
+            return expRank;
+
+        Result<ExperienceRank?> getRank = await _censusApiService.GetExperienceRankAsync(rank, prestigeLevel, ct);
+        if (getRank.IsDefined(out expRank))
+            _cache.Set(cacheKey, expRank, CacheEntryHelpers.GetExperienceRankOptions());
+
+        return getRank;
     }
 }

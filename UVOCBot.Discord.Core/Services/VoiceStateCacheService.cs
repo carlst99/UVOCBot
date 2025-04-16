@@ -10,24 +10,18 @@ namespace UVOCBot.Discord.Core.Services;
 /// </summary>
 public sealed class VoiceStateCacheService : IVoiceStateCacheService
 {
-    private readonly Dictionary<Snowflake, IVoiceState> _userVoiceStates;
-    private readonly Dictionary<Snowflake, List<Snowflake>> _channelUsers;
-
-    public VoiceStateCacheService()
-    {
-        _userVoiceStates = new Dictionary<Snowflake, IVoiceState>();
-        _channelUsers = new Dictionary<Snowflake, List<Snowflake>>();
-    }
+    private readonly Dictionary<Snowflake, IVoiceState> _userVoiceStates = [];
+    private readonly Dictionary<Snowflake, List<Snowflake>> _channelUsers = [];
 
     /// <inheritdoc/>
     public Optional<IReadOnlyList<IVoiceState>> GetChannelVoiceStates(Snowflake channelID)
     {
-        List<IVoiceState> states = new();
+        List<IVoiceState> states = [];
 
-        if (!_channelUsers.ContainsKey(channelID))
+        if (!_channelUsers.TryGetValue(channelID, out List<Snowflake>? channelUser))
             return new Optional<IReadOnlyList<IVoiceState>>();
 
-        foreach (Snowflake user in _channelUsers[channelID])
+        foreach (Snowflake user in channelUser)
             states.Add(_userVoiceStates[user]);
 
         return states.AsReadOnly();
@@ -36,20 +30,16 @@ public sealed class VoiceStateCacheService : IVoiceStateCacheService
     /// <inheritdoc/>
     public Optional<IVoiceState> GetUserVoiceState(Snowflake userID)
     {
-        if (!_userVoiceStates.ContainsKey(userID))
-            return new Optional<IVoiceState>();
-
-        return new Optional<IVoiceState>(_userVoiceStates[userID]);
+        return _userVoiceStates.TryGetValue(userID, out IVoiceState? state)
+            ? new Optional<IVoiceState>(state)
+            : new Optional<IVoiceState>();
     }
 
     /// <inheritdoc/>
     public void Remove(Snowflake userID)
     {
-        if (!_userVoiceStates.ContainsKey(userID))
+        if (!_userVoiceStates.Remove(userID, out IVoiceState? state))
             return;
-
-        IVoiceState state = _userVoiceStates[userID];
-        _userVoiceStates.Remove(userID);
 
         RemoveChannelUser(state);
     }
@@ -65,8 +55,8 @@ public sealed class VoiceStateCacheService : IVoiceStateCacheService
         }
 
         // If this state has previously been cached, we want to update the channel link
-        if (_userVoiceStates.ContainsKey(state.UserID))
-            RemoveChannelUser(_userVoiceStates[state.UserID]);
+        if (_userVoiceStates.TryGetValue(state.UserID, out IVoiceState? voiceState))
+            RemoveChannelUser(voiceState);
 
         _userVoiceStates[state.UserID] = state;
 

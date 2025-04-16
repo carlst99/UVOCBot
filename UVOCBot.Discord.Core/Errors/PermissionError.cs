@@ -62,15 +62,16 @@ public record PermissionError
             : DiscordSnowflake.New(0);
 
         string userMention = UserID == contextUserId
-            ? "You don't"
+            ? Formatter.UserMention(UserID) + ", you don't"
             : Formatter.UserMention(UserID) + " doesn't";
         string permissionMention = Formatter.InlineQuote(string.Join(", ", Permissions));
 
         string message = $"{ userMention } have the required permission/s ({permissionMention})";
 
+        Snowflake? channelId = context.Channel.OrDefault()?.ID.OrDefault();
         if (ChannelID is not null)
         {
-            string channelMention = ChannelID == context.ChannelID ? "this channel" : Formatter.ChannelMention(ChannelID.Value);
+            string channelMention = ChannelID == channelId ? "this channel" : Formatter.ChannelMention(ChannelID.Value);
             message += $" in {channelMention}";
         }
 

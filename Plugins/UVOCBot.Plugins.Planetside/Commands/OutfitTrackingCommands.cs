@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
@@ -61,7 +62,11 @@ public class OutfitTrackingCommands : CommandGroup
             return await _feedbackService.SendContextualErrorAsync("That outfit doesn't exist.", ct: CancellationToken);
 
         Outfit outfit = getOutfitResult.Entity;
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken);
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            ct: CancellationToken
+        );
 
         if (!settings.TrackedOutfits.Contains(outfit.OutfitId))
             settings.TrackedOutfits.Add(outfit.OutfitId);
@@ -80,10 +85,25 @@ public class OutfitTrackingCommands : CommandGroup
     [Description("Removes a tracked outfit.")]
     [RequireGuildPermission(DiscordPermission.ManageGuild, IncludeSelf = false)]
     [Deferred]
-    public async Task<Result> UntrackOutfitCommandAsync(
-        [Description("The 1-4 letter tag of the outfit to track.")] string outfitTag)
+    public async Task<Result> UntrackOutfitCommandAsync
+    (
+        [Description("The 1-4 letter tag of the outfit to track.")] string outfitTag
+    )
     {
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings? settings = await _dbContext.FindAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            CancellationToken
+        ).ConfigureAwait(false);
+
+        if (settings is null)
+        {
+            return await _feedbackService.SendContextualInfoAsync
+            (
+                "You are not tracking any guilds",
+                ct: CancellationToken
+            );
+        }
 
         Result<Outfit?> getOutfitResult = await _censusApi.GetOutfitAsync(outfitTag, CancellationToken).ConfigureAwait(false);
         if (!getOutfitResult.IsSuccess)
@@ -101,7 +121,11 @@ public class OutfitTrackingCommands : CommandGroup
         _dbContext.Update(settings);
         await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
 
-        return await _feedbackService.SendContextualSuccessAsync("That outfit is no longer being tracked.", ct: CancellationToken).ConfigureAwait(false);
+        return await _feedbackService.SendContextualSuccessAsync
+        (
+            "That outfit is no longer being tracked.",
+            ct: CancellationToken
+        ).ConfigureAwait(false);
     }
 
     [Command("list-tracked")]
@@ -109,7 +133,12 @@ public class OutfitTrackingCommands : CommandGroup
     [Ephemeral]
     public async Task<Result> ListTrackedOutfitsCommandAsync()
     {
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken);
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            false,
+            CancellationToken
+        );
 
         Result<List<Outfit>> outfitsResult = await _censusApi.GetOutfitsAsync(settings.TrackedOutfits, CancellationToken);
         if (!outfitsResult.IsDefined(out List<Outfit>? outfits))
@@ -143,7 +172,12 @@ public class OutfitTrackingCommands : CommandGroup
         IChannel? channel = null
     )
     {
-        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+        PlanetsideSettings settings = await _dbContext.FindOrDefaultAsync<PlanetsideSettings>
+        (
+            _context.GuildID.Value.Value,
+            ct: CancellationToken
+        ).ConfigureAwait(false);
+
         settings.BaseCaptureChannelId = null;
 
         if (channel is not null)

@@ -10,9 +10,10 @@ namespace UVOCBot.Discord.Core.Abstractions.Services;
 public interface IVoiceStateCacheService
 {
     /// <summary>
-    /// Sets a voice state within the cache. If there is no channel in the state, a previously cached state with the same member will be removed
+    /// Sets a voice state within the cache. If there is no <see cref="IVoiceState.ChannelID"/> present in the state,
+    /// then if a state already exists in the cache for the <see cref="IVoiceState.UserID"/> it will be removed.
     /// </summary>
-    /// <param name="state"></param>
+    /// <param name="state">The voice state update to cache.</param>
     void Set(IVoiceState state);
 
     /// <summary>

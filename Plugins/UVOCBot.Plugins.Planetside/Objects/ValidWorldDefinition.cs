@@ -7,10 +7,8 @@ namespace UVOCBot.Plugins.Planetside.Objects;
 /// </summary>
 public enum ValidWorldDefinition
 {
-    Connery = WorldDefinition.Connery,
+    Osprey = WorldDefinition.Connery,
     Miller = WorldDefinition.Miller,
-    Cobalt = WorldDefinition.Cobalt,
-    Emerald = WorldDefinition.Emerald,
     Jaeger = WorldDefinition.Jaeger,
     Soltech = WorldDefinition.Soltech
 }

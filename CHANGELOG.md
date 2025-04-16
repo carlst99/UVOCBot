@@ -1,5 +1,35 @@
 # Changelog
 
+## v2.1.0
+
+**Removed Features**
+- Removed the `apex player` command. The underlying API was unstable.
+- Removed the `apex craftables` command. Crafting is no longer available in-game.
+- Removed the planetside in-game-name guessing function from the welcome message.
+- Removed twitter feeds.
+
+**Additions**
+- Added the `pop-all` command, to get the population of all servers.
+- NSO battle rank images are now shown in the `character` command.
+- Added integration with Space Engineers servers, to show currently online players.
+- Exposed the source and timestamp of population data.
+- Added support for custom emojis to the role menu commands.
+- The `apex maps` command now also shows the ranked map rotation.
+
+**Fixes**
+- A.S.P 3 characters will no longer break the `character` command.
+- Twitter feeds are no longer shown to users when disabled by the bot host.
+- NSO population will no longer present as an 'Unknown' faction.
+- Role menu messages will now be recreated when the user updates them, if they no longer exist.
+- Fixed pop data retrieval fallback.
+
+**Maintenance**
+- Migrated to PostgreSQL as the backing database.
+- Switch to using runtime database migrations.
+- Added support for containerisation.
+- Updated PlanetSide 2 valid worlds (Connery -> Osprey, remove Cobalt).
+- Upgraded to net9.0.
+
 ## Release v1.6.0
 
 **Additions**

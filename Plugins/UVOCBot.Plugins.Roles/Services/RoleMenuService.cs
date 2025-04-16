@@ -2,11 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
+using Remora.Discord.API.Abstractions.Results;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Contexts;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
+using Remora.Rest.Results;
 using Remora.Results;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -86,18 +89,48 @@ public class RoleMenuService : IRoleMenuService
 
     /// <inheritdoc />
     public async Task<Result<IMessage>> UpdateRoleMenuMessageAsync(GuildRoleMenu menu, CancellationToken ct = default)
-        => await _channelApi.EditMessageAsync
+    {
+        menu.Roles.Sort
+        (
+            (r1, r2) => string.Compare(r1.Label, r2.Label, StringComparison.Ordinal)
+        );
+
+        Result<IMessage> editResult = await _channelApi.EditMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
-            embeds: new[] {
-                CreateRoleMenuEmbed(menu)
-            },
+            embeds: new[] { CreateRoleMenuEmbed(menu) },
             components: menu.Roles.Count > 0
                 ? CreateRoleMenuMessageComponents(menu)
                 : new Optional<IReadOnlyList<IMessageComponent>?>(),
             ct: ct
         );
+
+        // If we couldn't edit the message, it's quite possible it was deleted. Let's check if that was the case,
+        // and attempt to recreate the message if so
+
+        if (editResult.IsSuccess)
+            return editResult;
+
+        if (editResult.Error is not RestResultError<RestError> restError)
+            return editResult;
+
+        if (!restError.Error.Code.TryGet(out DiscordError discordError))
+            return editResult;
+
+        if (discordError is not DiscordError.UnknownMessage)
+            return editResult;
+
+        return await _channelApi.CreateMessageAsync
+        (
+            DiscordSnowflake.New(menu.ChannelId),
+            embeds: new[] { CreateRoleMenuEmbed(menu) },
+            components: menu.Roles.Count > 0
+                ? CreateRoleMenuMessageComponents(menu)
+                : new Optional<IReadOnlyList<IMessageComponent>>(),
+            ct: ct
+        );
+    }
 
     public IEmbed CreateRoleMenuEmbed(GuildRoleMenu menu)
         => new Embed
@@ -109,18 +142,12 @@ public class RoleMenuService : IRoleMenuService
 
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
     {
-        List<ButtonComponent> roleButtons = new();
+        List<ButtonComponent> roleButtons = [];
         foreach (GuildRoleMenuRole role in menu.Roles)
         {
             Optional<IPartialEmoji> emoji = default;
             if (role.Emoji is not null)
-            {
-                string[] parts = role.Emoji.Split(':');
-                Snowflake? id = parts[0].Length > 0
-                    ? DiscordSnowflake.New(ulong.Parse(parts[0]))
-                    : null;
-                emoji = new Emoji(id, parts[1]);
-            }
+                emoji = Formatter.EmojiFromString(role.Emoji).MapOr(x => new Optional<IPartialEmoji>(x), default);
 
             roleButtons.Add(new ButtonComponent
             (
@@ -131,10 +158,9 @@ public class RoleMenuService : IRoleMenuService
             ));
         }
 
-        return new List<IMessageComponent>
-        (
-            roleButtons.Chunk(5)
-                .Select(bl => new ActionRowComponent(bl))
-        );
+        return roleButtons.Chunk(5)
+            .Select(bl => new ActionRowComponent(bl))
+            .Cast<IMessageComponent>()
+            .ToList();
     }
 }

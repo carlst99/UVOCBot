@@ -37,7 +37,7 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
         if (!_context.GuildID.HasValue)
             return new ContextError(ContextError.GuildTextChannels);
 
-        if (!_context.ChannelID.HasValue)
+        if (!_context.Channel.HasValue)
             return new ArgumentInvalidError("channel", "No channel was present");
 
         if (!_context.TryGetUser(out IUser? user))
@@ -63,7 +63,7 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
     {
         Result<IDiscordPermissionSet> getPermissions = await _permissionChecksService.GetPermissionsInChannel
         (
-            _context.ChannelID.Value,
+            _context.Channel.Value.ID.Value,
             userID,
             ct
         ).ConfigureAwait(false);
@@ -76,7 +76,7 @@ public class RequireGuildPermissionCondition : ICondition<RequireGuildPermission
             .ToList();
 
         return missingPermissions.Count > 0
-            ? new PermissionError(missingPermissions, userID, _context.ChannelID.Value)
+            ? new PermissionError(missingPermissions, userID, _context.Channel.Value.ID.Value)
             : Result.FromSuccess();
     }
 }

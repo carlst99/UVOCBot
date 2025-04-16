@@ -21,7 +21,6 @@ using Serilog;
 using Serilog.Events;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Abstractions.Services;
@@ -35,12 +34,13 @@ using UVOCBot.Services;
 
 namespace UVOCBot;
 
-// Permissions integer: 2570144848
+// Permissions integer: 277448051792
 // - Manage Roles
 // - Manage Channels
 // - Manage Nicknames
 // - View Channels
 // - Send Messages
+// - Send Messages in Threads
 // - Embed Links
 // - Read Message History
 // - Add Reactions
@@ -48,9 +48,9 @@ namespace UVOCBot;
 // - Connect
 // - Speak
 // - Move Members
-// OAuth2 URL: https://discord.com/api/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=2570144848&scope=bot%20applications.commands
+// OAuth2 URL: https://discord.com/oauth2/authorize?client_id=<YOUR_CLIENT_ID>&permissions=277448051792&integration_type=0&scope=applications.commands+bot
 
-public static class Program
+public class Program
 {
     public static async Task Main(string[] args)
     {
@@ -86,6 +86,10 @@ public static class Program
             }
 #endif
 
+            using IServiceScope scope = host.Services.CreateScope();
+            await using DiscordContext dbContext = scope.ServiceProvider.GetRequiredService<DiscordContext>();
+            await dbContext.Database.MigrateAsync();
+
             await host.RunAsync();
         }
         catch (Exception ex)
@@ -102,79 +106,56 @@ public static class Program
         }
     }
 
-    public static IHostBuilder CreateHostBuilder(string[] args)
+    public static HostApplicationBuilder CreateHostBuilder(string[] args)
     {
-        return Host.CreateDefaultBuilder(args)
-            .UseSystemd()
-            .UseDefaultServiceProvider(s => s.ValidateScopes = true)
-            .ConfigureServices((c, _) =>
-            {
-                string? seqIngestionEndpoint = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqIngestionEndpoint)).Value;
-                string? seqApiKey = c.Configuration.GetSection(nameof(LoggingOptions)).GetSection(nameof(LoggingOptions.SeqApiKey)).Value;
-                SetupLogging(seqIngestionEndpoint, seqApiKey);
-            })
-            .UseSerilog()
-            .AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken)
-            .ConfigureServices((c, services) =>
-            {
-                // Setup configuration bindings
-                IConfigurationSection dbConfigSection = c.Configuration.GetSection(nameof(DatabaseOptions));
-                DatabaseOptions dbOptions = new();
-                dbConfigSection.Bind(dbOptions);
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+        builder.Services.AddSystemd();
 
-                services.Configure<DatabaseOptions>(dbConfigSection)
-                        .Configure<GeneralOptions>(c.Configuration.GetSection(nameof(GeneralOptions)));
+        LoggingOptions? logOptions = builder.Configuration.GetSection(LoggingOptions.CONFIG_NAME)
+            .Get<LoggingOptions>();
+        SetupLogging(logOptions?.SeqIngestionEndpoint, logOptions?.SeqApiKey);
+        builder.Services.AddSerilog();
 
-                services.AddDbContext<DiscordContext>
-                (
-                    options =>
-                    {
-                        options.UseMySql
-                        (
-                            dbOptions.ConnectionString,
-                            new MariaDbServerVersion(new Version(dbOptions.DatabaseVersion))
-                        )
-#if DEBUG
-                        .EnableSensitiveDataLogging()
-                        .EnableDetailedErrors()
-#endif
-                        ;
-                    },
-                    optionsLifetime: ServiceLifetime.Singleton
-                );
+            // #if DEBUG // Used for EF core migrations
+            // .ConfigureAppConfiguration((c, builder) =>
+            // {
+            //     builder.AddConfiguration(c.Configuration)
+            //         .AddUserSecrets<Program>();
+            // })
+            // #endif
 
-                services.AddDbContextFactory<DiscordContext>();
+        // Setup configuration bindings
+        DatabaseOptions dbOptions = builder.Configuration.GetRequiredSection(DatabaseOptions.CONFIG_NAME)
+            .Get<DatabaseOptions>()!;
 
-                // Add Discord-related services
-                services.AddRemoraServices()
-                        .AddCoreDiscordServices()
-                        .AddScoped<IAdminLogService, AdminLogService>();
+        builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.CONFIG_NAME))
+                .Configure<GeneralOptions>(builder.Configuration.GetSection(nameof(GeneralOptions)));
 
-                // Plugin registration
-                services.AddApexLegendsPlugin(c.Configuration)
-                        .AddFeedsPlugin(c.Configuration)
-                        .AddGreetingsPlugin()
-                        .AddPlanetsidePlugin(c.Configuration)
-                        .AddRolesPlugin();
-            });
-    }
+        // Set up the database
+        void DbOptionsBuilder(DbContextOptionsBuilder options)
+        {
+            options.UseNpgsql(dbOptions.ConnectionString, b => b.MigrationsAssembly("UVOCBot.Core"))
+                .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
+                .EnableDetailedErrors(builder.Environment.IsDevelopment());
+        }
 
-    /// <summary>
-    /// Gets the path to the specified file, assuming that it is in our appdata store.
-    /// </summary>
-    /// <param name="fileName">The name of the file stored in the appdata. Leave this parameter null to get the appdata directory.</param>
-    /// <remarks>Data is stored in the local appdata.</remarks>
-    public static string GetAppdataFilePath(string? fileName)
-    {
-        string directory = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        directory = Path.Combine(directory, "UVOCBot");
+        builder.Services.AddDbContext<DiscordContext>(DbOptionsBuilder, optionsLifetime: ServiceLifetime.Singleton)
+            .AddDbContextFactory<DiscordContext>(DbOptionsBuilder);
 
-        if (!Directory.Exists(directory))
-            Directory.CreateDirectory(directory);
+        // Add Discord-related services
+        AddRemoraServices(builder.Services)
+            .AddCoreDiscordServices()
+            .AddScoped<IAdminLogService, AdminLogService>();
 
-        return fileName is not null
-            ? Path.Combine(directory, fileName)
-            : directory;
+        // Plugin registration
+        builder.Services.AddApexLegendsPlugin(builder.Configuration)
+                .AddFeedsPlugin()
+                .AddGreetingsPlugin()
+                .AddPlanetsidePlugin(builder.Configuration)
+                .AddRolesPlugin()
+                .AddSpaceEngineersPlugin();
+
+        return builder;
     }
 
     // ReSharper disable twice UnusedParameter.Local
@@ -201,11 +182,12 @@ public static class Program
 #endif
 
         Log.Logger = logConfig.CreateLogger();
-        Log.Information("Appdata stored at {Path}", GetAppdataFilePath(null));
     }
 
-    private static IServiceCollection AddRemoraServices(this IServiceCollection services)
+    private static IServiceCollection AddRemoraServices(IServiceCollection services)
     {
+        services.AddDiscordService(s => s.GetRequiredService<IOptions<GeneralOptions>>().Value.BotToken);
+
         services.Configure<DiscordGatewayClientOptions>
         (
             o =>

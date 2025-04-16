@@ -24,71 +24,21 @@ public class ApexApiService : IApexApiService
         _jsonOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
-    public virtual async Task<Result<MapRotationBundle>> GetMapRotationsAsync(CancellationToken ct = default)
-    {
-        try
-        {
-            HttpResponseMessage result = await _client.GetAsync("maprotation", ct)
-                .ConfigureAwait(false);
-
-            Result<Dictionary<string, MapRotation>> getRotations = await ParseApiResult<Dictionary<string, MapRotation>>(result, ct)
-                .ConfigureAwait(false);
-
-            if (!getRotations.IsDefined(out Dictionary<string, MapRotation>? rotations))
-                return Result<MapRotationBundle>.FromError(getRotations);
-
-            if (!rotations.TryGetValue("current", out MapRotation? currentRotation))
-                return new ApexApiError("Result did not contain the current map rotation");
-            rotations.TryGetValue("next", out MapRotation? nextRotation);
-
-            return new MapRotationBundle(currentRotation, nextRotation);
-        }
-        catch (Exception ex)
-        {
-            return Result<MapRotationBundle>.FromError(ex);
-        }
-    }
-
-    public virtual async Task<Result<List<CraftingBundle>>> GetCraftingBundlesAsync(CancellationToken ct = default)
-    {
-        try
-        {
-            HttpResponseMessage result = await _client.GetAsync("crafting", ct)
-                .ConfigureAwait(false);
-
-            return await ParseApiResult<List<CraftingBundle>>(result, ct).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            return new ExceptionError(ex);
-        }
-    }
-
-    public virtual async Task<Result<StatsBridge>> GetPlayerStatisticsAsync
+    public virtual async Task<Result<IReadOnlyDictionary<string, MapRotations>>> GetMapRotationsAsync
     (
-        string playerName,
-        PlayerPlatform platform,
         CancellationToken ct = default
     )
     {
         try
         {
-            string platformString = platform switch {
-                PlayerPlatform.Origin => "PC",
-                PlayerPlatform.PS4 => "PS4",
-                PlayerPlatform.Xbox => "X1",
-                _ => throw new ArgumentException("Invalid platform", nameof(platform))
-            };
-
-            HttpResponseMessage response = await _client
-                .GetAsync($"bridge?player={playerName}&platform={platformString}", ct)
+            HttpResponseMessage result = await _client.GetAsync("maprotation?version=2", ct)
                 .ConfigureAwait(false);
 
-            return await ParseApiResult<StatsBridge>(response, ct).ConfigureAwait(false);
+            return await ParseApiResult<IReadOnlyDictionary<string, MapRotations>>(result, ct);
         }
         catch (Exception ex)
         {
-            return new ExceptionError(ex);
+            return Result<IReadOnlyDictionary<string, MapRotations>>.FromError(ex);
         }
     }
 

@@ -12,8 +12,8 @@ public record MapRotation
     int? RemainingSecs
 );
 
-public record MapRotationBundle
+public record MapRotations
 (
-    MapRotation Current,
+    MapRotation? Current,
     MapRotation? Next
 );

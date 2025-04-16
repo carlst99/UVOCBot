@@ -25,7 +25,6 @@ public static class IServiceCollectionExtensions
             c.BaseAddress = new Uri(options.ApexLegendsApiEndpoint);
             c.DefaultRequestHeaders.Add("Authorization", options.ApexLegendsApiKey);
         });
-        services.AddHttpClient<IApexImageGenerationService, ApexImageGenerationService>();
 
         services.AddSingleton<RecyclableMemoryStreamManager>();
 

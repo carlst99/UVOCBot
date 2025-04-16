@@ -16,12 +16,12 @@ namespace UVOCBot.Discord.Core.Abstractions.Services;
 public interface IInteractionResponseService
 {
     /// <summary>
-    /// Gets a value indicating whether or not an interaction response has been made for the current scope.
+    /// Gets a value indicating whether an interaction response has been made for the current scope.
     /// </summary>
     public bool HasResponded { get; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether or not an
+    /// Gets or sets a value indicating whether an
     /// interaction response should default to being ephemeral.
     /// </summary>
     public bool WillDefaultToEphemeral { get; set; }

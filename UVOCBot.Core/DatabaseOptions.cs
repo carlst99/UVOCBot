@@ -1,22 +1,14 @@
-﻿namespace UVOCBot.Core;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace UVOCBot.Core;
 
 public class DatabaseOptions
 {
-    public const string ConfigSectionName = "DatabaseOptions";
+    public const string CONFIG_NAME = "DatabaseOptions";
 
     /// <summary>
     /// The string used to initiate the database connection
     /// </summary>
-    public string ConnectionString { get; init; }
-
-    /// <summary>
-    /// The version of MariaDB which is being connected to
-    /// </summary>
-    public string DatabaseVersion { get; init; }
-
-    public DatabaseOptions()
-    {
-        ConnectionString = string.Empty;
-        DatabaseVersion = string.Empty;
-    }
+    [Required]
+    public string ConnectionString { get; init; } = null!;
 }

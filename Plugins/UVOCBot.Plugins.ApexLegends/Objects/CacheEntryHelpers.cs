@@ -8,26 +8,19 @@ namespace UVOCBot.Plugins.ApexLegends.Objects;
 
 public static class CacheEntryHelpers
 {
-    public static MemoryCacheEntryOptions GetMapRotationBundleOptions(MapRotationBundle bundle)
+    public static MemoryCacheEntryOptions GetMapRotationBundleOptions(IReadOnlyDictionary<string, MapRotations> bundle)
         => new()
         {
-            AbsoluteExpiration = DateTimeOffset.FromUnixTimeSeconds(bundle.Current.End),
+            AbsoluteExpiration = DateTimeOffset.FromUnixTimeSeconds
+                (
+                    bundle.Select
+                        (
+                            // Take the minimum end date as our absolute expiration, else five minutes into the future
+                            x => x.Value.Current?.End ?? DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+                        )
+                        .Min()
+                ),
             Priority = CacheItemPriority.Normal,
             Size = 1
-        };
-
-    public static MemoryCacheEntryOptions GetCraftingBundlesOptions(IEnumerable<CraftingBundle> bundles)
-        => new()
-        {
-            AbsoluteExpiration = DateTimeOffset.FromUnixTimeSeconds(bundles.Where(x => x.End > 0).Min(x => x.End)),
-            Priority = CacheItemPriority.Normal,
-            Size = 1
-        };
-
-    public static MemoryCacheEntryOptions GetStatsBridgeOptions()
-        => new() {
-            SlidingExpiration = TimeSpan.FromSeconds(30),
-            Priority = CacheItemPriority.Normal,
-            Size = 2
         };
 }

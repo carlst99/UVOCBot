@@ -6,7 +6,7 @@ public class GuildFeedsSettings : IGuildObject
 {
     /// <inheritdoc />
     [Key]
-    public ulong GuildId { get; set; }
+    public ulong GuildId { get; init; }
 
     /// <summary>
     /// Gets or sets a value indicating if feeds are enabled.

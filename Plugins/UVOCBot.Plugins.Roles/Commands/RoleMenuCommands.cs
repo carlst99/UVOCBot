@@ -11,7 +11,6 @@ using Remora.Discord.Commands.Feedback.Messages;
 using Remora.Discord.Commands.Feedback.Services;
 using Remora.Rest.Core;
 using Remora.Results;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -258,7 +257,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID,
         [Description("The role to add.")] IRole roleToAdd,
         [Description("The label of the role selection item. Leave empty to use the name of the role as the label.")] string? roleItemLabel = null,
-        [Description("An emoji to show on the role label")] IEmoji? emoji = null
+        [Description("An emoji to show on the role label")] string? emoji = null
     )
     {
         if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
@@ -279,25 +278,16 @@ public class RoleMenuCommands : CommandGroup
         {
             dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name)
             {
-                Emoji = emoji is null
-                    ? null
-                    : $"{emoji.ID}:{emoji.Name}"
+                Emoji = emoji
             };
 
             menu.Roles.Add(dbRole);
-            menu.Roles.Sort
-            (
-                (r1, r2) => string.Compare(r1.Label, r2.Label, StringComparison.Ordinal)
-            );
-
             _dbContext.Update(menu);
         }
         else
         {
             dbRole.Label = roleItemLabel ?? roleToAdd.Name;
-            dbRole.Emoji = emoji is null
-                ? null
-                : $"{emoji.ID}:{emoji.Name}";
+            dbRole.Emoji = emoji;
 
             _dbContext.Update(dbRole);
         }

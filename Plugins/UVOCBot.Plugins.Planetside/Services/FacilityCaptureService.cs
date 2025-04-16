@@ -33,9 +33,10 @@ namespace UVOCBot.Plugins.Planetside.Services;
 /// <inheritdoc cref="IFacilityCaptureService" />
 public sealed class FacilityCaptureService : IFacilityCaptureService
 {
-    private static readonly Uri AuraxiumImageUri = GetResourceImageUri("957264037048115242");
-    private static readonly Uri SynthiumImageUri = GetResourceImageUri("957264081465786388");
-    private static readonly Uri PolystellariteImageUri = GetResourceImageUri("957264140093763604");
+    // We store these images as rich presence assets on Discord
+    private static readonly Uri AuraxiumImageUri = GetResourceImageUri("957264037048115242"); // auraxium_icon
+    private static readonly Uri SynthiumImageUri = GetResourceImageUri("957264081465786388"); // synthium_icon
+    private static readonly Uri PolystellariteImageUri = GetResourceImageUri("957264140093763604"); // polystellarite_icon
 
     private readonly ICensusApiService _censusApiService;
     private readonly IMemoryCache _cache;

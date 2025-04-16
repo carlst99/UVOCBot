@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using UVOCBot.Core;
+using UVOCBot.Core.Extensions;
 using UVOCBot.Core.Model;
 using UVOCBot.Discord.Core;
 using UVOCBot.Discord.Core.Abstractions.Services;
@@ -24,7 +25,6 @@ using UVOCBot.Discord.Core.Commands.Attributes;
 using UVOCBot.Discord.Core.Commands.Conditions.Attributes;
 using UVOCBot.Discord.Core.Errors;
 using UVOCBot.Plugins.Greetings.Abstractions.Services;
-using UVOCBot.Plugins.Greetings.Objects;
 
 namespace UVOCBot.Plugins.Greetings.Commands;
 
@@ -36,7 +36,6 @@ namespace UVOCBot.Plugins.Greetings.Commands;
 public class GreetingCommands : CommandGroup
 {
     private readonly IInteraction _context;
-    private readonly ICensusQueryService _censusService;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IGreetingService _greetingService;
     private readonly IPermissionChecksService _permissionChecksService;
@@ -46,7 +45,6 @@ public class GreetingCommands : CommandGroup
     public GreetingCommands
     (
         IInteractionContext context,
-        ICensusQueryService censusService,
         IDiscordRestChannelAPI channelApi,
         IGreetingService greetingService,
         IPermissionChecksService permissionChecksService,
@@ -55,7 +53,6 @@ public class GreetingCommands : CommandGroup
     )
     {
         _context = context.Interaction;
-        _censusService = censusService;
         _feedbackService = responder;
         _channelApi = channelApi;
         _greetingService = greetingService;
@@ -181,7 +178,7 @@ public class GreetingCommands : CommandGroup
         GuildWelcomeMessage welcomeMessage = await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>
         (
             _context.GuildID.Value.Value,
-            CancellationToken
+            ct: CancellationToken
         ).ConfigureAwait(false);
 
         welcomeMessage.ChannelId = channel.ID.Value;
@@ -240,61 +237,6 @@ public class GreetingCommands : CommandGroup
         return replyResult;
     }
 
-    [Command("ingame-name-guess")]
-    [Description("Attempts to guess the new member's in-game name, in order to make an offer to set their nickname.")]
-    [RequireGuildPermission(DiscordPermission.ChangeNickname)]
-    public async Task<Result> IngameNameGuessCommand
-    (
-        [Description("Is the nickname guess feature enabled.")] bool isEnabled,
-        [Description("The tag of the outfit to make nickname guesses from, based on its newest members.")] string? outfitTag = null
-    )
-    {
-        if (isEnabled && string.IsNullOrEmpty(outfitTag))
-        {
-            return await _feedbackService.SendContextualErrorAsync
-            (
-                "You must provide an outfit tag to enable the name guess feature.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
-
-        GuildWelcomeMessage welcomeMessage = await GetWelcomeMessage().ConfigureAwait(false);
-        welcomeMessage.DoIngameNameGuess = isEnabled;
-
-        Result replyResult;
-        if (!isEnabled)
-        {
-            welcomeMessage.DoIngameNameGuess = false;
-            replyResult = await _feedbackService.SendContextualSuccessAsync
-            (
-                $"In-game name guesses will { Formatter.Italic("not") } be made.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
-        else
-        {
-            Result<Outfit?> getOutfit = await _censusService.GetOutfitAsync(outfitTag!, CancellationToken).ConfigureAwait(false);
-            if (!getOutfit.IsSuccess)
-                return (Result)getOutfit;
-
-            if (getOutfit.Entity is null)
-                return await _feedbackService.SendContextualErrorAsync("That outfit does not exist.", ct: CancellationToken).ConfigureAwait(false);
-
-            welcomeMessage.OutfitId = getOutfit.Entity.OutfitId;
-
-            replyResult = await _feedbackService.SendContextualSuccessAsync
-            (
-                $"Nickname guesses from the outfit { Formatter.Bold(getOutfit.Entity.Name) } will now be presented on the welcome message.",
-                ct: CancellationToken
-            ).ConfigureAwait(false);
-        }
-
-        _dbContext.Update(welcomeMessage);
-        await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
-
-        return replyResult;
-    }
-
     [Command("message")]
     [Description("Sets the message to present to new members. Use without arguments for more information.")]
     public async Task<Result> MessageCommand
@@ -319,7 +261,7 @@ public class GreetingCommands : CommandGroup
 
         Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync
         (
-            _context.ChannelID.Value,
+            _context.Channel.Value.ID.Value,
             (Snowflake)messageId,
             CancellationToken
         ).ConfigureAwait(false);
@@ -363,7 +305,7 @@ public class GreetingCommands : CommandGroup
 
     private static List<ulong> ParseRoles(string roles)
     {
-        List<ulong> roleIDs = new();
+        List<ulong> roleIDs = [];
 
         foreach (string role in roles.Split("<@&", StringSplitOptions.RemoveEmptyEntries))
         {
@@ -376,6 +318,6 @@ public class GreetingCommands : CommandGroup
         return roleIDs;
     }
 
-    private async Task<GuildWelcomeMessage> GetWelcomeMessage()
-        => await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, CancellationToken).ConfigureAwait(false);
+    private async ValueTask<GuildWelcomeMessage> GetWelcomeMessage()
+        => await _dbContext.FindOrDefaultAsync<GuildWelcomeMessage>(_context.GuildID.Value.Value, ct: CancellationToken);
 }

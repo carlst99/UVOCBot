@@ -17,6 +17,7 @@ namespace UVOCBot.Plugins.Planetside.Services;
 internal sealed class SanctuaryPopulationService : IPopulationService
 {
     private readonly ILogger<SanctuaryPopulationService> _logger;
+    private readonly PlanetsidePluginOptions _pluginOptions;
     private readonly IQueryService _queryService;
     private readonly CensusQueryOptions _sanctuaryOptions;
     private readonly IPopulationService _fallbackPopService;
@@ -24,12 +25,14 @@ internal sealed class SanctuaryPopulationService : IPopulationService
     public SanctuaryPopulationService
     (
         ILogger<SanctuaryPopulationService> logger,
+        IOptions<PlanetsidePluginOptions> pluginOptions,
         IQueryService queryService,
         IOptionsMonitor<CensusQueryOptions> queryOptions,
         IPopulationService fallbackPopService
     )
     {
         _logger = logger;
+        _pluginOptions = pluginOptions.Value;
         _queryService = queryService;
         _sanctuaryOptions = queryOptions.Get("sanctuary");
         _fallbackPopService = fallbackPopService;
@@ -50,7 +53,8 @@ internal sealed class SanctuaryPopulationService : IPopulationService
         if (population is not null && population.Timestamp.AddMinutes(5) >= DateTimeOffset.UtcNow)
             return population;
 
-        if (world is not (ValidWorldDefinition.Jaeger or ValidWorldDefinition.Osprey)) // Sanctuary doesn't read from Jaeger
+        // Sanctuary doesn't read from Jaeger, but otherwise we want to know when Sanctuary isn't performing
+        if (world is not ValidWorldDefinition.Jaeger && _pluginOptions.LogOnSanctuaryPopRetrievalFailures)
         {
             _logger.LogWarning
             (

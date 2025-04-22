@@ -25,7 +25,7 @@ public static class IServiceCollectionExtensions
 {
     public static IServiceCollection AddPlanetsidePlugin(this IServiceCollection services, IConfiguration config)
     {
-        services.Configure<PlanetsidePluginOptions>(config.GetSection(nameof(PlanetsidePluginOptions)));
+        services.Configure<PlanetsidePluginOptions>(config.GetSection(PlanetsidePluginOptions.CONFIG_KEY));
         services.Configure<EventStreamOptions>(config.GetSection(nameof(EventStreamOptions)));
         services.Configure<CensusQueryOptions>(config.GetSection(nameof(CensusQueryOptions)));
         services.Configure<CensusQueryOptions>(o => o.LanguageCode = CensusLanguage.English);
@@ -42,6 +42,7 @@ public static class IServiceCollectionExtensions
         services.AddSingleton(s => new SanctuaryPopulationService
         (
             s.GetRequiredService<ILogger<SanctuaryPopulationService>>(),
+            s.GetRequiredService<IOptions<PlanetsidePluginOptions>>(),
             s.GetRequiredService<IQueryService>(),
             s.GetRequiredService<IOptionsMonitor<CensusQueryOptions>>(),
             s.GetRequiredService<HonuPopulationService>()

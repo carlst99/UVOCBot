@@ -1,3 +1,4 @@
+using OneOf;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.Commands.Contexts;
@@ -5,7 +6,6 @@ using Remora.Rest.Core;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -75,10 +75,10 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
         if (!_context.Data.Value.TryPickT1(out IMessageComponentData componentData, out _))
             return new GenericCommandError();
 
-        if (!componentData.Values.IsDefined(out IReadOnlyList<string>? selectedValues))
+        if (!componentData.Values.IsDefined(out OneOf<IReadOnlyList<Snowflake>, IReadOnlyList<string>> selectedValues))
             return new GenericCommandError();
 
-        GuildWelcomeMessage? welcomeMessage = await _dbContext.FindAsync<GuildWelcomeMessage>(guildID.Value, ct)
+        GuildWelcomeMessage? welcomeMessage = await _dbContext.FindAsync<GuildWelcomeMessage>([guildID.Value], ct)
             .ConfigureAwait(false);
 
         if (welcomeMessage is null)
@@ -90,10 +90,10 @@ internal sealed class GreetingDeleteAltRolesetResponder : IComponentResponder
             );
         }
 
-        List<GuildGreetingAlternateRoleSet> removedRolesets = new();
-        foreach (ulong rolesetID in selectedValues.Select(ulong.Parse))
+        List<GuildGreetingAlternateRoleSet> removedRolesets = [];
+        foreach (Snowflake roleset in selectedValues.AsT0)
         {
-            int removeIndex = welcomeMessage.AlternateRolesets.FindIndex(rs => rs.ID == rolesetID);
+            int removeIndex = welcomeMessage.AlternateRolesets.FindIndex(rs => rs.ID == roleset.Value);
             removedRolesets.Add(welcomeMessage.AlternateRolesets[removeIndex]);
             welcomeMessage.AlternateRolesets.RemoveAt(removeIndex);
         }

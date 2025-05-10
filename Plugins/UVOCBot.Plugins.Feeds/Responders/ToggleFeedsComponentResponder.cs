@@ -1,5 +1,7 @@
-﻿using Remora.Discord.API.Abstractions.Objects;
+﻿using OneOf;
+using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.Commands.Contexts;
+using Remora.Rest.Core;
 using UVOCBot.Discord.Core.Commands;
 using Remora.Results;
 using System;
@@ -51,7 +53,7 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
             return Result.FromSuccess();
 
         if (!_context.Data.Value.TryPickT1(out IMessageComponentData componentData, out _)
-            || !componentData.Values.IsDefined(out IReadOnlyList<string>? values))
+            || !componentData.Values.IsDefined(out OneOf<IReadOnlyList<Snowflake>, IReadOnlyList<string>> values))
             return Result.FromError(new GenericCommandError());
 
         if (!_context.TryGetUser(out IUser? user))
@@ -69,7 +71,7 @@ internal sealed class ToggleFeedComponentResponder : IComponentResponder
         Feed selectedFeeds = 0;
         string message = "The following feeds have been enabled:";
 
-        foreach (string value in values)
+        foreach (string value in values.AsT1)
         {
             if (!Enum.TryParse(value, out Feed feed))
                 continue;

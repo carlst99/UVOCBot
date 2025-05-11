@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Core;
@@ -99,10 +100,8 @@ public class RoleMenuService : IRoleMenuService
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
-            embeds: new[] { CreateRoleMenuEmbed(menu) },
-            components: menu.Roles.Count > 0
-                ? CreateRoleMenuMessageComponents(menu)
-                : new Optional<IReadOnlyList<IMessageComponent>?>(),
+            components: CreateRoleMenuMessageComponents(menu),
+            flags: MessageFlags.IsComponentsV2,
             ct: ct
         );
 
@@ -124,26 +123,18 @@ public class RoleMenuService : IRoleMenuService
         return await _channelApi.CreateMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
-            embeds: new[] { CreateRoleMenuEmbed(menu) },
-            components: menu.Roles.Count > 0
-                ? CreateRoleMenuMessageComponents(menu)
-                : new Optional<IReadOnlyList<IMessageComponent>>(),
+            components: CreateRoleMenuMessageComponents(menu),
+            flags: MessageFlags.IsComponentsV2,
             ct: ct
         );
     }
 
-    public IEmbed CreateRoleMenuEmbed(GuildRoleMenu menu)
-        => new Embed
-        (
-            menu.Title,
-            Description: menu.Description,
-            Colour: DiscordConstants.DEFAULT_EMBED_COLOUR
-        );
-
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
     {
+        List<SectionComponent> roleButtonsWithDesc = [];
         List<ButtonComponent> roleButtons = [];
-        foreach (GuildRoleMenuRole role in menu.Roles)
+
+        foreach (GuildRoleMenuRole role in menu.Roles.Where(x => string.IsNullOrEmpty(x.Description)))
         {
             Optional<IPartialEmoji> emoji = default;
             if (role.Emoji is not null)
@@ -158,9 +149,51 @@ public class RoleMenuService : IRoleMenuService
             ));
         }
 
-        return roleButtons.Chunk(5)
+        foreach (GuildRoleMenuRole role in menu.Roles.Where(x => !string.IsNullOrEmpty(x.Description)))
+        {
+            Optional<IPartialEmoji> emoji = default;
+            if (role.Emoji is not null)
+                emoji = Formatter.EmojiFromString(role.Emoji).MapOr(x => new Optional<IPartialEmoji>(x), default);
+
+            roleButtonsWithDesc.Add(new SectionComponent
+            (
+                [new TextDisplayComponent(role.Description!)],
+                new ButtonComponent
+                (
+                    ButtonComponentStyle.Secondary,
+                    role.Label,
+                    emoji,
+                    ComponentIDFormatter.GetId(RoleComponentKeys.ToggleRole, role.RoleId.ToString())
+                )
+            ));
+        }
+
+        StringBuilder headerSb = new(Formatter.Header2(menu.Title));
+        if (!string.IsNullOrEmpty(menu.Description))
+            headerSb.AppendLine().Append(menu.Description);
+        TextDisplayComponent header = new(headerSb.ToString());
+
+        List<ActionRowComponent> actionRows = roleButtons.Chunk(5)
             .Select(bl => new ActionRowComponent(bl))
-            .Cast<IMessageComponent>()
             .ToList();
+
+        // Only add the second separator if we have action rows. No need to worry about the first separator, as
+        // if there are no role buttons with a description, it'll act as the separator for the action rows.
+        // And if there's no roles whatsoever, we don't care how it looks, because it isn't a proper role menu!
+        List<IMessageComponent> containerChildren = [header, new SeparatorComponent(), ..roleButtonsWithDesc];
+        if (actionRows.Count > 0)
+        {
+            containerChildren.Add(new SeparatorComponent());
+            containerChildren.AddRange(actionRows);
+        }
+
+        ContainerComponent container = new
+        (
+            containerChildren,
+            false,
+            DiscordConstants.DEFAULT_EMBED_COLOUR
+        );
+
+        return [container];
     }
 }

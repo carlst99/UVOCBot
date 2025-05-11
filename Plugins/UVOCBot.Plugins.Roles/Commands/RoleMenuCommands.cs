@@ -2,7 +2,6 @@
 using Remora.Commands.Attributes;
 using Remora.Commands.Groups;
 using Remora.Discord.API.Abstractions.Objects;
-using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Objects;
 using Remora.Discord.Commands.Attributes;
 using Remora.Discord.Commands.Conditions;
@@ -34,7 +33,6 @@ namespace UVOCBot.Plugins.Roles.Commands;
 public class RoleMenuCommands : CommandGroup
 {
     private readonly IInteraction _context;
-    private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IInteractionResponseService _interactionResponseService;
     private readonly IPermissionChecksService _permissionChecksService;
     private readonly IRoleMenuService _roleMenuService;
@@ -44,7 +42,6 @@ public class RoleMenuCommands : CommandGroup
     public RoleMenuCommands
     (
         IInteractionContext context,
-        IDiscordRestChannelAPI channelApi,
         IInteractionResponseService interactionResponseService,
         IPermissionChecksService permissionChecksService,
         IRoleMenuService roleMenuService,
@@ -53,7 +50,6 @@ public class RoleMenuCommands : CommandGroup
     )
     {
         _context = context.Interaction;
-        _channelApi = channelApi;
         _interactionResponseService = interactionResponseService;
         _permissionChecksService = permissionChecksService;
         _roleMenuService = roleMenuService;
@@ -98,14 +94,7 @@ public class RoleMenuCommands : CommandGroup
             "Placeholder"
         );
 
-        IEmbed e = _roleMenuService.CreateRoleMenuEmbed(menu);
-
-        Result<IMessage> menuCreationResult = await _channelApi.CreateMessageAsync
-        (
-            channel.ID,
-            embeds: new[] { e },
-            ct: CancellationToken
-        ).ConfigureAwait(false);
+        Result<IMessage> menuCreationResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, CancellationToken);
 
         if (!menuCreationResult.IsSuccess)
             return Result.FromError(menuCreationResult);
@@ -180,10 +169,10 @@ public class RoleMenuCommands : CommandGroup
         (
             ComponentIDFormatter.GetId(RoleComponentKeys.ModalEditMenu, messageID.Value.ToString()),
             "Editing Menu",
-            new[] {
+            [
                 new ActionRowComponent
                 (
-                    new[] {
+                    [
                         new TextInputComponent
                         (
                             RoleComponentKeys.TextInputEditMenuTitle,
@@ -195,11 +184,11 @@ public class RoleMenuCommands : CommandGroup
                             menu.Title,
                             default
                         )
-                    }
+                    ]
                 ),
                 new ActionRowComponent
                 (
-                    new[] {
+                    [
                         new TextInputComponent
                         (
                             RoleComponentKeys.TextInputEditMenuDescription,
@@ -211,9 +200,9 @@ public class RoleMenuCommands : CommandGroup
                             menu.Description,
                             default
                         )
-                    }
+                    ]
                 )
-            }
+            ]
         );
 
         return await _interactionResponseService.CreateModalResponse(modal, CancellationToken);
@@ -257,7 +246,8 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID,
         [Description("The role to add.")] IRole roleToAdd,
         [Description("The label of the role selection item. Leave empty to use the name of the role as the label.")] string? roleItemLabel = null,
-        [Description("An emoji to show on the role label")] string? emoji = null
+        [Description("An emoji to show on the role label")] string? emoji = null,
+        [Description("A long-text description of the role")] string? description = null
     )
     {
         if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
@@ -278,7 +268,8 @@ public class RoleMenuCommands : CommandGroup
         {
             dbRole = new GuildRoleMenuRole(roleToAdd.ID.Value, roleItemLabel ?? roleToAdd.Name)
             {
-                Emoji = emoji
+                Emoji = emoji,
+                Description = description
             };
 
             menu.Roles.Add(dbRole);
@@ -288,6 +279,7 @@ public class RoleMenuCommands : CommandGroup
         {
             dbRole.Label = roleItemLabel ?? roleToAdd.Name;
             dbRole.Emoji = emoji;
+            dbRole.Description = description;
 
             _dbContext.Update(dbRole);
         }

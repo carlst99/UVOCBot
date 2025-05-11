@@ -49,6 +49,10 @@ public static class Formatter
     public static string Timestamp(DateTime dateTime, TimestampStyle style)
         => Timestamp(new DateTimeOffset(dateTime).ToUnixTimeSeconds(), style);
 
+    public static string Header1(string text) => $"# {text}";
+    public static string Header2(string text) => $"## {text}";
+    public static string Header3(string text) => $"### {text}";
+
     public static Result<IEmoji> EmojiFromString(string value)
     {
         // Sometimes Discord will escape emojis

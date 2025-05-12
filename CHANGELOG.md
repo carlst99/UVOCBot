@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.2.0
+
+**Additions**
+- Role menus now use Components V2, and support having a description on the roles.
+
 ## v2.1.0
 
 **Removed Features**

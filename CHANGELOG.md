@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.2.1
+
+**Fixes**
+- Fixes to migration of role menus and handling of emoji in role menus.
+
 ## v2.2.0
 
 **Additions**

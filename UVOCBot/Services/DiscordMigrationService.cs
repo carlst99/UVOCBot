@@ -34,7 +34,8 @@ public class DiscordMigrationService
 
         _migrationList = new Dictionary<int, Func<CancellationToken, Task>>
         {
-            { 1, Migration_1_UpgradeRoleMenusToComponentsV2 }
+            { 1, Migration_UpdateRoleMenus },
+            { 2, Migration_UpdateRoleMenus },
         };
 }
 
@@ -76,7 +77,7 @@ public class DiscordMigrationService
         await _dbContext.SaveChangesAsync(ct);
     }
 
-    private async Task Migration_1_UpgradeRoleMenusToComponentsV2(CancellationToken ct)
+    private async Task Migration_UpdateRoleMenus(CancellationToken ct)
     {
         foreach (GuildRoleMenu menu in _dbContext.RoleMenus.Include(x => x.Roles))
         {

@@ -51,7 +51,7 @@ internal sealed class EditMenuModalResponder : IComponentResponder
         if (!validationResult.IsSuccess)
             return validationResult;
 
-        if (!_roleMenuService.TryGetGuildRoleMenu(roleMenuMessageID, out GuildRoleMenu? menu))
+        if (!_roleMenuService.TryGetGuildRoleMenu(_context.GuildID, roleMenuMessageID, out GuildRoleMenu? menu))
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: ct);
 
         menu.Title = titleText;

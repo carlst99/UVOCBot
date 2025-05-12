@@ -103,7 +103,7 @@ public class RoleMenuCommands : CommandGroup
         menu.MessageId = messageID.Value;
 
         _dbContext.Add(menu);
-        int addedCount = await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
+        int addedCount = await _dbContext.SaveChangesAsync(CancellationToken);
 
         if (addedCount < 1)
             return new GenericCommandError();
@@ -157,7 +157,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID
     )
     {
-        if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
+        if (!_roleMenuService.TryGetGuildRoleMenu(_context.GuildID, messageID.Value, out GuildRoleMenu? menu))
         {
             IResult sendResult = await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);
             return sendResult.IsSuccess
@@ -215,7 +215,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID
     )
     {
-        if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
+        if (!_roleMenuService.TryGetGuildRoleMenu(_context.GuildID, messageID.Value, out GuildRoleMenu? menu))
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);
 
         ButtonComponent confirmationComponent = new
@@ -250,7 +250,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("A long-text description of the role")] string? description = null
     )
     {
-        if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
+        if (!_roleMenuService.TryGetGuildRoleMenu(_context.GuildID, messageID.Value, out GuildRoleMenu? menu))
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);
 
         if (menu.Roles.Count == 25)
@@ -318,7 +318,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("The role to remove.")] IRole roleToRemove
     )
     {
-        if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
+        if (!_roleMenuService.TryGetGuildRoleMenu(_context.GuildID, messageID.Value, out GuildRoleMenu? menu))
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);
 
         if (menu.Roles.Count <= 1)
@@ -376,7 +376,7 @@ public class RoleMenuCommands : CommandGroup
         [Description("The ID of the role menu message.")] Snowflake messageID
     )
     {
-        if (!_roleMenuService.TryGetGuildRoleMenu(messageID.Value, out GuildRoleMenu? menu))
+        if (!_roleMenuService.TryGetGuildRoleMenu(_context.GuildID, messageID.Value, out GuildRoleMenu? menu))
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);
 
         IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu);

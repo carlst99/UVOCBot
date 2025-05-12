@@ -4,8 +4,6 @@ using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
 using Remora.Discord.API.Abstractions.Results;
 using Remora.Discord.API.Objects;
-using Remora.Discord.Commands.Contexts;
-using UVOCBot.Discord.Core.Commands;
 using Remora.Rest.Core;
 using Remora.Rest.Results;
 using Remora.Results;
@@ -26,66 +24,40 @@ namespace UVOCBot.Plugins.Roles.Services;
 /// <inheritdoc cref="IRoleMenuService"/>
 public class RoleMenuService : IRoleMenuService
 {
-    private readonly IInteraction _context;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly DiscordContext _dbContext;
-    private readonly FeedbackService _feedbackService;
 
     public RoleMenuService
     (
-        IInteractionContext context,
         IDiscordRestChannelAPI channelApi,
-        DiscordContext dbContext,
-        FeedbackService feedbackService
+        DiscordContext dbContext
     )
     {
-        _context = context.Interaction;
         _channelApi = channelApi;
         _dbContext = dbContext;
-        _feedbackService = feedbackService;
     }
 
     /// <inheritdoc />
-    public bool TryGetGuildRoleMenu(ulong messageID, [NotNullWhen(true)] out GuildRoleMenu? menu)
+    public bool TryGetGuildRoleMenu
+    (
+        Optional<Snowflake> guildId,
+        ulong messageID,
+        [NotNullWhen(true)] out GuildRoleMenu? menu
+    )
     {
         menu = null;
-        if (!_context.GuildID.HasValue)
+        if (!guildId.HasValue)
             return false;
 
         menu = _dbContext.RoleMenus
             .Include(grm => grm.Roles)
             .FirstOrDefault
             (
-                grm => grm.GuildId == _context.GuildID.Value.Value
+                grm => grm.GuildId == guildId.Value.Value
                      && grm.MessageId == messageID
             );
 
         return menu is not null;
-    }
-
-    /// <inheritdoc />
-    public async Task<Result<IMessage>> CheckRoleMenuMessageExistsAsync(GuildRoleMenu menu, CancellationToken ct = default)
-    {
-        Result<IMessage> getMessageResult = await _channelApi.GetChannelMessageAsync
-        (
-            DiscordSnowflake.New(menu.ChannelId),
-            DiscordSnowflake.New(menu.MessageId),
-            ct
-        ).ConfigureAwait(false);
-
-        if (!getMessageResult.IsSuccess)
-        {
-            await _feedbackService.SendContextualErrorAsync
-            (
-                "That role menu appears to have been deleted! Please create a new one.",
-                ct: ct
-            );
-
-            _dbContext.Remove(menu);
-            await _dbContext.SaveChangesAsync(ct).ConfigureAwait(false);
-        }
-
-        return getMessageResult;
     }
 
     /// <inheritdoc />
@@ -120,7 +92,7 @@ public class RoleMenuService : IRoleMenuService
         if (discordError is not DiscordError.UnknownMessage)
             return editResult;
 
-        return await _channelApi.CreateMessageAsync
+        Result<IMessage> createMsgResult = await _channelApi.CreateMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
             components: CreateRoleMenuMessageComponents(menu),

@@ -159,10 +159,12 @@ public class RoleMenuService : IRoleMenuService
             .Select(bl => new ActionRowComponent(bl))
             .ToList();
 
-        // Only add the second separator if we have action rows. No need to worry about the first separator, as
-        // if there are no role buttons with a description, it'll act as the separator for the action rows.
-        // And if there's no roles whatsoever, we don't care how it looks, because it isn't a proper role menu!
-        List<IMessageComponent> containerChildren = [header, new SeparatorComponent(), ..roleButtonsWithDesc];
+        List<IMessageComponent> containerChildren = [header];
+        if (roleButtonsWithDesc.Count > 0)
+        {
+            containerChildren.Add(new SeparatorComponent());
+            containerChildren.AddRange(roleButtonsWithDesc);
+        }
         if (actionRows.Count > 0)
         {
             containerChildren.Add(new SeparatorComponent());

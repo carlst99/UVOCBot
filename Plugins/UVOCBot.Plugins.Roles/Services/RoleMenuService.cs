@@ -61,7 +61,12 @@ public class RoleMenuService : IRoleMenuService
     }
 
     /// <inheritdoc />
-    public async Task<Result<IMessage>> UpdateRoleMenuMessageAsync(GuildRoleMenu menu, CancellationToken ct = default)
+    public async Task<Result<IMessage>> UpdateRoleMenuMessageAsync
+    (
+        GuildRoleMenu menu,
+        bool restoreDeletedMenus,
+        CancellationToken ct = default
+    )
     {
         menu.Roles.Sort
         (
@@ -80,7 +85,7 @@ public class RoleMenuService : IRoleMenuService
         // If we couldn't edit the message, it's quite possible it was deleted. Let's check if that was the case,
         // and attempt to recreate the message if so
 
-        if (editResult.IsSuccess)
+        if (editResult.IsSuccess || !restoreDeletedMenus)
             return editResult;
 
         if (editResult.Error is not RestResultError<RestError> restError)

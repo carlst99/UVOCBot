@@ -94,7 +94,12 @@ public class RoleMenuCommands : CommandGroup
             "Placeholder"
         );
 
-        Result<IMessage> menuCreationResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, CancellationToken);
+        Result<IMessage> menuCreationResult = await _roleMenuService.UpdateRoleMenuMessageAsync
+        (
+            menu,
+            true,
+            CancellationToken
+        );
 
         if (!menuCreationResult.IsSuccess)
             return Result.FromError(menuCreationResult);
@@ -289,7 +294,7 @@ public class RoleMenuCommands : CommandGroup
         if (updateCount < 1)
             return Result.FromError(new GenericCommandError());
 
-        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, CancellationToken).ConfigureAwait(false);
+        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, true, CancellationToken);
         if (!modifyMenuResult.IsSuccess)
         {
             return await _feedbackService.SendContextualWarningAsync
@@ -348,7 +353,7 @@ public class RoleMenuCommands : CommandGroup
         if (updateCount < 1)
             return Result.FromError(new GenericCommandError());
 
-        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu);
+        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, true, CancellationToken);
         if (!modifyMenuResult.IsSuccess)
         {
             return await _feedbackService.SendContextualWarningAsync
@@ -379,7 +384,7 @@ public class RoleMenuCommands : CommandGroup
         if (!_roleMenuService.TryGetGuildRoleMenu(_context.GuildID, messageID.Value, out GuildRoleMenu? menu))
             return await _feedbackService.SendContextualErrorAsync("That role menu doesn't exist.", ct: CancellationToken);
 
-        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu);
+        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, true, CancellationToken);
         if (!modifyMenuResult.IsSuccess)
             return modifyMenuResult;
 

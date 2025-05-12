@@ -32,7 +32,13 @@ public interface IRoleMenuService
     /// <paramref name="menu"/>, so ensure that changes get persisted to the database.
     /// </summary>
     /// <param name="menu">The menu to update.</param>
+    /// <param name="restoreDeletedMenus">Re-post menu messages that can't be found.</param>
     /// <param name="ct">A <see cref="CancellationToken"/> that can be used to stop the operation.</param>
     /// <returns>A result representing the outcome of the operation, and containing the updated message on success.</returns>
-    Task<Result<IMessage>> UpdateRoleMenuMessageAsync(GuildRoleMenu menu, CancellationToken ct = default);
+    Task<Result<IMessage>> UpdateRoleMenuMessageAsync
+    (
+        GuildRoleMenu menu,
+        bool restoreDeletedMenus,
+        CancellationToken ct = default
+    );
 }

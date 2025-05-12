@@ -63,7 +63,7 @@ internal sealed class EditMenuModalResponder : IComponentResponder
         if (updateCount < 1)
             return Result.FromError(new GenericCommandError());
 
-        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, ct);
+        IResult modifyMenuResult = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, true, ct);
         if (!modifyMenuResult.IsSuccess)
         {
             return await _feedbackService.SendContextualWarningAsync

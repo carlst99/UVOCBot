@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Remora.Discord.API.Abstractions.Objects;
+using Remora.Results;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,7 +81,10 @@ public class DiscordMigrationService
         foreach (GuildRoleMenu menu in _dbContext.RoleMenus.Include(x => x.Roles))
         {
             _logger.LogDebug("Migrating role menu {Id}", menu.Id);
-            await _roleMenuService.UpdateRoleMenuMessageAsync(menu, ct);
+            Result<IMessage> result = await _roleMenuService.UpdateRoleMenuMessageAsync(menu, false, ct);
+
+            if (!result.IsSuccess)
+                _logger.LogError("Failed to migrate a role menu: {Message}", result.Error!.Message);
         }
     }
 }

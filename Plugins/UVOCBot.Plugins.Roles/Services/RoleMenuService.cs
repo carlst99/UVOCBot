@@ -99,6 +99,11 @@ public class RoleMenuService : IRoleMenuService
             flags: MessageFlags.IsComponentsV2,
             ct: ct
         );
+
+        if (createMsgResult.IsDefined(out IMessage? createdMsg))
+            menu.MessageId = createdMsg.ID.Value;
+
+        return createMsgResult;
     }
 
     private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)

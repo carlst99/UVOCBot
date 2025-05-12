@@ -22,6 +22,7 @@ using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using UVOCBot.Abstractions.Services;
 using UVOCBot.Commands;
@@ -90,6 +91,9 @@ public class Program
             await using DiscordContext dbContext = scope.ServiceProvider.GetRequiredService<DiscordContext>();
             await dbContext.Database.MigrateAsync();
 
+            await scope.ServiceProvider.GetRequiredService<DiscordMigrationService>()
+                .RunMigrations(CancellationToken.None);
+
             await host.RunAsync();
         }
         catch (Exception ex)
@@ -141,7 +145,8 @@ public class Program
         // Add Discord-related services
         AddRemoraServices(builder.Services)
             .AddCoreDiscordServices()
-            .AddScoped<IAdminLogService, AdminLogService>();
+            .AddScoped<IAdminLogService, AdminLogService>()
+            .AddTransient<DiscordMigrationService>();
 
         // Plugin registration
         builder.Services.AddApexLegendsPlugin(builder.Configuration)

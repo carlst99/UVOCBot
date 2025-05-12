@@ -57,15 +57,18 @@ public static class Formatter
     {
         // Sometimes Discord will escape emojis
         value = value.Trim('<', '>');
-        if (value.Length < 3) // At least two colons and a name/id
+        if (value.Length is 0)
             return new GenericCommandError("Emoji string was too short");
 
-        bool isAnimated = value[0] is 'a';
-        value = value.Trim('a');
+        bool isAnimated = value.StartsWith("a:");
+        value = value.TrimStart('a').TrimStart(':');
+
+        if (value.Length is 0)
+            return new GenericCommandError("Emoji string format was invalid");
 
         string[] parts = value.Split(':', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length is 0)
-            return new GenericCommandError("Emoji string format was invalid");
+        if (parts.Length is 0) // No colons mean this is probably a UTF8 emoji string
+            return new Emoji(null, value);
 
         Snowflake? id = null;
         if (parts.Length > 1)

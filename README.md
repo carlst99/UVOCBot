@@ -61,6 +61,14 @@ name and icon and **add a bot** to the application.
     Update-Database
     ```
 
+## Creating Database Migrations
+
+```sh
+cd UVOCBot.Core
+dotnet ef migrations add --startup-project ../UVOCBot/UVOCBot.csproj <MIGRATION_NAME>
+dotnet ef database update --startup-project ../UVOCBot/UVOCBot.csproj
+```
+
 ### Project Structure
 
 UVOCBot is composed of multiple components

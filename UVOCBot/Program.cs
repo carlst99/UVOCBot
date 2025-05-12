@@ -116,13 +116,9 @@ public class Program
         SetupLogging(logOptions?.SeqIngestionEndpoint, logOptions?.SeqApiKey);
         builder.Services.AddSerilog();
 
-            // #if DEBUG // Used for EF core migrations
-            // .ConfigureAppConfiguration((c, builder) =>
-            // {
-            //     builder.AddConfiguration(c.Configuration)
-            //         .AddUserSecrets<Program>();
-            // })
-            // #endif
+        #if DEBUG // Needed for EF core migrations. Why? I'm not certain
+        builder.Configuration.AddUserSecrets<Program>();
+        #endif
 
         // Setup configuration bindings
         DatabaseOptions dbOptions = builder.Configuration.GetRequiredSection(DatabaseOptions.CONFIG_NAME)

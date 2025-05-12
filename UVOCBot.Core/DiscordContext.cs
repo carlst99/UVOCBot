@@ -13,6 +13,7 @@ public sealed class DiscordContext : DbContext
 {
     private static readonly JsonSerializerOptions JSON_OPTIONS = new();
 
+    public DbSet<DiscordMigrationHistory> DiscordMigrationHistory { get; set; }
     public DbSet<GuildAdminSettings> GuildAdminSettings { get; set; }
     public DbSet<GuildFeedsSettings> GuildFeedsSettings { get; set; }
     public DbSet<GuildWelcomeMessage> GuildWelcomeMessages { get; set; }
@@ -20,14 +21,10 @@ public sealed class DiscordContext : DbContext
     public DbSet<GuildRoleMenu> RoleMenus { get; set; }
     public DbSet<SpaceEngineersData> SpaceEngineersDatas { get; set; }
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
     public DiscordContext(DbContextOptions<DiscordContext> options)
         : base(options)
     {
     }
-
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +41,10 @@ public sealed class DiscordContext : DbContext
             l => l.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
             l => l
         );
+
+        modelBuilder.Entity<DiscordMigrationHistory>()
+            .Property(x => x.MigrationId)
+            .ValueGeneratedNever();
 
         modelBuilder.Entity<GuildWelcomeMessage>()
             .Property(p => p.AlternateRolesets)
@@ -90,7 +91,7 @@ public sealed class DiscordContext : DbContext
 
     private static List<ulong> BytesToIdList(byte[] buffer)
     {
-        List<ulong> idList = new();
+        List<ulong> idList = [];
 
         for (int i = 0; i < buffer.Length; i += sizeof(ulong))
         {

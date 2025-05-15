@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
+using Remora.Discord.API.Abstractions.Rest;
 using Remora.Results;
 using System;
 using System.Collections.Generic;
@@ -17,6 +19,7 @@ public class DiscordMigrationService
 {
     private readonly ILogger<DiscordMigrationService> _logger;
     private readonly DiscordContext _dbContext;
+    private readonly IDiscordRestChannelAPI _channelApi;
     private readonly IRoleMenuService _roleMenuService;
 
     private readonly Dictionary<int, Func<CancellationToken, Task>> _migrationList;
@@ -25,17 +28,21 @@ public class DiscordMigrationService
     (
         ILogger<DiscordMigrationService> logger,
         DiscordContext dbContext,
+        IDiscordRestChannelAPI channelApi,
         IRoleMenuService roleMenuService
     )
     {
         _logger = logger;
         _dbContext = dbContext;
+        _channelApi = channelApi;
         _roleMenuService = roleMenuService;
 
         _migrationList = new Dictionary<int, Func<CancellationToken, Task>>
         {
-            { 1, Migration_UpdateRoleMenus },
-            { 2, Migration_UpdateRoleMenus },
+            { 1, Migration_RoleMenus_Update },
+            { 2, Migration_RoleMenus_Update },
+            { 3, Migrate_RoleMenus_ClearComponentV1 },
+            { 4, Migration_RoleMenus_Update },
         };
 }
 
@@ -77,7 +84,7 @@ public class DiscordMigrationService
         await _dbContext.SaveChangesAsync(ct);
     }
 
-    private async Task Migration_UpdateRoleMenus(CancellationToken ct)
+    private async Task Migration_RoleMenus_Update(CancellationToken ct)
     {
         foreach (GuildRoleMenu menu in _dbContext.RoleMenus.Include(x => x.Roles))
         {
@@ -86,6 +93,31 @@ public class DiscordMigrationService
 
             if (!result.IsSuccess)
                 _logger.LogError("Failed to migrate a role menu: {Message}", result.Error!.Message);
+        }
+    }
+
+    private async Task Migrate_RoleMenus_ClearComponentV1(CancellationToken ct)
+    {
+        foreach (GuildRoleMenu menu in _dbContext.RoleMenus)
+        {
+            Result<IMessage> message = await _channelApi.GetChannelMessageAsync
+            (
+                DiscordSnowflake.New(menu.ChannelId),
+                DiscordSnowflake.New(menu.MessageId),
+                ct
+            );
+            if (message.IsSuccess && message.Entity.Flags.Value.HasFlag(MessageFlags.IsComponentsV2))
+                continue;
+
+            _logger.LogDebug("Clearing component V1 components from role menu {Id}", menu.Id);
+            await _channelApi.EditMessageAsync
+            (
+                DiscordSnowflake.New(menu.ChannelId),
+                DiscordSnowflake.New(menu.MessageId),
+                "",
+                embeds: Array.Empty<IEmbed>(),
+                ct: ct
+            );
         }
     }
 }

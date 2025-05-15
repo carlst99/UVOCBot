@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.2.2
+
+**Fixes**
+- Fix migration of role menus from components v1.
+
 ## v2.2.1
 
 **Fixes**

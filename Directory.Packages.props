@@ -1,0 +1,29 @@
+<Project>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageVersion Include="carlst99.Mandible" Version="6.0.0" />
+        <PackageVersion Include="CodeHollow.FeedReader" Version="1.2.6" />
+        <PackageVersion Include="DbgCensus.Core" Version="3.1.2" />
+        <PackageVersion Include="DbgCensus.EventStream.EventHandlers" Version="3.9.2" />
+        <PackageVersion Include="DbgCensus.Rest" Version="4.0.2" />
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
+        <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
+        <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
+        <PackageVersion Include="Remora.Discord" Version="2025.2.0" />
+        <PackageVersion Include="Remora.Discord.Commands" Version="30.0.0" />
+        <PackageVersion Include="Serilog" Version="4.3.1" />
+        <PackageVersion Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+        <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+        <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
+    </ItemGroup>
+</Project>

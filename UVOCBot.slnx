@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Plugins/">
+    <Project Path="Plugins/UVOCBot.Plugins.ApexLegends/UVOCBot.Plugins.ApexLegends.csproj" />
+    <Project Path="Plugins/UVOCBot.Plugins.Feeds/UVOCBot.Plugins.Feeds.csproj" />
+    <Project Path="Plugins/UVOCBot.Plugins.Greetings/UVOCBot.Plugins.Greetings.csproj" />
+    <Project Path="Plugins/UVOCBot.Plugins.Planetside/UVOCBot.Plugins.Planetside.csproj" />
+    <Project Path="Plugins/UVOCBot.Plugins.Roles/UVOCBot.Plugins.Roles.csproj" />
+    <Project Path="Plugins/UVOCBot.Plugins.SpaceEngineers/UVOCBot.Plugins.SpaceEngineers.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docker-compose.yml" />
+    <File Path="nuget.config" />
+  </Folder>
+  <Project Path="UVOCBot.Core/UVOCBot.Core.csproj" />
+  <Project Path="UVOCBot.Discord.Core/UVOCBot.Discord.Core.csproj" />
+  <Project Path="UVOCBot/UVOCBot.csproj" />
+</Solution>

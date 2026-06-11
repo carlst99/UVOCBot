@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using UVOCBot.Core;
 using UVOCBot.Core.Model;
 using Feed = UVOCBot.Plugins.Feeds.Objects.Feed;
@@ -160,11 +161,11 @@ public sealed class ForumRssWorker : BackgroundService
 
     private async Task<CodeHollow.FeedReader.Feed?> TryGetFeedAsync(Feed fType, CancellationToken ct)
     {
+        using XmlReader reader = XmlReader.Create(ForumRssFeeds[fType]);
         CodeHollow.FeedReader.Feed? feed = null;
         try
         {
-            feed = await FeedReader.ReadAsync(ForumRssFeeds[fType], ct)
-                .WithCancellation(ct);
+            feed = await FeedReader.ReadAsync(ForumRssFeeds[fType], ct);
         }
         catch (Exception ex)
         {

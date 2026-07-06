@@ -14,7 +14,7 @@ public class ApexPluginOptions
 
     public ApexPluginOptions()
     {
-        ApexLegendsApiEndpoint = "https://api.mozambiquehe.re";
+        ApexLegendsApiEndpoint = "https://api.apexlegendsstatus.com";
         ApexLegendsApiKey = string.Empty;
     }
 }

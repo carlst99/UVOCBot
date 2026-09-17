@@ -6,7 +6,7 @@
 
 # UVOCBot
 
-Provides various functions to assist with the experience of the UVOC outfit Discord server. Current features include:
+Provides various functions to assist with the experience of gaming-related Discord guilds. Current features include:
 
 - PlanetSide 2 Queries:
     - Server population and continent status.
@@ -15,11 +15,9 @@ Provides various functions to assist with the experience of the UVOC outfit Disc
     - Online friends.
     - Outfit base capture tracking, including members involved in any captures.
     - Outfit Wars information (registrations, match times).
-    - Notifications for Forum Announcements (e.g. release notes) and game patches.
+    - Notifications from the official news feed and game patches.
 - Role menus.
-- Apex Legends Queries:
-    - Current map rotation
-    - Current crafting rotation
+- Apex Legends current map rotation.
 - Space Engineers server integration - track online players and server status.
 - Bulk voice channel movement - never drag people one-at-a-time again!
 - Welcome messages - assign default roles and let users pick an alternate role set.
@@ -37,9 +35,7 @@ private invite link. I might say yes :slightly_smiling_face:.
 
 # Setup for Hosting
 
-Before continuing, you should note that UVOCBot is designed with a Linux host in mind; it has support for systemd and I
-only provide Linux binaries. If you'd like support for running as a Windows service and the corresponding binaries,
-please open an Issue.
+Before continuing, you should note that UVOCBot is designed for a Linux or containerised hosting environment.
 
 1. Create a new application in the Discord Developer portal - https://discord.com/developers/applications. Give it a
 name and icon and **add a bot** to the application.
@@ -50,15 +46,12 @@ name and icon and **add a bot** to the application.
 
 # Building and Developing
 
-1. Install the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
+1. Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
 2. Install [PostgreSQL](https://www.postgresql.org) and create a database. The name is up to you.
 3. Modify the requisite `appsettings.json` files to include your API keys and database connection string
-4. Update the database to the latest migration. If you are using the .NET Core CLI, run the command:
+4. Update the database to the latest migration. If you are using the .NET CLI, run the command:
     ```sh
-    # dotnet CLI
     dotnet ef database update
-    # Visual Studio Package Manager
-    Update-Database
     ```
 
 ## Creating Database Migrations
@@ -90,4 +83,3 @@ UVOCBot is built on these amazing libraries:
 - [Npgsql](https://www.npgsql.org)
 - [Remora.Discord](https://github.com/Remora/Remora.Discord)
 - [Serilog](https://github.com/serilog/serilog)
-- [Tweetinvi](https://github.com/linvi/tweetinvi)

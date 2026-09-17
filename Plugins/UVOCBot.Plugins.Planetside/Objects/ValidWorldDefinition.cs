@@ -8,7 +8,7 @@ namespace UVOCBot.Plugins.Planetside.Objects;
 public enum ValidWorldDefinition
 {
     Osprey = WorldDefinition.Connery,
-    Miller = WorldDefinition.Miller,
+    Wainwright = WorldDefinition.Miller,
     Jaeger = WorldDefinition.Jaeger,
     Soltech = WorldDefinition.Soltech
 }

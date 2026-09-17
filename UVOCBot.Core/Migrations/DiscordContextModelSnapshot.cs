@@ -17,7 +17,7 @@ namespace UVOCBot.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -32,7 +32,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasKey("MigrationId");
 
-                    b.ToTable("DiscordMigrationHistory");
+                    b.ToTable("DiscordMigrationHistory", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildAdminSettings", b =>
@@ -52,7 +52,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("GuildAdminSettings");
+                    b.ToTable("GuildAdminSettings", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildFeedsSettings", b =>
@@ -72,7 +72,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("GuildFeedsSettings");
+                    b.ToTable("GuildFeedsSettings", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildRoleMenu", b =>
@@ -107,7 +107,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasIndex("GuildId", "MessageId");
 
-                    b.ToTable("RoleMenus");
+                    b.ToTable("RoleMenus", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildRoleMenuRole", b =>
@@ -140,7 +140,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("GuildRoleMenuRole");
+                    b.ToTable("GuildRoleMenuRole", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildWelcomeMessage", b =>
@@ -169,7 +169,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("GuildWelcomeMessages");
+                    b.ToTable("GuildWelcomeMessages", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.PlanetsideSettings", b =>
@@ -190,7 +190,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("PlanetsideSettings");
+                    b.ToTable("PlanetsideSettings", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.SpaceEngineersData", b =>
@@ -216,7 +216,7 @@ namespace UVOCBot.Core.Migrations
 
                     b.HasKey("GuildId");
 
-                    b.ToTable("SpaceEngineersDatas");
+                    b.ToTable("SpaceEngineersDatas", (string)null);
                 });
 
             modelBuilder.Entity("UVOCBot.Core.Model.GuildRoleMenuRole", b =>

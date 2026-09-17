@@ -26,9 +26,6 @@ public sealed class ForumRssWorker : BackgroundService
     /// </summary>
     private static readonly IReadOnlyDictionary<Feed, string> ForumRssFeeds = new Dictionary<Feed, string>()
     {
-        { Feed.ForumAnnouncement, "https://forums.daybreakgames.com/ps2/index.php?forums/official-news-and-announcements.19/index.rss" },
-        { Feed.ForumPatchNotes, "https://forums.daybreakgames.com/ps2/index.php?forums/game-update-notes.73/index.rss" },
-        { Feed.ForumPTSAnnouncement, "https://forums.daybreakgames.com/ps2/index.php?forums/test-server-announcements.69/index.rss" },
         { Feed.News, "https://www.planetside2.com/rss" }
     };
 
@@ -97,7 +94,7 @@ public sealed class ForumRssWorker : BackgroundService
 
     private async Task<FeedBundle> GetUnseenPostsAsync(Feed fType, CancellationToken ct)
     {
-        List<FeedItem> validItems = new();
+        List<FeedItem> validItems = [];
 
         CodeHollow.FeedReader.Feed? feed = await TryGetFeedAsync(fType, ct);
         if (feed is null || feed.Items.Count == 0)

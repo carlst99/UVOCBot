@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remora.Commands.Extensions;
 using Remora.Discord.Commands.Extensions;
+using System.Net.Http.Headers;
 using UVOCBot.Plugins.Planetside;
 using UVOCBot.Plugins.Planetside.Abstractions.Services;
 using UVOCBot.Plugins.Planetside.CensusEventHandlers;
@@ -38,7 +39,11 @@ public static class IServiceCollectionExtensions
 
         // Register in order of consumption. Sanctuary pop service requires a fallback, caching pop service
         // requires a source-backed pop service
-        services.AddSingleton<HonuPopulationService>();
+        services.AddHttpClient<HonuPopulationService>().ConfigureHttpClient(x =>
+        {
+            x.DefaultRequestHeaders.UserAgent.Clear();
+            x.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("UVOCBot", "1.0"));
+        });
         services.AddSingleton(s => new SanctuaryPopulationService
         (
             s.GetRequiredService<ILogger<SanctuaryPopulationService>>(),

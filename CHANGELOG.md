@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.2.3
+
+**Deprecations**
+- Removed the old Planetside 2 Forum Feeds.
+
+**Fixes**
+- Population querying should be restored.
+- Renamed the Planetside 2 server "Miller" to "Wainwright".
+
 ## v2.2.2
 
 **Fixes**

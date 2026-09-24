@@ -86,17 +86,6 @@ public class RoleMenuService : IRoleMenuService
             ct: ct
         );
 
-        if (!editResult.IsSuccess)
-        {
-            _logger.LogError
-            (
-                "Failed to update role menu with guild / channel / message ID {GuildId} / {MessageId} / {ChannelId}",
-                menu.GuildId,
-                menu.ChannelId,
-                menu.MessageId
-            );
-        }
-
         // If we couldn't edit the message, it's quite possible it was deleted. Let's check if that was the case
         // and attempt to recreate the message if so
 
@@ -107,8 +96,18 @@ public class RoleMenuService : IRoleMenuService
         bool failure = editResult.Error is not RestResultError<RestError> restError
             || !restError.Error.Code.TryGet(out DiscordError discordError)
             || discordError is not DiscordError.UnknownMessage;
+
         if (failure)
+        {
+            _logger.LogError
+            (
+                "Failed to edit role menu with guild / channel / message ID {GuildId} / {MessageId} / {ChannelId}",
+                menu.GuildId,
+                menu.ChannelId,
+                menu.MessageId
+            );
             return editResult;
+        }
 
         Result<IMessage> createMsgResult = await _channelApi.CreateMessageAsync
         (

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -24,15 +25,18 @@ namespace UVOCBot.Plugins.Roles.Services;
 /// <inheritdoc cref="IRoleMenuService"/>
 public class RoleMenuService : IRoleMenuService
 {
+    private readonly ILogger<RoleMenuService> _logger;
     private readonly IDiscordRestChannelAPI _channelApi;
     private readonly DiscordContext _dbContext;
 
     public RoleMenuService
     (
+        ILogger<RoleMenuService> logger,
         IDiscordRestChannelAPI channelApi,
         DiscordContext dbContext
     )
     {
+        _logger = logger;
         _channelApi = channelApi;
         _dbContext = dbContext;
     }
@@ -82,19 +86,28 @@ public class RoleMenuService : IRoleMenuService
             ct: ct
         );
 
-        // If we couldn't edit the message, it's quite possible it was deleted. Let's check if that was the case,
+        if (!editResult.IsSuccess)
+        {
+            _logger.LogError
+            (
+                "Failed to update role menu with guild / channel / message ID {GuildId} / {MessageId} / {ChannelId}",
+                menu.GuildId,
+                menu.ChannelId,
+                menu.MessageId
+            );
+        }
+
+        // If we couldn't edit the message, it's quite possible it was deleted. Let's check if that was the case
         // and attempt to recreate the message if so
 
         if (editResult.IsSuccess || !restoreDeletedMenus)
             return editResult;
 
-        if (editResult.Error is not RestResultError<RestError> restError)
-            return editResult;
-
-        if (!restError.Error.Code.TryGet(out DiscordError discordError))
-            return editResult;
-
-        if (discordError is not DiscordError.UnknownMessage)
+        // Test for an UnknownMessage error - meaning we should recreate the message
+        bool failure = editResult.Error is not RestResultError<RestError> restError
+            || !restError.Error.Code.TryGet(out DiscordError discordError)
+            || discordError is not DiscordError.UnknownMessage;
+        if (failure)
             return editResult;
 
         Result<IMessage> createMsgResult = await _channelApi.CreateMessageAsync

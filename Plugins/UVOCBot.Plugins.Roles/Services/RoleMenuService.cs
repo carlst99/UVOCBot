@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OneOf;
 using Remora.Discord.API;
 using Remora.Discord.API.Abstractions.Objects;
 using Remora.Discord.API.Abstractions.Rest;
@@ -27,17 +28,20 @@ public class RoleMenuService : IRoleMenuService
 {
     private readonly ILogger<RoleMenuService> _logger;
     private readonly IDiscordRestChannelAPI _channelApi;
+    private readonly IDiscordRestEmojiAPI _emojiApi;
     private readonly DiscordContext _dbContext;
 
     public RoleMenuService
     (
         ILogger<RoleMenuService> logger,
         IDiscordRestChannelAPI channelApi,
+        IDiscordRestEmojiAPI emojiApi,
         DiscordContext dbContext
     )
     {
         _logger = logger;
         _channelApi = channelApi;
+        _emojiApi = emojiApi;
         _dbContext = dbContext;
     }
 
@@ -76,12 +80,13 @@ public class RoleMenuService : IRoleMenuService
         (
             (r1, r2) => string.Compare(r1.Label, r2.Label, StringComparison.Ordinal)
         );
+        List<IMessageComponent> components = await CreateRoleMenuMessageComponents(menu, ct);
 
         Result<IMessage> editResult = await _channelApi.EditMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
             DiscordSnowflake.New(menu.MessageId),
-            components: CreateRoleMenuMessageComponents(menu),
+            components: components,
             flags: MessageFlags.IsComponentsV2,
             ct: ct
         );
@@ -112,10 +117,17 @@ public class RoleMenuService : IRoleMenuService
         Result<IMessage> createMsgResult = await _channelApi.CreateMessageAsync
         (
             DiscordSnowflake.New(menu.ChannelId),
-            components: CreateRoleMenuMessageComponents(menu),
+            components: components,
             flags: MessageFlags.IsComponentsV2,
             ct: ct
         );
+        if (createMsgResult.Error is RestResultError<RestError> { Error.Code: { HasValue: true, Value: DiscordError.InvalidFormBody } } createRestError)
+        {
+            // TODO: Drill all the way down, find IErrorDetails.Code = "COMPONENT_INVALID_EMOJI" or error on IPropertyErrorDetails.Key = "emoji"
+            foreach ((string key, OneOf<IPropertyErrorDetails, IReadOnlyList<IErrorDetails>> value) in createRestError.Error.Errors.Value)
+            {
+            }
+        }
 
         if (createMsgResult.IsDefined(out IMessage? createdMsg))
             menu.MessageId = createdMsg.ID.Value;
@@ -123,10 +135,33 @@ public class RoleMenuService : IRoleMenuService
         return createMsgResult;
     }
 
-    private static List<IMessageComponent> CreateRoleMenuMessageComponents(GuildRoleMenu menu)
+    private async ValueTask<List<IMessageComponent>> CreateRoleMenuMessageComponents
+    (
+        GuildRoleMenu menu,
+        CancellationToken ct
+    )
     {
         List<SectionComponent> roleButtonsWithDesc = [];
         List<ButtonComponent> roleButtons = [];
+
+        // Validate emoji, otherwise Discord causes issues
+        // foreach (GuildRoleMenuRole role in menu.Roles.Where(x => x.Emoji != null))
+        // {
+        //     Optional<IPartialEmoji> emoji = Formatter.EmojiFromString(role.Emoji!)
+        //         .MapOr(x => new Optional<IPartialEmoji>(x), default);
+        //
+        //     if (!emoji.HasValue || !emoji.Value.ID.HasValue)
+        //         continue;
+        //
+        //     Result<IEmoji> guildEmoji = await _emojiApi.GetGuildEmojiAsync
+        //     (
+        //         DiscordSnowflake.New(menu.GuildId),
+        //         emoji.Value.ID.Value!.Value, ct
+        //     );
+        //
+        //     if (!guildEmoji.IsSuccess)
+        //         role.Emoji = null;
+        // }
 
         foreach (GuildRoleMenuRole role in menu.Roles.Where(x => string.IsNullOrEmpty(x.Description)))
         {
